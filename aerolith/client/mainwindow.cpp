@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-
+#include <QBuffer>
 
 MainWindow::MainWindow()
 {
@@ -11,7 +11,7 @@ MainWindow::MainWindow()
 
   // create login widget
   QWidget *loginWidget = new QWidget;
-  QLineEdit *username = new QLineEdit;
+  username = new QLineEdit;
 
   QPushButton *submit = new QPushButton("Submit");
   
@@ -117,14 +117,17 @@ MainWindow::MainWindow()
   // commsSocket
 
   commsSocket = new QTcpSocket;
-
-
-
   connect(commsSocket, SIGNAL(readyRead()), this, SLOT(readFromServer()));
   connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
 	  this, SLOT(displayError(QAbstractSocket::SocketError)));
+  connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
   connect(submit, SIGNAL(clicked()), this, SLOT(connectToServer()));
-  blockSize = 0;
+
+  buffer = new QBuffer(this);
+  buffer->open(QIODevice::ReadWrite);
+
+
+
 }
 
 void MainWindow::submitChatLEContents()
@@ -142,31 +145,14 @@ void MainWindow::submitSolutionLEContents()
 
 void MainWindow::readFromServer()
 {
-  QDataStream in(commsSocket);
-  in.setVersion(QDataStream::Qt_4_0);
-
-  if (blockSize == 0) 
+  qint64 bytes = buffer->write(commsSocket->readAll());
+  buffer->seek(buffer->pos() - bytes);
+  while (buffer->canReadLine())
     {
-      if (commsSocket->bytesAvailable() < (int)sizeof(quint16))
-	return;
-
-      in >> blockSize;
-      chatText->append(QString("blocksize %1").arg(blockSize));
+      QString line = buffer->readLine();
+      chatText->append(line.simplified());
     }
 
-  if (commsSocket->bytesAvailable() < blockSize)
-    return;
-
-  QString messageFromServer;
-  in >> messageFromServer;
-  blockSize = 0; // reset blocksize in anticipation for new message
-
-  /*  if (nextFortune == currentFortune) {
-    QTimer::singleShot(0, this, SLOT(requestNewFortune()));
-    return;
-    }*/
-
-  connectStatusLabel->setText(messageFromServer);
 
 }
 
@@ -198,5 +184,11 @@ void MainWindow::connectToServer()
 {
   commsSocket->abort();
   commsSocket->connectToHost("cesar.boldlygoingnowhere.org", 1988);
+  connectStatusLabel->clear();
+}
 
+void MainWindow::writeUsernameToServer()
+{
+  // only after connecting!
+  commsSocket->write(username->text().toAscii() + "\n");
 }
