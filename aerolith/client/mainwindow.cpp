@@ -190,5 +190,6 @@ void MainWindow::connectToServer()
 void MainWindow::writeUsernameToServer()
 {
   // only after connecting!
-  commsSocket->write(username->text().toAscii() + "\n");
+  commsSocket->write("LOGIN " + username->text().toAscii() + "\n");
+
 }
