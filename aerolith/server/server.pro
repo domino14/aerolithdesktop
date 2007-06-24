@@ -1,6 +1,5 @@
 TEMPLATE = app
-CONFIG += qt console
-HEADERS += mainserver.h serverthread.h
-SOURCES += main.cpp mainserver.cpp serverthread.cpp
+HEADERS += mainserver.h
+SOURCES += main.cpp mainserver.cpp
 QT += network
-QT -= gui
+
