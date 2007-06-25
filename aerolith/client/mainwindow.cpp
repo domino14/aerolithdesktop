@@ -12,12 +12,13 @@ MainWindow::MainWindow()
   // create login widget
   QWidget *loginWidget = new QWidget;
   username = new QLineEdit;
-
+ 
   QPushButton *submit = new QPushButton("Submit");
   
   connectStatusLabel = new QLabel("Please enter your desired username");  
   QLabel *userLabel = new QLabel("Username: ");
   username->setFixedWidth(150);
+  username->setMaxLength(16);
   submit->setFixedWidth(150);
   connectStatusLabel->setFixedWidth(600);
   
@@ -90,7 +91,7 @@ MainWindow::MainWindow()
   
   
 
-  //
+  // chat related stuff
 
   QVBoxLayout *gameBoardLayout = new QVBoxLayout;
   chatLE = new QLineEdit;
@@ -104,11 +105,19 @@ MainWindow::MainWindow()
   gameBoardLayout->addStretch(1);
   gameBoardLayout->addWidget(chatLE);
   gameBoardLayout->addSpacing(20);
-  gameBoardLayout->addWidget(chatText);
+
+  QHBoxLayout *chatLayout = new QHBoxLayout;
+  chatLayout->addWidget(chatText);
+  QListWidget* peopleConnected = new QListWidget;
+  peopleConnected->setFixedWidth(150);
+  chatLayout->addWidget(peopleConnected);
+  gameBoardLayout->addLayout(chatLayout);
 
   gameBoardWidget->setLayout(gameBoardLayout);
-  
   mainTabWidget->addTab(gameBoardWidget, "Game Board");
+  
+
+
   //mainTabWidget->setTabEnabled(1, false);
   chatText->document()->setMaximumBlockCount(5000);  // at most 5000 newlines.
 
@@ -150,8 +159,16 @@ void MainWindow::readFromServer()
   while (buffer->canReadLine())
     {
       QString line = buffer->readLine();
-      chatText->append(line.simplified());
+      processServerString(line);
+      //      chatText->append(line.simplified());
     }
+
+
+}
+
+void MainWindow::processServerString(QString line)
+{
+
 
 
 }

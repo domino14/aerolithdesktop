@@ -10,6 +10,7 @@ MainServer::MainServer()
 
 void MainServer::addConnection()
 {
+  qDebug("connection added");
   QTcpSocket* connection = nextPendingConnection();
   connections.append(connection);
   QBuffer* buffer = new QBuffer(this);
@@ -23,8 +24,13 @@ void MainServer::addConnection()
 
 void MainServer::removeConnection()
 {
+  qDebug("remove connection");
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender()); // sender violates modularity
   // but many signals are connected to this slot
+  QString username = socket->property("Username").toString();
+  foreach (QTcpSocket* connection, connections)
+    connection->write("LOGOUT " + username.toAscii() + " has logged out!\n");
+
   QBuffer* buffer = buffers.take(socket);
   buffer->close();
   buffer->deleteLater();
@@ -46,12 +52,50 @@ void MainServer::receiveMessage()
   while (buffer->canReadLine())
     {
       QByteArray line = buffer->readLine();
-      foreach (QTcpSocket* connection, connections)
-	{
-	  connection->write(line);
-	}
+      handleMessage(socket, line);
     }
   
 }
 
+void MainServer::handleMessage(QTcpSocket *socket, QString message)
+{
+  // every message is a QString
+  if (message.indexOf("LOGIN ") == 0)
+    {
+      QString username = message.mid(6, message.length()-7);
+      // username is trying to log in
+      // first check to see if the username is in the right format
+      if (!isValidUsername(username))
+	{
+	  socket->write("ERROR That username is invalid. Please try another one.\n");
+	  socket->disconnectFromHost();
+	  return;
+	}
+      //
+      foreach (QTcpSocket* connection, connections)
+	{
+	  QVariant possibleUsername = connection->property("Username");
+	  if (possibleUsername.isValid())
+	    if (possibleUsername.toString() == username)
+	      {
+		socket->write("ERROR That username is already in use. Please select another one.\n");
+		socket->disconnectFromHost();
+		return;
+	      }
+	}
+      // got here with no error
+      socket->setProperty("Username", QVariant(username));
 
+      foreach (QTcpSocket* connection, connections)
+	connection->write("LOGIN " + username.toAscii() + " has logged in!\n");
+    }
+}
+
+bool MainServer::isValidUsername(QString username)
+{
+  if (username.length() > 16) return false;
+  if (!username.at(0).isLetter()) return false;
+  for (int i = 1; i < username.length(); i++)
+    if (!username.at(i).isLetterOrNumber()) return false;
+  return true;
+}

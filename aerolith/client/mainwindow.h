@@ -20,7 +20,7 @@ private:
   QBuffer *buffer;
   quint16 blockSize; // used for socket
   QLabel *connectStatusLabel;
-
+  void processServerString(QString);
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
