@@ -14,8 +14,11 @@ void MainServer::addConnection()
   QTcpSocket* connection = nextPendingConnection();
   connections.append(connection);
   QBuffer* buffer = new QBuffer(this);
+  connectionData *connData = new connectionData;
   buffer->open(QIODevice::ReadWrite);
-  buffers.insert(connection, buffer);
+  connData->buffer = buffer;
+  
+  connectionParameters.insert(connection, connData);
   connect(connection, SIGNAL(disconnected()), this, SLOT(removeConnection()));
   connect(connection, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
 
@@ -27,22 +30,30 @@ void MainServer::removeConnection()
   qDebug("remove connection");
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender()); // sender violates modularity
   // but many signals are connected to this slot
-  QString username = socket->property("Username").toString();
-  foreach (QTcpSocket* connection, connections)
-    connection->write("LOGOUT " + username.toAscii() + " has logged out!\n");
-
-  QBuffer* buffer = buffers.take(socket);
-  buffer->close();
-  buffer->deleteLater();
+  QString username = usernamesHash.key(socket); // linear time
+  if (username != "")
+    {
+      foreach (QTcpSocket* connection, connections)
+	{
+	  connection->write("LOGOUT " + username.toAscii() + "\n");
+	  qDebug() << "wrote logout " + username.toAscii();
+	}
+      usernamesHash.take(username);
+    }
+  connectionData *connData = connectionParameters.take(socket);
+  connData->buffer->close();
+  connData->buffer->deleteLater();
   connections.removeAll(socket);
   socket->deleteLater();
+  delete connData;
+  qDebug("connection removed");
 }
 
 void MainServer::receiveMessage()
 {
   // this seems like it'll be balls slow, but it'll do for now
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender());
-  QBuffer* buffer = buffers.value(socket);
+  QBuffer* buffer = connectionParameters.value(socket)->buffer;
 
   // missing some checks for returns values for the sake of simplicity                   
   qint64 bytes = buffer->write(socket->readAll());
@@ -62,7 +73,12 @@ void MainServer::handleMessage(QTcpSocket *socket, QString message)
   // every message is a QString
   if (message.indexOf("LOGIN ") == 0)
     {
-      QString username = message.mid(6, message.length()-7);
+      // am i already logged in? this message should be impossible, unless the client is faulty
+      // or like telnet, etc.
+     
+
+
+      QString username = message.mid(6, message.length()).simplified();
       // username is trying to log in
       // first check to see if the username is in the right format
       if (!isValidUsername(username))
@@ -72,23 +88,37 @@ void MainServer::handleMessage(QTcpSocket *socket, QString message)
 	  return;
 	}
       //
-      foreach (QTcpSocket* connection, connections)
+      
+      if (usernamesHash.find(username) != usernamesHash.end())
 	{
-	  QVariant possibleUsername = connection->property("Username");
-	  if (possibleUsername.isValid())
-	    if (possibleUsername.toString() == username)
-	      {
-		socket->write("ERROR That username is already in use. Please select another one.\n");
-		socket->disconnectFromHost();
-		return;
-	      }
+	  socket->write("ERROR That username is already in use. Please select another one.\n");
+	  socket->disconnectFromHost();
+	  return;
 	}
+      
       // got here with no error
-      socket->setProperty("Username", QVariant(username));
-
+      usernamesHash.insert(username, socket);
+      
       foreach (QTcpSocket* connection, connections)
-	connection->write("LOGIN " + username.toAscii() + " has logged in!\n");
+	connection->write("LOGIN " + username.toAscii() + "\n");
+      
+      foreach (QTcpSocket* connection, connections)
+	if (connection != socket) socket->write("LOGIN " + usernamesHash.key(connection).toAscii() + "\n");
     }
+  
+  if (message.indexOf("CHAT ") == 0)
+    {
+
+    }
+
+  if (message.indexOf("PM ") == 0)
+    {
+
+    }
+
+  if (message.indexOf(""));
+
+
 }
 
 bool MainServer::isValidUsername(QString username)

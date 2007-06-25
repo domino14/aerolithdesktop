@@ -21,9 +21,19 @@ private slots:
  void receiveMessage();
  
 private:
+ struct connectionData
+ {
+   QBuffer* buffer;
+   bool loggedIn;
+   QString username;
+
+ };
+
+
 
  QList <QTcpSocket*> connections;
- QHash <QTcpSocket*, QBuffer*> buffers;
+ QHash <QTcpSocket*, connectionData*> connectionParameters;
+ QHash <QString, QTcpSocket*> usernamesHash;
  quint16 blockSize;
  void handleMessage(QTcpSocket*, QString);
  bool isValidUsername(QString);
