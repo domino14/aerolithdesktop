@@ -37,9 +37,11 @@ MainWindow::MainWindow()
   mainTabWidget->addTab(loginWidget, "Login window");
 
   // create game board widget
+  QGroupBox *gameBoardGroupBox = new QGroupBox("Game board");
 
+  
   QWidget *gameBoardWidget = new QWidget;
-
+  
   QLabel *words[45];
 
   for (int i = 0; i < 45; i++)
@@ -50,6 +52,8 @@ MainWindow::MainWindow()
       words[i]->setFrameShape(QFrame::Panel);
       words[i]->setAlignment(Qt::AlignHCenter);
     }
+  
+  
 
   QGridLayout *wordLayout = new QGridLayout;
   int wordsIndex = 0;
@@ -59,6 +63,7 @@ MainWindow::MainWindow()
 	wordLayout->addWidget(words[wordsIndex], i, j);
 	wordsIndex++;
       }
+  wordLayout->setSpacing(0);
 
   // solution box
   QLabel *solutionLabel = new QLabel("Guess:");
@@ -84,38 +89,50 @@ MainWindow::MainWindow()
   {
     playerLists[i] = new QListWidget();
     playerLists[i]->setMaximumWidth(150);
+    playerLists[i]->setMinimumHeight(250);
     if (i > 0) playerLists[i]->hide();
     playerListsSplitter->addWidget(playerLists[i]);
+    playerLists[i]->setFrameShape(QFrame::Box);
   }
 
+  QVBoxLayout *gameBoardLayout = new QVBoxLayout;
+  gameBoardLayout->addLayout(wordLayout);
+  gameBoardLayout->addSpacing(10);
+  gameBoardLayout->addLayout(solutionLayout);
+  gameBoardLayout->addSpacing(10);
+  gameBoardLayout->addWidget(playerListsSplitter);
   
+  gameBoardGroupBox->setLayout(gameBoardLayout);
   
+  QGroupBox *chatGroupBox = new QGroupBox("Chat");
 
   // chat related stuff
-
-  QVBoxLayout *gameBoardLayout = new QVBoxLayout;
   chatLE = new QLineEdit;
+  chatLE->setMaxLength(500);
   chatText = new QTextEdit;
-  gameBoardLayout->addSpacing(20);
-  gameBoardLayout->addLayout(wordLayout);
-  gameBoardLayout->addSpacing(20);
-  gameBoardLayout->addLayout(solutionLayout);
-  gameBoardLayout->addSpacing(20);
-  gameBoardLayout->addWidget(playerListsSplitter);
-  gameBoardLayout->addStretch(1);
-  gameBoardLayout->addWidget(chatLE);
-  gameBoardLayout->addSpacing(20);
+  chatText->setReadOnly(true);
+  QVBoxLayout *chatLayout = new QVBoxLayout();
 
-  QHBoxLayout *chatLayout = new QHBoxLayout;
-  chatLayout->addWidget(chatText);
+  chatLayout->addWidget(chatLE);
+  chatLayout->addSpacing(5);
+
+  QHBoxLayout *chatBoxLayout = new QHBoxLayout;
+  chatBoxLayout->addWidget(chatText);
+  chatText->setFrameShape(QFrame::Box);
   QListWidget* peopleConnected = new QListWidget;
+  peopleConnected->setFrameShape(QFrame::Box);
   peopleConnected->setFixedWidth(150);
-  chatLayout->addWidget(peopleConnected);
-  gameBoardLayout->addLayout(chatLayout);
+  chatBoxLayout->addWidget(peopleConnected);
+  chatLayout->addLayout(chatBoxLayout);
+  chatGroupBox->setLayout(chatLayout);
 
-  gameBoardWidget->setLayout(gameBoardLayout);
+  QVBoxLayout *overallGameBoardLayout = new QVBoxLayout;
+  overallGameBoardLayout->addWidget(gameBoardGroupBox);
+  overallGameBoardLayout->addStretch(1);
+  overallGameBoardLayout->addWidget(chatGroupBox);
+  gameBoardWidget->setLayout(overallGameBoardLayout);
   mainTabWidget->addTab(gameBoardWidget, "Game Board");
-  
+  gameBoardGroupBox->setFixedWidth(780);
 
 
   //mainTabWidget->setTabEnabled(1, false);
