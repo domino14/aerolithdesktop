@@ -17,6 +17,7 @@ private:
   QLineEdit *chatLE; // as will this (to chat)
   QTextEdit *chatText; // this is the chat box
   QTcpSocket *commsSocket;
+  QListWidget *peopleConnected;
   QBuffer *buffer;
   quint16 blockSize; // used for socket
   QLabel *connectStatusLabel;
@@ -26,6 +27,7 @@ public slots:
   void submitChatLEContents();
   void readFromServer();
   void displayError(QAbstractSocket::SocketError);
+  void serverDisconnection();
   void connectToServer();
   void writeUsernameToServer();
 };

@@ -44,6 +44,7 @@ MainWindow::MainWindow()
   
   QLabel *words[45];
 
+  QWidget *wordsWidget = new QWidget;
   for (int i = 0; i < 45; i++)
     {
 
@@ -64,7 +65,8 @@ MainWindow::MainWindow()
 	wordsIndex++;
       }
   wordLayout->setSpacing(0);
-
+  wordsWidget->setLayout(wordLayout);
+  wordsWidget->setFixedWidth(780);
   // solution box
   QLabel *solutionLabel = new QLabel("Guess:");
   solutionLE = new QLineEdit;
@@ -96,7 +98,7 @@ MainWindow::MainWindow()
   }
 
   QVBoxLayout *gameBoardLayout = new QVBoxLayout;
-  gameBoardLayout->addLayout(wordLayout);
+  gameBoardLayout->addWidget(wordsWidget);
   gameBoardLayout->addSpacing(10);
   gameBoardLayout->addLayout(solutionLayout);
   gameBoardLayout->addSpacing(10);
@@ -119,7 +121,7 @@ MainWindow::MainWindow()
   QHBoxLayout *chatBoxLayout = new QHBoxLayout;
   chatBoxLayout->addWidget(chatText);
   chatText->setFrameShape(QFrame::Box);
-  QListWidget* peopleConnected = new QListWidget;
+  peopleConnected = new QListWidget;
   peopleConnected->setFrameShape(QFrame::Box);
   peopleConnected->setFixedWidth(150);
   chatBoxLayout->addWidget(peopleConnected);
@@ -128,11 +130,12 @@ MainWindow::MainWindow()
 
   QVBoxLayout *overallGameBoardLayout = new QVBoxLayout;
   overallGameBoardLayout->addWidget(gameBoardGroupBox);
+  overallGameBoardLayout->setAlignment(gameBoardGroupBox, Qt::AlignHCenter);
   overallGameBoardLayout->addStretch(1);
   overallGameBoardLayout->addWidget(chatGroupBox);
   gameBoardWidget->setLayout(overallGameBoardLayout);
   mainTabWidget->addTab(gameBoardWidget, "Game Board");
-  gameBoardGroupBox->setFixedWidth(780);
+  gameBoardGroupBox->setFixedWidth(800);
 
 
   //mainTabWidget->setTabEnabled(1, false);
@@ -148,7 +151,7 @@ MainWindow::MainWindow()
 	  this, SLOT(displayError(QAbstractSocket::SocketError)));
   connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
   connect(submit, SIGNAL(clicked()), this, SLOT(connectToServer()));
-
+  connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
   buffer = new QBuffer(this);
   buffer->open(QIODevice::ReadWrite);
 
@@ -185,9 +188,25 @@ void MainWindow::readFromServer()
 
 void MainWindow::processServerString(QString line)
 {
-
-
-
+  //  chatText->append(line);
+  if (line.indexOf("ERROR ") == 0)
+    {
+      connectStatusLabel->setText(line.mid(6));
+    }
+  else if (line.indexOf("LOGIN ") == 0)
+    //    peopleConnected->addItem(line.mid(6).simplified());
+    QListWidgetItem *it = new QListWidgetItem(line.mid(6).simplified(), peopleConnected);
+  else if (line.indexOf("LOGOUT ") == 0)
+    {
+      
+      QString username = line.mid(7).simplified();
+      for (int i = 0; i < peopleConnected->count(); i++)
+	if (peopleConnected->item(i)->text() == username)
+	  {
+	    QListWidgetItem *it = peopleConnected->takeItem(i);
+	    delete it;
+	  }
+    }
 }
 
 void MainWindow::displayError(QAbstractSocket::SocketError socketError)
@@ -219,6 +238,12 @@ void MainWindow::connectToServer()
   commsSocket->abort();
   commsSocket->connectToHost("cesar.boldlygoingnowhere.org", 1988);
   connectStatusLabel->clear();
+}
+
+void MainWindow::serverDisconnection()
+{
+  peopleConnected->clear();
+  QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
 }
 
 void MainWindow::writeUsernameToServer()
