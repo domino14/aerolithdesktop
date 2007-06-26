@@ -18,17 +18,19 @@ private:
   QTextEdit *chatText; // this is the chat box
   QTcpSocket *commsSocket;
   QListWidget *peopleConnected;
-  QBuffer *buffer;
   quint16 blockSize; // used for socket
   QLabel *connectStatusLabel;
   void processServerString(QString);
+	QString currentUsername;
+	QPushButton *toggleConnection;
+	QDataStream in;
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
   void readFromServer();
   void displayError(QAbstractSocket::SocketError);
   void serverDisconnection();
-  void connectToServer();
+  void toggleConnectToServer();
   void writeUsernameToServer();
 };
 

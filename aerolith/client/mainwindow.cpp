@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include <QBuffer>
 
 MainWindow::MainWindow()
 {
@@ -13,19 +12,19 @@ MainWindow::MainWindow()
   QWidget *loginWidget = new QWidget;
   username = new QLineEdit;
  
-  QPushButton *submit = new QPushButton("Submit");
+  toggleConnection = new QPushButton("Connect");
   
   connectStatusLabel = new QLabel("Please enter your desired username");  
   QLabel *userLabel = new QLabel("Username: ");
   username->setFixedWidth(150);
   username->setMaxLength(16);
-  submit->setFixedWidth(150);
+  toggleConnection->setFixedWidth(150);
   connectStatusLabel->setFixedWidth(600);
   
   QGridLayout *loginWidgetLayout = new QGridLayout;
   loginWidgetLayout->addWidget(userLabel, 0, 0);
   loginWidgetLayout->addWidget(username, 0, 1);
-  loginWidgetLayout->addWidget(submit, 3, 1);
+  loginWidgetLayout->addWidget(toggleConnection, 3, 1);
   loginWidgetLayout->addWidget(connectStatusLabel, 5, 1);
 
   QHBoxLayout *overallLoginWidgetLayout = new QHBoxLayout;
@@ -150,18 +149,29 @@ MainWindow::MainWindow()
   connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
 	  this, SLOT(displayError(QAbstractSocket::SocketError)));
   connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
-  connect(submit, SIGNAL(clicked()), this, SLOT(connectToServer()));
+  connect(toggleConnection, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
   connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
-  buffer = new QBuffer(this);
-  buffer->open(QIODevice::ReadWrite);
 
 
+	blockSize = 0; 
 
 }
 
 void MainWindow::submitChatLEContents()
 {
-  chatText->append(QString("From chat: ") + chatLE->text());
+//  chatText->append(QString("From chat: ") + chatLE->text());
+
+	QByteArray block;
+	QDataStream out(&block, QIODevice::WriteOnly);
+	out.setVersion(QDataStream::Qt_4_2);
+	out << (quint16)25344;	// magic number
+	out << (quint16)0; // length 
+	out << (quint8)'c';
+    out << chatLE->text();
+    out.device()->seek(2); // position of length
+    out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+	commsSocket->write(block);
+
   chatLE->clear();
 }
 
@@ -174,40 +184,92 @@ void MainWindow::submitSolutionLEContents()
 
 void MainWindow::readFromServer()
 {
-  qint64 bytes = buffer->write(commsSocket->readAll());
-  buffer->seek(buffer->pos() - bytes);
-  while (buffer->canReadLine())
-    {
-      QString line = buffer->readLine();
-      processServerString(line);
-      //      chatText->append(line.simplified());
-    }
+  // same structure as server's read
 
+  //QDataStream needs EVERY byte to be available for reading!
+	while (commsSocket->bytesAvailable() > 0)
+	{
+	  if (blockSize == 0)
+		{
+		  if (commsSocket->bytesAvailable() < 4)
+			return;
 
+		  quint16 header;
+		  quint16 packetlength;
+
+		  // there are 4 bytes available. read them in!
+		  
+		  in >> header;
+		  in >> packetlength;
+		  if (header != (quint16)25344) // magic number
+			{
+				QMessageBox::information(this, "aerolith", QString("wrong magic number: %1").arg(header));
+			  commsSocket->disconnectFromHost();	
+			  return;
+			}
+		 blockSize = packetlength;
+
+		}
+
+	  if (commsSocket->bytesAvailable() < blockSize)
+		return;
+
+	  // ok, we can now read the WHOLE packet
+	  // ideally we read the 'case' byte right now, and then call a process function with
+	  // 'in' (the QDataStream) as a parameter!
+	  // the process function will set blocksize to 0 at the end
+	  quint8 packetType;
+	  in >> packetType; // this is the case byte!
+
+		switch(packetType)
+		{
+		case 'L':
+			{
+				QString username;
+				in >> username;
+				QListWidgetItem *it = new QListWidgetItem(username, peopleConnected);
+				if (username == currentUsername) connectStatusLabel->setText("You have connected!");
+			}
+			break;
+		case 'X':
+			{
+				QString username;
+				in >> username;
+				for (int i = 0; i < peopleConnected->count(); i++)
+					if (peopleConnected->item(i)->text() == username)
+					{
+						QListWidgetItem *it = peopleConnected->takeItem(i);
+						delete it;
+					}
+
+			}
+			break;
+
+		case '!':
+			{
+				QString errorString;
+				in >> errorString;
+				QMessageBox::information(this, "Aerolith client", errorString);
+			}
+			break;
+		case 'C':
+			{
+				QString username;
+				in >> username;
+				QString text;
+				in >> text;
+				chatText->append(QString("[")+username+"] " + text);
+			}
+			break;
+		default:
+			QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
+			commsSocket->disconnectFromHost();
+		}
+
+		blockSize = 0;
+	}
 }
 
-void MainWindow::processServerString(QString line)
-{
-  //  chatText->append(line);
-  if (line.indexOf("ERROR ") == 0)
-    {
-      connectStatusLabel->setText(line.mid(6));
-    }
-  else if (line.indexOf("LOGIN ") == 0)
-    //    peopleConnected->addItem(line.mid(6).simplified());
-    QListWidgetItem *it = new QListWidgetItem(line.mid(6).simplified(), peopleConnected);
-  else if (line.indexOf("LOGOUT ") == 0)
-    {
-      
-      QString username = line.mid(7).simplified();
-      for (int i = 0; i < peopleConnected->count(); i++)
-	if (peopleConnected->item(i)->text() == username)
-	  {
-	    QListWidgetItem *it = peopleConnected->takeItem(i);
-	    delete it;
-	  }
-    }
-}
 
 void MainWindow::displayError(QAbstractSocket::SocketError socketError)
 {
@@ -231,24 +293,54 @@ void MainWindow::displayError(QAbstractSocket::SocketError socketError)
 			     tr("The following error occurred: %1.")
 			     .arg(commsSocket->errorString()));
   }
+  toggleConnection->setText("Connect");
+	connectStatusLabel->setText("Disconnected.");
 }
 
-void MainWindow::connectToServer()
+void MainWindow::toggleConnectToServer()
 {
-  commsSocket->abort();
-  commsSocket->connectToHost("cesar.boldlygoingnowhere.org", 1988);
-  connectStatusLabel->clear();
+	if (commsSocket->state() != QAbstractSocket::ConnectedState)
+	{
+
+		commsSocket->abort();
+		commsSocket->connectToHost("cesar.boldlygoingnowhere.org", 1988);
+		connectStatusLabel->setText("Connecting to server...");
+		toggleConnection->setText("Disconnect");
+	}
+	else
+	{	
+		connectStatusLabel->setText("Disconnected from server");
+		commsSocket->disconnectFromHost();
+		toggleConnection->setText("Connect");
+	}
+
 }
 
 void MainWindow::serverDisconnection()
 {
+	connectStatusLabel->setText("You are disconnected.");
   peopleConnected->clear();
   QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
+	toggleConnection->setText("Connect");
 }
 
 void MainWindow::writeUsernameToServer()
 {
   // only after connecting!
-  commsSocket->write("LOGIN " + username->text().toAscii() + "\n");
+	blockSize = 0;
+	in.setDevice(commsSocket);
+	in.setVersion(QDataStream::Qt_4_2);
+	currentUsername = username->text();
 
+
+	QByteArray block;
+	QDataStream out(&block, QIODevice::WriteOnly);
+	out.setVersion(QDataStream::Qt_4_2);
+	out << (quint16)25344;	// magic byte
+	out << (quint16)0; // length 
+	out << (quint8)'e';
+    out << currentUsername;
+    out.device()->seek(2); // position of length
+    out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+	commsSocket->write(block);
 }
