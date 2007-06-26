@@ -39,33 +39,42 @@ MainWindow::MainWindow()
   QGroupBox *gameBoardGroupBox = new QGroupBox("Game board");
 
   
-  QWidget *gameBoardWidget = new QWidget;
+  QWidget *gameBoardWidget = new QWidget;	 // the 'overall' widget
   
-  QLabel *words[45];
+  QTableWidget *wordsWidget = new QTableWidget(9, 5);
 
-  QWidget *wordsWidget = new QWidget;
-  for (int i = 0; i < 45; i++)
-    {
+	wordsWidget->horizontalHeader()->hide();
 
-      words[i] = new QLabel(QString("AEINNORS"));
-      words[i]->setFixedWidth(150);
-      words[i]->setFrameShape(QFrame::Panel);
-      words[i]->setAlignment(Qt::AlignHCenter);
-    }
-  
-  
+  wordsWidget->setSelectionMode(QAbstractItemView::NoSelection);
+  wordsWidget->verticalHeader()->hide();
+  for (int i = 0; i < 5; i++)
+	wordsWidget->setColumnWidth(i, 150);
+  for (int i = 0; i < 9; i++)
+	wordsWidget->setRowHeight(i, 20);
 
-  QGridLayout *wordLayout = new QGridLayout;
-  int wordsIndex = 0;
-  for (int i =0; i < 9; i++)
-    for (int j = 0; j < 5; j++)
-      {
-	wordLayout->addWidget(words[wordsIndex], i, j);
-	wordsIndex++;
-      }
-  wordLayout->setSpacing(0);
-  wordsWidget->setLayout(wordLayout);
-  wordsWidget->setFixedWidth(780);
+  wordsWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  wordsWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  wordsWidget->setFixedSize(752,182);	// this feels extremely cheap and i hate it
+
+  /*
+  {
+  float available( wordsWidget->viewport()->width() );
+  for ( int col = 0; col < wordsWidget->columnCount(); ++col )
+      available -= wordsWidget->columnWidth( col );
+  float perColumn = available / wordsWidget->columnCount();
+  for ( int col = 0; col < wordsWidget->columnCount(); ++col )
+      wordsWidget->setColumnWidth(col, wordsWidget->columnWidth( col ) + perColumn );
+  }{
+  float available( wordsWidget->viewport()->height() );
+  for ( int row = 0; row < wordsWidget->rowCount(); ++row )
+      available -= wordsWidget->rowHeight(row);
+  float perRow = available / wordsWidget->rowCount();
+  for ( int row = 0; row < wordsWidget->rowCount(); ++row )
+	  wordsWidget->setRowHeight(row, wordsWidget->rowHeight(row) + perRow );
+  }*/
+//  wordsWidget->setFixedSize(wordsWidget->maximumViewportSize());
+  //roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
+
   // solution box
   QLabel *solutionLabel = new QLabel("Guess:");
   solutionLE = new QLineEdit;
@@ -86,33 +95,31 @@ MainWindow::MainWindow()
   
   QListWidget *playerLists[6];
   QLabel *playerNames[6];
-  QSplitter *playerListsSplitter = new QSplitter;
-  QSplitter *playerNamesSplitter = new QSplitter;
-  for (int i = 0; i < 6; i++)
-  {
-    playerNames[i] = new QLabel("ADEILNPS");
-    playerNames[i]->setAlignment(Qt::AlignHCenter);
-    playerNames[i]->setFixedWidth(150);
 
-    playerLists[i] = new QListWidget();
-    playerLists[i]->setFixedWidth(150);
-    playerLists[i]->setMinimumHeight(200);
-    //    if (i > 0) playerLists[i]->hide();
-    playerNamesSplitter->addWidget(playerNames[i]);
-    playerListsSplitter->addWidget(playerLists[i]);
-    playerLists[i]->setFrameShape(QFrame::Box);
-  }
-  
-  playerNamesSplitter->setChildrenCollapsible(false);
-  playerListsSplitter->setChildrenCollapsible(false);
+	QGridLayout *playerListsLayout = new QGridLayout;
+	for (int i = 0; i < 6; i++)
+	{
+		playerNames[i] = new QLabel("ADEILNPS");	
+		playerNames[i]->setAlignment(Qt::AlignHCenter);
+		playerNames[i]->setFixedWidth(120);
+		playerLists[i] = new QListWidget();
+		playerLists[i]->setFixedWidth(120);
+		playerLists[i]->setMinimumHeight(200);
+		playerLists[i]->setFrameShape(QFrame::Box);
+
+		if (i > 1) { playerLists[i]->hide(); playerNames[i]->hide(); }
+		playerListsLayout->addWidget(playerNames[i], 0, i*2);
+		playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
+		playerListsLayout->addWidget(playerLists[i], 1, i*2);
+	}
+
 
   QVBoxLayout *gameBoardLayout = new QVBoxLayout;
   gameBoardLayout->addWidget(wordsWidget);
   gameBoardLayout->addSpacing(10);
   gameBoardLayout->addLayout(solutionLayout);
   gameBoardLayout->addSpacing(10);
-  gameBoardLayout->addWidget(playerNamesSplitter);
-  gameBoardLayout->addWidget(playerListsSplitter);
+  gameBoardLayout->addLayout(playerListsLayout);
   
   gameBoardGroupBox->setLayout(gameBoardLayout);
 
