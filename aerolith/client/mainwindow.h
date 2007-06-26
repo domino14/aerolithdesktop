@@ -8,7 +8,7 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 
-
+    
 public:
   MainWindow();
 private:
@@ -21,9 +21,9 @@ private:
   quint16 blockSize; // used for socket
   QLabel *connectStatusLabel;
   void processServerString(QString);
-	QString currentUsername;
-	QPushButton *toggleConnection;
-	QDataStream in;
+  QString currentUsername;
+  QPushButton *toggleConnection;
+  QDataStream in;
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
