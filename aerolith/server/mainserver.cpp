@@ -32,7 +32,7 @@ void MainServer::removeConnection()
   qDebug("remove connection");
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender()); // sender violates modularity
   // but many signals are connected to this slot
-  QString username = usernamesHash.key(socket); // linear time
+  QString username = connectionParameters.value(socket)->username;
   if (username != "")
     {
       foreach (QTcpSocket* connection, connections)
@@ -110,11 +110,45 @@ void MainServer::receiveMessage()
 	  // game guess
 	  processGameGuess(socket, connData);
 	  break;
+	case 'p':
+	  // private message
+	  processPrivateMessage(socket, connData);
+	  break;
 	}
       
       connData->numBytesInPacket = 0;
     }
 }
+
+void MainServer::processPrivateMessage(QTcpSocket* socket, connectionData* connData)
+{
+  QString username;
+  connData->in >> username;
+  QString message;
+  connData->in >> message;
+  
+  if (usernamesHash.find(username) != usernamesHash.end())
+    {
+      // the username exists
+      QTcpSocket* connection = usernamesHash.value(username); // receiver
+      QByteArray block;
+      QDataStream out(&block, QIODevice::WriteOnly);
+      out.setVersion(QDataStream::Qt_4_2);
+      out << (quint16)25344;// magic byte
+      out << (quint16)0; // length
+      
+      out << (quint8) 'P';
+      out << connData->username; // sender
+      out << message; 
+      
+      out.device()->seek(2); // position of length
+      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+      connection->write(block); 
+    }
+
+  
+}
+
 void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
 {
   QString username;

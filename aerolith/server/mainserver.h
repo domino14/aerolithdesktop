@@ -44,6 +44,7 @@ private:
  void processLogin(QTcpSocket*, connectionData*);
  void processGameGuess(QTcpSocket*, connectionData*);
  void processChat(QTcpSocket*, connectionData*);
+ void processPrivateMessage(QTcpSocket*, connectionData*);
  void writeToClient(QTcpSocket*, QString, packetHeaderStatesEnum);
  bool isValidUsername(QString);
 };
