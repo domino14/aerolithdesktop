@@ -85,27 +85,76 @@ MainWindow::MainWindow()
   // Players box
   
   QListWidget *playerLists[6];
+  QLabel *playerNames[6];
   QSplitter *playerListsSplitter = new QSplitter;
+  QSplitter *playerNamesSplitter = new QSplitter;
   for (int i = 0; i < 6; i++)
   {
+    playerNames[i] = new QLabel("ADEILNPS");
+    playerNames[i]->setAlignment(Qt::AlignHCenter);
+    playerNames[i]->setFixedWidth(150);
+
     playerLists[i] = new QListWidget();
-    playerLists[i]->setMaximumWidth(150);
-    playerLists[i]->setMinimumHeight(250);
-    if (i > 0) playerLists[i]->hide();
+    playerLists[i]->setFixedWidth(150);
+    playerLists[i]->setMinimumHeight(200);
+    //    if (i > 0) playerLists[i]->hide();
+    playerNamesSplitter->addWidget(playerNames[i]);
     playerListsSplitter->addWidget(playerLists[i]);
     playerLists[i]->setFrameShape(QFrame::Box);
   }
+  
+  playerNamesSplitter->setChildrenCollapsible(false);
+  playerListsSplitter->setChildrenCollapsible(false);
 
   QVBoxLayout *gameBoardLayout = new QVBoxLayout;
   gameBoardLayout->addWidget(wordsWidget);
   gameBoardLayout->addSpacing(10);
   gameBoardLayout->addLayout(solutionLayout);
   gameBoardLayout->addSpacing(10);
+  gameBoardLayout->addWidget(playerNamesSplitter);
   gameBoardLayout->addWidget(playerListsSplitter);
   
   gameBoardGroupBox->setLayout(gameBoardLayout);
+
+  // the room selector will be anotehr group box
+  
+  QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
+  
+  QTableWidget *roomTable = new QTableWidget(0, 5);
+  QStringList headerLabels;
+  headerLabels << "#" << "Word List" << "Players" << "Max # Players"<< "Join?";
+  roomTable->setHorizontalHeaderLabels(headerLabels);
+  roomTable->setGridStyle(Qt::NoPen);
+  roomTable->setSelectionMode(QAbstractItemView::NoSelection);
+  roomTable->verticalHeader()->hide();
+  roomTable->setColumnWidth(0, 30);
+  roomTable->setColumnWidth(1, 200);
+  roomTable->setColumnWidth(2, 300);
+  roomTable->setColumnWidth(3, 100);
+  roomTable->setColumnWidth(4, 75);
+  roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
+  
+  QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
+  roomSelectorLayout->addWidget(roomTable);
+  /*  QPushButton *joinRoom1 = new QPushButton("Join");
+  QPushButton *joinRoom2 = new QPushButton("Join");
+  roomTable->setCellWidget(0, 4, joinRoom1);
+  roomTable->setCellWidget(1, 4, joinRoom2);*/
+
+  QPushButton *newRoom = new QPushButton("Create new table");
+  roomSelectorLayout->addWidget(newRoom);
+  newRoom->setFixedWidth(150);
+  roomSelectorGroupBox->setLayout(roomSelectorLayout);
+
+  gameStackedWidget = new QStackedWidget;
+  gameStackedWidget->addWidget(roomSelectorGroupBox);
+  gameStackedWidget->addWidget(gameBoardGroupBox);
+
+
+  connect(newRoom, SIGNAL(clicked()), this, SLOT(createNewRoom()));
   
   QGroupBox *chatGroupBox = new QGroupBox("Chat");
+
 
   // chat related stuff
   chatLE = new QLineEdit;
@@ -126,10 +175,11 @@ MainWindow::MainWindow()
   chatBoxLayout->addWidget(peopleConnected);
   chatLayout->addLayout(chatBoxLayout);
   chatGroupBox->setLayout(chatLayout);
+  connect(peopleConnected, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 
   QVBoxLayout *overallGameBoardLayout = new QVBoxLayout;
-  overallGameBoardLayout->addWidget(gameBoardGroupBox);
-  overallGameBoardLayout->setAlignment(gameBoardGroupBox, Qt::AlignHCenter);
+  overallGameBoardLayout->addWidget(gameStackedWidget);
+  overallGameBoardLayout->setAlignment(gameStackedWidget, Qt::AlignHCenter);
   overallGameBoardLayout->addStretch(1);
   overallGameBoardLayout->addWidget(chatGroupBox);
   gameBoardWidget->setLayout(overallGameBoardLayout);
@@ -154,6 +204,10 @@ MainWindow::MainWindow()
   
   
   blockSize = 0; 
+
+
+
+
   
 }
 
@@ -161,18 +215,46 @@ void MainWindow::submitChatLEContents()
 {
 //  chatText->append(QString("From chat: ") + chatLE->text());
 
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;	// magic number
-  out << (quint16)0; // length 
-  out << (quint8)'c';
-  out << chatLE->text();
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
-  commsSocket->write(block);
-  
-  chatLE->clear();
+  if (chatLE->text().indexOf("/msg ") == 0)
+    {
+      QString restOfText = chatLE->text().mid(5);
+      QString username = restOfText.mid(0, restOfText.indexOf(" "));
+      QString message = restOfText.mid(username.length()+1);
+      if (message.simplified() == "" || message.simplified() == " ")
+	{
+	  chatLE->clear();
+	  return;
+	}
+      QByteArray block;
+      QDataStream out(&block, QIODevice::WriteOnly);
+      out.setVersion(QDataStream::Qt_4_2);
+      out << (quint16)25344;	// magic number
+      out << (quint16)0; // length 
+      out << (quint8)'p';
+      out << username;
+      out << message;
+      out.device()->seek(2); // position of length
+      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+      commsSocket->write(block);
+      
+      chatLE->clear();
+    }
+  else
+    {
+
+      QByteArray block;
+      QDataStream out(&block, QIODevice::WriteOnly);
+      out.setVersion(QDataStream::Qt_4_2);
+      out << (quint16)25344;	// magic number
+      out << (quint16)0; // length 
+      out << (quint8)'c';
+      out << chatLE->text();
+      out.device()->seek(2); // position of length
+      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+      commsSocket->write(block);
+      
+      chatLE->clear();
+    }
 }
 
 
@@ -261,6 +343,15 @@ void MainWindow::readFromServer()
 	    chatText->append(QString("[")+username+"] " + text);
 	  }
 	  break;
+	case 'P':
+	  {
+	    QString username, message;
+	    in >> username >> message;
+	    chatText->append(QString("[")+username+ " writes to you] " + message);
+	  }
+	  break;
+	  
+
 	default:
 	  QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
 	  commsSocket->disconnectFromHost();
@@ -343,4 +434,15 @@ void MainWindow::writeUsernameToServer()
   out.device()->seek(2); // position of length
   out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
   commsSocket->write(block);
+}
+
+void MainWindow::sendPM(QListWidgetItem* item)
+{
+  chatLE->setText(QString("/msg ") + item->text() + " ");
+
+}
+
+void MainWindow::createNewRoom()
+{
+  gameStackedWidget->setCurrentIndex(1);
 }

@@ -24,6 +24,8 @@ private:
   QString currentUsername;
   QPushButton *toggleConnection;
   QDataStream in;
+  QStackedWidget* gameStackedWidget;
+
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
@@ -32,6 +34,8 @@ public slots:
   void serverDisconnection();
   void toggleConnectToServer();
   void writeUsernameToServer();
+  void sendPM(QListWidgetItem*);
+  void createNewRoom();
 };
 
 
