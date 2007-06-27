@@ -39,7 +39,7 @@ MainWindow::MainWindow()
   QGroupBox *gameBoardGroupBox = new QGroupBox("Game board");
 
   
-  QWidget *gameBoardWidget = new QWidget;	 // the 'overall' widget
+  QWidget *gameBoardWidget = new QWidget;	 // the 'overall' game board widget
   
   QTableWidget *wordsWidget = new QTableWidget(9, 5);
 
@@ -52,9 +52,31 @@ MainWindow::MainWindow()
   for (int i = 0; i < 9; i++)
 	wordsWidget->setRowHeight(i, 20);
 
+  QTableWidgetItem *tableItem[9][5];
+  QFont wordFont("Arial", 12, QFont::Bold);
+  
+	
+  colorBrushes[0].setColor(Qt::black);
+  colorBrushes[1].setColor(Qt::gray);
+  colorBrushes[2].setColor(Qt::darkBlue);
+  colorBrushes[3].setColor(Qt::blue);
+  colorBrushes[4].setColor(Qt::darkCyan);
+  colorBrushes[5].setColor(Qt::darkMagenta);
+  colorBrushes[6].setColor(Qt::darkRed);
+  colorBrushes[7].setColor(Qt::red);
+  colorBrushes[8].setColor(Qt::magenta);
+  for (int i = 0; i < 9; i++)
+	  for (int j = 0; j < 5; j++)
+	  {
+		  tableItem[i][j] = new QTableWidgetItem("ADEEFRST");
+		  tableItem[i][j]->setTextAlignment(Qt::AlignHCenter);
+		  tableItem[i][j]->setFont(wordFont);
+		 // tableItem[i][j]->setForeground(colorBrushes[i]);
+		wordsWidget->setItem(i, j, tableItem[i][j]);
+	  }
   wordsWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   wordsWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  wordsWidget->setFixedSize(752,182);	// this feels extremely cheap and i hate it
+  wordsWidget->setFixedSize(752,182);	// this feels extremely cheap and i hate it but it seems to work 
 
   /*
   {
@@ -81,14 +103,14 @@ MainWindow::MainWindow()
   solutionLE->setFixedWidth(100);
   QPushButton *alpha = new QPushButton("Alpha");
   QPushButton *shuffle = new QPushButton("Shuffle");
-  
+  QPushButton *exitTable = new QPushButton("Exit Table #");
   QHBoxLayout *solutionLayout = new QHBoxLayout;
   solutionLayout->addWidget(solutionLabel);
   solutionLayout->addWidget(solutionLE);
-  solutionLayout->addSpacing(300);
+  solutionLayout->addStretch(1);
   solutionLayout->addWidget(alpha);
   solutionLayout->addWidget(shuffle);
-
+	solutionLayout->addWidget(exitTable);
   connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
 
   // Players box
@@ -107,7 +129,7 @@ MainWindow::MainWindow()
 		playerLists[i]->setMinimumHeight(200);
 		playerLists[i]->setFrameShape(QFrame::Box);
 
-		if (i > 1) { playerLists[i]->hide(); playerNames[i]->hide(); }
+		//if (i > -1) { playerLists[i]->hide(); playerNames[i]->hide(); }
 		playerListsLayout->addWidget(playerNames[i], 0, i*2);
 		playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
 		playerListsLayout->addWidget(playerLists[i], 1, i*2);
@@ -301,7 +323,7 @@ void MainWindow::readFromServer()
 	}
       
       if (commsSocket->bytesAvailable() < blockSize)
-	return;
+		return;
       
       // ok, we can now read the WHOLE packet
       // ideally we read the 'case' byte right now, and then call a process function with
@@ -312,7 +334,7 @@ void MainWindow::readFromServer()
       
       switch(packetType)
 	{
-	case 'L':
+	case 'E':	// logged in (entered)
 	  {
 	    QString username;
 	    in >> username;
@@ -320,7 +342,7 @@ void MainWindow::readFromServer()
 	    if (username == currentUsername) connectStatusLabel->setText("You have connected!");
 	  }
 	  break;
-	case 'X':
+	case 'X':	// logged out
 	  {
 	    QString username;
 	    in >> username;
@@ -334,14 +356,14 @@ void MainWindow::readFromServer()
 	  }
 	  break;
 	  
-	case '!':
+	case '!':	// error
 	  {
 	    QString errorString;
 	    in >> errorString;
 	    QMessageBox::information(this, "Aerolith client", errorString);
 	  }
 	  break;
-	case 'C':
+	case 'C':	// chat
 	  {
 	    QString username;
 	    in >> username;
@@ -350,15 +372,56 @@ void MainWindow::readFromServer()
 	    chatText->append(QString("[")+username+"] " + text);
 	  }
 	  break;
-	case 'P':
+	case 'P':	// PM
 	  {
 	    QString username, message;
 	    in >> username >> message;
 	    chatText->append(QString("[")+username+ " writes to you] " + message);
 	  }
 	  break;
-	  
+	case 'T':	// New table
+		{
+		// there is a new table
+		
+			// static information
+		quint16 tablenum;
+		QString wordListDescriptor;
+		quint8 maxPlayers;
+//		QStringList 
 
+		in >> tablenum >> wordListDescriptor >> maxPlayers;
+		// create table
+		}
+		break;
+	case 'J':	// player joined table
+		{
+		quint16 tablenum;
+		QString playerName;
+
+		in >> tablenum >> playerName; // this will also black out the corresponding button for can join
+										
+		}
+		break;
+	case 'L':
+		{
+		// player left table
+		quint16 tablenum;
+		QString playerName;
+		in >> tablenum >> playerName;
+		}
+		break;
+	case 'K':
+		{
+		// table has ceased to exist
+		quint16 tablenum;
+		in >> tablenum;
+
+		}	
+		break;
+	case '=':
+		// table command
+		// an additional byte is needed
+		break;
 	default:
 	  QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
 	  commsSocket->disconnectFromHost();

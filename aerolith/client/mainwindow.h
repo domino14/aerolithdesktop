@@ -25,7 +25,7 @@ private:
   QPushButton *toggleConnection;
   QDataStream in;
   QStackedWidget* gameStackedWidget;
-
+QBrush colorBrushes[9];
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
