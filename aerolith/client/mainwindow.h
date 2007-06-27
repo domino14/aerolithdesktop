@@ -23,8 +23,11 @@ private:
   void processServerString(QString);
   QString currentUsername;
   QPushButton *toggleConnection;
+  QPushButton *exitTable;
   QDataStream in;
   QStackedWidget* gameStackedWidget;
+  QTableWidget* roomTable;
+  quint16 currentTablenum;
 QBrush colorBrushes[9];
 public slots:
   void submitSolutionLEContents();
@@ -36,6 +39,7 @@ public slots:
   void writeUsernameToServer();
   void sendPM(QListWidgetItem*);
   void createNewRoom();
+  void leaveThisTable();
 };
 
 
