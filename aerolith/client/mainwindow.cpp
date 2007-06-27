@@ -132,9 +132,9 @@ MainWindow::MainWindow()
   
   QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
   
-  roomTable = new QTableWidget(0, 5);
+  roomTable = new QTableWidget(0, 6);
   QStringList headerLabels;
-  headerLabels << "#" << "Word List" << "Players" << "Max # Players"<< "Join?";
+  headerLabels << "#" << "Word List" << "Players" << "#" << "Max #" << "Join?";
   roomTable->setHorizontalHeaderLabels(headerLabels);
   roomTable->setGridStyle(Qt::NoPen);
   roomTable->setSelectionMode(QAbstractItemView::NoSelection);
@@ -142,8 +142,9 @@ MainWindow::MainWindow()
   roomTable->setColumnWidth(0, 30);
   roomTable->setColumnWidth(1, 200);
   roomTable->setColumnWidth(2, 300);
-  roomTable->setColumnWidth(3, 100);
+  roomTable->setColumnWidth(3, 75);
   roomTable->setColumnWidth(4, 75);
+   roomTable->setColumnWidth(5, 75);
   roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
   
   QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
@@ -374,6 +375,7 @@ void MainWindow::readFromServer()
 	    
 	    in >> tablenum >> wordListDescriptor >> maxPlayers;
 	    // create table
+		createTable(tablenum, wordListDescriptor, maxPlayers);
 	  }
 	  break;
 	case 'J':	// player joined table
@@ -389,7 +391,7 @@ void MainWindow::readFromServer()
 		exitTable->setText(QString("Exit table %1").arg(tablenum));
 		
 	      }
-	    chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
+	  //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
 	  }
 	  break;
 	case 'L':
@@ -536,4 +538,70 @@ void MainWindow::leaveThisTable()
   out.device()->seek(2); // position of length
   out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
   commsSocket->write(block);
+}
+
+void MainWindow::createTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers)
+{
+//	roomTable = new QTableWidget(0, 5);
+//	QStringList headerLabels;
+//	headerLabels << "#" << "Word List" << "Players" << "#" << "Max # Players"<< "Join?";
+//	roomTable->setHorizontalHeaderLabels(headerLabels);
+//	roomTable->setGridStyle(Qt::NoPen);
+//  roomTable->setSelectionMode(QAbstractItemView::NoSelection);
+//  roomTable->verticalHeader()->hide();
+//  roomTable->setColumnWidth(0, 30);
+//  roomTable->setColumnWidth(1, 200);
+//  roomTable->setColumnWidth(2, 300);
+ // roomTable->setColumnWidth(3, 100);
+ // roomTable->setColumnWidth(4, 75);
+ // roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
+  
+ // QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
+ // roomSelectorLayout->addWidget(roomTable);
+  /*  QPushButton *joinRoom1 = new QPushButton("Join");
+  QPushButton *joinRoom2 = new QPushButton("Join");
+  roomTable->setCellWidget(0, 4, joinRoom1);
+  roomTable->setCellWidget(1, 4, joinRoom2);*/
+	
+	QTableWidgetItem *tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
+	QTableWidgetItem *descriptorItem = new QTableWidgetItem(wordListDescriptor);
+	QTableWidgetItem *maxPlayersItem = new QTableWidgetItem(QString("%1").arg(maxPlayers));
+	QTableWidgetItem *playersItem = new QTableWidgetItem("");
+	QTableWidgetItem *numPlayersItem = new QTableWidgetItem("0");
+	QPushButton* buttonItem = new QPushButton("Join");
+	buttonItem->setEnabled(false);
+	roomTable->insertRow(roomTable->rowCount());
+	roomTable->setItem(roomTable->rowCount()-1, 0, tableNumItem);
+	roomTable->setItem(roomTable->rowCount()-1, 1, descriptorItem);
+	roomTable->setItem(roomTable->rowCount()-1, 2, playersItem);
+	roomTable->setItem(roomTable->rowCount()-1, 3, numPlayersItem);
+	roomTable->setItem(roomTable->rowCount()-1, 4, maxPlayersItem);
+	roomTable->setCellWidget(roomTable->rowCount()-1, 5, buttonItem);
+	tablenums.insert(tablenum, roomTable->rowCount()-1);
+}
+
+void MainWindow::deleteTable(quint16 tablenum)
+{
+	int row = tablenums.value(tablenum);
+	tablenums.remove(tablenum);
+
+	roomTable->removeRow(row);
+}
+
+void MainWindow::addToTable(quint16 tablenum, QString player)
+{
+	// this will change button state as well
+	int row = tablenums.value(tablenum);
+	quint8 curNumPlayers = roomTable->item(row,3)->text().toShort();
+	quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
+	curNumPlayers++;
+	roomTable->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
+	roomTable->item(row, 2)->setText(roomTable->item(row,2)->text() + " " + player);
+	if (curNumPlayers >= maxNumPlayers)
+		roomTable->cellWidget(row, 4)->setEnabled(false);
+	else
+		roomTable->cellWidget(row, 4)->setEnabled(true);
+	
+
+
 }

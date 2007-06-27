@@ -29,6 +29,10 @@ private:
   QTableWidget* roomTable;
   quint16 currentTablenum;
 QBrush colorBrushes[9];
+	void createTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
+void deleteTable(quint16 tablenum);
+void addToTable(quint16 tablenum, QString player);
+	QHash <quint16, quint16> tablenums;
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
@@ -40,6 +44,7 @@ public slots:
   void sendPM(QListWidgetItem*);
   void createNewRoom();
   void leaveThisTable();
+
 };
 
 
