@@ -47,13 +47,14 @@ MainWindow::MainWindow()
 
   wordsWidget->setSelectionMode(QAbstractItemView::NoSelection);
   wordsWidget->verticalHeader()->hide();
+  wordsWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
   for (int i = 0; i < 5; i++)
 	wordsWidget->setColumnWidth(i, 150);
   for (int i = 0; i < 9; i++)
 	wordsWidget->setRowHeight(i, 20);
 
   QTableWidgetItem *tableItem[9][5];
-  QFont wordFont("Arial", 12, QFont::Bold);
+  QFont wordFont("Helvetica", 12, QFont::Bold);
   
 	
   colorBrushes[0].setColor(Qt::black);
@@ -70,7 +71,7 @@ MainWindow::MainWindow()
 	  {
 		  tableItem[i][j] = new QTableWidgetItem("ADEEFRST");
 		  tableItem[i][j]->setTextAlignment(Qt::AlignHCenter);
-		  tableItem[i][j]->setFont(wordFont);
+		  //tableItem[i][j]->setFont(wordFont);
 		 // tableItem[i][j]->setForeground(colorBrushes[i]);
 		wordsWidget->setItem(i, j, tableItem[i][j]);
 	  }
