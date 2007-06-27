@@ -67,76 +67,58 @@ MainWindow::MainWindow()
   colorBrushes[7].setColor(Qt::red);
   colorBrushes[8].setColor(Qt::magenta);
   for (int i = 0; i < 9; i++)
-	  for (int j = 0; j < 5; j++)
-	  {
-		  tableItem[i][j] = new QTableWidgetItem("ADEEFRST");
-		  tableItem[i][j]->setTextAlignment(Qt::AlignHCenter);
-		  //tableItem[i][j]->setFont(wordFont);
-		 // tableItem[i][j]->setForeground(colorBrushes[i]);
-		wordsWidget->setItem(i, j, tableItem[i][j]);
-	  }
+    for (int j = 0; j < 5; j++)
+      {
+	tableItem[i][j] = new QTableWidgetItem("ADEEFRST");
+	tableItem[i][j]->setTextAlignment(Qt::AlignHCenter);
+	//tableItem[i][j]->setFont(wordFont);
+	// tableItem[i][j]->setForeground(colorBrushes[i]);
+	wordsWidget->setItem(i, j, tableItem[i][j]);
+      }
   wordsWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   wordsWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   wordsWidget->setFixedSize(752,182);	// this feels extremely cheap and i hate it but it seems to work 
-
-  /*
-  {
-  float available( wordsWidget->viewport()->width() );
-  for ( int col = 0; col < wordsWidget->columnCount(); ++col )
-      available -= wordsWidget->columnWidth( col );
-  float perColumn = available / wordsWidget->columnCount();
-  for ( int col = 0; col < wordsWidget->columnCount(); ++col )
-      wordsWidget->setColumnWidth(col, wordsWidget->columnWidth( col ) + perColumn );
-  }{
-  float available( wordsWidget->viewport()->height() );
-  for ( int row = 0; row < wordsWidget->rowCount(); ++row )
-      available -= wordsWidget->rowHeight(row);
-  float perRow = available / wordsWidget->rowCount();
-  for ( int row = 0; row < wordsWidget->rowCount(); ++row )
-	  wordsWidget->setRowHeight(row, wordsWidget->rowHeight(row) + perRow );
-  }*/
-//  wordsWidget->setFixedSize(wordsWidget->maximumViewportSize());
-  //roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
-
+  
+  
   // solution box
   QLabel *solutionLabel = new QLabel("Guess:");
   solutionLE = new QLineEdit;
   solutionLE->setFixedWidth(100);
   QPushButton *alpha = new QPushButton("Alpha");
   QPushButton *shuffle = new QPushButton("Shuffle");
-  QPushButton *exitTable = new QPushButton("Exit Table #");
+  exitTable = new QPushButton("Exit Table #");
   QHBoxLayout *solutionLayout = new QHBoxLayout;
   solutionLayout->addWidget(solutionLabel);
   solutionLayout->addWidget(solutionLE);
   solutionLayout->addStretch(1);
   solutionLayout->addWidget(alpha);
   solutionLayout->addWidget(shuffle);
-	solutionLayout->addWidget(exitTable);
+  solutionLayout->addWidget(exitTable);
   connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
 
   // Players box
   
   QListWidget *playerLists[6];
   QLabel *playerNames[6];
-
-	QGridLayout *playerListsLayout = new QGridLayout;
-	for (int i = 0; i < 6; i++)
-	{
-		playerNames[i] = new QLabel("ADEILNPS");	
-		playerNames[i]->setAlignment(Qt::AlignHCenter);
-		playerNames[i]->setFixedWidth(120);
-		playerLists[i] = new QListWidget();
-		playerLists[i]->setFixedWidth(120);
-		playerLists[i]->setMinimumHeight(200);
-		playerLists[i]->setFrameShape(QFrame::Box);
-
-		//if (i > -1) { playerLists[i]->hide(); playerNames[i]->hide(); }
-		playerListsLayout->addWidget(playerNames[i], 0, i*2);
-		playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
-		playerListsLayout->addWidget(playerLists[i], 1, i*2);
-	}
-
-
+  
+  QGridLayout *playerListsLayout = new QGridLayout;
+  for (int i = 0; i < 6; i++)
+    {
+      playerNames[i] = new QLabel("ADEILNPS");	
+      playerNames[i]->setAlignment(Qt::AlignHCenter);
+      playerNames[i]->setFixedWidth(120);
+      playerLists[i] = new QListWidget();
+      playerLists[i]->setFixedWidth(120);
+      playerLists[i]->setMinimumHeight(200);
+      playerLists[i]->setFrameShape(QFrame::Box);
+      
+      //if (i > -1) { playerLists[i]->hide(); playerNames[i]->hide(); }
+      playerListsLayout->addWidget(playerNames[i], 0, i*2);
+      playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
+      playerListsLayout->addWidget(playerLists[i], 1, i*2);
+    }
+  
+  
   QVBoxLayout *gameBoardLayout = new QVBoxLayout;
   gameBoardLayout->addWidget(wordsWidget);
   gameBoardLayout->addSpacing(10);
@@ -150,7 +132,7 @@ MainWindow::MainWindow()
   
   QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
   
-  QTableWidget *roomTable = new QTableWidget(0, 5);
+  roomTable = new QTableWidget(0, 5);
   QStringList headerLabels;
   headerLabels << "#" << "Word List" << "Players" << "Max # Players"<< "Join?";
   roomTable->setHorizontalHeaderLabels(headerLabels);
@@ -231,11 +213,11 @@ MainWindow::MainWindow()
   connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
   connect(toggleConnection, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
   connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
-  
+  connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
   
   blockSize = 0; 
 
-
+  currentTablenum = 0;
 
 
   
@@ -381,48 +363,61 @@ void MainWindow::readFromServer()
 	  }
 	  break;
 	case 'T':	// New table
-		{
-		// there is a new table
-		
-			// static information
-		quint16 tablenum;
-		QString wordListDescriptor;
-		quint8 maxPlayers;
-//		QStringList 
-
-		in >> tablenum >> wordListDescriptor >> maxPlayers;
-		// create table
-		}
-		break;
+	  {
+	    // there is a new table
+	    
+	    // static information
+	    quint16 tablenum;
+	    QString wordListDescriptor;
+	    quint8 maxPlayers;
+	    //		QStringList 
+	    
+	    in >> tablenum >> wordListDescriptor >> maxPlayers;
+	    // create table
+	  }
+	  break;
 	case 'J':	// player joined table
-		{
-		quint16 tablenum;
-		QString playerName;
-
-		in >> tablenum >> playerName; // this will also black out the corresponding button for can join
-										
-		}
-		break;
+	  {
+	    quint16 tablenum;
+	    QString playerName;
+	    
+	    in >> tablenum >> playerName; // this will also black out the corresponding button for can join
+	    if (playerName == currentUsername)
+	      {
+		currentTablenum = tablenum;
+		gameStackedWidget->setCurrentIndex(1);
+		exitTable->setText(QString("Exit table %1").arg(tablenum));
+		
+	      }
+	    chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
+	  }
+	  break;
 	case 'L':
-		{
-		// player left table
-		quint16 tablenum;
-		QString playerName;
-		in >> tablenum >> playerName;
-		}
-		break;
+	  {
+	    // player left table
+	    quint16 tablenum;
+	    QString playerName;
+	    in >> tablenum >> playerName;
+	    if (playerName == currentUsername)
+	      {
+		currentTablenum = 0;
+		gameStackedWidget->setCurrentIndex(0);
+	      }
+	    chatText->append(QString("%1 has left %2").arg(playerName).arg(tablenum));
+	  }
+	  break;
 	case 'K':
-		{
-		// table has ceased to exist
-		quint16 tablenum;
-		in >> tablenum;
-
-		}	
-		break;
+	  {
+	    // table has ceased to exist
+	    quint16 tablenum;
+	    in >> tablenum;
+	    chatText->append(QString("%1 has ceasd to exist").arg(tablenum));
+	  }	
+	  break;
 	case '=':
-		// table command
-		// an additional byte is needed
-		break;
+	  // table command
+	  // an additional byte is needed
+	  break;
 	default:
 	  QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
 	  commsSocket->disconnectFromHost();
@@ -494,17 +489,17 @@ void MainWindow::writeUsernameToServer()
   in.setVersion(QDataStream::Qt_4_2);
   currentUsername = username->text();
   
-  
   QByteArray block;
   QDataStream out(&block, QIODevice::WriteOnly);
   out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;	// magic byte
+  out << (quint16)25344;// magic byte
   out << (quint16)0; // length 
   out << (quint8)'e';
   out << currentUsername;
   out.device()->seek(2); // position of length
   out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
   commsSocket->write(block);
+
 }
 
 void MainWindow::sendPM(QListWidgetItem* item)
@@ -515,5 +510,30 @@ void MainWindow::sendPM(QListWidgetItem* item)
 
 void MainWindow::createNewRoom()
 {
-  gameStackedWidget->setCurrentIndex(1);
+
+  QByteArray block;
+  QDataStream out(&block, QIODevice::WriteOnly);
+  out.setVersion(QDataStream::Qt_4_2);
+  out << (quint16)25344;	// magic byte
+  out << (quint16)0; // length 
+  out << (quint8)'t';
+  out << QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+  out << (quint8)5;
+  out.device()->seek(2); // position of length
+  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+  commsSocket->write(block);
+}
+
+void MainWindow::leaveThisTable()
+{
+  QByteArray block;
+  QDataStream out(&block, QIODevice::WriteOnly);
+  out.setVersion(QDataStream::Qt_4_2);
+  out << (quint16)25344;	// magic byte
+  out << (quint16)0; // length 
+  out << (quint8)'l';
+  out << (quint16)currentTablenum;
+  out.device()->seek(2); // position of length
+  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+  commsSocket->write(block);
 }
