@@ -6,6 +6,7 @@ MainServer::MainServer()
   connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
   qDebug("mainserver constructor");
   blockSize = 0;
+  highestTableNumber = 0;
 }
 
 void MainServer::addConnection()
@@ -16,10 +17,9 @@ void MainServer::addConnection()
   connectionData *connData = new connectionData;
   connData->loggedIn = false;
   connData->numBytesInPacket = 0;
-  connData->numBytesReceivedSoFar = 0;
   connData->in.setDevice(connection);
   connData->in.setVersion(QDataStream::Qt_4_2);
-  
+  connData->tablenum = 0; // bad table num
   connectionParameters.insert(connection, connData);
   connect(connection, SIGNAL(disconnected()), this, SLOT(removeConnection()));
   connect(connection, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
@@ -35,15 +35,21 @@ void MainServer::removeConnection()
   QString username = connectionParameters.value(socket)->username;
   if (username != "")
     {
+      if (connectionParameters.value(socket)->tablenum != 0)
+	removePlayerFromTable(socket, connectionParameters.value(socket)->tablenum, 
+			      connectionParameters.value(socket)->username);
+      
       foreach (QTcpSocket* connection, connections)
 	{
 	  writeToClient(connection, username, S_USERLOGGEDOUT);
 	}
+      
+
       usernamesHash.take(username);
     }
   connectionData *connData = connectionParameters.take(socket);
-  //  connData->buffer->close();
-  // connData->buffer->deleteLater();
+
+  
   connections.removeAll(socket);
   socket->deleteLater();
   delete connData;
@@ -114,10 +120,228 @@ void MainServer::receiveMessage()
 	  // private message
 	  processPrivateMessage(socket, connData);
 	  break;
+	case 't':
+	  // created a new table
+	  processNewTable(socket, connData);
+	  break;
+	case 'i':
+	  //table information! 
+	  //this packet should contain the entire word list as calculated by the client
+	  // since this could be fairly large, put a limit of 5000 on it
+	  // 5000 quint16s is 10000 bytes, which is pretty fast
+	  // the quint16s will be indexes
+
+	  // will write this into a temporary file, named
+	  // #_qs.tmp
+	  // will write errors into a temporary file #_es.tmp    # is the table number.
+	  // these files will be deleted when the table is closed!!
+	  break;
+	case 'j':
+	  // joined an existing table
+	  processJoinTable(socket, connData);
+	  break;
+	case 'l':
+	  processLeftTable(socket, connData);
+	  break;
 	}
       
       connData->numBytesInPacket = 0;
     }
+}
+
+void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
+{
+  quint16 tablenum;
+  connData->in >> tablenum;
+  
+  // the table checking/deletion process must also be done on disconnection!!!
+
+  removePlayerFromTable(socket, tablenum, connData->username);
+
+  connData->tablenum = 0;      
+
+}
+
+void MainServer::removePlayerFromTable(QTcpSocket* socket, quint16 tablenum, QString username)
+{
+  // this functions removes the player from the table
+  // additionally, if the table is then empty as a result, it deletes the table!
+  if (tables.contains(tablenum))
+    {
+      tableData *tmp = tables.value(tablenum);
+      tmp->playerList.removeAll(username);
+
+        // write to all connections that username has left table  
+      QByteArray block;
+      QDataStream out(&block, QIODevice::WriteOnly);
+      out.setVersion(QDataStream::Qt_4_2);
+      out << (quint16)25344;// magic byte
+      out << (quint16)0; // length
+      
+      out << (quint8) 'L';
+      out << tablenum;
+      out << username;
+      
+      out.device()->seek(2); // position of length
+      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+      
+      foreach (QTcpSocket* connection, connections)
+	connection->write(block);      
+      
+
+      if (tmp->playerList.size() == 0)
+	{
+	  tables.remove(tablenum);
+	  delete tmp; // delete this table data structure
+	  
+	  // write to all clients that table has ceased to exist!
+	    QByteArray block;
+	    QDataStream out(&block, QIODevice::WriteOnly);
+	    out.setVersion(QDataStream::Qt_4_2);
+	    out << (quint16)25344;// magic byte
+	    out << (quint16)0; // length
+	    
+	    out << (quint8) 'K'; // kill table
+	    out << tablenum;
+	    
+	    out.device()->seek(2); // position of length
+	    out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+	    
+	    foreach (QTcpSocket* connection, connections)
+	      connection->write(block);
+	    // now we must delete the temporary files!
+	    // TODO temp file system
+
+	}
+    } 
+  else
+    {
+      // an error that shouldn't happen.
+      writeToClient(socket, "Error leaving table!", S_ERROR);
+      return;    
+    
+    }
+}
+
+void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
+{
+  // 
+
+  quint16 tablenum = 0;  
+  bool foundFreeNumber = false;
+
+  
+  QString wordListDescriptor;
+  quint8 maxPlayers;
+  connData->in >> wordListDescriptor;
+  connData->in >> maxPlayers;
+  while (!foundFreeNumber && tablenum < 1000)
+    {
+      tablenum++;
+      foundFreeNumber = tables.contains(tablenum);
+    }
+
+  if (!foundFreeNumber) 
+    {
+      writeToClient(socket, "You cannot create any more tables!", S_ERROR);
+      return;
+    }
+  
+  // TODO fix, bad code:
+  QByteArray block;
+  QDataStream out(&block, QIODevice::WriteOnly);
+  out.setVersion(QDataStream::Qt_4_2);
+  out << (quint16)25344;// magic byte
+  out << (quint16)0; // length
+  
+  out << (quint8) 'T';
+  out << (quint16) tablenum;
+  out << wordListDescriptor;
+  out << maxPlayers;
+  
+  out.device()->seek(2); // position of length
+  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+  
+  connData->tablenum = tablenum;
+  tableData *tmp = new tableData;
+  tmp->tableNumber = tablenum;
+  tmp->wordListDescriptor = wordListDescriptor;
+  tmp->maxPlayers = maxPlayers;
+  tmp->playerList << connData->username;
+  if (maxPlayers == 1) tmp->canJoin = false;
+  else tmp->canJoin = true;
+  tables.insert(tablenum, tmp);
+  
+  QByteArray block2;
+  QDataStream out2(&block2, QIODevice::WriteOnly);
+  out2.setVersion(QDataStream::Qt_4_2);
+  out2 << (quint16)25344;// magic byte
+  out2 << (quint16)0; // length
+  
+  out2 << (quint8) 'J';
+  out2 << (quint16) tablenum;
+  out2 << connData->username;
+  
+  out2.device()->seek(2); // position of length
+  out2 << (quint16)(block2.size() - sizeof(quint16) - sizeof(quint16));
+  
+  foreach (QTcpSocket* connection, connections)
+  {
+    connection->write(block);
+    connection->write(block2);
+  }
+  
+
+}
+
+void MainServer::processJoinTable(QTcpSocket* socket, connectionData* connData)
+{
+  
+  QString username = connData->username;
+
+  quint16 tablenum;
+  connData->in >> tablenum;
+  
+
+  // check if table exists, and if it does (which it should), if it's full
+  if (!tables.contains(tablenum))
+    {
+      writeToClient(socket, "That table doesn't exist!", S_ERROR);
+      return;
+    }
+
+  tableData *tmp = tables.value(tablenum);
+  
+  if (!tmp->canJoin)
+    {
+      writeToClient(socket, "That table is full! You can not join.", S_ERROR);
+      return;
+    }
+
+  // got here with no errors, join table!
+  
+  // does this work?
+  tmp->playerList << username;
+  if (tmp->playerList.size() == tmp->maxPlayers) tmp->canJoin = false;
+
+  QByteArray block2;
+  QDataStream out2(&block2, QIODevice::WriteOnly);
+  out2.setVersion(QDataStream::Qt_4_2);
+  out2 << (quint16)25344;// magic byte
+  out2 << (quint16)0; // length
+
+  out2 << (quint8) 'J';
+  out2 << (quint16) tablenum;
+  out2 << connData->username;
+
+  out2.device()->seek(2); // position of length
+  out2 << (quint16)(block2.size() - sizeof(quint16) - sizeof(quint16));
+
+  foreach (QTcpSocket* connection, connections)
+    connection->write(block2);
+  
+
+
 }
 
 void MainServer::processPrivateMessage(QTcpSocket* socket, connectionData* connData)
@@ -241,7 +465,7 @@ void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHead
     {
     case S_USERLOGGEDIN:
 
-      out << (quint8) 'L';
+      out << (quint8) 'E';
       out << parameter;
       debugstring = "logged in.";
       break;
@@ -255,7 +479,7 @@ void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHead
       out << parameter;
       debugstring = "logged out.";
       break;
-
+      
     }
   out.device()->seek(2); // position of length
   out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
