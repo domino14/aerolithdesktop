@@ -59,6 +59,7 @@ void MainServer::removeConnection()
 
 void MainServer::receiveMessage()
 {
+ 
   // this seems like it'll be slow, but it'll do for now
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender());
   connectionData* connData = connectionParameters.value(socket);
@@ -147,6 +148,7 @@ void MainServer::receiveMessage()
       
       connData->numBytesInPacket = 0;
     }
+  qDebug() << "Received from sender " << connData->username;
 }
 
 void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
@@ -238,7 +240,7 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   while (!foundFreeNumber && tablenum < 1000)
     {
       tablenum++;
-      foundFreeNumber = tables.contains(tablenum);
+      foundFreeNumber = !tables.contains(tablenum);
     }
 
   if (!foundFreeNumber) 
@@ -415,6 +417,54 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
 
 	}
     }
+
+  QList <tableData*> tableList= tables.values();
+
+  foreach(tableData* table, tableList)
+    {
+      // write new table for every existing table!
+      QByteArray block;
+      QDataStream out(&block, QIODevice::WriteOnly);
+      out.setVersion(QDataStream::Qt_4_2);
+      out << (quint16)25344;// magic byte
+      out << (quint16)0; // length
+      
+      out << (quint8) 'T';
+      out << table->tableNumber;
+      out << table->wordListDescriptor;
+      out << table->maxPlayers;
+      
+      out.device()->seek(2); // position of length
+      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+      
+      socket->write(block);
+
+      foreach(QString thisUsername, table->playerList)
+	{
+	  QByteArray block2;
+	  QDataStream out2(&block2, QIODevice::WriteOnly);
+	  out2.setVersion(QDataStream::Qt_4_2);
+	  out2 << (quint16)25344;// magic byte
+	  out2 << (quint16)0; // length
+	  
+	  out2 << (quint8) 'J';
+	  out2 << (quint16) table->tableNumber;
+	  out2 << thisUsername;
+	  
+	  out2.device()->seek(2); // position of length
+	  out2 << (quint16)(block2.size() - sizeof(quint16) - sizeof(quint16));
+	  
+	  socket->write(block2);
+	}
+
+    }
+
+
+
+
+
+
+
 }
 
 void MainServer::processGameGuess(QTcpSocket* socket, connectionData* connData)
