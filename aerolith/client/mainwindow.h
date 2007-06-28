@@ -28,11 +28,13 @@ private:
   QStackedWidget* gameStackedWidget;
   QTableWidget* roomTable;
   quint16 currentTablenum;
-QBrush colorBrushes[9];
-	void createTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
-void deleteTable(quint16 tablenum);
-void addToTable(quint16 tablenum, QString player);
-	QHash <quint16, quint16> tablenums;
+  QBrush colorBrushes[9];
+  void createTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
+  void deleteTable(quint16 tablenum);
+  void addToTable(quint16 tablenum, QString player);
+  QHash <quint16, quint16> tablenums;
+  void leaveTable(quint16 tablenum, QString player);
+
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
