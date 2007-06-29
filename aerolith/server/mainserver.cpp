@@ -32,13 +32,17 @@ void MainServer::removeConnection()
   qDebug("remove connection");
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender()); // sender violates modularity
   // but many signals are connected to this slot
-  QString username = connectionParameters.value(socket)->username;
+  connectionData* connData = connectionParameters.take(socket);
+  QString username = connData->username;
   if (username != "")
     {
-      if (connectionParameters.value(socket)->tablenum != 0)
-	removePlayerFromTable(socket, connectionParameters.value(socket)->tablenum, 
-			      connectionParameters.value(socket)->username);
-      
+      if (connData->tablenum != 0)
+      	{
+	  qDebug() << username << " is at table " << connData->tablenum << " so we have to remove him.";
+	  removePlayerFromTable(socket, connData, connData->tablenum);
+	}
+      else
+	qDebug() << username << " is not at any tables.";
       foreach (QTcpSocket* connection, connections)
 	{
 	  writeToClient(connection, username, S_USERLOGGEDOUT);
@@ -47,14 +51,13 @@ void MainServer::removeConnection()
 
       usernamesHash.take(username);
     }
-  connectionData *connData = connectionParameters.take(socket);
-
   
   connections.removeAll(socket);
   socket->deleteLater();
   delete connData;
   qDebug("connection removed");
   qDebug() << " Number of connections: " << connections.size();
+  qDebug() << " Number of tables: " << tables.size();
 }
 
 void MainServer::receiveMessage()
@@ -158,14 +161,20 @@ void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
   
   // the table checking/deletion process must also be done on disconnection!!!
 
-  removePlayerFromTable(socket, tablenum, connData->username);
-
-  connData->tablenum = 0;      
+  removePlayerFromTable(socket, connData, tablenum);
+  
+  //  connData->tablenum = 0;      
 
 }
 
-void MainServer::removePlayerFromTable(QTcpSocket* socket, quint16 tablenum, QString username)
+void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connData, quint16 tablenum)
 {
+  QString username = connData->username;
+  if (connData->tablenum != tablenum)
+    {
+      qDebug() << "A SERIOUS ERROR OCCURRED";
+
+    }
   // this functions removes the player from the table
   // additionally, if the table is then empty as a result, it deletes the table!
   if (tables.contains(tablenum))
@@ -190,30 +199,31 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, quint16 tablenum, QSt
       foreach (QTcpSocket* connection, connections)
 	connection->write(block);      
       
-
+      qDebug() << "wrote " << username << " left " << tablenum;
       if (tmp->playerList.size() == 0)
 	{
+	  qDebug() << " need to kill table " << tablenum;
 	  tables.remove(tablenum);
 	  delete tmp; // delete this table data structure
 	  
 	  // write to all clients that table has ceased to exist!
-	    QByteArray block;
-	    QDataStream out(&block, QIODevice::WriteOnly);
-	    out.setVersion(QDataStream::Qt_4_2);
-	    out << (quint16)25344;// magic byte
-	    out << (quint16)0; // length
-	    
-	    out << (quint8) 'K'; // kill table
-	    out << tablenum;
-	    
-	    out.device()->seek(2); // position of length
-	    out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
-	    
-	    foreach (QTcpSocket* connection, connections)
-	      connection->write(block);
-	    // now we must delete the temporary files!
-	    // TODO temp file system
-
+	  QByteArray block;
+	  QDataStream out(&block, QIODevice::WriteOnly);
+	  out.setVersion(QDataStream::Qt_4_2);
+	  out << (quint16)25344;// magic byte
+	  out << (quint16)0; // length
+	  
+	  out << (quint8) 'K'; // kill table
+	  out << tablenum;
+	  
+	  out.device()->seek(2); // position of length
+	  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+	  
+	  foreach (QTcpSocket* connection, connections)
+	    connection->write(block);
+	  // now we must delete the temporary files!
+	  // TODO temp file system
+	  qDebug() << "wrote that we Killed table " << tablenum;
 	}
     } 
   else
@@ -223,6 +233,9 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, quint16 tablenum, QSt
       return;    
     
     }
+
+  connData->tablenum = 0;
+
 }
 
 void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
@@ -458,13 +471,6 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
 	}
 
     }
-
-
-
-
-
-
-
 }
 
 void MainServer::processGameGuess(QTcpSocket* socket, connectionData* connData)
