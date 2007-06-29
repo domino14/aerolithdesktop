@@ -101,7 +101,7 @@ void MainServer::receiveMessage()
       // the process function will set connData->numBytesInPacket to 0 at the end
       quint8 packetType;
       connData->in >> packetType; // this is the case byte!
-      
+      qDebug() << "Received from sender " << connData->username << " packet " << (char)packetType;      
       switch(packetType)
 	{
 	case 'e':
@@ -151,7 +151,7 @@ void MainServer::receiveMessage()
       
       connData->numBytesInPacket = 0;
     }
-  qDebug() << "Received from sender " << connData->username;
+
 }
 
 void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
@@ -172,7 +172,8 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
   QString username = connData->username;
   if (connData->tablenum != tablenum)
     {
-      qDebug() << "A SERIOUS ERROR OCCURRED";
+      
+      qDebug() << "A SERIOUS ERROR OCCURRED " << username << connData->tablenum << tablenum;
 
     }
   // this functions removes the player from the table
@@ -262,6 +263,12 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
       return;
     }
   
+  if (connData->loggedIn == false)
+    {
+      qDebug() << "new table? wait.. still logging in!";
+      return;
+    }
+
   // TODO fix, bad code:
   QByteArray block;
   QDataStream out(&block, QIODevice::WriteOnly);
@@ -333,6 +340,12 @@ void MainServer::processJoinTable(QTcpSocket* socket, connectionData* connData)
       return;
     }
 
+  if (connData->loggedIn == false)
+    {
+      qDebug() << "join? wait.. still logging in!";
+      return;
+    }
+
   // got here with no errors, join table!
   
   // does this work?
@@ -355,7 +368,7 @@ void MainServer::processJoinTable(QTcpSocket* socket, connectionData* connData)
   foreach (QTcpSocket* connection, connections)
     connection->write(block2);
   
-
+  connData->tablenum = tablenum;
 
 }
 
@@ -541,7 +554,7 @@ void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHead
   out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
   socket->write(block);
 
-  qDebug() << " wrote to " << connectionParameters.value(socket)->username << " that " << parameter << debugstring;
+  //  qDebug() << " wrote to " << connectionParameters.value(socket)->username << " that " << parameter << debugstring;
 } 
 
 
