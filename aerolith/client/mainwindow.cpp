@@ -307,7 +307,7 @@ void MainWindow::readFromServer()
 	}
       
       if (commsSocket->bytesAvailable() < blockSize)
-		return;
+	return;
       
       // ok, we can now read the WHOLE packet
       // ideally we read the 'case' byte right now, and then call a process function with
@@ -315,7 +315,7 @@ void MainWindow::readFromServer()
       // the process function will set blocksize to 0 at the end
       quint8 packetType;
       in >> packetType; // this is the case byte!
-      
+      qDebug() << "Packet type " << (char)packetType;
       switch(packetType)
 	{
 	case 'E':	// logged in (entered)
@@ -469,6 +469,10 @@ void MainWindow::toggleConnectToServer()
       commsSocket->connectToHost("cesar.boldlygoingnowhere.org", 1988);
       connectStatusLabel->setText("Connecting to server...");
       toggleConnection->setText("Disconnect");
+
+      gameStackedWidget->setCurrentIndex(0);
+      roomTable->clearContents();
+      roomTable->setRowCount(0);
     }
   else
     {	
@@ -485,6 +489,9 @@ void MainWindow::serverDisconnection()
   peopleConnected->clear();
   QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
   toggleConnection->setText("Connect");
+      gameStackedWidget->setCurrentIndex(0);
+      roomTable->clearContents();
+      roomTable->setRowCount(0);
 }
 
 void MainWindow::writeUsernameToServer()
@@ -561,6 +568,19 @@ void MainWindow::leaveThisTable()
   commsSocket->write(block);
 }
 
+int MainWindow::findRoomTableRow(quint16 tablenum)
+{
+  // straight linear search.
+  // i guess this is ok. i'm not gonna have that many clients :P
+  // and even if i do, it makes more sense to split across servers
+  for (int i = 0; i < roomTable->rowCount(); i++)
+    {
+      if (roomTable->item(i, 0)->text().toInt() == (int)tablenum)
+	return i;
+    }
+  return roomTable->rowCount();
+}
+
 void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers)
 {
   QTableWidgetItem *tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
@@ -582,19 +602,6 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
   // tablenums.insert(tablenum, roomTable->rowCount()-1);
 }
 
-int MainWindow::findRoomTableRow(quint16 tablenum)
-{
-  // straight linear search.
-  // i guess this is ok. i'm not gonna have that many clients :P
-  // and even if i do, it makes more sense to split across servers
-  for (int i = 0; i < roomTable->rowCount(); i++)
-    {
-      if (roomTable->item(i, 0)->text().toInt() == (int)tablenum)
-	return i;
-    }
-  return roomTable->rowCount();
-}
-
 void MainWindow::handleDeleteTable(quint16 tablenum)
 {
   int row = findRoomTableRow(tablenum);
@@ -608,8 +615,11 @@ void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
   /*  if (roomTable->rowCount() - 1 < row)
     QMessageBox::critical(this, "OMG", QString("ZOMG %1 %2").arg(row).arg(roomTable->rowCount()));*/
   QTableWidgetItem* myItem = roomTable->item(row, 2);
-  QString textToReplace = myItem->text();  
-  myItem->setText(textToReplace.replace(player + " ", ""));
+  QString textToReplace = myItem->text();
+  chatText->append("before: " + textToReplace + " PLAYER: " + player) ;
+  textToReplace.replace(player + " ", "");
+  chatText->append("after: " + textToReplace);
+  myItem->setText(textToReplace);
   quint8 curNumPlayers = roomTable->item(row,3)->text().toShort();
   quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
   curNumPlayers--;
@@ -624,11 +634,12 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 {
   // this will change button state as well
   int row = findRoomTableRow(tablenum);
+  
   quint8 curNumPlayers = roomTable->item(row,3)->text().toShort();
   quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
   curNumPlayers++;
   roomTable->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
-  roomTable->item(row, 2)->setText(roomTable->item(row,2)->text() + " " + player);
+  roomTable->item(row, 2)->setText(roomTable->item(row,2)->text() + player + " ");
   if (curNumPlayers >= maxNumPlayers)
     roomTable->cellWidget(row, 5)->setEnabled(false);
   else
