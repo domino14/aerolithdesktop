@@ -67,7 +67,8 @@ private:
  void processJoinTable(QTcpSocket*, connectionData*);
  void processLeftTable(QTcpSocket*, connectionData*);
 
- void removePlayerFromTable(QTcpSocket*, quint16 tablenum, QString username);
+ void removePlayerFromTable(QTcpSocket* socket, connectionData* connData, quint16 tablenum);
+
  bool isValidUsername(QString);
 };
 
