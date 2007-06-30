@@ -13,6 +13,7 @@ public:
   MainWindow();
 private:
   QLineEdit *username;
+  QLineEdit *serverAddress;
   QLineEdit *solutionLE; // this will be submitted (to answers) when pressing enter
   QLineEdit *chatLE; // as will this (to chat)
   QTextEdit *chatText; // this is the chat box
@@ -32,9 +33,17 @@ private:
   void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
   void handleDeleteTable(quint16 tablenum);
   void handleAddToTable(quint16 tablenum, QString player);
-  QHash <quint16, quint16> tablenums;
   void handleLeaveTable(quint16 tablenum, QString player);
   int findRoomTableRow(quint16 tablenum);
+
+  QListWidget *playerLists[6];
+  QLabel *playerNames[6];
+  const int PLAYERLIST_ROLE;
+  void writeHeaderData();
+  void fixHeaderLength();
+  QByteArray block;
+  QDataStream out;
+
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();

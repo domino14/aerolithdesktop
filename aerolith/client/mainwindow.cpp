@@ -1,11 +1,11 @@
 #include "mainwindow.h"
 
-MainWindow::MainWindow()
+MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODevice::WriteOnly)
 {
   
   setWindowTitle("Aerolith");
-  QTabWidget *mainTabWidget = new QTabWidget;
-  setCentralWidget(mainTabWidget);
+  //QTabWidget *mainTabWidget = new QTabWidget;
+  //setCentralWidget(mainTabWidget);
   
 
   // create login widget
@@ -16,6 +16,9 @@ MainWindow::MainWindow()
   
   connectStatusLabel = new QLabel("Please enter your desired username");  
   QLabel *userLabel = new QLabel("Username: ");
+  QLabel *serverLabel = new QLabel("Address: ");
+  serverAddress = new QLineEdit("cesar.boldlygoingnowhere.org");
+  serverAddress->setFixedWidth(150);
   username->setFixedWidth(150);
   username->setMaxLength(16);
   toggleConnection->setFixedWidth(150);
@@ -24,6 +27,8 @@ MainWindow::MainWindow()
   QGridLayout *loginWidgetLayout = new QGridLayout;
   loginWidgetLayout->addWidget(userLabel, 0, 0);
   loginWidgetLayout->addWidget(username, 0, 1);
+  loginWidgetLayout->addWidget(serverLabel, 2, 0);
+  loginWidgetLayout->addWidget(serverAddress, 2, 1);
   loginWidgetLayout->addWidget(toggleConnection, 3, 1);
   loginWidgetLayout->addWidget(connectStatusLabel, 5, 1);
 
@@ -33,7 +38,7 @@ MainWindow::MainWindow()
   
   loginWidget->setLayout(overallLoginWidgetLayout);
   
-  mainTabWidget->addTab(loginWidget, "Login window");
+  //  mainTabWidget->addTab(loginWidget, "Login window");
 
   // create game board widget
   QGroupBox *gameBoardGroupBox = new QGroupBox("Game board");
@@ -98,9 +103,6 @@ MainWindow::MainWindow()
 
   // Players box
   
-  QListWidget *playerLists[6];
-  QLabel *playerNames[6];
-  
   QGridLayout *playerListsLayout = new QGridLayout;
   for (int i = 0; i < 6; i++)
     {
@@ -162,6 +164,8 @@ MainWindow::MainWindow()
   gameStackedWidget = new QStackedWidget;
   gameStackedWidget->addWidget(roomSelectorGroupBox);
   gameStackedWidget->addWidget(gameBoardGroupBox);
+  gameStackedWidget->addWidget(loginWidget);
+
 
 
   connect(newRoom, SIGNAL(clicked()), this, SLOT(createNewRoom()));
@@ -196,7 +200,7 @@ MainWindow::MainWindow()
   overallGameBoardLayout->addStretch(1);
   overallGameBoardLayout->addWidget(chatGroupBox);
   gameBoardWidget->setLayout(overallGameBoardLayout);
-  mainTabWidget->addTab(gameBoardWidget, "Game Board");
+  //mainTabWidget->addTab(gameBoardWidget, "Game Board");
   gameBoardGroupBox->setFixedWidth(800);
 
 
@@ -219,9 +223,24 @@ MainWindow::MainWindow()
   blockSize = 0; 
 
   currentTablenum = 0;
+  gameStackedWidget->setCurrentIndex(2);
 
+  setCentralWidget(gameBoardWidget);  
+  out.setVersion(QDataStream::Qt_4_2);  
+}
 
-  
+void MainWindow::writeHeaderData()
+{
+  out.device()->seek(0);
+  block.clear();
+  out << (quint16)25344;	// magic number
+  out << (quint16)0; // length 
+}
+
+void MainWindow::fixHeaderLength()
+{
+  out.device()->seek(sizeof(quint16));
+  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
 }
 
 void MainWindow::submitChatLEContents()
@@ -238,34 +257,23 @@ void MainWindow::submitChatLEContents()
 	  chatLE->clear();
 	  return;
 	}
-      QByteArray block;
-      QDataStream out(&block, QIODevice::WriteOnly);
-      out.setVersion(QDataStream::Qt_4_2);
-      out << (quint16)25344;	// magic number
-      out << (quint16)0; // length 
+ 
+      writeHeaderData();
       out << (quint8)'p';
       out << username;
       out << message;
-      out.device()->seek(2); // position of length
-      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+      fixHeaderLength();
       commsSocket->write(block);
-      
       chatLE->clear();
     }
   else
     {
 
-      QByteArray block;
-      QDataStream out(&block, QIODevice::WriteOnly);
-      out.setVersion(QDataStream::Qt_4_2);
-      out << (quint16)25344;	// magic number
-      out << (quint16)0; // length 
+      writeHeaderData();
       out << (quint8)'c';
       out << chatLE->text();
-      out.device()->seek(2); // position of length
-      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+      fixHeaderLength();
       commsSocket->write(block);
-      
       chatLE->clear();
     }
 }
@@ -323,7 +331,12 @@ void MainWindow::readFromServer()
 	    QString username;
 	    in >> username;
 	    QListWidgetItem *it = new QListWidgetItem(username, peopleConnected);
-	    if (username == currentUsername) connectStatusLabel->setText("You have connected!");
+	    if (username == currentUsername) 
+	      {
+		connectStatusLabel->setText("You have connected!");
+		gameStackedWidget->setCurrentIndex(0);
+		setWindowTitle(QString("Aerolith - logged in as ") + username);
+	      }
 	  }
 	  break;
 	case 'X':	// logged out
@@ -389,10 +402,17 @@ void MainWindow::readFromServer()
 		currentTablenum = tablenum;
 		gameStackedWidget->setCurrentIndex(1);
 		exitTable->setText(QString("Exit table %1").arg(tablenum));
-		
 	      }
-	  //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
+
+	    //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
 	    handleAddToTable(tablenum, playerName);
+	    if (currentTablenum == tablenum)
+	      {
+		// lists
+		// modify player lists and labels!
+		//		modifyPlayerLists(tablenum, playerName, 1); // add
+	      }
+	    
 	  }
 	  break;
 	case 'L':
@@ -406,8 +426,14 @@ void MainWindow::readFromServer()
 		currentTablenum = 0;
 		gameStackedWidget->setCurrentIndex(0);
 	      }
+	    
 	    // chatText->append(QString("%1 has left %2").arg(playerName).arg(tablenum));
 	    handleLeaveTable(tablenum, playerName);
+	    if (currentTablenum == tablenum)
+	      {//i love shoe
+		//		modifyPlayerLists(tablenum, playerName, -1);// remove
+	      }
+
 	  }
 
 	  break;
@@ -466,11 +492,11 @@ void MainWindow::toggleConnectToServer()
     {
       
       commsSocket->abort();
-      commsSocket->connectToHost("cesar.boldlygoingnowhere.org", 1988);
+      commsSocket->connectToHost(serverAddress->text(), 1988);
       connectStatusLabel->setText("Connecting to server...");
       toggleConnection->setText("Disconnect");
 
-      gameStackedWidget->setCurrentIndex(0);
+
       roomTable->clearContents();
       roomTable->setRowCount(0);
     }
@@ -479,19 +505,22 @@ void MainWindow::toggleConnectToServer()
       connectStatusLabel->setText("Disconnected from server");
       commsSocket->disconnectFromHost();
       toggleConnection->setText("Connect");
+      gameStackedWidget->setCurrentIndex(2);
     }
   
 }
 
 void MainWindow::serverDisconnection()
 {
+  
   connectStatusLabel->setText("You are disconnected.");
   peopleConnected->clear();
   QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
   toggleConnection->setText("Connect");
-      gameStackedWidget->setCurrentIndex(0);
-      roomTable->clearContents();
-      roomTable->setRowCount(0);
+  gameStackedWidget->setCurrentIndex(2);
+  roomTable->clearContents();
+  roomTable->setRowCount(0);
+  setWindowTitle("Aerolith - disconnected");
 }
 
 void MainWindow::writeUsernameToServer()
@@ -502,15 +531,10 @@ void MainWindow::writeUsernameToServer()
   in.setVersion(QDataStream::Qt_4_2);
   currentUsername = username->text();
   
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;// magic byte
-  out << (quint16)0; // length 
+  writeHeaderData();
   out << (quint8)'e';
   out << currentUsername;
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+  fixHeaderLength();
   commsSocket->write(block);
 
 }
@@ -524,16 +548,11 @@ void MainWindow::sendPM(QListWidgetItem* item)
 void MainWindow::createNewRoom()
 {
 
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;	// magic byte
-  out << (quint16)0; // length 
+  writeHeaderData();
   out << (quint8)'t';
   out << QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
   out << (quint8)5;
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+  fixHeaderLength();
   commsSocket->write(block);
 }
 
@@ -542,29 +561,19 @@ void MainWindow::joinTable()
   QPushButton* buttonThatSent = static_cast<QPushButton*> (sender());
   QVariant tn = buttonThatSent->property("tablenum");
   quint16 tablenum = (quint16)tn.toInt();
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;	// magic byte
-  out << (quint16)0; // length 
+  writeHeaderData();
   out << (quint8)'j';
   out << (quint16) tablenum;
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+  fixHeaderLength();
   commsSocket->write(block);
 }
 
 void MainWindow::leaveThisTable()
 {
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;	// magic byte
-  out << (quint16)0; // length 
+  writeHeaderData();
   out << (quint8)'l';
   out << (quint16)currentTablenum;
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16)); 
+  fixHeaderLength();
   commsSocket->write(block);
 }
 
@@ -592,6 +601,10 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
   buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));
   connect(buttonItem, SIGNAL(clicked()), this, SLOT(joinTable()));
   buttonItem->setEnabled(false);
+
+  QStringList playerList;
+  playersItem->setData(PLAYERLIST_ROLE, QVariant(playerList));
+
   roomTable->insertRow(roomTable->rowCount());
   roomTable->setItem(roomTable->rowCount()-1, 0, tableNumItem);
   roomTable->setItem(roomTable->rowCount()-1, 1, descriptorItem);
@@ -599,7 +612,10 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
   roomTable->setItem(roomTable->rowCount()-1, 3, numPlayersItem);
   roomTable->setItem(roomTable->rowCount()-1, 4, maxPlayersItem);
   roomTable->setCellWidget(roomTable->rowCount()-1, 5, buttonItem);
-  // tablenums.insert(tablenum, roomTable->rowCount()-1);
+  
+
+
+// tablenums.insert(tablenum, roomTable->rowCount()-1);
 }
 
 void MainWindow::handleDeleteTable(quint16 tablenum)
@@ -612,14 +628,18 @@ void MainWindow::handleDeleteTable(quint16 tablenum)
 void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
 {
   int row = findRoomTableRow(tablenum);
-  /*  if (roomTable->rowCount() - 1 < row)
-    QMessageBox::critical(this, "OMG", QString("ZOMG %1 %2").arg(row).arg(roomTable->rowCount()));*/
-  QTableWidgetItem* myItem = roomTable->item(row, 2);
-  QString textToReplace = myItem->text();
-  chatText->append("before: " + textToReplace + " PLAYER: " + player) ;
-  textToReplace.replace(player + " ", "");
-  chatText->append("after: " + textToReplace);
-  myItem->setText(textToReplace);
+
+  QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+  QStringList plist = plistVar.toStringList();
+  plist.removeAll(player);
+  QString textToSet="";
+  foreach(QString thisplayer, plist)
+    textToSet += thisplayer + " ";
+  
+  roomTable->item(row, 2)->setText(textToSet);
+  roomTable->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
+
+
   quint8 curNumPlayers = roomTable->item(row,3)->text().toShort();
   quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
   curNumPlayers--;
@@ -639,7 +659,16 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
   quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
   curNumPlayers++;
   roomTable->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
-  roomTable->item(row, 2)->setText(roomTable->item(row,2)->text() + player + " ");
+  
+  QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+  QStringList plist = plistVar.toStringList();
+  plist << player;
+  QString textToSet="";
+  foreach(QString thisplayer, plist)
+    textToSet += thisplayer + " ";
+  
+  roomTable->item(row, 2)->setText(textToSet);
+  roomTable->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
   if (curNumPlayers >= maxNumPlayers)
     roomTable->cellWidget(row, 5)->setEnabled(false);
   else
