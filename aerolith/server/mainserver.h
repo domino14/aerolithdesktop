@@ -41,6 +41,8 @@ private:
    bool canJoin; 
 
    quint16 totalNumberQuestions;
+
+
    //   quint16 indexOfCurrentQuestion; // LAST PLACE in the file that was read from!
    // should be a multiple of 45 typically. i.e. read 45 lines, so the index of 
    // curq should be 45 so that it starts reading at line 45 next.
@@ -57,6 +59,9 @@ private:
  QHash <quint16, tableData*> tables;
  quint16 blockSize;
  quint16 highestTableNumber;
+ void writeHeaderData();
+ void fixHeaderLength();
+
 
  void processLogin(QTcpSocket*, connectionData*);
  void processGameGuess(QTcpSocket*, connectionData*);
@@ -66,10 +71,11 @@ private:
  void processNewTable(QTcpSocket*, connectionData*);
  void processJoinTable(QTcpSocket*, connectionData*);
  void processLeftTable(QTcpSocket*, connectionData*);
-
  void removePlayerFromTable(QTcpSocket* socket, connectionData* connData, quint16 tablenum);
-
  bool isValidUsername(QString);
+ QByteArray block;
+ QDataStream out;
+
 };
 
 #endif

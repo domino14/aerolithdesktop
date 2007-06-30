@@ -1,12 +1,27 @@
 #include "mainserver.h"
 #include <QtDebug>
 
-MainServer::MainServer()
+MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
 {
   connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
   qDebug("mainserver constructor");
   blockSize = 0;
   highestTableNumber = 0;
+}
+
+void MainServer::writeHeaderData()
+{
+  out.device()->seek(0);
+  block.clear();
+  out << (quint16)25344;
+  out << (quint16)0; // length    
+}
+
+void MainServer::fixHeaderLength()
+{
+  out.device()->seek(sizeof(quint16));
+  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+
 }
 
 void MainServer::addConnection()
@@ -184,18 +199,11 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
       tmp->playerList.removeAll(username);
 
         // write to all connections that username has left table  
-      QByteArray block;
-      QDataStream out(&block, QIODevice::WriteOnly);
-      out.setVersion(QDataStream::Qt_4_2);
-      out << (quint16)25344;// magic byte
-      out << (quint16)0; // length
-      
+      writeHeaderData();      
       out << (quint8) 'L';
       out << tablenum;
       out << username;
-      
-      out.device()->seek(2); // position of length
-      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+      fixHeaderLength();
       
       foreach (QTcpSocket* connection, connections)
 	connection->write(block);      
@@ -208,17 +216,10 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
 	  delete tmp; // delete this table data structure
 	  
 	  // write to all clients that table has ceased to exist!
-	  QByteArray block;
-	  QDataStream out(&block, QIODevice::WriteOnly);
-	  out.setVersion(QDataStream::Qt_4_2);
-	  out << (quint16)25344;// magic byte
-	  out << (quint16)0; // length
-	  
+	  writeHeaderData();
 	  out << (quint8) 'K'; // kill table
 	  out << tablenum;
-	  
-	  out.device()->seek(2); // position of length
-	  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+	  fixHeaderLength();
 	  
 	  foreach (QTcpSocket* connection, connections)
 	    connection->write(block);
@@ -270,20 +271,16 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
     }
 
   // TODO fix, bad code:
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;// magic byte
-  out << (quint16)0; // length
-  
+  writeHeaderData();
   out << (quint8) 'T';
   out << (quint16) tablenum;
   out << wordListDescriptor;
   out << maxPlayers;
-  
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
-  
+  fixHeaderLength();
+
+  foreach (QTcpSocket* connection, connections)
+    connection->write(block);  
+
   connData->tablenum = tablenum;
   tableData *tmp = new tableData;
   tmp->tableNumber = tablenum;
@@ -294,25 +291,14 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   else tmp->canJoin = true;
   tables.insert(tablenum, tmp);
   
-  QByteArray block2;
-  QDataStream out2(&block2, QIODevice::WriteOnly);
-  out2.setVersion(QDataStream::Qt_4_2);
-  out2 << (quint16)25344;// magic byte
-  out2 << (quint16)0; // length
-  
-  out2 << (quint8) 'J';
-  out2 << (quint16) tablenum;
-  out2 << connData->username;
-  
-  out2.device()->seek(2); // position of length
-  out2 << (quint16)(block2.size() - sizeof(quint16) - sizeof(quint16));
+  writeHeaderData();
+  out << (quint8) 'J';
+  out << (quint16) tablenum;
+  out << connData->username;
+  fixHeaderLength();
   
   foreach (QTcpSocket* connection, connections)
-  {
-    connection->write(block);
-    connection->write(block2);
-  }
-  
+    connection->write(block);  
 
 }
 
@@ -352,21 +338,13 @@ void MainServer::processJoinTable(QTcpSocket* socket, connectionData* connData)
   tmp->playerList << username;
   if (tmp->playerList.size() == tmp->maxPlayers) tmp->canJoin = false;
 
-  QByteArray block2;
-  QDataStream out2(&block2, QIODevice::WriteOnly);
-  out2.setVersion(QDataStream::Qt_4_2);
-  out2 << (quint16)25344;// magic byte
-  out2 << (quint16)0; // length
-
-  out2 << (quint8) 'J';
-  out2 << (quint16) tablenum;
-  out2 << connData->username;
-
-  out2.device()->seek(2); // position of length
-  out2 << (quint16)(block2.size() - sizeof(quint16) - sizeof(quint16));
-
+  writeHeaderData();
+  out << (quint8) 'J';
+  out << (quint16) tablenum;
+  out << connData->username;
+  fixHeaderLength();
   foreach (QTcpSocket* connection, connections)
-    connection->write(block2);
+    connection->write(block);
   
   connData->tablenum = tablenum;
 
@@ -383,18 +361,11 @@ void MainServer::processPrivateMessage(QTcpSocket* socket, connectionData* connD
     {
       // the username exists
       QTcpSocket* connection = usernamesHash.value(username); // receiver
-      QByteArray block;
-      QDataStream out(&block, QIODevice::WriteOnly);
-      out.setVersion(QDataStream::Qt_4_2);
-      out << (quint16)25344;// magic byte
-      out << (quint16)0; // length
-      
+      writeHeaderData();      
       out << (quint8) 'P';
       out << connData->username; // sender
       out << message; 
-      
-      out.device()->seek(2); // position of length
-      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+      fixHeaderLength();
       connection->write(block); 
     }
 
@@ -449,38 +420,23 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
   foreach(tableData* table, tableList)
     {
       // write new table for every existing table!
-      QByteArray block;
-      QDataStream out(&block, QIODevice::WriteOnly);
-      out.setVersion(QDataStream::Qt_4_2);
-      out << (quint16)25344;// magic byte
-      out << (quint16)0; // length
-      
+      writeHeaderData();      
       out << (quint8) 'T';
       out << table->tableNumber;
       out << table->wordListDescriptor;
       out << table->maxPlayers;
-      
-      out.device()->seek(2); // position of length
-      out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+      fixHeaderLength();
       
       socket->write(block);
 
       foreach(QString thisUsername, table->playerList)
 	{
-	  QByteArray block2;
-	  QDataStream out2(&block2, QIODevice::WriteOnly);
-	  out2.setVersion(QDataStream::Qt_4_2);
-	  out2 << (quint16)25344;// magic byte
-	  out2 << (quint16)0; // length
-	  
-	  out2 << (quint8) 'J';
-	  out2 << (quint16) table->tableNumber;
-	  out2 << thisUsername;
-	  
-	  out2.device()->seek(2); // position of length
-	  out2 << (quint16)(block2.size() - sizeof(quint16) - sizeof(quint16));
-	  
-	  socket->write(block2);
+	  writeHeaderData();
+	  out << (quint8) 'J';
+	  out << (quint16) table->tableNumber;
+	  out << thisUsername;
+	  fixHeaderLength();	  
+	  socket->write(block);
 	}
 
     }
@@ -501,19 +457,11 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
   QString chattext;
   connData->in >> chattext;
 
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;// magic byte
-  out << (quint16)0; // length
-  
+  writeHeaderData();  
   out << (quint8) 'C';
   out << username;
   out << chattext;
-  
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
-
+  fixHeaderLength();
   foreach (QTcpSocket* connection, connections)
     connection->write(block);
   
@@ -524,11 +472,7 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
 
 void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHeaderStatesEnum type)
 {
-  QByteArray block;
-  QDataStream out(&block, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_2);
-  out << (quint16)25344;// magic byte
-  out << (quint16)0; // length 
+  writeHeaderData();
   QString debugstring;
   switch (type)
     {
@@ -550,8 +494,7 @@ void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHead
       break;
       
     }
-  out.device()->seek(2); // position of length
-  out << (quint16)(block.size() - sizeof(quint16) - sizeof(quint16));
+  fixHeaderLength();
   socket->write(block);
 
   //  qDebug() << " wrote to " << connectionParameters.value(socket)->username << " that " << parameter << debugstring;
