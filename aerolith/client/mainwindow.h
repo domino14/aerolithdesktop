@@ -43,6 +43,7 @@ private:
   void fixHeaderLength();
   QByteArray block;
   QDataStream out;
+  void modifyPlayerLists(quint16 tablenum, QString player, int modification);
 
 public slots:
   void submitSolutionLEContents();
