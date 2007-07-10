@@ -106,14 +106,15 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   QGridLayout *playerListsLayout = new QGridLayout;
   for (int i = 0; i < 6; i++)
     {
-      playerNames[i] = new QLabel("ADEILNPS");	
+      playerNames[i] = new QLabel("");
       playerNames[i]->setAlignment(Qt::AlignHCenter);
       playerNames[i]->setFixedWidth(120);
       playerLists[i] = new QListWidget();
       playerLists[i]->setFixedWidth(120);
       playerLists[i]->setMinimumHeight(200);
       playerLists[i]->setFrameShape(QFrame::Box);
-      
+      playerLists[i]->hide();
+      playerNames[i]->hide();
       //if (i > -1) { playerLists[i]->hide(); playerNames[i]->hide(); }
       playerListsLayout->addWidget(playerNames[i], 0, i*2);
       playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
@@ -401,6 +402,14 @@ void MainWindow::readFromServer()
 	      {
 		currentTablenum = tablenum;
 		gameStackedWidget->setCurrentIndex(1);
+		
+		for (int i = 0; i < 6; i++)
+		  {
+		    playerNames[i]->setText("");
+		    playerLists[i]->clear();
+		    playerLists[i]->hide();
+		    playerNames[i]->hide();
+		  }
 		exitTable->setText(QString("Exit table %1").arg(tablenum));
 	      }
 
@@ -410,7 +419,8 @@ void MainWindow::readFromServer()
 	      {
 		// lists
 		// modify player lists and labels!
-		//		modifyPlayerLists(tablenum, playerName, 1); // add
+		modifyPlayerLists(tablenum, playerName, 1);
+		
 	      }
 	    
 	  }
@@ -431,7 +441,7 @@ void MainWindow::readFromServer()
 	    handleLeaveTable(tablenum, playerName);
 	    if (currentTablenum == tablenum)
 	      {//i love shoe
-		//		modifyPlayerLists(tablenum, playerName, -1);// remove
+		modifyPlayerLists(tablenum, playerName, -1);
 	      }
 
 	  }
@@ -617,6 +627,94 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
 
 // tablenums.insert(tablenum, roomTable->rowCount()-1);
 }
+
+void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modification)
+{
+  // if player = currentusername
+
+  int row = findRoomTableRow(tablenum);
+  QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+  QStringList plist = plistVar.toStringList();
+  
+  // plist contains all the players
+
+  if (player == currentUsername)
+    {
+      if (modification == -1) return; // the widget will be hid anyway, so we don't need to hide the individual lists
+      //however, we hide when adding when we join down below
+
+      else 
+	{
+
+	  // add all players including self
+	  for (int i = 0; i < plist.size(); i++)
+	    {
+	      
+
+	    }
+	  
+
+	  return;
+	}
+    }
+
+  // if we are here then a player has joined/left a table that we were already in
+
+  // modification = -1 remove
+  // or 1 add
+
+  //playerNames - labels, playerLists qlistwidgets
+
+
+
+  if (modification == 1)
+    {
+      // player has been added
+      // find a spot
+      bool spotfound = false;
+      int spot;
+
+      for (int i = 0; i < 6; i++)
+	if (playerNames[i]->text() == "")
+	  {
+	    spotfound = true;
+	    spot = i;
+	    break;
+	  }
+      //spot i
+      if (spotfound == false)
+	QMessageBox::critical(this, "?", "Please notify developer about this error. (Error code 10001)");
+      
+      playerNames[spot]->setText(player);
+      playerNames[spot]->show();
+      playerLists[spot]->show();
+     
+
+    }
+  for (int i = 0; i < plist.length(); i++)
+    {
+
+
+
+
+    }
+
+  for (int i = 0; i < 6; i++)
+    {
+      if (playerNames[i]->text() != "")
+	{
+	  
+
+
+	}
+
+    }
+  
+
+
+}
+
+
 
 void MainWindow::handleDeleteTable(quint16 tablenum)
 {
