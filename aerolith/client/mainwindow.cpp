@@ -44,7 +44,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   QGroupBox *gameBoardGroupBox = new QGroupBox("Game board");
 
   
-  QWidget *gameBoardWidget = new QWidget;	 // the 'overall' game board widget
+  QWidget *centralWidget = new QWidget;	 // the 'overall'  widget
   
   QTableWidget *wordsWidget = new QTableWidget(9, 5);
 
@@ -74,7 +74,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   for (int i = 0; i < 9; i++)
     for (int j = 0; j < 5; j++)
       {
-	tableItem[i][j] = new QTableWidgetItem("ADEEFRST");
+	tableItem[i][j] = new QTableWidgetItem("");
 	tableItem[i][j]->setTextAlignment(Qt::AlignHCenter);
 	//tableItem[i][j]->setFont(wordFont);
 	// tableItem[i][j]->setForeground(colorBrushes[i]);
@@ -95,7 +95,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   QHBoxLayout *solutionLayout = new QHBoxLayout;
   solutionLayout->addWidget(solutionLabel);
   solutionLayout->addWidget(solutionLE);
-  solutionLayout->addStretch(1);
+  solutionLayout->addStretch(100);
   solutionLayout->addWidget(alpha);
   solutionLayout->addWidget(shuffle);
   solutionLayout->addWidget(exitTable);
@@ -115,12 +115,13 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
       playerLists[i]->setFrameShape(QFrame::Box);
       playerLists[i]->hide();
       playerNames[i]->hide();
-      //if (i > -1) { playerLists[i]->hide(); playerNames[i]->hide(); }
+     
       playerListsLayout->addWidget(playerNames[i], 0, i*2);
       playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
       playerListsLayout->addWidget(playerLists[i], 1, i*2);
+	  
     }
-  
+  playerListsLayout->setRowMinimumHeight(1, 200);
   
   QVBoxLayout *gameBoardLayout = new QVBoxLayout;
   gameBoardLayout->addWidget(wordsWidget);
@@ -128,7 +129,6 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   gameBoardLayout->addLayout(solutionLayout);
   gameBoardLayout->addSpacing(10);
   gameBoardLayout->addLayout(playerListsLayout);
-  
   gameBoardGroupBox->setLayout(gameBoardLayout);
 
   // the room selector will be anotehr group box
@@ -166,7 +166,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   gameStackedWidget->addWidget(roomSelectorGroupBox);
   gameStackedWidget->addWidget(gameBoardGroupBox);
   gameStackedWidget->addWidget(loginWidget);
-
+	//gameStackedWidget->setFixedWidth(850);
 
 
   connect(newRoom, SIGNAL(clicked()), this, SLOT(createNewRoom()));
@@ -200,9 +200,9 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   overallGameBoardLayout->setAlignment(gameStackedWidget, Qt::AlignHCenter);
   overallGameBoardLayout->addStretch(1);
   overallGameBoardLayout->addWidget(chatGroupBox);
-  gameBoardWidget->setLayout(overallGameBoardLayout);
+  centralWidget->setLayout(overallGameBoardLayout);
   //mainTabWidget->addTab(gameBoardWidget, "Game Board");
-  gameBoardGroupBox->setFixedWidth(800);
+  //gameBoardGroupBox->setFixedWidth(800);
 
 
   //mainTabWidget->setTabEnabled(1, false);
@@ -226,7 +226,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   currentTablenum = 0;
   gameStackedWidget->setCurrentIndex(2);
 
-  setCentralWidget(gameBoardWidget);  
+  setCentralWidget(centralWidget);  
   out.setVersion(QDataStream::Qt_4_2);  
 }
 
@@ -398,6 +398,7 @@ void MainWindow::readFromServer()
 	    QString playerName;
 	    
 	    in >> tablenum >> playerName; // this will also black out the corresponding button for can join
+		handleAddToTable(tablenum, playerName);
 	    if (playerName == currentUsername)
 	      {
 		currentTablenum = tablenum;
@@ -411,17 +412,12 @@ void MainWindow::readFromServer()
 		    playerNames[i]->hide();
 		  }
 		exitTable->setText(QString("Exit table %1").arg(tablenum));
-	      }
-
-	    //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
-	    handleAddToTable(tablenum, playerName);
-	    if (currentTablenum == tablenum)
-	      {
-		// lists
-		// modify player lists and labels!
-		modifyPlayerLists(tablenum, playerName, 1);
 		
 	      }
+		if (currentTablenum == tablenum)
+			modifyPlayerLists(tablenum, playerName, 1);
+	    //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
+	   
 	    
 	  }
 	  break;
@@ -561,7 +557,7 @@ void MainWindow::createNewRoom()
   writeHeaderData();
   out << (quint8)'t';
   out << QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-  out << (quint8)5;
+  out << (quint8)6;
   fixHeaderLength();
   commsSocket->write(block);
 }
@@ -638,19 +634,25 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
   
   // plist contains all the players
 
-  if (player == currentUsername)
+  if (player == currentUsername)	// I joined. therefore, populate the list from the beginning
     {
-      if (modification == -1) return; // the widget will be hid anyway, so we don't need to hide the individual lists
+      if (modification == -1) 
+	  {
+		seats.clear(); // clear the seats hash if we leave! 	  
+		  
+		  return; // the widget will be hid anyway, so we don't need to hide the individual lists
       //however, we hide when adding when we join down below
-
+	  }
       else 
 	{
 
 	  // add all players including self
 	  for (int i = 0; i < plist.size(); i++)
 	    {
-	      
-
+	      playerNames[i]->setText(plist[i]);
+		  playerNames[i]->show();
+		  playerLists[i]->show();
+			seats.insert(plist[i], i);
 	    }
 	  
 
@@ -683,33 +685,50 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 	  }
       //spot i
       if (spotfound == false)
-	QMessageBox::critical(this, "?", "Please notify developer about this error. (Error code 10001)");
-      
+	  {
+		QMessageBox::critical(this, "?", "Please notify developer about this error. (Error code 10001)");
+		return;
+	  }
+
       playerNames[spot]->setText(player);
       playerNames[spot]->show();
       playerLists[spot]->show();
-     
-
+	  seats.insert(player, spot);
     }
+
+  else if (modification == -1)
+  {
+	  int seat;
+	if (seats.contains(player))
+	{
+		seat = seats.value(player);
+	}
+	else
+	{
+		QMessageBox::critical(this, "?", "Please notify developer about this error. (Error code 10002)");
+		return;
+	}
+	seats.remove(player);
+	playerNames[seat]->setText("");
+	playerLists[seat]->clear();
+	playerNames[seat]->hide();
+	playerLists[seat]->hide();
+
+  }
+
+  /*
   for (int i = 0; i < plist.length(); i++)
     {
-
-
-
-
     }
 
   for (int i = 0; i < 6; i++)
     {
       if (playerNames[i]->text() != "")
 	{
-	  
-
-
 	}
 
     }
-  
+*/  
 
 
 }
