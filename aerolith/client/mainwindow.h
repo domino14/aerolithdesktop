@@ -45,6 +45,8 @@ private:
   QDataStream out;
   void modifyPlayerLists(quint16 tablenum, QString player, int modification);
 
+	QHash <QString, int> seats;
+
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
