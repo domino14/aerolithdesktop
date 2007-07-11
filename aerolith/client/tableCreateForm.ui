@@ -1,0 +1,449 @@
+<ui version="4.0" >
+ <class>tableCreateForm</class>
+ <widget class="QDialog" name="tableCreateForm" >
+  <property name="windowModality" >
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>405</width>
+    <height>452</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Create Table</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox" >
+   <property name="geometry" >
+    <rect>
+     <x>140</x>
+     <y>400</y>
+     <width>251</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons" >
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="spinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>20</y>
+     <width>42</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+   <property name="maximum" >
+    <number>6</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>20</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Number of Players</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>70</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Play mode</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>60</y>
+     <width>121</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string/>
+   </property>
+   <widget class="QRadioButton" name="radioButton_2" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Cycle</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Random</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="label_3" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>140</y>
+     <width>101</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Startup shuffle mode</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>130</y>
+     <width>121</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string/>
+   </property>
+   <widget class="QRadioButton" name="radioButton_3" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Alphagram</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_4" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Shuffle</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="label_4" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>210</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Word list</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_3" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>200</y>
+     <width>271</width>
+     <height>161</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string>GroupBox</string>
+   </property>
+   <widget class="QComboBox" name="comboBox" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
+    <property name="geometry" >
+     <rect>
+      <x>40</x>
+      <y>40</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (1-1000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (1001-2000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (2001-3000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (3001-4000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (4001-5000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (5001-6000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (6001-7000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (7001-8000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (8001-9000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Sevens (9001-10000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (1-1000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (1001-2000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (2001-3000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (3001-4000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (4001-5000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (5001-6000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (6001-7000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (7001-8000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (8001-9000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Essential Eights (9001-10000)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>JQXZ 5s</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>JQXZ 6s</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>JQXZ 7s</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>JQXZ 8s</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>5-Vowel Eights</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>4-Vowel Sevens</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_5" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Existing List</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_6" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>70</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>User List</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_2" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
+    <property name="geometry" >
+     <rect>
+      <x>40</x>
+      <y>90</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>tableCreateForm</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>308</x>
+     <y>404</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>96</x>
+     <y>380</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>tableCreateForm</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>376</x>
+     <y>410</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>375</x>
+     <y>375</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_6</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboBox_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>171</x>
+     <y>276</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>329</x>
+     <y>295</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButton_5</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>comboBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>183</x>
+     <y>227</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>307</x>
+     <y>246</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
