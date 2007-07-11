@@ -227,6 +227,8 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
 	  // TODO temp file system
 	  qDebug() << "wrote that we Killed table " << tablenum;
 	}
+      else
+	tmp->canJoin = true;
     } 
   else
     {
