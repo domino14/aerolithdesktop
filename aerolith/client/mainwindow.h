@@ -44,7 +44,7 @@ private:
   QByteArray block;
   QDataStream out;
   void modifyPlayerLists(quint16 tablenum, QString player, int modification);
-
+QDialog *createTableDialogWindow;
 	QHash <QString, int> seats;
 
 public slots:

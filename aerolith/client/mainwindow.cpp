@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-
+#include "ui_tableCreateForm.h"
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODevice::WriteOnly)
 {
   
@@ -220,7 +220,12 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   connect(toggleConnection, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
   connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
   connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
-  
+	createTableDialogWindow = new QDialog;
+	Ui::tableCreateForm ui;
+     ui.setupUi(createTableDialogWindow);
+
+
+
   blockSize = 0; 
 
   currentTablenum = 0;
@@ -553,13 +558,17 @@ void MainWindow::sendPM(QListWidgetItem* item)
 
 void MainWindow::createNewRoom()
 {
-
-  writeHeaderData();
+	
+	// reset dialog to defaults first.
+	
+     createTableDialogWindow->show();
+	// connect(ui.radioButton, SIGNAL(clicked()), ui.spinBox, SLOT(stepUp()));
+/*  writeHeaderData();
   out << (quint8)'t';
   out << QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
   out << (quint8)6;
   fixHeaderLength();
-  commsSocket->write(block);
+  commsSocket->write(block);*/
 }
 
 void MainWindow::joinTable()

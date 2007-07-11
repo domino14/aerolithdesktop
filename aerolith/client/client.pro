@@ -3,6 +3,7 @@ TEMPLATE = app
 CONFIG += qt
 QT += network
 
+FORMS = tableCreateForm.ui
 SOURCES += main.cpp mainwindow.cpp
 HEADERS += mainwindow.h
 
