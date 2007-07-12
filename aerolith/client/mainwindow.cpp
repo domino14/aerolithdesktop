@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "ui_tableCreateForm.h"
+
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODevice::WriteOnly)
 {
   
@@ -221,7 +221,6 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
   connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
 	createTableDialogWindow = new QDialog;
-	Ui::tableCreateForm ui;
      ui.setupUi(createTableDialogWindow);
 
 
@@ -560,9 +559,28 @@ void MainWindow::createNewRoom()
 {
 	
 	// reset dialog to defaults first.
-	
-     createTableDialogWindow->show();
-	// connect(ui.radioButton, SIGNAL(clicked()), ui.spinBox, SLOT(stepUp()));
+  ui.cycleRbo->setChecked(true);
+  ui.alphagramRbo->setChecked(true);
+  ui.existingRbo->setChecked(true);
+  ui.playersSpinBox->setValue(1);
+  int retval = createTableDialogWindow->exec();
+  if (retval == QDialog::Rejected) return;
+  
+  // else its not rejected
+
+  writeHeaderData();
+  out << (quint8)'t';
+  if (ui.existingRbo->isChecked() == true)
+      out << ui.elistsCbo->currentText();
+  else
+    out << ui.ulistsCbo->currentText();
+
+  out << (quint8)ui.playersSpinBox->value();
+  
+
+  fixHeaderLength();
+  commsSocket->write(block);
+
 /*  writeHeaderData();
   out << (quint8)'t';
   out << QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
