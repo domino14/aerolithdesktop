@@ -3,6 +3,8 @@
 
 #include <QtGui>
 #include <QtNetwork>
+#include "ui_tableCreateForm.h"
+
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
@@ -46,7 +48,7 @@ private:
   void modifyPlayerLists(quint16 tablenum, QString player, int modification);
 QDialog *createTableDialogWindow;
 	QHash <QString, int> seats;
-
+	Ui::tableCreateForm ui;
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();

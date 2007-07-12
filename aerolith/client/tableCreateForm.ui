@@ -1,9 +1,6 @@
 <ui version="4.0" >
  <class>tableCreateForm</class>
  <widget class="QDialog" name="tableCreateForm" >
-  <property name="windowModality" >
-   <enum>Qt::ApplicationModal</enum>
-  </property>
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -11,6 +8,18 @@
     <width>405</width>
     <height>452</height>
    </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>405</width>
+    <height>452</height>
+   </size>
+  </property>
+  <property name="maximumSize" >
+   <size>
+    <width>405</width>
+    <height>452</height>
+   </size>
   </property>
   <property name="windowTitle" >
    <string>Create Table</string>
@@ -31,145 +40,6 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox" >
-   <property name="geometry" >
-    <rect>
-     <x>120</x>
-     <y>20</y>
-     <width>42</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="minimum" >
-    <number>1</number>
-   </property>
-   <property name="maximum" >
-    <number>6</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>20</y>
-     <width>101</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Number of Players</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>70</y>
-     <width>91</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Play mode</string>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="groupBox" >
-   <property name="geometry" >
-    <rect>
-     <x>120</x>
-     <y>60</y>
-     <width>121</width>
-     <height>61</height>
-    </rect>
-   </property>
-   <property name="title" >
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="radioButton_2" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Cycle</string>
-    </property>
-    <property name="checked" >
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radioButton" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>30</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Random</string>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QLabel" name="label_3" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>140</y>
-     <width>101</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Startup shuffle mode</string>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_2" >
-   <property name="geometry" >
-    <rect>
-     <x>120</x>
-     <y>130</y>
-     <width>121</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="title" >
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="radioButton_3" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Alphagram</string>
-    </property>
-    <property name="checked" >
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radioButton_4" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>30</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Shuffle</string>
-    </property>
-   </widget>
-  </widget>
   <widget class="QLabel" name="label_4" >
    <property name="geometry" >
     <rect>
@@ -183,6 +53,129 @@
     <string>Word list</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>20</y>
+     <width>121</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Number of Players</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>90</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Play mode</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>160</y>
+     <width>131</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Startup shuffle mode</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox" >
+   <property name="geometry" >
+    <rect>
+     <x>160</x>
+     <y>50</y>
+     <width>131</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string/>
+   </property>
+   <widget class="QRadioButton" name="randomRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Random</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="cycleRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Cycle</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2" >
+   <property name="geometry" >
+    <rect>
+     <x>160</x>
+     <y>120</y>
+     <width>131</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string/>
+   </property>
+   <widget class="QRadioButton" name="alphagramRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>91</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Alphagram</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="shuffleRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Shuffle</string>
+    </property>
+   </widget>
+  </widget>
   <widget class="QGroupBox" name="groupBox_3" >
    <property name="geometry" >
     <rect>
@@ -195,14 +188,40 @@
    <property name="title" >
     <string>GroupBox</string>
    </property>
-   <widget class="QComboBox" name="comboBox" >
+   <widget class="QRadioButton" name="userRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>User List</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="existingRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>121</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Existing List</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="elistsCbo" >
     <property name="enabled" >
      <bool>false</bool>
     </property>
     <property name="geometry" >
      <rect>
       <x>40</x>
-      <y>40</y>
+      <y>50</y>
       <width>211</width>
       <height>21</height>
      </rect>
@@ -338,45 +357,45 @@
      </property>
     </item>
    </widget>
-   <widget class="QRadioButton" name="radioButton_5" >
-    <property name="geometry" >
-     <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Existing List</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radioButton_6" >
-    <property name="geometry" >
-     <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>User List</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBox_2" >
+   <widget class="QComboBox" name="ulistsCbo" >
     <property name="enabled" >
      <bool>false</bool>
     </property>
     <property name="geometry" >
      <rect>
       <x>40</x>
-      <y>90</y>
+      <y>100</y>
       <width>211</width>
       <height>21</height>
      </rect>
     </property>
+    <item>
+     <property name="text" >
+      <string>Test user item 1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Test user item 2!!</string>
+     </property>
+    </item>
    </widget>
+  </widget>
+  <widget class="QSpinBox" name="playersSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>160</x>
+     <y>20</y>
+     <width>42</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="maximum" >
+    <number>6</number>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
   </widget>
  </widget>
  <resources/>
@@ -414,9 +433,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>radioButton_6</sender>
+   <sender>userRbo</sender>
    <signal>toggled(bool)</signal>
-   <receiver>comboBox_2</receiver>
+   <receiver>ulistsCbo</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel" >
@@ -430,9 +449,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>radioButton_5</sender>
+   <sender>existingRbo</sender>
    <signal>toggled(bool)</signal>
-   <receiver>comboBox</receiver>
+   <receiver>elistsCbo</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel" >
