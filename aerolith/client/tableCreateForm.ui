@@ -24,35 +24,6 @@
   <property name="windowTitle" >
    <string>Create Table</string>
   </property>
-  <widget class="QDialogButtonBox" name="buttonBox" >
-   <property name="geometry" >
-    <rect>
-     <x>140</x>
-     <y>400</y>
-     <width>251</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="orientation" >
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="standardButtons" >
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4" >
-   <property name="geometry" >
-    <rect>
-     <x>10</x>
-     <y>210</y>
-     <width>91</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Word list</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label" >
    <property name="geometry" >
     <rect>
@@ -92,101 +63,46 @@
     <string>Startup shuffle mode</string>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox" >
+  <widget class="QSpinBox" name="playersSpinBox" >
    <property name="geometry" >
     <rect>
      <x>160</x>
-     <y>50</y>
-     <width>131</width>
-     <height>71</height>
+     <y>20</y>
+     <width>42</width>
+     <height>22</height>
     </rect>
    </property>
-   <property name="title" >
-    <string/>
+   <property name="maximum" >
+    <number>6</number>
    </property>
-   <widget class="QRadioButton" name="randomRbo" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>50</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Random</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="cycleRbo" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>30</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Cycle</string>
-    </property>
-    <property name="checked" >
-     <bool>true</bool>
-    </property>
-   </widget>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox_2" >
+  <widget class="QLabel" name="label_4" >
    <property name="geometry" >
     <rect>
-     <x>160</x>
-     <y>120</y>
-     <width>131</width>
-     <height>71</height>
+     <x>10</x>
+     <y>230</y>
+     <width>91</width>
+     <height>16</height>
     </rect>
    </property>
-   <property name="title" >
-    <string/>
+   <property name="text" >
+    <string>Word list</string>
    </property>
-   <widget class="QRadioButton" name="alphagramRbo" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>30</y>
-      <width>91</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Alphagram</string>
-    </property>
-    <property name="checked" >
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="shuffleRbo" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>50</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Shuffle</string>
-    </property>
-   </widget>
   </widget>
   <widget class="QGroupBox" name="groupBox_3" >
    <property name="geometry" >
     <rect>
      <x>120</x>
-     <y>200</y>
+     <y>220</y>
      <width>271</width>
      <height>161</height>
     </rect>
    </property>
    <property name="title" >
-    <string>GroupBox</string>
+    <string>Word list</string>
    </property>
    <widget class="QRadioButton" name="userRbo" >
     <property name="geometry" >
@@ -381,21 +297,105 @@
     </item>
    </widget>
   </widget>
-  <widget class="QSpinBox" name="playersSpinBox" >
+  <widget class="QDialogButtonBox" name="buttonBox" >
+   <property name="geometry" >
+    <rect>
+     <x>140</x>
+     <y>410</y>
+     <width>251</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons" >
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2" >
    <property name="geometry" >
     <rect>
      <x>160</x>
-     <y>20</y>
-     <width>42</width>
-     <height>22</height>
+     <y>140</y>
+     <width>131</width>
+     <height>71</height>
     </rect>
    </property>
-   <property name="maximum" >
-    <number>6</number>
+   <property name="title" >
+    <string>On start</string>
    </property>
-   <property name="minimum" >
-    <number>1</number>
+   <widget class="QRadioButton" name="alphagramRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>91</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Alphagram</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="shuffleRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Shuffle</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox" >
+   <property name="geometry" >
+    <rect>
+     <x>160</x>
+     <y>60</y>
+     <width>131</width>
+     <height>71</height>
+    </rect>
    </property>
+   <property name="title" >
+    <string>Play mode</string>
+   </property>
+   <widget class="QRadioButton" name="cycleRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Cycle</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="randomRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Random</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>
