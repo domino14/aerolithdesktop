@@ -46,7 +46,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   
   QWidget *centralWidget = new QWidget;	 // the 'overall'  widget
   
-  QTableWidget *wordsWidget = new QTableWidget(9, 5);
+  wordsWidget = new QTableWidget(9, 5);
 
   wordsWidget->horizontalHeader()->hide();
 
@@ -63,10 +63,10 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   
 	
   colorBrushes[0].setColor(Qt::black);
-  colorBrushes[1].setColor(Qt::gray);
-  colorBrushes[2].setColor(Qt::darkBlue);
-  colorBrushes[3].setColor(Qt::blue);
-  colorBrushes[4].setColor(Qt::darkCyan);
+  colorBrushes[1].setColor(Qt::darkGreen);
+  colorBrushes[2].setColor(Qt::blue);
+  colorBrushes[3].setColor(Qt::darkCyan);
+  colorBrushes[4].setColor(Qt::cyan);
   colorBrushes[5].setColor(Qt::darkMagenta);
   colorBrushes[6].setColor(Qt::darkRed);
   colorBrushes[7].setColor(Qt::red);
@@ -276,7 +276,7 @@ void MainWindow::submitChatLEContents()
 	  chatLE->clear();
 	  return;
 	}
-		chatText->append("[You write to " + username + "] " + message);
+      chatText->append("[You write to " + username + "] " + message);
       writeHeaderData();
       out << (quint8)'p';
       out << username;
@@ -285,15 +285,39 @@ void MainWindow::submitChatLEContents()
       commsSocket->write(block);
       chatLE->clear();
     }
-  else
+  else if (chatLE->text().indexOf("/shout ") == 0)
     {
-
       writeHeaderData();
       out << (quint8)'c';
-      out << chatLE->text();
+      out << chatLE->text().mid(7);
       fixHeaderLength();
       commsSocket->write(block);
       chatLE->clear();
+    }
+  else
+
+    {
+      if (currentTablenum == 0)
+	{
+	  writeHeaderData();
+	  out << (quint8)'c';
+	  out << chatLE->text();
+	  fixHeaderLength();
+	  commsSocket->write(block);
+	  chatLE->clear();
+	}
+      else
+	{
+	  writeHeaderData();
+	  out << (quint8)'=';
+	  out << (quint16)currentTablenum;
+	  out << (quint8)'c';
+	  out << chatLE->text();
+	  fixHeaderLength();
+	  commsSocket->write(block);
+	  chatLE->clear();
+
+	}
     }
 }
 
@@ -302,15 +326,15 @@ void MainWindow::submitSolutionLEContents()
 {
  // chatText->append(QString("From solution: ") + solutionLE->text());
  // solutionLE->clear();
-
-	writeHeaderData();
-	out << (quint8) '=';
-	out << (quint16) currentTablenum;
-	out << (quint8) 's'; // from solution box
-	out << solutionLE->text();
-	fixHeaderLength();
-	commsSocket->write(block);
-	solutionLE->clear();
+  
+  writeHeaderData();
+  out << (quint8) '=';
+  out << (quint16) currentTablenum;
+  out << (quint8) 's'; // from solution box
+  out << solutionLE->text();
+  fixHeaderLength();
+  commsSocket->write(block);
+  solutionLE->clear();
 }
 
 void MainWindow::readFromServer()
@@ -430,8 +454,8 @@ void MainWindow::readFromServer()
 	      {
 		currentTablenum = tablenum;
 		gameStackedWidget->setCurrentIndex(1);
-		 int row = findRoomTableRow(tablenum);
-		  QString wList = roomTable->item(row, 1)->text();
+		int row = findRoomTableRow(tablenum);
+		QString wList = roomTable->item(row, 1)->text();
 		gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
 		timerDial->setValue(0);
 		for (int i = 0; i < 6; i++)
@@ -441,6 +465,10 @@ void MainWindow::readFromServer()
 		    playerLists[i]->hide();
 		    playerNames[i]->hide();
 		  }
+		for (int i = 0; i < 9; i++)
+		  for (int j = 0; j < 5; j++)
+		    wordsWidget->item(i, j)->setText("");
+
 		exitTable->setText(QString("Exit table %1").arg(tablenum));
 		
 	      }
@@ -483,31 +511,31 @@ void MainWindow::readFromServer()
 	  }	
 	  break;
 	case 'W':
-		{
-			// word lists
-			QString listTitle;
-			in >> listTitle;
-			ui.elistsCbo->addItem(listTitle);
-			
-		}
-		break;
+	  {
+	    // word lists
+	    QString listTitle;
+	    in >> listTitle;
+	    ui.elistsCbo->addItem(listTitle);
+	    
+	  }
+	  break;
 	case '+':
 	  // table command
 	  // an additional byte is needed
-		{
-			quint16 tablenum;
-			in >> tablenum; 
-			if (tablenum != currentTablenum)
-			{
-				QMessageBox::critical(this, "Aerolith client", "Critical error 10003");
-				exit(0);
-			}
-			quint8 addByte;
-			in >> addByte;
-			
-			handleTableCommand(tablenum, addByte);
-
-		}
+	  {
+	    quint16 tablenum;
+	    in >> tablenum; 
+	    if (tablenum != currentTablenum)
+	      {
+		QMessageBox::critical(this, "Aerolith client", "Critical error 10003");
+		exit(0);
+	      }
+	    quint8 addByte;
+	    in >> addByte;
+	    
+	    handleTableCommand(tablenum, addByte);
+	    
+	  }
 	  break;
 	default:
 	  QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
@@ -603,7 +631,7 @@ void MainWindow::writeUsernameToServer()
 void MainWindow::sendPM(QListWidgetItem* item)
 {
   chatLE->setText(QString("/msg ") + item->text() + " ");
-
+  chatLE->setFocus(Qt::OtherFocusReason);
 }
 
 void MainWindow::createNewRoom()
@@ -613,6 +641,7 @@ void MainWindow::createNewRoom()
   ui.cycleRbo->setChecked(true);
   ui.alphagramRbo->setChecked(true);
   ui.existingRbo->setChecked(true);
+  ui.userRbo->setEnabled(false);
   ui.playersSpinBox->setValue(1);
   int retval = createTableDialogWindow->exec();
   if (retval == QDialog::Rejected) return;
@@ -622,15 +651,15 @@ void MainWindow::createNewRoom()
   writeHeaderData();
   out << (quint8)'t';
   if (ui.existingRbo->isChecked() == true)
-      out << ui.elistsCbo->currentText();
+    out << ui.elistsCbo->currentText();
   else
     out << ui.ulistsCbo->currentText();
-
+  
   out << (quint8)ui.playersSpinBox->value();
-	if (ui.cycleRbo->isChecked() == true) out << (quint8)1;
-	else out << (quint8)0;
-	if (ui.alphagramRbo->isChecked() == true) out << (quint8)1;
-	else out << (quint8)0;
+  if (ui.cycleRbo->isChecked() == true) out << (quint8)1;
+  else out << (quint8)0;
+  if (ui.alphagramRbo->isChecked() == true) out << (quint8)1;
+  else out << (quint8)0;
 
   fixHeaderLength();
   commsSocket->write(block);
@@ -679,37 +708,71 @@ int MainWindow::findRoomTableRow(quint16 tablenum)
 
 void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 {
-	switch (commandByte)
-	{
-	case 'T':
-		// a timer byte
-		{
-			quint16 timerval;	
-			in >> timerval;
-			timerDial->setValue(timerval);
-			
-
-		}
+  switch (commandByte)
+    {
+    case 'T':
+      // a timer byte
+      {
+	quint16 timerval;	
+	in >> timerval;
+	timerDial->setValue(timerval);
 	
-		break;
-	case 'S':
-		// the game has started
-		{
-			for (int i = 0; i <6 ; i++)
-				playerLists[i]->clear();
-			chatText->append("<font color=red>The game has started!</font>");
-		}
+	
+      }
+      
+      break;
+    case 'S':
+      // the game has started
+      {
+	for (int i = 0; i <6 ; i++)
+	  playerLists[i]->clear();
+	chatText->append("<font color=red>The game has started!</font>");
+      }
+      
+      break;
+    case 'E':
+      // the game has ended
+      {
+	chatText->append("<font color=red>Time is up!</font>");
+	
+      }
+      break;
 
-		break;
-	case 'E':
-		// the game has ended
-		{
-			chatText->append("<font color=red>Time is up!</font>");
 
-		}
+    case 'C':
+      // chat
+      {
+	QString username, chat;
+	in >> username;
+	in >> chat;
+	chatText->append("[" + username + " to table] " + chat);
+      }
+      break;
 
-	}
+    case 'W':
+      // 45 alphagrams!!!
+      
+      for (int i = 0; i < 9; i++)
+	for (int j = 0; j < 5; j++)
+	  {
+	    QString alphagram;
+	    in >> alphagram;
+	    quint8 numsolutions;
+	    in >> numsolutions;
+	   
+	    wordsWidget->item(i, j)->setText(alphagram);
+	    if (alphagram != "") 
+	    {
+	      wordsWidget->item(i, j)->setForeground(colorBrushes[(numsolutions > 9 ? 8 : (numsolutions - 1))]);
+	      wordsWidget->item(i, j)->setData(Qt::UserRole, QVariant(numsolutions)); // numsolutions yet to be solved
+	    }
+	  }
+      break;
+    
 
+    }
+
+  
 }
 
 void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers)

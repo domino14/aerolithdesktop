@@ -31,6 +31,7 @@ private:
   QDataStream in;
   QStackedWidget* gameStackedWidget;
   QTableWidget* roomTable;
+  QTableWidget* wordsWidget;
   quint16 currentTablenum;
   QBrush colorBrushes[9];
   void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
