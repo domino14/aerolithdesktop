@@ -27,6 +27,7 @@ private:
   QString currentUsername;
   QPushButton *toggleConnection;
   QPushButton *exitTable;
+  QDial *timerDial;
   QDataStream in;
   QStackedWidget* gameStackedWidget;
   QTableWidget* roomTable;
@@ -36,6 +37,7 @@ private:
   void handleDeleteTable(quint16 tablenum);
   void handleAddToTable(quint16 tablenum, QString player);
   void handleLeaveTable(quint16 tablenum, QString player);
+  void handleTableCommand(quint16 tablenum, quint8 commandByte);
   int findRoomTableRow(quint16 tablenum);
 
   QListWidget *playerLists[6];
@@ -46,6 +48,7 @@ private:
   QByteArray block;
   QDataStream out;
   void modifyPlayerLists(quint16 tablenum, QString player, int modification);
+  QGroupBox *gameBoardGroupBox;
 QDialog *createTableDialogWindow;
 	QHash <QString, int> seats;
 	Ui::tableCreateForm ui;

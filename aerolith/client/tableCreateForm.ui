@@ -72,11 +72,11 @@
      <height>22</height>
     </rect>
    </property>
-   <property name="maximum" >
-    <number>6</number>
-   </property>
    <property name="minimum" >
     <number>1</number>
+   </property>
+   <property name="maximum" >
+    <number>6</number>
    </property>
   </widget>
   <widget class="QLabel" name="label_4" >
@@ -142,136 +142,6 @@
       <height>21</height>
      </rect>
     </property>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (1-1000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (1001-2000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (2001-3000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (3001-4000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (4001-5000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (5001-6000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (6001-7000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (7001-8000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (8001-9000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Sevens (9001-10000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (1-1000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (1001-2000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (2001-3000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (3001-4000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (4001-5000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (5001-6000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (6001-7000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (7001-8000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (8001-9000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Essential Eights (9001-10000)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>JQXZ 5s</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>JQXZ 6s</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>JQXZ 7s</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>JQXZ 8s</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>5-Vowel Eights</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>4-Vowel Sevens</string>
-     </property>
-    </item>
    </widget>
    <widget class="QComboBox" name="ulistsCbo" >
     <property name="enabled" >
@@ -285,16 +155,6 @@
       <height>21</height>
      </rect>
     </property>
-    <item>
-     <property name="text" >
-      <string>Test user item 1</string>
-     </property>
-    </item>
-    <item>
-     <property name="text" >
-      <string>Test user item 2!!</string>
-     </property>
-    </item>
    </widget>
   </widget>
   <widget class="QDialogButtonBox" name="buttonBox" >
