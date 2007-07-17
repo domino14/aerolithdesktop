@@ -13,6 +13,8 @@ void listInfoWriter();
 QSqlDatabase db;
 QFile listsDescriptor("lists/LISTS");
 QTextStream listsStream(&listsDescriptor);
+const char SEPARATOR = '@';
+
 int main (int argc, char **argv)
 {
 
@@ -20,7 +22,7 @@ int main (int argc, char **argv)
   sqlInitializer();
   listsDescriptor.open(QIODevice::WriteOnly | QIODevice::Text);
 
-  /*
+  
 
   for (int x = 4; x <= 9; x++)
     {
@@ -42,7 +44,7 @@ int main (int argc, char **argv)
   for (int i = 6; i <= 9; i++)
     splitLists(QString("%1s").arg(i));
 
-*/
+
   listInfoWriter();
   listsDescriptor.close();
   qDebug() << " Final.";
@@ -64,7 +66,7 @@ void splitLists(QString filename)
 
   while(shouldKeepGoing)
     {
-      QFile output(QString("lists/%1s__%2_to_%3.txt").arg(filename.left(1))
+      QFile output(QString("lists/%1s__%2_to_%3").arg(filename.left(1))
 		   .arg(linecounter + 1).arg(linecounter + 1000));
       if (!output.open(QIODevice::WriteOnly | QIODevice::Text)) return;
       QTextStream out(&output);
@@ -105,16 +107,16 @@ void sqlInitializer()
 void listInfoWriter()
 {
   QDir directory("lists");
-  QStringList filenameList = directory.entryList();
+  QStringList filenameList = directory.entryList(QDir::NoDotAndDotDot | QDir::Files, QDir::Time);
   qDebug() << "Files: " << filenameList;
   foreach (QString filename, filenameList)
     {
-      if (filename.left(5) == "LISTS" || filename == "." || filename == "..") continue;
+      if (filename.left(5) == "LISTS") continue;
 
   
       if (filename.contains("JQXZ"))
 	{
-	  listsStream << filename << " ";
+	  listsStream << filename << SEPARATOR;
 	  listsStream << "JQXZ " << filename.right(2) << "\n";
 	}
       else if (filename.contains("__"))
@@ -128,20 +130,20 @@ void listInfoWriter()
 	  
 	  if (tmp.at(1).toInt() < 10000)
 	    {
-	      listsStream << filename << " ";
+	      listsStream << filename << SEPARATOR;
 	      listsStream << blah << QString(" (%1 - %2)\n").arg(tmp.at(1)).arg(tmp.at(3));
 	    }
 	}
       else if (filename.contains("vowel"))
 	{
-	  listsStream << filename << " ";
+	  listsStream << filename << SEPARATOR;
 	  QStringList tmp = filename.split("vowel");
 	  listsStream << tmp.at(0) << " vowel " << tmp.at(1) << "\n";
 	  
 	}
       else
 	{
-	  listsStream << filename << " ";
+	  listsStream << filename << SEPARATOR;
 	  listsStream << "Official " << filename << "\n";
 	  
 	}
