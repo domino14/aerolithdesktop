@@ -1,12 +1,17 @@
 #include "mainserver.h"
 #include <QtDebug>
 
+QList <QVariant> dummyList;
+const int GAME_TIMER_VALUE = 10;
+
 MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
 {
   connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
   qDebug("mainserver constructor");
   blockSize = 0;
   highestTableNumber = 0;
+
+
 }
 
 void MainServer::writeHeaderData()
@@ -41,6 +46,7 @@ void MainServer::addConnection()
 
 
 }
+
 
 void MainServer::removeConnection()
 {
@@ -162,12 +168,77 @@ void MainServer::receiveMessage()
 	case 'l':
 	  processLeftTable(socket, connData);
 	  break;
+	case '=':
+	  processTableCommand(socket, connData);
+
+	  break;
+
 	}
       
       connData->numBytesInPacket = 0;
     }
 
 }
+
+void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connData)
+{
+  quint16 tablenum;
+  connData->in >> tablenum;
+
+  quint8 subcommand;
+  connData->in >> subcommand;
+  
+  tableData* table = tables.value(tablenum);
+
+  switch (subcommand)
+    {
+    case 's':
+      // guess from solution box
+      {
+	QString guess;
+	connData->in >> guess;
+	//if (guess == "")
+	if (guess == "")
+	  {
+	    
+	    if (table->gameStarted == false)
+	      {
+		writeToTable(tablenum, dummyList, GAME_STARTED);
+		
+		// this seems like horrible overkill. there has to be a better way...
+		table->timerVal = GAME_TIMER_VALUE;
+		QList <QVariant> tempList;
+		tempList << QVariant(table->timerVal);
+		writeToTable(tablenum, tempList, TIMER_VALUE);
+
+		
+		 // code for starting the game
+		 // steps:
+		 // 1. list should already be loaded when table was created
+		 // 2. send to everyone @ the table:
+		 //    - 45 alphagrams
+
+
+		table->timer->start(1000);
+		table->gameStarted = true;
+	      }
+
+	  }
+	
+      }
+
+
+      break;
+
+
+
+
+    }
+
+}
+
+
+
 
 void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
 {
@@ -213,6 +284,7 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
 	{
 	  qDebug() << " need to kill table " << tablenum;
 	  tables.remove(tablenum);
+	  tmp->timer->deleteLater();
 	  delete tmp; // delete this table data structure
 	  
 	  // write to all clients that table has ceased to exist!
@@ -254,6 +326,11 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   quint8 maxPlayers;
   connData->in >> wordListDescriptor;
   connData->in >> maxPlayers;
+  
+  quint8 cycleState, alphagramState;
+  connData->in >> cycleState;
+  connData->in >> alphagramState;
+  
   while (!foundFreeNumber && tablenum < 1000)
     {
       tablenum++;
@@ -291,6 +368,13 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   tmp->playerList << connData->username;
   if (maxPlayers == 1) tmp->canJoin = false;
   else tmp->canJoin = true;
+  tmp->cycleState = cycleState;
+  tmp->alphagramState = alphagramState;
+  tmp->timer = new QTimer();
+  tmp->timer->setProperty("tablenum", QVariant(tablenum));
+    tmp->gameStarted = false;
+
+  connect(tmp->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
   tables.insert(tablenum, tmp);
   
   writeHeaderData();
@@ -413,6 +497,7 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
 	{
 	  // write to THIS socket that every other username has logged in.
 	  writeToClient(socket, connectionParameters.value(connection)->username, S_USERLOGGEDIN);
+	  
 
 	}
     }
@@ -442,6 +527,8 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
 	}
 
     }
+  // send existing lists
+
 }
 
 void MainServer::processGameGuess(QTcpSocket* socket, connectionData* connData)
@@ -449,6 +536,30 @@ void MainServer::processGameGuess(QTcpSocket* socket, connectionData* connData)
   // QString ;
   // connData->in >> username;
   //qDebug() << "Login: " << username;
+
+}
+
+void MainServer::updateTimer()
+{
+  QTimer* timer = static_cast <QTimer*> (sender());
+  // corresponds to a specific table
+  // figure out which one
+  quint16 tablenum = (quint16) timer->property("tablenum").toInt();
+  tableData *tmp = tables.value(tablenum);
+  tmp->timerVal--;
+
+  QList <QVariant> tempList;
+  tempList << QVariant(tmp->timerVal);
+  writeToTable(tablenum, tempList, TIMER_VALUE);
+
+  if (tmp->timerVal == 0)
+    {
+      tmp->timer->stop();
+      tmp->gameStarted = false;
+      // TODO here is code for the game ending
+      // send game ended to everyone, etc.
+      writeToTable(tablenum, dummyList, GAME_ENDED);
+    }
 
 }
 
@@ -471,6 +582,48 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
 
 }
 
+void MainServer::writeToTable(quint16 tablenum, QList <QVariant> parameterList, packetHeaderStatesEnum type)
+{  
+  tableData* table = tables.value(tablenum);
+
+  writeHeaderData();
+  out << (quint8) '+';
+  out << (quint16) tablenum;
+
+  switch (type)
+    {
+    case GAME_STARTED:
+      out << (quint8) 'S';
+      break;
+
+    case GAME_ENDED:
+      out << (quint8) 'E';
+      break;
+
+    case CHAT_SENT:
+      
+      break;
+      
+    case GUESS_RIGHT:
+      
+
+      break;
+    case TIMER_VALUE:
+      out << (quint8) 'T';
+      out << (quint16) parameterList.at(0).toInt();
+
+      break;
+    }
+
+  fixHeaderLength();
+  
+  foreach(QString userInTable, table->playerList)
+    usernamesHash.value(userInTable)->write(block);
+  
+
+
+
+}
 
 void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHeaderStatesEnum type)
 {
