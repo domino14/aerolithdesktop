@@ -4,6 +4,7 @@
 QList <QVariant> dummyList;
 const int GAME_TIMER_VALUE = 10;
 
+
 MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
 {
   connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
@@ -11,7 +12,23 @@ MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
   blockSize = 0;
   highestTableNumber = 0;
 
+  // load lists
 
+  QFile listFile("../listmaker/lists/LISTS");
+  QTextStream thisIn;
+  thisIn.setDevice(&listFile);
+
+  listFile.open(QIODevice::ReadOnly | QIODevice::Text);
+
+  while (!thisIn.atEnd())
+    {
+      QString line = thisIn.readLine();
+      QStringList tmp = line.split("@");
+      wordLists.insert(tmp.at(1), tmp.at(0));
+      orderedWordLists << tmp.at(1);
+    }
+
+  listFile.close();
 }
 
 void MainServer::writeHeaderData()
@@ -529,6 +546,14 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
     }
   // send existing lists
 
+  foreach (QString listDescriptor, orderedWordLists)
+    {
+      writeHeaderData();
+      out << (quint8) 'W';
+      out << listDescriptor;
+      fixHeaderLength();
+      socket->write(block);
+    }
 }
 
 void MainServer::processGameGuess(QTcpSocket* socket, connectionData* connData)

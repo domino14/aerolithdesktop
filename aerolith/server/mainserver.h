@@ -69,8 +69,8 @@ private:
  QHash <QString, QTcpSocket*> usernamesHash;
  QHash <quint16, tableData*> tables;
  
- QHash <QString, QString> lists;
-
+ QHash <QString, QString> wordLists;
+ QStringList orderedWordLists;
  quint16 blockSize;
  quint16 highestTableNumber;
 
