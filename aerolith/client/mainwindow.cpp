@@ -41,7 +41,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   //  mainTabWidget->addTab(loginWidget, "Login window");
 
   // create game board widget
-  QGroupBox *gameBoardGroupBox = new QGroupBox("Game board");
+  gameBoardGroupBox = new QGroupBox("Game board");
 
   
   QWidget *centralWidget = new QWidget;	 // the 'overall'  widget
@@ -89,15 +89,29 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   QLabel *solutionLabel = new QLabel("Guess:");
   solutionLE = new QLineEdit;
   solutionLE->setFixedWidth(100);
+  solutionLE->setMaxLength(15);
   QPushButton *alpha = new QPushButton("Alpha");
   QPushButton *shuffle = new QPushButton("Shuffle");
-  exitTable = new QPushButton("Exit Table #");
+  QPushButton *giveup = new QPushButton("Give up");
+	exitTable = new QPushButton("Exit Table #");
   QHBoxLayout *solutionLayout = new QHBoxLayout;
+
+  timerDial = new QDial();
+  timerDial->setMaximum(200);
+  timerDial->setMinimum(0);
+  timerDial->setValue(0);
+  timerDial->setNotchesVisible(true);
+  timerDial->setEnabled(false);
+
+
   solutionLayout->addWidget(solutionLabel);
   solutionLayout->addWidget(solutionLE);
-  solutionLayout->addStretch(100);
+  solutionLayout->addStretch(1);
+  solutionLayout->addWidget(timerDial);
   solutionLayout->addWidget(alpha);
   solutionLayout->addWidget(shuffle);
+  solutionLayout->addWidget(giveup);
+  solutionLayout->addSpacing(50);
   solutionLayout->addWidget(exitTable);
   connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
 
@@ -262,7 +276,7 @@ void MainWindow::submitChatLEContents()
 	  chatLE->clear();
 	  return;
 	}
- 
+		chatText->append("[You write to " + username + "] " + message);
       writeHeaderData();
       out << (quint8)'p';
       out << username;
@@ -286,8 +300,17 @@ void MainWindow::submitChatLEContents()
 
 void MainWindow::submitSolutionLEContents()
 {
-  chatText->append(QString("From solution: ") + solutionLE->text());
-  solutionLE->clear();
+ // chatText->append(QString("From solution: ") + solutionLE->text());
+ // solutionLE->clear();
+
+	writeHeaderData();
+	out << (quint8) '=';
+	out << (quint16) currentTablenum;
+	out << (quint8) 's'; // from solution box
+	out << solutionLE->text();
+	fixHeaderLength();
+	commsSocket->write(block);
+	solutionLE->clear();
 }
 
 void MainWindow::readFromServer()
@@ -407,7 +430,10 @@ void MainWindow::readFromServer()
 	      {
 		currentTablenum = tablenum;
 		gameStackedWidget->setCurrentIndex(1);
-		
+		 int row = findRoomTableRow(tablenum);
+		  QString wList = roomTable->item(row, 1)->text();
+		gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
+		timerDial->setValue(0);
 		for (int i = 0; i < 6; i++)
 		  {
 		    playerNames[i]->setText("");
@@ -456,9 +482,32 @@ void MainWindow::readFromServer()
 	    handleDeleteTable(tablenum);
 	  }	
 	  break;
-	case '=':
+	case 'W':
+		{
+			// word lists
+			QString listTitle;
+			in >> listTitle;
+			ui.elistsCbo->addItem(listTitle);
+			
+		}
+		break;
+	case '+':
 	  // table command
 	  // an additional byte is needed
+		{
+			quint16 tablenum;
+			in >> tablenum; 
+			if (tablenum != currentTablenum)
+			{
+				QMessageBox::critical(this, "Aerolith client", "Critical error 10003");
+				exit(0);
+			}
+			quint8 addByte;
+			in >> addByte;
+			
+			handleTableCommand(tablenum, addByte);
+
+		}
 	  break;
 	default:
 	  QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
@@ -531,6 +580,8 @@ void MainWindow::serverDisconnection()
   roomTable->clearContents();
   roomTable->setRowCount(0);
   setWindowTitle("Aerolith - disconnected");
+  ui.elistsCbo->clear();
+  ui.ulistsCbo->clear();
 }
 
 void MainWindow::writeUsernameToServer()
@@ -576,7 +627,10 @@ void MainWindow::createNewRoom()
     out << ui.ulistsCbo->currentText();
 
   out << (quint8)ui.playersSpinBox->value();
-  
+	if (ui.cycleRbo->isChecked() == true) out << (quint8)1;
+	else out << (quint8)0;
+	if (ui.alphagramRbo->isChecked() == true) out << (quint8)1;
+	else out << (quint8)0;
 
   fixHeaderLength();
   commsSocket->write(block);
@@ -621,6 +675,41 @@ int MainWindow::findRoomTableRow(quint16 tablenum)
 	return i;
     }
   return roomTable->rowCount();
+}
+
+void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
+{
+	switch (commandByte)
+	{
+	case 'T':
+		// a timer byte
+		{
+			quint16 timerval;	
+			in >> timerval;
+			timerDial->setValue(timerval);
+			
+
+		}
+	
+		break;
+	case 'S':
+		// the game has started
+		{
+			for (int i = 0; i <6 ; i++)
+				playerLists[i]->clear();
+			chatText->append("<font color=red>The game has started!</font>");
+		}
+
+		break;
+	case 'E':
+		// the game has ended
+		{
+			chatText->append("<font color=red>Time is up!</font>");
+
+		}
+
+	}
+
 }
 
 void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers)
