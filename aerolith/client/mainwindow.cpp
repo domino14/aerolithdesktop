@@ -59,7 +59,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
 	wordsWidget->setRowHeight(i, 20);
 
   QTableWidgetItem *tableItem[9][5];
-  QFont wordFont("Helvetica", 12, QFont::Bold);
+  QFont wordFont("Times", 12, QFont::Bold);
   
 	
   colorBrushes[0].setColor(Qt::black);
@@ -76,7 +76,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
       {
 	tableItem[i][j] = new QTableWidgetItem("");
 	tableItem[i][j]->setTextAlignment(Qt::AlignHCenter);
-	//tableItem[i][j]->setFont(wordFont);
+	tableItem[i][j]->setFont(wordFont);
 	// tableItem[i][j]->setForeground(colorBrushes[i]);
 	wordsWidget->setItem(i, j, tableItem[i][j]);
       }
@@ -97,7 +97,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   QHBoxLayout *solutionLayout = new QHBoxLayout;
 
   timerDial = new QDial();
-  timerDial->setMaximum(200);
+  timerDial->setMaximum(300);
   timerDial->setMinimum(0);
   timerDial->setValue(0);
   timerDial->setNotchesVisible(true);
@@ -114,7 +114,9 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
   solutionLayout->addSpacing(50);
   solutionLayout->addWidget(exitTable);
   connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
-
+	connect(alpha, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
+	connect(shuffle, SIGNAL(clicked()), this, SLOT(shuffleWords()));
+	connect(giveup, SIGNAL(clicked()), this, SLOT(giveUpOnThisGame()));
   // Players box
   
   QGridLayout *playerListsLayout = new QGridLayout;
@@ -127,12 +129,19 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
       playerLists[i]->setFixedWidth(120);
       playerLists[i]->setMinimumHeight(200);
       playerLists[i]->setFrameShape(QFrame::Box);
+
+		playerStatus[i] = new QLabel("");
+		playerStatus[i]->setFixedWidth(120);
+		playerStatus[i]->setAlignment(Qt::AlignHCenter);
+
       playerLists[i]->hide();
       playerNames[i]->hide();
+	  playerStatus[i]->hide();
      
       playerListsLayout->addWidget(playerNames[i], 0, i*2);
       playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
       playerListsLayout->addWidget(playerLists[i], 1, i*2);
+	  playerListsLayout->addWidget(playerStatus[i], 2, i*2);
 	  
     }
   playerListsLayout->setRowMinimumHeight(1, 200);
@@ -237,7 +246,7 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
 	createTableDialogWindow = new QDialog;
      ui.setupUi(createTableDialogWindow);
 
-
+	gameStarted = false;
 
   blockSize = 0; 
 
@@ -246,6 +255,11 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole + 1), out(&block, QIODev
 
   setCentralWidget(centralWidget);  
   out.setVersion(QDataStream::Qt_4_2);  
+	
+  QTime midnight(0, 0, 0);
+  qsrand(midnight.msecsTo(QTime::currentTime()));
+
+
 }
 
 void MainWindow::writeHeaderData()
@@ -462,8 +476,10 @@ void MainWindow::readFromServer()
 		  {
 		    playerNames[i]->setText("");
 		    playerLists[i]->clear();
+			playerStatus[i]->setText("");
 		    playerLists[i]->hide();
 		    playerNames[i]->hide();
+			playerStatus[i]->hide();
 		  }
 		for (int i = 0; i < 9; i++)
 		  for (int j = 0; j < 5; j++)
@@ -639,7 +655,6 @@ void MainWindow::createNewRoom()
 	
 	// reset dialog to defaults first.
   ui.cycleRbo->setChecked(true);
-  ui.alphagramRbo->setChecked(true);
   ui.existingRbo->setChecked(true);
   ui.userRbo->setEnabled(false);
   ui.playersSpinBox->setValue(1);
@@ -657,8 +672,6 @@ void MainWindow::createNewRoom()
   
   out << (quint8)ui.playersSpinBox->value();
   if (ui.cycleRbo->isChecked() == true) out << (quint8)1;
-  else out << (quint8)0;
-  if (ui.alphagramRbo->isChecked() == true) out << (quint8)1;
   else out << (quint8)0;
 
   fixHeaderLength();
@@ -721,20 +734,41 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
       }
       
       break;
+	case 'B':
+		// a request for beginning the game from a player
+		// refresh ready light for each player.
+		{
+		QString username;
+		in >> username;
+		int indexOfPlayer;
+			for (int k = 0; k < 6; k++)
+			{
+				if (playerNames[k]->text() == username)
+				{
+					indexOfPlayer = k;
+					break;
+				}
+			}
+		playerStatus[indexOfPlayer]->setText("Ready.");
+
+		}
+		break;
     case 'S':
       // the game has started
       {
 	for (int i = 0; i <6 ; i++)
 	  playerLists[i]->clear();
 	chatText->append("<font color=red>The game has started!</font>");
+	gameStarted = true;
       }
       
       break;
     case 'E':
       // the game has ended
       {
-	chatText->append("<font color=red>Time is up!</font>");
-	
+	chatText->append("<font color=red>This round is over.</font>");
+	gameStarted = false;
+
       }
       break;
 
@@ -768,7 +802,39 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 	    }
 	  }
       break;
-    
+	case 'U':
+		// someone cried uncle
+		{
+			QString username;
+			in >> username;
+			chatText->append("<font color=red>" + username + " has requested to end this game. </font>");
+		}
+		break;
+	case 'A':
+		{
+			QString username, guess;
+			quint8 row, column;
+			in >> username >> guess >> row >> column;
+			quint8 numsolutions = wordsWidget->item(row, column)->data(Qt::UserRole).toInt();
+			numsolutions--;
+			wordsWidget->item(row, column)->setData(Qt::UserRole, QVariant(numsolutions));
+			if (numsolutions > 0)
+				wordsWidget->item(row, column)->setForeground(colorBrushes[(numsolutions > 9 ? 8 : (numsolutions - 1))]);
+			else
+				wordsWidget->item(row, column)->setText("");
+
+			int indexOfPlayer;
+			for (int k = 0; k < 6; k++)
+			{
+				if (playerNames[k]->text() == username)
+				{
+					indexOfPlayer = k;
+					break;
+				}
+			}
+			playerLists[indexOfPlayer]->insertItem(0, guess);
+			playerStatus[indexOfPlayer]->setText(QString("%1 words").arg(playerLists[indexOfPlayer]->count()));
+		}
 
     }
 
@@ -831,6 +897,7 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 	      playerNames[i]->setText(plist[i]);
 		  playerNames[i]->show();
 		  playerLists[i]->show();
+		  playerStatus[i]->show();
 			seats.insert(plist[i], i);
 	    }
 	  
@@ -872,6 +939,7 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
       playerNames[spot]->setText(player);
       playerNames[spot]->show();
       playerLists[spot]->show();
+	  playerStatus[spot]->show();
 	  seats.insert(player, spot);
     }
 
@@ -889,10 +957,16 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 	}
 	seats.remove(player);
 	playerNames[seat]->setText("");
+	playerStatus[seat]->setText("");
 	playerLists[seat]->clear();
 	playerNames[seat]->hide();
 	playerLists[seat]->hide();
-
+	playerStatus[seat]->hide();
+	if (gameStarted == false)
+	{
+		for (int i = 0; i < 6; i++)
+			playerStatus[i]->setText("");
+	}
   }
 
   /*
@@ -969,7 +1043,61 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
     roomTable->cellWidget(row, 5)->setEnabled(false);
   else
     roomTable->cellWidget(row, 5)->setEnabled(true);
-  
+ 
+}
 
+void MainWindow::alphagrammizeWords()
+{
+// wordsWidget
+	for (int i = 0; i < 9; i++)
+		for (int j = 0; j < 5; j++)
+			wordsWidget->item(i,j)->setText(alphagrammizeString(wordsWidget->item(i,j)->text()));
+}
 
+void MainWindow::shuffleWords()
+{
+	for (int i = 0; i < 9; i++)
+		for (int j = 0; j < 5; j++)
+			wordsWidget->item(i,j)->setText(shuffleString(wordsWidget->item(i,j)->text()));
+}
+void MainWindow::giveUpOnThisGame()
+{
+	  writeHeaderData();
+	  out << (quint8)'=';
+	  out << (quint16)currentTablenum;
+	  out << (quint8)'u';
+	  fixHeaderLength();
+	  commsSocket->write(block);
+}
+
+QString MainWindow::alphagrammizeString(QString inputString)
+{
+	int letters[26];
+	for (int i = 0; i < 26; i++)
+		letters[i] = 0;
+
+	for (int i = 0; i < inputString.length(); i++)
+	{
+		letters[inputString[i].toUpper().toAscii() - 'A']++;
+	}
+	QString retString = "";
+	for (int i = 0; i < 26; i++)
+		for (int j = 0; j < letters[i]; j++)
+			retString += (unsigned char)(i + 'A');
+
+	return retString;
+}
+
+QString MainWindow::shuffleString(QString inputString)
+{
+	for (int i = 0; i < inputString.length(); i++)
+	{
+		int j = qrand() % inputString.length();
+		QChar tmp;
+		tmp = inputString[i];
+		inputString[i] = inputString[j];
+		inputString[j] = tmp;
+
+	}
+	return inputString;
 }

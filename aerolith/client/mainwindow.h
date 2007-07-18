@@ -43,6 +43,7 @@ private:
 
   QListWidget *playerLists[6];
   QLabel *playerNames[6];
+  QLabel *playerStatus[6];
   const int PLAYERLIST_ROLE;
   void writeHeaderData();
   void fixHeaderLength();
@@ -50,9 +51,14 @@ private:
   QDataStream out;
   void modifyPlayerLists(quint16 tablenum, QString player, int modification);
   QGroupBox *gameBoardGroupBox;
+  bool gameStarted;
 QDialog *createTableDialogWindow;
 	QHash <QString, int> seats;
 	Ui::tableCreateForm ui;
+
+	QString alphagrammizeString(QString);
+	QString shuffleString(QString);
+
 public slots:
   void submitSolutionLEContents();
   void submitChatLEContents();
@@ -65,6 +71,9 @@ public slots:
   void createNewRoom();
   void leaveThisTable();
   void joinTable();
+  void alphagrammizeWords();
+  void shuffleWords();
+  void giveUpOnThisGame();
 };
 
 
