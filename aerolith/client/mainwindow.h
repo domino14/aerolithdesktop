@@ -4,76 +4,79 @@
 #include <QtGui>
 #include <QtNetwork>
 #include "ui_tableCreateForm.h"
-
+#include "ui_solutionsForm.h"
 class MainWindow : public QMainWindow
 {
-  Q_OBJECT
+	Q_OBJECT
 
 
-    
+
 public:
-  MainWindow();
+	MainWindow();
 private:
-  QLineEdit *username;
-  QLineEdit *serverAddress;
-  QLineEdit *solutionLE; // this will be submitted (to answers) when pressing enter
-  QLineEdit *chatLE; // as will this (to chat)
-  QTextEdit *chatText; // this is the chat box
-  QTcpSocket *commsSocket;
-  QListWidget *peopleConnected;
-  quint16 blockSize; // used for socket
-  QLabel *connectStatusLabel;
-  void processServerString(QString);
-  QString currentUsername;
-  QPushButton *toggleConnection;
-  QPushButton *exitTable;
-  QDial *timerDial;
-  QDataStream in;
-  QStackedWidget* gameStackedWidget;
-  QTableWidget* roomTable;
-  QTableWidget* wordsWidget;
-  quint16 currentTablenum;
-  QBrush colorBrushes[9];
-  void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
-  void handleDeleteTable(quint16 tablenum);
-  void handleAddToTable(quint16 tablenum, QString player);
-  void handleLeaveTable(quint16 tablenum, QString player);
-  void handleTableCommand(quint16 tablenum, quint8 commandByte);
-  int findRoomTableRow(quint16 tablenum);
+	QLineEdit *username;
+	QLineEdit *serverAddress;
+	QLineEdit *solutionLE; // this will be submitted (to answers) when pressing enter
+	QLineEdit *chatLE; // as will this (to chat)
+	QTextEdit *chatText; // this is the chat box
+	QTcpSocket *commsSocket;
+	QListWidget *peopleConnected;
+	quint16 blockSize; // used for socket
+	QLabel *connectStatusLabel;
+	void processServerString(QString);
+	QString currentUsername;
+	QPushButton *toggleConnection;
+	QPushButton *exitTable;
+	QDial *timerDial;
+	QDataStream in;
+	QStackedWidget* gameStackedWidget;
+	QTableWidget* roomTable;
+	QTableWidget* wordsWidget;
+	quint16 currentTablenum;
+	QBrush colorBrushes[9];
+	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
+	void handleDeleteTable(quint16 tablenum);
+	void handleAddToTable(quint16 tablenum, QString player);
+	void handleLeaveTable(quint16 tablenum, QString player);
+	void handleTableCommand(quint16 tablenum, quint8 commandByte);
+	int findRoomTableRow(quint16 tablenum);
 
-  QListWidget *playerLists[6];
-  QLabel *playerNames[6];
-  QLabel *playerStatus[6];
-  const int PLAYERLIST_ROLE;
-  void writeHeaderData();
-  void fixHeaderLength();
-  QByteArray block;
-  QDataStream out;
-  void modifyPlayerLists(quint16 tablenum, QString player, int modification);
-  QGroupBox *gameBoardGroupBox;
-  bool gameStarted;
-QDialog *createTableDialogWindow;
+	QListWidget *playerLists[6];
+	QLabel *playerNames[6];
+	QLabel *playerStatus[6];
+	const int PLAYERLIST_ROLE, NUM_SOLUTIONS_ROLE, SOLUTIONS_ROLE, ALPHAGRAM_ROLE;
+	void writeHeaderData();
+	void fixHeaderLength();
+	QByteArray block;
+	QDataStream out;
+	void modifyPlayerLists(quint16 tablenum, QString player, int modification);
+	QGroupBox *gameBoardGroupBox;
+	bool gameStarted;
+	QDialog *createTableDialog;
+	QDialog *solutionsDialog;
 	QHash <QString, int> seats;
-	Ui::tableCreateForm ui;
-
+	Ui::tableCreateForm uiTable;
+	Ui::solutionsForm uiSolutions;
 	QString alphagrammizeString(QString);
 	QString shuffleString(QString);
+	QSet <QString> rightAnswers;
 
-public slots:
-  void submitSolutionLEContents();
-  void submitChatLEContents();
-  void readFromServer();
-  void displayError(QAbstractSocket::SocketError);
-  void serverDisconnection();
-  void toggleConnectToServer();
-  void writeUsernameToServer();
-  void sendPM(QListWidgetItem*);
-  void createNewRoom();
-  void leaveThisTable();
-  void joinTable();
-  void alphagrammizeWords();
-  void shuffleWords();
-  void giveUpOnThisGame();
+	public slots:
+		void submitSolutionLEContents();
+		void submitChatLEContents();
+		void readFromServer();
+		void displayError(QAbstractSocket::SocketError);
+		void serverDisconnection();
+		void toggleConnectToServer();
+		void writeUsernameToServer();
+		void sendPM(QListWidgetItem*);
+		void createNewRoom();
+		void leaveThisTable();
+		void joinTable();
+		void alphagrammizeWords();
+		void shuffleWords();
+		void giveUpOnThisGame();
+		void wordsWidgetItemClicked(QTableWidgetItem*);
 };
 
 
