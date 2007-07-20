@@ -264,7 +264,7 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 	guess = guess.toUpper();
 	if (guess == "")
 	  {
-	
+	    
 
 	  }
 	else
@@ -297,6 +297,7 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 		  }
 	      }
 	  }
+	qDebug() << " ->GUESS" << connData->username << guess;
 	
       }
       break;
@@ -309,7 +310,7 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 	tempList << QVariant(connData->username);
 	tempList << QVariant(chat);
 	writeToTable(tablenum, tempList, CHAT_SENT);
-	
+	qDebug() << " ->" << tablenum << connData->username << chat;
       }
       break;
     case 'u':
@@ -911,7 +912,7 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
   foreach (QTcpSocket* connection, connections)
     connection->write(block);
   
-
+  qDebug() <<" ->" << username << ":" << chattext;
 
 }
 
