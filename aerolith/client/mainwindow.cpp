@@ -821,8 +821,8 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			chatText->append("<font color=red>The game has started!</font>");
 			gameStarted = true;
 			rightAnswers.clear();
-			uiSolutions.solutionsTableWidget->clearContents();
-			uiSolutions.solutionsTableWidget->setRowCount(0);
+			//			uiSolutions.solutionsTableWidget->clearContents();
+			//uiSolutions.solutionsTableWidget->setRowCount(0);
 		}
 
 		break;
@@ -920,7 +920,10 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 					wordsWidget->item(i, j)->setData(ALPHAGRAM_ROLE, QVariant(alphagram));
 				}
 			}
+			uiSolutions.solutionsTableWidget->clearContents();
+			uiSolutions.solutionsTableWidget->setRowCount(0);
 			break;
+
 	case 'U':
 		// someone cried uncle
 		{
