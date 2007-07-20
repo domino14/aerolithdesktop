@@ -1,7 +1,7 @@
 message(generating makefile from jtclone.pro)
 TEMPLATE = app
 CONFIG += qt
-QT += network
+QT += network sql
 
 FORMS = tableCreateForm.ui solutionsForm.ui
 SOURCES += main.cpp mainwindow.cpp

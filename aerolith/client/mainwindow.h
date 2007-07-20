@@ -3,6 +3,7 @@
 
 #include <QtGui>
 #include <QtNetwork>
+#include <QtSql>
 #include "ui_tableCreateForm.h"
 #include "ui_solutionsForm.h"
 class MainWindow : public QMainWindow
@@ -61,6 +62,7 @@ private:
 	QString shuffleString(QString);
 	QSet <QString> rightAnswers;
 
+	QSqlDatabase wordDb;
 	public slots:
 		void submitSolutionLEContents();
 		void submitChatLEContents();

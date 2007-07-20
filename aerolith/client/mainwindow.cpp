@@ -7,7 +7,7 @@ ALPHAGRAM_ROLE(Qt::UserRole + 3),
 out(&block, QIODevice::WriteOnly)
 {
 
-	setWindowTitle("Aerolith");
+	setWindowTitle("Aerolith 0.1");
 	//QTabWidget *mainTabWidget = new QTabWidget;
 	//setCentralWidget(mainTabWidget);
 
@@ -251,12 +251,13 @@ out(&block, QIODevice::WriteOnly)
 		connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
 		connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
 
-		createTableDialog = new QDialog;
+		createTableDialog = new QDialog(this);
 		uiTable.setupUi(createTableDialog);
-		solutionsDialog = new QDialog;
+		solutionsDialog = new QDialog(this);
 		uiSolutions.setupUi(solutionsDialog);
 		uiSolutions.solutionsTableWidget->verticalHeader()->hide();
-
+		
+		solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
 
 		gameStarted = false;
 		connect(solutions, SIGNAL(clicked()), solutionsDialog, SLOT(show())); 
@@ -271,7 +272,19 @@ out(&block, QIODevice::WriteOnly)
 		QTime midnight(0, 0, 0);
 		qsrand(midnight.msecsTo(QTime::currentTime()));
 
+		if (QFile::exists(QDir::homePath()+"/.zyzzyva/lexicons/OWL2+LWL.db"))
+		{
+			chatText->append("<font color=red>A suitable Zyzzyva installation was found!</font>");	
+			wordDb = QSqlDatabase::addDatabase("QSQLITE");
+			wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
+			wordDb.open();
+		}
+		else
+		{
+			chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round.</font>");
+		}
 
+		//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
 }
 
 void MainWindow::writeHeaderData()
@@ -413,7 +426,7 @@ void MainWindow::readFromServer()
 				{
 					connectStatusLabel->setText("You have connected!");
 					gameStackedWidget->setCurrentIndex(0);
-					setWindowTitle(QString("Aerolith - logged in as ") + username);
+					setWindowTitle(QString("Aerolith 0.1 - logged in as ") + username);
 				}
 			}
 			break;
@@ -799,6 +812,29 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 					{
 						uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
 						QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
+						if (wordDb.isOpen())
+						{
+							QString backHooks, frontHooks, definition;
+							QSqlQuery query;
+							query.exec("select back_hooks from words where word='"+theseSols.at(i)+"'");
+							while (query.next())
+								backHooks = query.value(0).toString();
+							QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
+							uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);
+
+							query.exec("select front_hooks from words where word='"+theseSols.at(i)+"'");
+							while (query.next())
+								frontHooks = query.value(0).toString();
+							QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
+							uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
+
+							query.exec("select definition from words where word='"+theseSols.at(i)+"'");
+							while (query.next())
+								definition = query.value(0).toString();
+							QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
+							uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
+						}
+
 						if (!rightAnswers.contains(theseSols.at(i)))
 							wordItem->setForeground(colorBrushes[7]);
 						wordItem->setTextAlignment(Qt::AlignCenter);
@@ -807,7 +843,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 					}
 					uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
 				}
-
+				uiSolutions.solutionsTableWidget->resizeColumnsToContents();
 
 		}
 		break;
