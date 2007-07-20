@@ -106,6 +106,13 @@ out(&block, QIODevice::WriteOnly)
 		QPushButton *start = new QPushButton("Start");
 		exitTable = new QPushButton("Exit Table #");
 
+		solutions->setFocusPolicy(Qt::NoFocus);
+		alpha->setFocusPolicy(Qt::NoFocus);
+		shuffle->setFocusPolicy(Qt::NoFocus);
+		giveup->setFocusPolicy(Qt::NoFocus);
+		start->setFocusPolicy(Qt::NoFocus);
+		exitTable->setFocusPolicy(Qt::NoFocus);
+
 		QHBoxLayout *topSolutionLayout = new QHBoxLayout;
 		
 		topSolutionLayout->addStretch(1);
@@ -167,8 +174,11 @@ out(&block, QIODevice::WriteOnly)
 			playerListsLayout->addWidget(playerStatus[i], 2, i*2);
 			playerLists[i]->setFocusPolicy(Qt::NoFocus);
 		}
+#ifdef Q_OS_MAC
 		playerListsLayout->setRowMinimumHeight(1, 100);
-
+#else
+		playerListsLayout->setRowMinimumHeight(1, 150);
+#endif
 		QVBoxLayout *gameBoardLayout = new QVBoxLayout;
 		gameBoardLayout->addLayout(topSolutionLayout);
 		gameBoardLayout->addWidget(wordsWidget);
@@ -861,7 +871,12 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 						}
 
 						if (!rightAnswers.contains(theseSols.at(i)))
+						{
 							wordItem->setForeground(colorBrushes[7]);
+							QFont wordItemFont = wordItem->font();
+							wordItemFont.setBold(true);
+							wordItem->setFont(wordItemFont);
+						}
 						wordItem->setTextAlignment(Qt::AlignCenter);
 						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
 		
