@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 
 const quint16 MAGIC_NUMBER = 25345;
+const QString WindowTitle = "Aerolith 0.1.1";
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
 NUM_SOLUTIONS_ROLE(Qt::UserRole + 1),
 SOLUTIONS_ROLE(Qt::UserRole + 2),
@@ -8,7 +9,7 @@ ALPHAGRAM_ROLE(Qt::UserRole + 3),
 out(&block, QIODevice::WriteOnly)
 {
 
-	setWindowTitle("Aerolith 0.1");
+	setWindowTitle(WindowTitle);
 	//QTabWidget *mainTabWidget = new QTabWidget;
 	//setCentralWidget(mainTabWidget);
 
@@ -435,7 +436,7 @@ void MainWindow::readFromServer()
 				{
 					connectStatusLabel->setText("You have connected!");
 					gameStackedWidget->setCurrentIndex(0);
-					setWindowTitle(QString("Aerolith 0.1 - logged in as ") + username);
+					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 				}
 			}
 			break;
