@@ -4,7 +4,8 @@
 #include <QtSql>
 QList <QVariant> dummyList;
 
-
+const quint16 MAGIC_NUMBER = 25345; 
+const quint8 COUNTDOWN_TIMER_VAL = 3;
 MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
 {
   connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
@@ -44,7 +45,7 @@ void MainServer::writeHeaderData()
 {
   out.device()->seek(0);
   block.clear();
-  out << (quint16)25344;
+  out << (quint16)MAGIC_NUMBER;
   out << (quint16)0; // length    
 }
 
@@ -136,16 +137,19 @@ void MainServer::receiveMessage()
 	  // there are 4 bytes available. read them in!
 	  connData->in >> header;
 	  connData->in >> packetlength;
-	  if (header != (quint16)25344) // magic number
+	  // THIS IS OPEN TO ABUSE.  what if the user sends a packet thats > 2^16 bytes? packetlength will wrap around,
+	  // and when the reader tries to read more bytes than are available 'undefined behavior' occurs...
+	  connData->numBytesInPacket = packetlength;
+	  if (header != (quint16)MAGIC_NUMBER) // magic number
 	    {
 	      qDebug() << " wrong magic number: " << header << " packlength " << packetlength;
+	      writeToClient(socket, "You are using the wrong version of the aerolith client. <BR>Please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.", S_ERROR);
 	      socket->disconnectFromHost();
 	      return;
-	    }
-	  connData->numBytesInPacket = packetlength;
-	  
+	    }  
 	}
       
+    
       if (socket->bytesAvailable() < connData->numBytesInPacket)
 	return;
       
@@ -222,8 +226,9 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
   switch (subcommand)
     {
     case 'b':
-      if (table->gameStarted == false)
+      if (table->gameStarted == false && table->countingDown == false)
 	{
+
 	  bool startTheGame = true;
 	  
 	  QList <QVariant> tempList;
@@ -238,27 +243,15 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 		break;
 	      }
 	  
+	  
 	  if (startTheGame == true)
 	    {
-	      writeToTable(tablenum, dummyList, GAME_STARTED);
-	      
-	      // this seems like horrible overkill. there has to be a better way...
+	      table->countingDown = true;
+	      table->countdownTimerVal = 3;
+	      table->countdownTimer->start(1000);
 	      QList <QVariant> tempList;
-	      tempList << QVariant(table->timerVal);
-	      writeToTable(tablenum, tempList, TIMER_VALUE);
-	      
-	      
-	      // code for starting the game
-	      // steps:
-	      // 1. list should already be loaded when table was created
-	      // 2. send to everyone @ the table:
-	      //    - 45 alphagrams
-	      prepareTableAlphagrams(table);
-	      foreach (QString player, table->playerList)
-		sendUserCurrentAlphagrams(table, usernamesHash.value(player));
-	      
-	      table->timer->start(1000);
-	      table->gameStarted = true;
+	      tempList << QVariant(table->countdownTimerVal);
+	      writeToTable(table->tableNumber, tempList, TIMER_VALUE);  
 	    }
 	}
       break;
@@ -512,6 +505,7 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
 	  qDebug() << " need to kill table " << tablenum;
 	  tables.remove(tablenum);
 	  tmp->timer->deleteLater();
+	  tmp->countdownTimer->deleteLater();
 	  delete tmp; // delete this table data structure
 	  
 	  // write to all clients that table has ceased to exist!
@@ -610,12 +604,17 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   tmp->tempFileExists = false;
   tmp->cycleState = cycleState;
   tmp->timer = new QTimer();
+  tmp->countdownTimer = new QTimer();
+  tmp->countdownTimer->setProperty("tablenum", QVariant(tablenum));
   tmp->timer->setProperty("tablenum", QVariant(tablenum));
   tmp->gameStarted = false;
+  tmp->countingDown = false;
   connect(tmp->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
+  connect(tmp->countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
   tables.insert(tablenum, tmp);
-  tmp->timerVal = (quint16)tableTimer * 60;
-
+  tmp->tableTimerVal = (quint16)tableTimer * 60;
+  tmp->currentTimerVal = tmp->tableTimerVal;
+  tmp->countdownTimerVal = COUNTDOWN_TIMER_VAL;
   writeHeaderData();
   out << (quint8) 'J';
   out << (quint16) tablenum;
@@ -712,6 +711,7 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
   if (connData->loggedIn == true)
     {
       writeToClient(socket, "You are already logged in!", S_ERROR);
+      socket->disconnectFromHost();
       return;
     }
 
@@ -798,17 +798,61 @@ void MainServer::updateTimer()
   // figure out which one
   quint16 tablenum = (quint16) timer->property("tablenum").toInt();
   tableData *tmp = tables.value(tablenum);
-  tmp->timerVal--;
+  tmp->currentTimerVal--;
 
   QList <QVariant> tempList;
-  tempList << QVariant(tmp->timerVal);
+  tempList << QVariant(tmp->currentTimerVal);
   writeToTable(tablenum, tempList, TIMER_VALUE);
 
-  if (tmp->timerVal == 0)
+  if (tmp->currentTimerVal == 0)
     {
       endGame(tmp);
     }
 
+}
+
+void MainServer::updateCountdownTimer()
+{
+  QTimer* timer = static_cast <QTimer*> (sender());
+  // corresponds to a specific table
+  // figure out which one
+  quint16 tablenum = (quint16) timer->property("tablenum").toInt();
+  tableData *tmp = tables.value(tablenum);
+  tmp->countdownTimerVal--;
+
+  QList <QVariant> tempList;
+  tempList << QVariant(tmp->countdownTimerVal);
+  writeToTable(tablenum, tempList, TIMER_VALUE);
+
+  if (tmp->countdownTimerVal == 0)
+    {
+      startGame(tmp);
+   }
+}
+
+void MainServer::startGame(tableData* table)
+{
+  table->countingDown = false;
+  table->countdownTimer->stop();
+  writeToTable(table->tableNumber, dummyList, GAME_STARTED);
+  
+  // this seems like horrible overkill. there has to be a better way...
+  QList <QVariant> tempList;
+  tempList << QVariant(table->tableTimerVal);
+  writeToTable(table->tableNumber, tempList, TIMER_VALUE);
+  
+  
+  // code for starting the game
+  // steps:
+  // 1. list should already be loaded when table was created
+  // 2. send to everyone @ the table:
+  //    - 45 alphagrams
+  prepareTableAlphagrams(table);
+  foreach (QString player, table->playerList)
+    sendUserCurrentAlphagrams(table, usernamesHash.value(player));
+  table->currentTimerVal = table->tableTimerVal;
+  table->timer->start(1000);
+  table->gameStarted = true;
 }
 
 void MainServer::endGame(tableData* tmp)
@@ -858,7 +902,7 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
   QString username = connData->username;
   QString chattext;
   connData->in >> chattext;
-
+  
   writeHeaderData();  
   out << (quint8) 'C';
   out << username;
