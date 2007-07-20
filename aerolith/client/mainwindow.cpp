@@ -65,8 +65,11 @@ out(&block, QIODevice::WriteOnly)
 		wordsWidget->setRowHeight(i, 20);
 
 	QTableWidgetItem *tableItem[9][5];
+#ifdef Q_OS_MAC
 	QFont wordFont("Arial Black", 16, QFont::Normal);
-
+#else
+	QFont wordFont("Arial Black", 12, QFont::Normal);
+#endif
 
 	colorBrushes[0].setColor(Qt::black);
 	colorBrushes[1].setColor(Qt::darkGreen);
