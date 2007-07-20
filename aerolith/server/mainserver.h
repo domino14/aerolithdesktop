@@ -20,7 +20,7 @@ private slots:
  void removeConnection();
  void receiveMessage();
  void updateTimer();
- 
+ void updateCountdownTimer();
 private:
  QSqlDatabase wordDb;
  
@@ -61,8 +61,12 @@ private:
    quint8 maxPlayers;
    bool canJoin; 
    bool gameStarted;
+   bool countingDown;
    QTimer *timer;
-   quint16 timerVal;
+   QTimer *countdownTimer;
+   quint16 currentTimerVal;
+   quint16 tableTimerVal;
+   quint8 countdownTimerVal;
    quint16 totalNumberQuestions;
    
    quint8 cycleState; // holds value of cycle radio button
@@ -126,7 +130,7 @@ private:
  QByteArray block;
  QDataStream out;
  void endGame(tableData*);
-
+ void startGame(tableData*);
  void writeToTable(quint16, QList <QVariant>, tablePacketHeaderStatesEnum);
 };
 
