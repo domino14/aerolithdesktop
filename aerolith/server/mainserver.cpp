@@ -1,8 +1,8 @@
+
 #include "mainserver.h"
 #include <QtDebug>
-
+#include <QtSql>
 QList <QVariant> dummyList;
-const int GAME_TIMER_VALUE = 10;
 
 
 MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
@@ -23,12 +23,21 @@ MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
   while (!thisIn.atEnd())
     {
       QString line = thisIn.readLine();
+      if (!line.contains("@")) break;
       QStringList tmp = line.split("@");
-      wordLists.insert(tmp.at(1), tmp.at(0));
+      wordLists.insert(tmp.at(1), "../listmaker/lists/" + tmp.at(0)); // key is the DESCRIPTIVE name
+      // value is the FILENAME
       orderedWordLists << tmp.at(1);
     }
 
   listFile.close();
+  QTime midnight(0, 0, 0);
+  qsrand(midnight.msecsTo(QTime::currentTime()));
+
+  //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
+  //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
+  //wordDb.open();
+
 }
 
 void MainServer::writeHeaderData()
@@ -56,7 +65,6 @@ void MainServer::addConnection()
   connData->numBytesInPacket = 0;
   connData->in.setDevice(connection);
   connData->in.setVersion(QDataStream::Qt_4_2);
-  connData->tablenum = 0; // bad table num
   connectionParameters.insert(connection, connData);
   connect(connection, SIGNAL(disconnected()), this, SLOT(removeConnection()));
   connect(connection, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
@@ -70,31 +78,39 @@ void MainServer::removeConnection()
   qDebug("remove connection");
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender()); // sender violates modularity
   // but many signals are connected to this slot
-  connectionData* connData = connectionParameters.take(socket);
+  connectionData* connData = connectionParameters.value(socket);
   QString username = connData->username;
   if (username != "")
     {
-      if (connData->tablenum != 0)
+      quint16 tablenum = playerDataHash.value(username).tablenum;
+      if (tablenum != 0)
       	{
-	  qDebug() << username << " is at table " << connData->tablenum << " so we have to remove him.";
-	  removePlayerFromTable(socket, connData, connData->tablenum);
+	  qDebug() << username << " is at table " << tablenum << " so we have to remove him.";
+	  removePlayerFromTable(socket, connData, tablenum);
 	}
       else
 	qDebug() << username << " is not at any tables.";
+
       foreach (QTcpSocket* connection, connections)
 	{
 	  writeToClient(connection, username, S_USERLOGGEDOUT);
 	}
       
 
-      usernamesHash.take(username);
+      usernamesHash.remove(username);
     }
   
   connections.removeAll(socket);
   socket->deleteLater();
-  delete connData;
+
+  connectionParameters.remove(socket);
+
+  playerDataHash.remove(username);
+
   qDebug("connection removed");
   qDebug() << " Number of connections: " << connections.size();
+  qDebug() << " Number of player data structures: " << playerDataHash.size();
+  qDebug() << " Number of connection data structures: " << connectionParameters.size();
   qDebug() << " Number of tables: " << tables.size();
 }
 
@@ -154,10 +170,6 @@ void MainServer::receiveMessage()
 	  // chat
 	  processChat(socket, connData);
 	  break;
-	case 'g':
-	  // game guess
-	  processGameGuess(socket, connData);
-	  break;
 	case 'p':
 	  // private message
 	  processPrivateMessage(socket, connData);
@@ -209,52 +221,251 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 
   switch (subcommand)
     {
+    case 'b':
+      if (table->gameStarted == false)
+	{
+	  bool startTheGame = true;
+	  
+	  QList <QVariant> tempList;
+	  tempList << QVariant(connData->username);
+	  writeToTable(tablenum, tempList, READY_TO_BEGIN);
+	  playerDataHash[connData->username].readyToPlay = true;
+	  
+	  foreach (QString player, table->playerList)
+	    if (playerDataHash.value(player).readyToPlay == false)
+	      {
+		startTheGame = false;
+		break;
+	      }
+	  
+	  if (startTheGame == true)
+	    {
+	      writeToTable(tablenum, dummyList, GAME_STARTED);
+	      
+	      // this seems like horrible overkill. there has to be a better way...
+	      QList <QVariant> tempList;
+	      tempList << QVariant(table->timerVal);
+	      writeToTable(tablenum, tempList, TIMER_VALUE);
+	      
+	      
+	      // code for starting the game
+	      // steps:
+	      // 1. list should already be loaded when table was created
+	      // 2. send to everyone @ the table:
+	      //    - 45 alphagrams
+	      prepareTableAlphagrams(table);
+	      foreach (QString player, table->playerList)
+		sendUserCurrentAlphagrams(table, usernamesHash.value(player));
+	      
+	      table->timer->start(1000);
+	      table->gameStarted = true;
+	    }
+	}
+      break;
     case 's':
       // guess from solution box
       {
 	QString guess;
 	connData->in >> guess;
 	//if (guess == "")
+	guess = guess.toUpper();
 	if (guess == "")
 	  {
-	    
-	    if (table->gameStarted == false)
+	
+
+	  }
+	else
+	  {
+	    if (table->gameStarted)
 	      {
-		writeToTable(tablenum, dummyList, GAME_STARTED);
-		
-		// this seems like horrible overkill. there has to be a better way...
-		table->timerVal = GAME_TIMER_VALUE;
-		QList <QVariant> tempList;
-		tempList << QVariant(table->timerVal);
-		writeToTable(tablenum, tempList, TIMER_VALUE);
-
-		
-		 // code for starting the game
-		 // steps:
-		 // 1. list should already be loaded when table was created
-		 // 2. send to everyone @ the table:
-		 //    - 45 alphagrams
-
-
-		table->timer->start(1000);
-		table->gameStarted = true;
+		if (table->gameSolutions.contains(guess))
+		  {
+		    QString alphagram = table->gameSolutions.value(guess);
+		    table->gameSolutions.remove(guess);
+		    quint8 rowIndex = 0, columnIndex = 0;
+		    for (quint8 i = 0; i < 45; i++)
+		      if (table->alphagrams.at(i).alphagram == alphagram)
+			{
+			  table->alphagrams[i].numNotYetSolved--;
+			  if (table->alphagrams.at(i).numNotYetSolved == 0) table->alphagrams[i].alphagram = "";
+			  rowIndex = table->alphagrams.at(i).i;
+			  columnIndex = table->alphagrams.at(i).j;
+			  break;
+			}
+		    
+		    QList <QVariant> tempList;
+		    tempList << QVariant(connData->username);
+		    tempList << QVariant(guess);
+		    tempList << QVariant(rowIndex);
+		    tempList << QVariant(columnIndex);
+		    writeToTable(tablenum, tempList, GUESS_RIGHT);
+		    
+		    if (table->gameSolutions.isEmpty()) endGame(table);
+		  }
 	      }
-
 	  }
 	
       }
-
-
       break;
+    case 'c':
+      // chat
+      {
+	QString chat;
+	connData->in >> chat;
+	QList <QVariant> tempList;
+	tempList << QVariant(connData->username);
+	tempList << QVariant(chat);
+	writeToTable(tablenum, tempList, CHAT_SENT);
+	
+      }
+      break;
+    case 'u':
+      // uncle
+      {
+	// user gave up.
+	if (table->gameStarted == true)
+	  {
+	    bool giveUp = true;
+	    
+	    QList <QVariant> tempList;
+	    tempList << QVariant(connData->username);
+	    writeToTable(tablenum, tempList, GAVE_UP);
+	    playerDataHash[connData->username].gaveUp = true;
+	    foreach (QString player, table->playerList)
+	      if (playerDataHash.value(player).gaveUp == false)
+		{
+		  giveUp = false;
+		  break;
+		}
+	    if (giveUp == true) endGame(table);
+	    
+	  }
+	
+      }
+      break;
+    }
+}
+void MainServer::prepareTableAlphagrams(tableData* table)
+{
+  // load alphagrams into the gamesolutions hash and the alphagrams list
+  
+
+  if (table->cycleState == 0) table->tempFileExists = false;
+
+  if (table->tempFileExists == false)
+    {
+      table->inFile.close();
+      table->outFile.close();
+      // generate missed file
+      table->outFile.setFileName(QString("missed%1").arg(table->tableNumber));
+      table->outFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      table->missedFileWriter.setDevice(&(table->outFile));
+      table->missedFileWriter.seek(0);
 
 
-
-
+      qDebug() << "before generating temp file";
+      QFile inFile(wordLists.value(table->wordListDescriptor));
+      QFile outFile(QString("tmp%1").arg(table->tableNumber));
+      QTextStream inStream(&inFile);
+      QTextStream outStream(&outFile);
+      inFile.open(QIODevice::ReadOnly | QIODevice::Text);
+      outFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      QStringList fileContents;
+      while (!inStream.atEnd())
+	fileContents << inStream.readLine().trimmed();
+      inFile.close();
+      int index;
+      while (fileContents.size() > 0)
+	{
+	  index = qrand() % fileContents.size();
+	  outStream << fileContents.at(index) << "\n";
+	  fileContents.removeAt(index);
+	}
+      outFile.close();
+      table->tempFileExists = true;
+      qDebug() << "after generating temp file";
+      table->inFile.setFileName(QString("tmp%1").arg(table->tableNumber));
+      table->alphagramReader.setDevice(&(table->inFile));
+      table->inFile.open(QIODevice::ReadWrite | QIODevice::Text);
+      table->alphagramReader.seek(0);
     }
 
+  table->gameSolutions.clear();
+  table->alphagrams.clear();
+
+  QStringList lineList;
+  QString line;
+
+  for (quint8 i = 0; i < 9; i++)
+    for (quint8 j = 0; j < 5; j++)
+      {
+	gameData thisGameData;
+	thisGameData.i = i;
+	thisGameData.j = j;
+	if (table->alphagramReader.atEnd())
+	  {
+	    thisGameData.alphagram = "";
+	    thisGameData.numNotYetSolved = 0;
+	  }
+	else
+	  {
+	    line = table->alphagramReader.readLine();
+	    lineList = line.split(" ");
+	    thisGameData.alphagram = lineList.at(0);
+	    thisGameData.numNotYetSolved = (quint8)(lineList.size()-1);
+	    for (int k = 1; k < lineList.size(); k++)
+	      {
+		table->gameSolutions.insert(lineList.at(k), lineList.at(0));
+		thisGameData.solutions << lineList.at(k);
+	      }
+	  }
+
+	table->alphagrams.append(thisGameData);
+      }
+  
+
+  if (table->cycleState == 1 && table->alphagramReader.atEnd())
+    {
+      table->inFile.close();
+      table->inFile.remove();
+      table->outFile.close();
+      table->outFile.copy(QString("tmp%1").arg(table->tableNumber));
+      table->outFile.remove();
+
+      table->inFile.setFileName(QString("tmp%1").arg(table->tableNumber));
+      table->outFile.setFileName(QString("missed%1").arg(table->tableNumber));
+      table->alphagramReader.setDevice(&(table->inFile));
+      table->missedFileWriter.setDevice(&(table->outFile));
+      table->inFile.open(QIODevice::ReadOnly | QIODevice::Text);
+      table->outFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      
+
+      // TODO
+      //
+      // CLOSE table->inFile
+      // COPY missed%1 to tmp%1
+      // repeat code above to load the file into memory, shuffle, etc
+
+    }
 }
 
+void MainServer::sendUserCurrentAlphagrams(tableData* table, QTcpSocket* socket)
+{
+  writeHeaderData();      
+  out << (quint8) '+';
+  out << table->tableNumber;
+  out << (quint8) 'W';
+ 
+  for (int i = 0; i < 45; i++)
+    {
+      out << table->alphagrams.at(i).alphagram;
+      out << table->alphagrams.at(i).numNotYetSolved;
+      out << table->alphagrams.at(i).solutions;
+    }
 
+  fixHeaderLength();  
+  socket->write(block);        
+}
 
 
 void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
@@ -266,17 +477,16 @@ void MainServer::processLeftTable(QTcpSocket* socket, connectionData* connData)
 
   removePlayerFromTable(socket, connData, tablenum);
   
-  //  connData->tablenum = 0;      
 
 }
 
 void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connData, quint16 tablenum)
 {
   QString username = connData->username;
-  if (connData->tablenum != tablenum)
+  if (playerDataHash.value(username).tablenum != tablenum)
     {
       
-      qDebug() << "A SERIOUS ERROR OCCURRED " << username << connData->tablenum << tablenum;
+      qDebug() << "A SERIOUS ERROR OCCURRED " << username << playerDataHash.value(username).tablenum << tablenum;
 
     }
   // this functions removes the player from the table
@@ -311,13 +521,20 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
 	  fixHeaderLength();
 	  
 	  foreach (QTcpSocket* connection, connections)
-	    connection->write(block);
+	    {
+	      connection->write(block);
+	      qDebug() << "wrote that we Killed table " << tablenum << " to " << connectionParameters.value(connection)->username;
+	    }
 	  // now we must delete the temporary files!
 	  // TODO temp file system
-	  qDebug() << "wrote that we Killed table " << tablenum;
+	  
 	}
       else
-	tmp->canJoin = true;
+	{
+	  tmp->canJoin = true;
+	  foreach (QString thisname, tmp->playerList)
+	    playerDataHash[thisname].readyToPlay = false;
+	}
     } 
   else
     {
@@ -327,8 +544,9 @@ void MainServer::removePlayerFromTable(QTcpSocket* socket, connectionData* connD
     
     }
 
-  connData->tablenum = 0;
-
+  playerDataHash[username].tablenum = 0;
+  playerDataHash[username].readyToPlay = false;
+  playerDataHash[username].gaveUp = false;
 }
 
 void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
@@ -344,10 +562,10 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   connData->in >> wordListDescriptor;
   connData->in >> maxPlayers;
   
-  quint8 cycleState, alphagramState;
+  quint8 cycleState;
   connData->in >> cycleState;
-  connData->in >> alphagramState;
-  
+  quint8 tableTimer;
+  connData->in >> tableTimer;
   while (!foundFreeNumber && tablenum < 1000)
     {
       tablenum++;
@@ -377,23 +595,27 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   foreach (QTcpSocket* connection, connections)
     connection->write(block);  
 
-  connData->tablenum = tablenum;
+  playerDataHash[connData->username].tablenum = tablenum;
+  playerDataHash[connData->username].readyToPlay = false;
+  playerDataHash[connData->username].gaveUp = false;
+
   tableData *tmp = new tableData;
+
   tmp->tableNumber = tablenum;
   tmp->wordListDescriptor = wordListDescriptor;
   tmp->maxPlayers = maxPlayers;
   tmp->playerList << connData->username;
   if (maxPlayers == 1) tmp->canJoin = false;
   else tmp->canJoin = true;
+  tmp->tempFileExists = false;
   tmp->cycleState = cycleState;
-  tmp->alphagramState = alphagramState;
   tmp->timer = new QTimer();
   tmp->timer->setProperty("tablenum", QVariant(tablenum));
-    tmp->gameStarted = false;
-
+  tmp->gameStarted = false;
   connect(tmp->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
   tables.insert(tablenum, tmp);
-  
+  tmp->timerVal = (quint16)tableTimer * 60;
+
   writeHeaderData();
   out << (quint8) 'J';
   out << (quint16) tablenum;
@@ -444,13 +666,19 @@ void MainServer::processJoinTable(QTcpSocket* socket, connectionData* connData)
   writeHeaderData();
   out << (quint8) 'J';
   out << (quint16) tablenum;
-  out << connData->username;
+  out << username;
   fixHeaderLength();
   foreach (QTcpSocket* connection, connections)
     connection->write(block);
   
-  connData->tablenum = tablenum;
-
+  playerDataHash[username].tablenum = tablenum;
+  playerDataHash[username].readyToPlay = false;
+  playerDataHash[username].gaveUp = false;
+  if (tmp->gameStarted)
+    {
+      sendUserCurrentAlphagrams(tmp, socket);
+      //sendUser
+    }
 }
 
 void MainServer::processPrivateMessage(QTcpSocket* socket, connectionData* connData)
@@ -508,16 +736,23 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
     {
       // write to each socket that "username" has logged in
       writeToClient(connection, username, S_USERLOGGEDIN);
-
-
       if (connection != socket)
 	{
 	  // write to THIS socket that every other username has logged in.
 	  writeToClient(socket, connectionParameters.value(connection)->username, S_USERLOGGEDIN);
-	  
-
 	}
     }
+
+  // create a new playerData
+  playerData tempPD;
+  tempPD.username = username;
+  tempPD.readyToPlay = false;
+  tempPD.gaveUp = false;
+  tempPD.score = 0;
+  tempPD.tablenum = 0;
+
+  playerDataHash.insert(username, tempPD);
+  
 
   QList <tableData*> tableList= tables.values();
 
@@ -556,14 +791,6 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
     }
 }
 
-void MainServer::processGameGuess(QTcpSocket* socket, connectionData* connData)
-{
-  // QString ;
-  // connData->in >> username;
-  //qDebug() << "Login: " << username;
-
-}
-
 void MainServer::updateTimer()
 {
   QTimer* timer = static_cast <QTimer*> (sender());
@@ -579,12 +806,49 @@ void MainServer::updateTimer()
 
   if (tmp->timerVal == 0)
     {
-      tmp->timer->stop();
-      tmp->gameStarted = false;
-      // TODO here is code for the game ending
-      // send game ended to everyone, etc.
-      writeToTable(tablenum, dummyList, GAME_ENDED);
+      endGame(tmp);
     }
+
+}
+
+void MainServer::endGame(tableData* tmp)
+{
+  tmp->timer->stop();
+  tmp->gameStarted = false;
+  // TODO here is code for the game ending
+  // send game ended to everyone, etc.
+  writeToTable(tmp->tableNumber, dummyList, GAME_ENDED);
+  QList <QVariant> tempList;
+  tempList << QVariant(0);
+  writeToTable(tmp->tableNumber, tempList, TIMER_VALUE);
+
+  foreach (QString username, tmp->playerList)
+    {
+      playerDataHash[username].readyToPlay = false;
+      playerDataHash[username].gaveUp = false;
+    }
+
+  // if in cycle mode, update list
+  if (tmp->cycleState)
+    {
+      for (int i = 0; i < 45; i++)
+	{
+	  if (tmp->alphagrams.at(i).alphagram != "")
+	    {
+	      // this one has not been solved!
+	      
+	      tmp->missedFileWriter << tmp->alphagrams.at(i).alphagram;
+	      for (int j = 0; j < tmp->alphagrams.at(i).solutions.size(); j++)
+		tmp->missedFileWriter << " " << tmp->alphagrams.at(i).solutions.at(j);
+	      tmp->missedFileWriter << "\n";
+
+	      qDebug() << "wrote" << tmp->alphagrams.at(i).alphagram << 
+		tmp->alphagrams.at(i).solutions << " to missed file.";
+	    }
+	}
+
+    }
+
 
 }
 
@@ -607,7 +871,7 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
 
 }
 
-void MainServer::writeToTable(quint16 tablenum, QList <QVariant> parameterList, packetHeaderStatesEnum type)
+void MainServer::writeToTable(quint16 tablenum, QList <QVariant> parameterList, tablePacketHeaderStatesEnum type)
 {  
   tableData* table = tables.value(tablenum);
 
@@ -626,10 +890,24 @@ void MainServer::writeToTable(quint16 tablenum, QList <QVariant> parameterList, 
       break;
 
     case CHAT_SENT:
-      
+      {
+	QString username = parameterList.at(0).toString();
+	QString chat = parameterList.at(1).toString();
+	out << (quint8) 'C';
+	out << username;
+	out << chat;
+
+      }
       break;
       
     case GUESS_RIGHT:
+      {
+	QString username = parameterList.at(0).toString();
+	QString guess = parameterList.at(1).toString();
+	quint8 row = parameterList.at(2).toInt();
+	quint8 column = parameterList.at(3).toInt();
+	out << (quint8)'A' << username << guess << row << column;
+      }
       
 
       break;
@@ -637,6 +915,15 @@ void MainServer::writeToTable(quint16 tablenum, QList <QVariant> parameterList, 
       out << (quint8) 'T';
       out << (quint16) parameterList.at(0).toInt();
 
+      break;
+    case READY_TO_BEGIN:
+      out << (quint8)'B';
+      out << parameterList.at(0).toString(); 
+      break;
+
+    case GAVE_UP:
+      out << (quint8)'U';
+      out << parameterList.at(0).toString();
       break;
     }
 
