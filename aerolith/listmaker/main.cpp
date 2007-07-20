@@ -99,7 +99,7 @@ void splitLists(QString filename)
 void sqlInitializer()
 {
   db = QSqlDatabase::addDatabase("QSQLITE");
-  db.setDatabaseName("/home/cesar/.zyzzyva/lexicons/OWL2+LWL.db");
+  db.setDatabaseName(QDir::homePath()+"/.zyzzyva/lexicons/OWL2+LWL.db");
   db.open();
 
 }
