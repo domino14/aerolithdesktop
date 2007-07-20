@@ -92,7 +92,7 @@ out(&block, QIODevice::WriteOnly)
 		wordsWidget->setFocusPolicy(Qt::NoFocus);
 		connect(wordsWidget, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
 		// solution box
-		QLabel *solutionLabel = new QLabel("Guess:");
+	       	QLabel *solutionLabel = new QLabel("Guess:");
 		solutionLE = new QLineEdit;
 		solutionLE->setFixedWidth(100);
 		solutionLE->setMaxLength(15);
@@ -102,7 +102,14 @@ out(&block, QIODevice::WriteOnly)
 		QPushButton *giveup = new QPushButton("Give up");
 		QPushButton *start = new QPushButton("Start");
 		exitTable = new QPushButton("Exit Table #");
-		QHBoxLayout *solutionLayout = new QHBoxLayout;
+
+		QHBoxLayout *topSolutionLayout = new QHBoxLayout;
+		
+		topSolutionLayout->addStretch(1);
+		topSolutionLayout->addWidget(giveup);
+		topSolutionLayout->addSpacing(50);
+		topSolutionLayout->addWidget(exitTable);
+		QHBoxLayout *bottomSolutionLayout = new QHBoxLayout;
 		/*		timerDial = new QDial();
 		timerDial->setMaximum(300);
 		timerDial->setMinimum(0);
@@ -112,17 +119,17 @@ out(&block, QIODevice::WriteOnly)
 		timerDial = new QLabel;
 		timerDial->setFixedWidth(30);
 		timerDial->setAlignment(Qt::AlignCenter);
-		solutionLayout->addWidget(solutionLabel);
-		solutionLayout->addWidget(solutionLE);
-		solutionLayout->addStretch(1);
-		solutionLayout->addWidget(timerDial);
-		solutionLayout->addWidget(start);
-		solutionLayout->addWidget(solutions);
-		solutionLayout->addWidget(alpha);
-		solutionLayout->addWidget(shuffle);
-		solutionLayout->addSpacing(50);
-		solutionLayout->addWidget(giveup);
-		solutionLayout->addWidget(exitTable);
+		bottomSolutionLayout->addWidget(solutionLabel);
+		bottomSolutionLayout->addWidget(solutionLE);
+		bottomSolutionLayout->addStretch(1);
+		bottomSolutionLayout->addWidget(timerDial);
+		bottomSolutionLayout->addWidget(start);
+		bottomSolutionLayout->addWidget(solutions);
+		bottomSolutionLayout->addWidget(alpha);
+		bottomSolutionLayout->addWidget(shuffle);
+		//solutionLayout->addSpacing(50);
+		//solutionLayout->addWidget(giveup);
+		//solutionLayout->addWidget(exitTable);
 		
 		connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
 		connect(alpha, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
@@ -139,7 +146,7 @@ out(&block, QIODevice::WriteOnly)
 			playerNames[i]->setFixedWidth(120);
 			playerLists[i] = new QListWidget();
 			playerLists[i]->setFixedWidth(120);
-			playerLists[i]->setMinimumHeight(200);
+			playerLists[i]->setMinimumHeight(100);
 			playerLists[i]->setFrameShape(QFrame::Box);
 
 			playerStatus[i] = new QLabel("");
@@ -157,12 +164,13 @@ out(&block, QIODevice::WriteOnly)
 			playerListsLayout->addWidget(playerStatus[i], 2, i*2);
 			playerLists[i]->setFocusPolicy(Qt::NoFocus);
 		}
-		playerListsLayout->setRowMinimumHeight(1, 200);
+		playerListsLayout->setRowMinimumHeight(1, 100);
 
 		QVBoxLayout *gameBoardLayout = new QVBoxLayout;
+		gameBoardLayout->addLayout(topSolutionLayout);
 		gameBoardLayout->addWidget(wordsWidget);
 		gameBoardLayout->addSpacing(10);
-		gameBoardLayout->addLayout(solutionLayout);
+		gameBoardLayout->addLayout(bottomSolutionLayout);
 		gameBoardLayout->addSpacing(10);
 		gameBoardLayout->addLayout(playerListsLayout);
 		gameBoardGroupBox->setLayout(gameBoardLayout);
