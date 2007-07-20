@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 
+const quint16 MAGIC_NUMBER = 25345;
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
 NUM_SOLUTIONS_ROLE(Qt::UserRole + 1),
 SOLUTIONS_ROLE(Qt::UserRole + 2),
@@ -63,7 +64,7 @@ out(&block, QIODevice::WriteOnly)
 		wordsWidget->setRowHeight(i, 20);
 
 	QTableWidgetItem *tableItem[9][5];
-	QFont wordFont("Times", 12, QFont::Bold);
+	QFont wordFont("Arial Black", 16, QFont::Normal);
 
 
 	colorBrushes[0].setColor(Qt::black);
@@ -87,7 +88,7 @@ out(&block, QIODevice::WriteOnly)
 		wordsWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 		wordsWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 		wordsWidget->setFixedSize(752,182);	// this feels extremely cheap and i hate it but it seems to work 
-
+		wordsWidget->setFocusPolicy(Qt::NoFocus);
 		connect(wordsWidget, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
 		// solution box
 		QLabel *solutionLabel = new QLabel("Guess:");
@@ -98,21 +99,23 @@ out(&block, QIODevice::WriteOnly)
 		QPushButton *alpha = new QPushButton("Alpha");
 		QPushButton *shuffle = new QPushButton("Shuffle");
 		QPushButton *giveup = new QPushButton("Give up");
+		QPushButton *start = new QPushButton("Start");
 		exitTable = new QPushButton("Exit Table #");
 		QHBoxLayout *solutionLayout = new QHBoxLayout;
-
-		timerDial = new QDial();
+		/*		timerDial = new QDial();
 		timerDial->setMaximum(300);
 		timerDial->setMinimum(0);
 		timerDial->setValue(0);
 		timerDial->setNotchesVisible(true);
-		timerDial->setEnabled(false);
-
-
+		timerDial->setEnabled(false);*/
+		timerDial = new QLabel;
+		timerDial->setFixedWidth(30);
+		timerDial->setAlignment(Qt::AlignCenter);
 		solutionLayout->addWidget(solutionLabel);
 		solutionLayout->addWidget(solutionLE);
 		solutionLayout->addStretch(1);
 		solutionLayout->addWidget(timerDial);
+		solutionLayout->addWidget(start);
 		solutionLayout->addWidget(solutions);
 		solutionLayout->addWidget(alpha);
 		solutionLayout->addWidget(shuffle);
@@ -124,8 +127,9 @@ out(&block, QIODevice::WriteOnly)
 		connect(alpha, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
 		connect(shuffle, SIGNAL(clicked()), this, SLOT(shuffleWords()));
 		connect(giveup, SIGNAL(clicked()), this, SLOT(giveUpOnThisGame()));
+		connect(start, SIGNAL(clicked()), this, SLOT(submitReady()));
 		// Players box
-
+		
 		QGridLayout *playerListsLayout = new QGridLayout;
 		for (int i = 0; i < 6; i++)
 		{
@@ -140,16 +144,17 @@ out(&block, QIODevice::WriteOnly)
 			playerStatus[i] = new QLabel("");
 			playerStatus[i]->setFixedWidth(120);
 			playerStatus[i]->setAlignment(Qt::AlignHCenter);
-
-			playerLists[i]->hide();
-			playerNames[i]->hide();
-			playerStatus[i]->hide();
-
+			if (i != 0)
+			  {
+			    playerLists[i]->hide();
+			    playerNames[i]->hide();
+			    playerStatus[i]->hide();
+			  }
 			playerListsLayout->addWidget(playerNames[i], 0, i*2);
 			playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
 			playerListsLayout->addWidget(playerLists[i], 1, i*2);
 			playerListsLayout->addWidget(playerStatus[i], 2, i*2);
-
+			playerLists[i]->setFocusPolicy(Qt::NoFocus);
 		}
 		playerListsLayout->setRowMinimumHeight(1, 200);
 
@@ -206,7 +211,7 @@ out(&block, QIODevice::WriteOnly)
 
 		// chat related stuff
 		chatLE = new QLineEdit;
-		chatLE->setMaxLength(500);
+		chatLE->setMaxLength(300);
 		chatText = new QTextEdit;
 		chatText->setReadOnly(true);
 		QVBoxLayout *chatLayout = new QVBoxLayout();
@@ -224,7 +229,7 @@ out(&block, QIODevice::WriteOnly)
 		chatLayout->addLayout(chatBoxLayout);
 		chatGroupBox->setLayout(chatLayout);
 		connect(peopleConnected, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
-
+		
 		QVBoxLayout *overallGameBoardLayout = new QVBoxLayout;
 		overallGameBoardLayout->addWidget(gameStackedWidget);
 		overallGameBoardLayout->setAlignment(gameStackedWidget, Qt::AlignHCenter);
@@ -233,7 +238,8 @@ out(&block, QIODevice::WriteOnly)
 		centralWidget->setLayout(overallGameBoardLayout);
 		//mainTabWidget->addTab(gameBoardWidget, "Game Board");
 		//gameBoardGroupBox->setFixedWidth(800);
-
+		chatText->setFocusPolicy(Qt::NoFocus);
+		peopleConnected->setFocusPolicy(Qt::NoFocus);
 
 		//mainTabWidget->setTabEnabled(1, false);
 		chatText->document()->setMaximumBlockCount(5000);  // at most 5000 newlines.
@@ -283,6 +289,9 @@ out(&block, QIODevice::WriteOnly)
 		{
 			chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round.</font>");
 		}
+		setTabOrder(solutionLE, chatLE);
+		setTabOrder(chatLE, solutionLE);
+
 
 		//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
 }
@@ -291,7 +300,7 @@ void MainWindow::writeHeaderData()
 {
 	out.device()->seek(0);
 	block.clear();
-	out << (quint16)25344;	// magic number
+	out << (quint16)MAGIC_NUMBER;	// magic number
 	out << (quint16)0; // length 
 }
 
@@ -395,11 +404,11 @@ void MainWindow::readFromServer()
 
 			in >> header;
 			in >> packetlength;
-			if (header != (quint16)25344) // magic number
+			if (header != (quint16)MAGIC_NUMBER) // magic number
 			{
-				QMessageBox::information(this, "aerolith", QString("wrong magic number: %1").arg(header));
-				commsSocket->disconnectFromHost();	
-				return;
+			  chatText->append("Wrong magic number (you have the wrong version of the client)");
+			  //				commsSocket->disconnectFromHost();	
+			  //				return;
 			}
 			blockSize = packetlength;
 
@@ -496,7 +505,7 @@ void MainWindow::readFromServer()
 					int row = findRoomTableRow(tablenum);
 					QString wList = roomTable->item(row, 1)->text();
 					gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
-					timerDial->setValue(0);
+					timerDial->setText("0");
 					for (int i = 0; i < 6; i++)
 					{
 						playerNames[i]->setText("");
@@ -683,6 +692,7 @@ void MainWindow::createNewRoom()
 	uiTable.existingRbo->setChecked(true);
 	uiTable.userRbo->setEnabled(false);
 	uiTable.playersSpinBox->setValue(1);
+	uiTable.timerSpinBox->setValue(4);
 	int retval = createTableDialog->exec();
 	if (retval == QDialog::Rejected) return;
 
@@ -698,7 +708,7 @@ void MainWindow::createNewRoom()
 	out << (quint8)uiTable.playersSpinBox->value();
 	if (uiTable.cycleRbo->isChecked() == true) out << (quint8)1;
 	else out << (quint8)0;
-
+	out << (quint8)uiTable.timerSpinBox->value();
 	fixHeaderLength();
 	commsSocket->write(block);
 
@@ -753,7 +763,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			quint16 timerval;	
 			in >> timerval;
-			timerDial->setValue(timerval);
+			timerDial->setText(QString("%1").arg(timerval));
 
 
 		}
@@ -782,7 +792,10 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		// the game has started
 		{
 			for (int i = 0; i <6 ; i++)
+			  {
 				playerLists[i]->clear();
+				playerStatus[i]->setText("");
+			  }
 			chatText->append("<font color=red>The game has started!</font>");
 			gameStarted = true;
 			rightAnswers.clear();
@@ -1151,6 +1164,16 @@ void MainWindow::giveUpOnThisGame()
 	commsSocket->write(block);
 }
 
+void MainWindow::submitReady()
+{
+  writeHeaderData();
+  out << (quint8)'=';
+  out << (quint16)currentTablenum;
+  out << (quint8)'b';
+  fixHeaderLength();
+  commsSocket->write(block);
+
+}
 void MainWindow::wordsWidgetItemClicked(QTableWidgetItem* item)
 {
 	int i = item->row();
@@ -1190,3 +1213,4 @@ QString MainWindow::shuffleString(QString inputString)
 	}
 	return inputString;
 }
+

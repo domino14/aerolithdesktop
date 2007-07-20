@@ -28,7 +28,7 @@ private:
 	QString currentUsername;
 	QPushButton *toggleConnection;
 	QPushButton *exitTable;
-	QDial *timerDial;
+	QLabel *timerDial;
 	QDataStream in;
 	QStackedWidget* gameStackedWidget;
 	QTableWidget* roomTable;
@@ -79,6 +79,7 @@ private:
 		void shuffleWords();
 		void giveUpOnThisGame();
 		void wordsWidgetItemClicked(QTableWidgetItem*);
+		void submitReady();
 };
 
 
