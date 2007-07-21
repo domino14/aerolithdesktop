@@ -393,7 +393,7 @@ void MainServer::prepareTableAlphagrams(tableData* table)
   for (quint8 i = 0; i < 9; i++)
     for (quint8 j = 0; j < 5; j++)
       {
-	gameData thisGameData;
+	unscrambleGameData thisGameData;
 	thisGameData.i = i;
 	thisGameData.j = j;
 	if (table->alphagramReader.atEnd())
