@@ -5,7 +5,7 @@
 QList <QVariant> dummyList;
 
 const quint16 MAGIC_NUMBER = 25345; 
-const quint8 COUNTDOWN_TIMER_VAL = 3;
+
 MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
 {
   connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
@@ -579,7 +579,6 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
       return;
     }
 
-  // TODO fix, bad code:
   writeHeaderData();
   out << (quint8) 'T';
   out << (quint16) tablenum;
@@ -595,27 +594,13 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   playerDataHash[connData->username].gaveUp = false;
 
   tableData *tmp = new tableData;
+  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username, cycleState, tableTimer);
 
-  tmp->tableNumber = tablenum;
-  tmp->wordListDescriptor = wordListDescriptor;
-  tmp->maxPlayers = maxPlayers;
-  tmp->playerList << connData->username;
-  if (maxPlayers == 1) tmp->canJoin = false;
-  else tmp->canJoin = true;
-  tmp->tempFileExists = false;
-  tmp->cycleState = cycleState;
-  tmp->timer = new QTimer();
-  tmp->countdownTimer = new QTimer();
-  tmp->countdownTimer->setProperty("tablenum", QVariant(tablenum));
-  tmp->timer->setProperty("tablenum", QVariant(tablenum));
-  tmp->gameStarted = false;
-  tmp->countingDown = false;
+
   connect(tmp->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
   connect(tmp->countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
   tables.insert(tablenum, tmp);
-  tmp->tableTimerVal = (quint16)tableTimer * 60;
-  tmp->currentTimerVal = tmp->tableTimerVal;
-  tmp->countdownTimerVal = COUNTDOWN_TIMER_VAL;
+
   writeHeaderData();
   out << (quint8) 'J';
   out << (quint16) tablenum;

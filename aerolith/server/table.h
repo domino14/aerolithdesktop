@@ -6,7 +6,9 @@
 class tableData
 {
  public:
-  
+
+  void initialize(quint16 tableNumber, QString wordListDescriptor, quint8 maxPlayers, QString tableCreator, 
+	   quint8 cycleState, quint8 tableTimer);
   quint16 tableNumber;
   QString wordListDescriptor;
   QStringList playerList;
@@ -41,6 +43,12 @@ class tableData
   QTextStream missedFileWriter;
   
   bool tempFileExists;
+
+  // placeholder for anagrams mode
+  
+  quint8 gameMode; // jumble = 0, anagrams = 1, etc etc
+  QByteArray letters; // the letters that are showing on the board
+
 };
 
 #endif
