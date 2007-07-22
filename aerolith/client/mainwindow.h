@@ -55,6 +55,8 @@ private:
 	bool gameStarted;
 	QDialog *createTableDialog;
 	QDialog *solutionsDialog;
+	QDialog *helpDialog;
+
 	QHash <QString, int> seats;
 	Ui::tableCreateForm uiTable;
 	Ui::solutionsForm uiSolutions;
@@ -80,6 +82,7 @@ private:
 		void giveUpOnThisGame();
 		void wordsWidgetItemClicked(QTableWidgetItem*);
 		void submitReady();
+		void aerolithHelpDialog();
 };
 
 
