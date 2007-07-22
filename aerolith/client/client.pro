@@ -7,6 +7,6 @@ FORMS = tableCreateForm.ui solutionsForm.ui
 SOURCES += main.cpp mainwindow.cpp
 HEADERS += mainwindow.h
 
-TARGET = jtclone
+TARGET = aerolith
 
 

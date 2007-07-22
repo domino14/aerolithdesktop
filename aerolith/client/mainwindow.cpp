@@ -309,11 +309,18 @@ out(&block, QIODevice::WriteOnly)
 		}
 		else
 		{
-			chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round.</font>");
+			chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool found at http://www.zyzzyva.net</font>");
 		}
 		setTabOrder(solutionLE, chatLE);
 		setTabOrder(chatLE, solutionLE);
+		
 
+		QMenu* helpMenu = menuBar()->addMenu("Help");
+		QAction* helpAction = helpMenu->addAction("Aerolith Help");
+
+
+		connect(helpAction, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
+		
 
 		//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
 }
@@ -1244,3 +1251,12 @@ QString MainWindow::shuffleString(QString inputString)
 	return inputString;
 }
 
+void MainWindow::aerolithHelpDialog()
+{
+  QString infoText;
+
+  infoText = "- To send text to a single player, double click his or her name and type in your message, or type /msg username message in the chat box.<BR>";
+  infoText += "- To send text to everyone, type in /shout message in the chat box. <BR>";
+  infoText += "- Cycle mode allows you to go through all the words in a list, and at the end, keep going through the missed words.<BR>";
+  QMessageBox::information(this, "Aerolith how-to", infoText);
+}
