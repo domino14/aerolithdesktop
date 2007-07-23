@@ -12,7 +12,7 @@ INCLUDEPATH += build/moc
 DEPENDPATH += build/moc
 
 FORMS = tableCreateForm.ui solutionsForm.ui
-SOURCES += main.cpp mainwindow.cpp
-HEADERS += mainwindow.h
+SOURCES += main.cpp mainwindow.cpp wordsTableWidget.cpp playerInfoWidget.cpp
+HEADERS += mainwindow.h wordsTableWidget.h playerInfoWidget.h 
 
 

@@ -6,6 +6,10 @@
 #include <QtSql>
 #include "ui_tableCreateForm.h"
 #include "ui_solutionsForm.h"
+
+#include "wordsTableWidget.h"
+#include "playerInfoWidget.h"
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -32,9 +36,10 @@ private:
 	QDataStream in;
 	QStackedWidget* gameStackedWidget;
 	QTableWidget* roomTable;
-	QTableWidget* wordsWidget;
+	wordsTableWidget* wordsWidget;
 	quint16 currentTablenum;
-	QBrush colorBrushes[9];
+	//	QBrush colorBrushes[9];
+	QBrush missedColorBrush;
 	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
 	void handleDeleteTable(quint16 tablenum);
 	void handleAddToTable(quint16 tablenum, QString player);
@@ -42,10 +47,9 @@ private:
 	void handleTableCommand(quint16 tablenum, quint8 commandByte);
 	int findRoomTableRow(quint16 tablenum);
 
-	QListWidget *playerLists[6];
-	QLabel *playerNames[6];
-	QLabel *playerStatus[6];
-	const int PLAYERLIST_ROLE, NUM_SOLUTIONS_ROLE, SOLUTIONS_ROLE, ALPHAGRAM_ROLE;
+	playerInfoWidget* PlayerInfoWidget;
+
+	const int PLAYERLIST_ROLE;
 	void writeHeaderData();
 	void fixHeaderLength();
 	QByteArray block;
@@ -57,7 +61,6 @@ private:
 	QDialog *solutionsDialog;
 	QDialog *helpDialog;
 
-	QHash <QString, int> seats;
 	Ui::tableCreateForm uiTable;
 	Ui::solutionsForm uiSolutions;
 	QString alphagrammizeString(QString);
