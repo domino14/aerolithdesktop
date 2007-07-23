@@ -3,9 +3,6 @@
 const quint16 MAGIC_NUMBER = 25345;
 const QString WindowTitle = "Aerolith 0.1.1";
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
-NUM_SOLUTIONS_ROLE(Qt::UserRole + 1),
-SOLUTIONS_ROLE(Qt::UserRole + 2),
-ALPHAGRAM_ROLE(Qt::UserRole + 3),
 out(&block, QIODevice::WriteOnly)
 {
 
@@ -52,146 +49,77 @@ out(&block, QIODevice::WriteOnly)
 
 	QWidget *centralWidget = new QWidget;	 // the 'overall'  widget
 
-	wordsWidget = new QTableWidget(9, 5);
+	wordsWidget = new wordsTableWidget();
+	connect(wordsWidget, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
+	// solution box
+	QLabel *solutionLabel = new QLabel("Guess:");
+	solutionLE = new QLineEdit;
+	solutionLE->setFixedWidth(100);
+	solutionLE->setMaxLength(15);
+	QPushButton *solutions = new QPushButton("Solutions");
+	QPushButton *alpha = new QPushButton("Alpha");
+	QPushButton *shuffle = new QPushButton("Shuffle");
+	QPushButton *giveup = new QPushButton("Give up");
+	QPushButton *start = new QPushButton("Start");
+	exitTable = new QPushButton("Exit Table #");
+	
+	solutions->setFocusPolicy(Qt::NoFocus);
+	alpha->setFocusPolicy(Qt::NoFocus);
+	shuffle->setFocusPolicy(Qt::NoFocus);
+	giveup->setFocusPolicy(Qt::NoFocus);
+	start->setFocusPolicy(Qt::NoFocus);
+	exitTable->setFocusPolicy(Qt::NoFocus);
+	
+	QHBoxLayout *topSolutionLayout = new QHBoxLayout;
+	
+	topSolutionLayout->addStretch(1);
+	topSolutionLayout->addWidget(giveup);
+	topSolutionLayout->addSpacing(50);
+	topSolutionLayout->addWidget(exitTable);
+	QHBoxLayout *bottomSolutionLayout = new QHBoxLayout;
+	/*		timerDial = new QDial();
+			timerDial->setMaximum(300);
+			timerDial->setMinimum(0);
+			timerDial->setValue(0);
+			timerDial->setNotchesVisible(true);
+			timerDial->setEnabled(false);*/
+	timerDial = new QLabel;
+	timerDial->setFixedWidth(30);
+	timerDial->setAlignment(Qt::AlignCenter);
+	bottomSolutionLayout->addWidget(solutionLabel);
+	bottomSolutionLayout->addWidget(solutionLE);
+	bottomSolutionLayout->addStretch(1);
+	bottomSolutionLayout->addWidget(timerDial);
+	bottomSolutionLayout->addWidget(start);
+	bottomSolutionLayout->addWidget(solutions);
+	bottomSolutionLayout->addWidget(alpha);
+	bottomSolutionLayout->addWidget(shuffle);
+	//solutionLayout->addSpacing(50);
+	//solutionLayout->addWidget(giveup);
+	//solutionLayout->addWidget(exitTable);
+	
+	connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
+	connect(alpha, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
+	connect(shuffle, SIGNAL(clicked()), this, SLOT(shuffleWords()));
+	connect(giveup, SIGNAL(clicked()), this, SLOT(giveUpOnThisGame()));
+	connect(start, SIGNAL(clicked()), this, SLOT(submitReady()));
+	// Players box
 
-	wordsWidget->horizontalHeader()->hide();
+	PlayerInfoWidget = new playerInfoWidget(); // includes lists, etc
 
-	wordsWidget->setSelectionMode(QAbstractItemView::NoSelection);
-	wordsWidget->verticalHeader()->hide();
-	wordsWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	for (int i = 0; i < 5; i++)
-		wordsWidget->setColumnWidth(i, 150);
-	for (int i = 0; i < 9; i++)
-		wordsWidget->setRowHeight(i, 20);
-
-	QTableWidgetItem *tableItem[9][5];
-#ifdef Q_OS_MAC
-	QFont wordFont("Arial Black", 16, QFont::Normal);
-#else
-	QFont wordFont("Arial Black", 12, QFont::Normal);
-#endif
-
-	colorBrushes[0].setColor(Qt::black);
-	colorBrushes[1].setColor(Qt::darkGreen);
-	colorBrushes[2].setColor(Qt::blue);
-	colorBrushes[3].setColor(Qt::darkCyan);
-	colorBrushes[4].setColor(Qt::cyan);
-	colorBrushes[5].setColor(Qt::darkMagenta);
-	colorBrushes[6].setColor(Qt::darkRed);
-	colorBrushes[7].setColor(Qt::red);
-	colorBrushes[8].setColor(Qt::magenta);
-	for (int i = 0; i < 9; i++)
-		for (int j = 0; j < 5; j++)
-		{
-			tableItem[i][j] = new QTableWidgetItem("");
-			tableItem[i][j]->setTextAlignment(Qt::AlignCenter);
-			tableItem[i][j]->setFont(wordFont);
-			// tableItem[i][j]->setForeground(colorBrushes[i]);
-			wordsWidget->setItem(i, j, tableItem[i][j]);
-		}
-		wordsWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-		wordsWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-		wordsWidget->setFixedSize(752,182);	// this feels extremely cheap and i hate it but it seems to work 
-		wordsWidget->setFocusPolicy(Qt::NoFocus);
-		connect(wordsWidget, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
-		// solution box
-	       	QLabel *solutionLabel = new QLabel("Guess:");
-		solutionLE = new QLineEdit;
-		solutionLE->setFixedWidth(100);
-		solutionLE->setMaxLength(15);
-		QPushButton *solutions = new QPushButton("Solutions");
-		QPushButton *alpha = new QPushButton("Alpha");
-		QPushButton *shuffle = new QPushButton("Shuffle");
-		QPushButton *giveup = new QPushButton("Give up");
-		QPushButton *start = new QPushButton("Start");
-		exitTable = new QPushButton("Exit Table #");
-
-		solutions->setFocusPolicy(Qt::NoFocus);
-		alpha->setFocusPolicy(Qt::NoFocus);
-		shuffle->setFocusPolicy(Qt::NoFocus);
-		giveup->setFocusPolicy(Qt::NoFocus);
-		start->setFocusPolicy(Qt::NoFocus);
-		exitTable->setFocusPolicy(Qt::NoFocus);
-
-		QHBoxLayout *topSolutionLayout = new QHBoxLayout;
-		
-		topSolutionLayout->addStretch(1);
-		topSolutionLayout->addWidget(giveup);
-		topSolutionLayout->addSpacing(50);
-		topSolutionLayout->addWidget(exitTable);
-		QHBoxLayout *bottomSolutionLayout = new QHBoxLayout;
-		/*		timerDial = new QDial();
-		timerDial->setMaximum(300);
-		timerDial->setMinimum(0);
-		timerDial->setValue(0);
-		timerDial->setNotchesVisible(true);
-		timerDial->setEnabled(false);*/
-		timerDial = new QLabel;
-		timerDial->setFixedWidth(30);
-		timerDial->setAlignment(Qt::AlignCenter);
-		bottomSolutionLayout->addWidget(solutionLabel);
-		bottomSolutionLayout->addWidget(solutionLE);
-		bottomSolutionLayout->addStretch(1);
-		bottomSolutionLayout->addWidget(timerDial);
-		bottomSolutionLayout->addWidget(start);
-		bottomSolutionLayout->addWidget(solutions);
-		bottomSolutionLayout->addWidget(alpha);
-		bottomSolutionLayout->addWidget(shuffle);
-		//solutionLayout->addSpacing(50);
-		//solutionLayout->addWidget(giveup);
-		//solutionLayout->addWidget(exitTable);
-		
-		connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
-		connect(alpha, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
-		connect(shuffle, SIGNAL(clicked()), this, SLOT(shuffleWords()));
-		connect(giveup, SIGNAL(clicked()), this, SLOT(giveUpOnThisGame()));
-		connect(start, SIGNAL(clicked()), this, SLOT(submitReady()));
-		// Players box
-		
-		QGridLayout *playerListsLayout = new QGridLayout;
-		for (int i = 0; i < 6; i++)
-		{
-			playerNames[i] = new QLabel("");
-			playerNames[i]->setAlignment(Qt::AlignHCenter);
-			playerNames[i]->setFixedWidth(120);
-			playerLists[i] = new QListWidget();
-			playerLists[i]->setFixedWidth(120);
-			playerLists[i]->setMinimumHeight(100);
-			playerLists[i]->setFrameShape(QFrame::Box);
-
-			playerStatus[i] = new QLabel("");
-			playerStatus[i]->setFixedWidth(120);
-			playerStatus[i]->setAlignment(Qt::AlignHCenter);
-			if (i != 0)
-			  {
-			    playerLists[i]->hide();
-			    playerNames[i]->hide();
-			    playerStatus[i]->hide();
-			  }
-			playerListsLayout->addWidget(playerNames[i], 0, i*2);
-			playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
-			playerListsLayout->addWidget(playerLists[i], 1, i*2);
-			playerListsLayout->addWidget(playerStatus[i], 2, i*2);
-			playerLists[i]->setFocusPolicy(Qt::NoFocus);
-		}
-#ifdef Q_OS_MAC
-		playerListsLayout->setRowMinimumHeight(1, 100);
-#else
-		playerListsLayout->setRowMinimumHeight(1, 150);
-#endif
-		QVBoxLayout *gameBoardLayout = new QVBoxLayout;
-		gameBoardLayout->addLayout(topSolutionLayout);
-		gameBoardLayout->addWidget(wordsWidget);
-		gameBoardLayout->addSpacing(10);
-		gameBoardLayout->addLayout(bottomSolutionLayout);
-		gameBoardLayout->addSpacing(10);
-		gameBoardLayout->addLayout(playerListsLayout);
-		gameBoardGroupBox->setLayout(gameBoardLayout);
-
-		// the room selector will be anotehr group box
-
-		QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
-
+	QVBoxLayout *gameBoardLayout = new QVBoxLayout;
+	gameBoardLayout->addLayout(topSolutionLayout);
+	gameBoardLayout->addWidget(wordsWidget);
+	gameBoardLayout->addSpacing(10);
+	gameBoardLayout->addLayout(bottomSolutionLayout);
+	gameBoardLayout->addSpacing(10);
+	gameBoardLayout->addWidget(PlayerInfoWidget);
+	gameBoardGroupBox->setLayout(gameBoardLayout);
+	
+	// the room selector will be anotehr group box
+	
+	QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
+	
 		roomTable = new QTableWidget(0, 6);
 		QStringList headerLabels;
 		headerLabels << "#" << "Word List" << "Players" << "#" << "Max #" << "Join?";
@@ -320,7 +248,7 @@ out(&block, QIODevice::WriteOnly)
 
 
 		connect(helpAction, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
-		
+		missedColorBrush.setColor(Qt::red);
 
 		//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
 }
@@ -535,19 +463,9 @@ void MainWindow::readFromServer()
 					QString wList = roomTable->item(row, 1)->text();
 					gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
 					timerDial->setText("0");
-					for (int i = 0; i < 6; i++)
-					{
-						playerNames[i]->setText("");
-						playerLists[i]->clear();
-						playerStatus[i]->setText("");
-						playerLists[i]->hide();
-						playerNames[i]->hide();
-						playerStatus[i]->hide();
-					}
-					for (int i = 0; i < 9; i++)
-						for (int j = 0; j < 5; j++)
-							wordsWidget->item(i, j)->setText("");
-
+					
+					PlayerInfoWidget->clearAndHide();
+					wordsWidget->clearCells();
 					exitTable->setText(QString("Exit table %1").arg(tablenum));
 
 				}
@@ -804,32 +722,17 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-			int indexOfPlayer;
-			for (int k = 0; k < 6; k++)
-			{
-				if (playerNames[k]->text() == username)
-				{
-					indexOfPlayer = k;
-					break;
-				}
-			}
-			playerStatus[indexOfPlayer]->setText("Ready.");
-
+			PlayerInfoWidget->setReadyIndicator(username);
 		}
 		break;
 	case 'S':
 		// the game has started
 		{
-			for (int i = 0; i <6 ; i++)
-			  {
-				playerLists[i]->clear();
-				playerStatus[i]->setText("");
-			  }
-			chatText->append("<font color=red>The game has started!</font>");
-			gameStarted = true;
-			rightAnswers.clear();
-			//			uiSolutions.solutionsTableWidget->clearContents();
-			//uiSolutions.solutionsTableWidget->setRowCount(0);
+		  PlayerInfoWidget->setupForGameStart();
+		  chatText->append("<font color=red>The game has started!</font>");
+		  gameStarted = true;
+		  rightAnswers.clear();
+		  
 		}
 
 		break;
@@ -838,17 +741,17 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			chatText->append("<font color=red>This round is over.</font>");
 			gameStarted = false;
-
+			
 			for (int i = 0; i < 9; i++)
 				for (int j = 0; j < 5; j++)
 				{
-					wordsWidget->item(i, j)->setText("");
-					QStringList theseSols = wordsWidget->item(i,j)->data(SOLUTIONS_ROLE).toStringList();
-					QString alphagram = wordsWidget->item(i, j)->data(ALPHAGRAM_ROLE).toString();
-					QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
-					tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
-					int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-					
+				  wordsWidget->item(i, j)->setText("");
+				  QStringList theseSols = wordsWidget->getCellSolutions(i, j);
+				  QString alphagram = wordsWidget->getCellAlphagram(i, j);
+				  QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+				  tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+				  int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
+				  
 
 					for (int i = 0; i < theseSols.size(); i++)
 					{
@@ -879,7 +782,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 						if (!rightAnswers.contains(theseSols.at(i)))
 						{
-							wordItem->setForeground(colorBrushes[7]);
+							wordItem->setForeground(missedColorBrush);
 							QFont wordItemFont = wordItem->font();
 							wordItemFont.setBold(true);
 							wordItem->setFont(wordItemFont);
@@ -914,18 +817,11 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			{
 				QString alphagram;
 				in >> alphagram;
-				quint8 numsolutions;
-				in >> numsolutions;
+				quint8 numSolutions;
+				in >> numSolutions;
 				QStringList solutions;
 				in >> solutions;
-				wordsWidget->item(i, j)->setText(alphagram);
-				if (alphagram != "") 
-				{
-					wordsWidget->item(i, j)->setForeground(colorBrushes[(numsolutions > 9 ? 8 : (numsolutions - 1))]);
-					wordsWidget->item(i, j)->setData(NUM_SOLUTIONS_ROLE, QVariant(numsolutions)); // numsolutions yet to be solved
-					wordsWidget->item(i, j)->setData(SOLUTIONS_ROLE, QVariant(solutions));
-					wordsWidget->item(i, j)->setData(ALPHAGRAM_ROLE, QVariant(alphagram));
-				}
+				wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutions);
 			}
 			uiSolutions.solutionsTableWidget->clearContents();
 			uiSolutions.solutionsTableWidget->setRowCount(0);
@@ -941,30 +837,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		break;
 	case 'A':
 		{
-			QString username, guess;
+		  QString username, answer;
 			quint8 row, column;
-			in >> username >> guess >> row >> column;
-			quint8 numsolutions = wordsWidget->item(row, column)->data(NUM_SOLUTIONS_ROLE).toInt();
-			numsolutions--;
-			wordsWidget->item(row, column)->setData(NUM_SOLUTIONS_ROLE, QVariant(numsolutions));
-			if (numsolutions > 0)
-				wordsWidget->item(row, column)->setForeground(colorBrushes[(numsolutions > 9 ? 8 : (numsolutions - 1))]);
-			else
-				wordsWidget->item(row, column)->setText("");
+			in >> username >> answer >> row >> column;
+			wordsWidget->answeredCorrectly(row, column);
+			PlayerInfoWidget->answered(username, answer);
+			rightAnswers.insert(answer);
 
-			int indexOfPlayer;
-			for (int k = 0; k < 6; k++)
-			{
-				if (playerNames[k]->text() == username)
-				{
-					indexOfPlayer = k;
-					break;
-				}
-			}
-			playerLists[indexOfPlayer]->insertItem(0, guess);
-			playerLists[indexOfPlayer]->item(0)->setTextAlignment(Qt::AlignCenter);
-			rightAnswers.insert(guess);
-			playerStatus[indexOfPlayer]->setText(QString("%1 words").arg(playerLists[indexOfPlayer]->count()));
 		}
 		break;
 	}
@@ -1002,117 +881,43 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
 
 void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modification)
 {
-	// if player = currentusername
-
-	int row = findRoomTableRow(tablenum);
-	QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
-	QStringList plist = plistVar.toStringList();
-
-	// plist contains all the players
-
-	if (player == currentUsername)	// I joined. therefore, populate the list from the beginning
+  // if player = currentusername
+  
+  int row = findRoomTableRow(tablenum);
+  QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+  QStringList plist = plistVar.toStringList();
+  
+  // plist contains all the players
+  
+  if (player == currentUsername)	// I joined. therefore, populate the list from the beginning
+    {
+      if (modification == -1) 
 	{
-		if (modification == -1) 
-		{
-			seats.clear(); // clear the seats hash if we leave! 	  
+	  PlayerInfoWidget->leaveTable();
 
-			return; // the widget will be hid anyway, so we don't need to hide the individual lists
-			//however, we hide when adding when we join down below
-		}
-		else 
-		{
-
-			// add all players including self
-			for (int i = 0; i < plist.size(); i++)
-			{
-				playerNames[i]->setText(plist[i]);
-				playerNames[i]->show();
-				playerLists[i]->show();
-				playerStatus[i]->show();
-				seats.insert(plist[i], i);
-			}
-
-
-			return;
-		}
+	  return; // the widget will be hid anyway, so we don't need to hide the individual lists
+	  //however, we hide when adding when we join down below
 	}
-
-	// if we are here then a player has joined/left a table that we were already in
-
-	// modification = -1 remove
-	// or 1 add
-
-	//playerNames - labels, playerLists qlistwidgets
-
-
-
-	if (modification == 1)
+      else 
 	{
-		// player has been added
-		// find a spot
-		bool spotfound = false;
-		int spot;
-
-		for (int i = 0; i < 6; i++)
-			if (playerNames[i]->text() == "")
-			{
-				spotfound = true;
-				spot = i;
-				break;
-			}
-			//spot i
-			if (spotfound == false)
-			{
-				QMessageBox::critical(this, "?", "Please notify developer about this error. (Error code 10001)");
-				return;
-			}
-
-			playerNames[spot]->setText(player);
-			playerNames[spot]->show();
-			playerLists[spot]->show();
-			playerStatus[spot]->show();
-			seats.insert(player, spot);
+	  PlayerInfoWidget->addPlayers(plist);
+	  // add all players including self
+	  return;
 	}
+    }
 
-	else if (modification == -1)
-	{
-		int seat;
-		if (seats.contains(player))
-		{
-			seat = seats.value(player);
-		}
-		else
-		{
-			QMessageBox::critical(this, "?", "Please notify developer about this error. (Error code 10002)");
-			return;
-		}
-		seats.remove(player);
-		playerNames[seat]->setText("");
-		playerStatus[seat]->setText("");
-		playerLists[seat]->clear();
-		playerNames[seat]->hide();
-		playerLists[seat]->hide();
-		playerStatus[seat]->hide();
-		if (gameStarted == false)
-		{
-			for (int i = 0; i < 6; i++)
-				playerStatus[i]->setText("");
-		}
-	}
-
-	/*
-	for (int i = 0; i < plist.length(); i++)
-	{
-	}
-
-	for (int i = 0; i < 6; i++)
-	{
-	if (playerNames[i]->text() != "")
-	{
-	}
-
-	}
-	*/  
+  // if we are here then a player has joined/left a table that we were already in
+  
+  // modification = -1 remove
+  // or 1 add
+  
+  if (modification == 1)
+	  // player has been added
+	  // find a spot
+	  PlayerInfoWidget->addPlayer(player);
+  
+  else if (modification == -1)
+    PlayerInfoWidget->removePlayer(player, gameStarted);
 
 
 }
