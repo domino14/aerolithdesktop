@@ -1067,6 +1067,7 @@ void MainWindow::populateSolutionsTable()
 						QSqlQuery query;
 
 						query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
+						qDebug() << "select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'";
 						while (query.next())
 						{
 							frontHooks = query.value(0).toString();
