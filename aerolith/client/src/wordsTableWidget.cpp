@@ -85,14 +85,13 @@ void wordsTableWidget::answeredCorrectly(int row, int column)
 }
 
 
-void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStringList solutions, quint8 numSolutions)
+void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStringList solutions, quint8 numSolutionsNotYetSolved)
 {
   cellAlphagrams[i][j] = alphagram;
-  item(i, j)->setText(alphagram);
-  if (alphagram != "")
-    {
-      item(i, j)->setForeground(colorBrushes[(numSolutions > 9 ? 8 : (numSolutions - 1))]);
-      cellNumSolutions[i][j] = numSolutions;
-      cellSolutions[i][j] = solutions;
-    }
+  if (numSolutionsNotYetSolved > 0) item(i, j)->setText(alphagram);
+  else item(i, j)->setText("");
+  item(i, j)->setForeground(colorBrushes[(numSolutionsNotYetSolved > 9 ? 8 : (numSolutionsNotYetSolved - 1))]);
+  cellNumSolutions[i][j] = numSolutionsNotYetSolved;
+  cellSolutions[i][j] = solutions;
+
 }

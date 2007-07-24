@@ -68,6 +68,9 @@ private:
 	QSet <QString> rightAnswers;
 
 	QSqlDatabase wordDb;
+	void populateSolutionsTable();
+	void sendClientVersion();
+
 	public slots:
 		void submitSolutionLEContents();
 		void submitChatLEContents();
@@ -86,6 +89,7 @@ private:
 		void wordsWidgetItemClicked(QTableWidgetItem*);
 		void submitReady();
 		void aerolithHelpDialog();
+
 };
 
 
