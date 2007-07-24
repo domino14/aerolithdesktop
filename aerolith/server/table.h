@@ -6,9 +6,8 @@
 class tableData
 {
  public:
-
-  void initialize(quint16 tableNumber, QString wordListDescriptor, quint8 maxPlayers, QString tableCreator, 
-	   quint8 cycleState, quint8 tableTimer);
+  
+  void initialize(quint16 tableNumber, QString wordListDescriptor, quint8 maxPlayers, QString tableCreator, quint8 cycleState, quint8 tableTimer);
   quint16 tableNumber;
   QString wordListDescriptor;
   QStringList playerList;
@@ -26,16 +25,15 @@ class tableData
   quint8 cycleState; // holds value of cycle radio button
   // if 1, it will cycle at the end of the word list thru all missed words
   // if 0, it will just pick random words every time
-  
-  quint8 alphagramState; // holds value of alphagram radio button
-  // if 1 it will alphagram automatically
-  // if 0 it will shuffle automatically
+  // if 2 it's "endless mode"
+
   QHash <QString, QString> gameSolutions; // the KEY (first value) is a solution
   // the VALUE (second) is an alphagram
-  QList <unscrambleGameData> alphagrams;
-  //   quint16 indexOfCurrentQuestion; // LAST PLACE in the file that was read from!
-  // should be a multiple of 45 typically. i.e. read 45 lines, so the index of 
-  // curq should be 45 so that it starts reading at line 45 next.
+
+  QHash <QString, quint8> alphagramIndices; // the KEY is the alphagram, VALUE is the index in 'unscrambleGameQuestions
+
+  QList <unscrambleGameData> unscrambleGameQuestions;
+  
   QTextStream alphagramReader;
   QFile inFile;
   

@@ -49,7 +49,7 @@ private:
 
  enum packetHeaderStatesEnum
    {
-     S_USERLOGGEDIN, S_ERROR, S_USERLOGGEDOUT
+     S_USERLOGGEDIN, S_ERROR, S_USERLOGGEDOUT, S_SERVERMESSAGE
      
    };
  enum tablePacketHeaderStatesEnum
@@ -68,7 +68,7 @@ private:
 
  void writeHeaderData();
  void fixHeaderLength();
-
+ void loadWordLists();
 
  void processLogin(QTcpSocket*, connectionData*);
  void processChat(QTcpSocket*, connectionData*);
@@ -81,7 +81,8 @@ private:
  void processTableCommand(QTcpSocket*, connectionData*);
  void prepareTableAlphagrams(tableData*);
  void sendUserCurrentAlphagrams(tableData*, QTcpSocket*);
-
+ void processChatAction(QTcpSocket*, connectionData*);
+ void processVersionNumber(QTcpSocket*, connectionData*);
  bool isValidUsername(QString);
  QByteArray block;
  QDataStream out;

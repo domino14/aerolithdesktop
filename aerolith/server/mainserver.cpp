@@ -5,6 +5,12 @@
 QList <QVariant> dummyList;
 
 const quint16 MAGIC_NUMBER = 25345; 
+const QString incompatibleVersionString = 
+"You are using an outdated version of the Aerolith client.<BR>\
+Please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
+const QString compatibleButOutdatedVersionString = 
+"You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
+const QString thisVersion = "0.1.2";
 
 MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
 {
@@ -14,7 +20,21 @@ MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
   highestTableNumber = 0;
 
   // load lists
+  loadWordLists();
+ 
+  QTime midnight(0, 0, 0);
+  qsrand(midnight.msecsTo(QTime::currentTime()));
 
+  //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
+  //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
+  //wordDb.open();
+
+}
+
+void MainServer::loadWordLists()
+{
+  wordLists.clear();
+  orderedWordLists.clear();
   QFile listFile("../listmaker/lists/LISTS");
   QTextStream thisIn;
   thisIn.setDevice(&listFile);
@@ -32,12 +52,6 @@ MainServer::MainServer() : out(&block, QIODevice::WriteOnly)
     }
 
   listFile.close();
-  QTime midnight(0, 0, 0);
-  qsrand(midnight.msecsTo(QTime::currentTime()));
-
-  //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
-  //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
-  //wordDb.open();
 
 }
 
@@ -122,7 +136,13 @@ void MainServer::receiveMessage()
   QTcpSocket* socket = static_cast<QTcpSocket*> (sender());
   connectionData* connData = connectionParameters.value(socket);
   // is this the way it's normally done? hashing? maybe.
+  if (socket->bytesAvailable() > 15000)
+    {
 
+      socket->disconnectFromHost();
+      return;
+    }
+  
   while (socket->bytesAvailable()> 0)
     {
       //QDataStream needs EVERY byte to be available for reading!
@@ -138,12 +158,13 @@ void MainServer::receiveMessage()
 	  connData->in >> header;
 	  connData->in >> packetlength;
 	  // THIS IS OPEN TO ABUSE.  what if the user sends a packet thats > 2^16 bytes? packetlength will wrap around,
-	  // and when the reader tries to read more bytes than are available 'undefined behavior' occurs...
+	  // and reader won't read all bytes
+	  // or if user sends 20 bytes e.g. and packetlength = 10
 	  connData->numBytesInPacket = packetlength;
 	  if (header != (quint16)MAGIC_NUMBER) // magic number
 	    {
 	      qDebug() << " wrong magic number: " << header << " packlength " << packetlength;
-	      writeToClient(socket, "You are using the wrong version of the aerolith client. <BR>Please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.", S_ERROR);
+	      writeToClient(socket, incompatibleVersionString, S_ERROR);
 	      socket->disconnectFromHost();
 	      return;
 	    }  
@@ -160,8 +181,17 @@ void MainServer::receiveMessage()
       quint8 packetType;
       connData->in >> packetType; // this is the case byte!
       qDebug() << "Received from sender " << connData->username << " packet " << (char)packetType;      
+      
+      if (connData->numBytesInPacket > 10000) 
+	{
+	  socket->disconnectFromHost();
+	  return;
+	}
       switch(packetType)
 	{
+	case 'a':
+	  processChatAction(socket, connData);
+	  break;
 	case 'e':
 	  // entered
 	  processLogin(socket, connData);
@@ -188,11 +218,14 @@ void MainServer::receiveMessage()
 	  // since this could be fairly large, put a limit of 5000 on it
 	  // 5000 quint16s is 10000 bytes, which is pretty fast
 	  // the quint16s will be indexes
-
+	  
 	  // will write this into a temporary file, named
 	  // #_qs.tmp
 	  // will write errors into a temporary file #_es.tmp    # is the table number.
 	  // these files will be deleted when the table is closed!!
+	  break;
+	case 'v':
+	  processVersionNumber(socket, connData);
 	  break;
 	case 'j':
 	  // joined an existing table
@@ -203,14 +236,43 @@ void MainServer::receiveMessage()
 	  break;
 	case '=':
 	  processTableCommand(socket, connData);
-
+	  
 	  break;
-
+	default:
+	  socket->disconnectFromHost(); // possibly a malicious packet
+	  return;
 	}
       
-      connData->numBytesInPacket = 0;
+      connData->numBytesInPacket = 0;      
+      
     }
+}
 
+
+void MainServer::processChatAction(QTcpSocket* socket, connectionData* connData)
+{
+  QString username, actionText;
+  // i.e. cesar knocks bbstenniz over the head
+  username = connData->username;
+  connData->in >> actionText;
+  if (actionText.length() > 400) 
+    {
+      socket->disconnectFromHost();
+      return;
+    }
+  foreach (QTcpSocket* connection, connections)
+    writeToClient(connection, "* " +username + " " + actionText, S_SERVERMESSAGE);
+}
+
+void MainServer::processVersionNumber(QTcpSocket* socket, connectionData* connData)
+{
+  QString version;
+  connData->in >> version;
+
+  if (version != thisVersion)
+    {
+      writeToClient(socket, compatibleButOutdatedVersionString , S_SERVERMESSAGE);
+    }
 }
 
 void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connData)
@@ -276,16 +338,22 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 		    QString alphagram = table->gameSolutions.value(guess);
 		    table->gameSolutions.remove(guess);
 		    quint8 rowIndex = 0, columnIndex = 0;
-		    for (quint8 i = 0; i < 45; i++)
-		      if (table->alphagrams.at(i).alphagram == alphagram)
+		    quint8 indexOfQuestion = table->alphagramIndices.value(alphagram);
+		    table->unscrambleGameQuestions[indexOfQuestion].numNotYetSolved--;
+		    rowIndex = table->unscrambleGameQuestions[indexOfQuestion].i;
+		    columnIndex = table->unscrambleGameQuestions[indexOfQuestion].j;
+
+		    // booo! use a hash table!
+		    /*		    for (quint8 i = 0; i < 45; i++)
+		      if (table->unscrambleGameQuestions.at(i).alphagram == alphagram)
 			{
-			  table->alphagrams[i].numNotYetSolved--;
-			  if (table->alphagrams.at(i).numNotYetSolved == 0) table->alphagrams[i].alphagram = "";
-			  rowIndex = table->alphagrams.at(i).i;
-			  columnIndex = table->alphagrams.at(i).j;
+			  table->unscrambleGameQuestions[i].numNotYetSolved--;
+			  rowIndex = table->unscrambleGameQuestions.at(i).i;
+			  columnIndex = table->unscrambleGameQuestions.at(i).j;
 			  break;
 			}
-		    
+		    */
+
 		    QList <QVariant> tempList;
 		    tempList << QVariant(connData->username);
 		    tempList << QVariant(guess);
@@ -306,6 +374,14 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
       {
 	QString chat;
 	connData->in >> chat;
+	if (chat == "/reload" && connData->username == "cesar") loadWordLists();
+	
+	if (chat.length() > 400)
+	  {
+	    socket->disconnectFromHost();
+	    return;
+	  }
+
 	QList <QVariant> tempList;
 	tempList << QVariant(connData->username);
 	tempList << QVariant(chat);
@@ -337,6 +413,8 @@ void MainServer::processTableCommand(QTcpSocket* socket, connectionData* connDat
 	
       }
       break;
+    default:
+      socket->disconnectFromHost();
     }
 }
 void MainServer::prepareTableAlphagrams(tableData* table)
@@ -385,7 +463,30 @@ void MainServer::prepareTableAlphagrams(tableData* table)
     }
 
   table->gameSolutions.clear();
-  table->alphagrams.clear();
+  table->unscrambleGameQuestions.clear();
+  table->alphagramIndices.clear();
+  if (table->cycleState == 1 && table->alphagramReader.atEnd())
+    {
+      table->inFile.close();
+      table->inFile.remove();
+      table->outFile.close();
+      table->outFile.copy(QString("tmp%1").arg(table->tableNumber));
+      table->outFile.remove();
+
+      table->inFile.setFileName(QString("tmp%1").arg(table->tableNumber));
+      table->outFile.setFileName(QString("missed%1").arg(table->tableNumber));
+      table->alphagramReader.setDevice(&(table->inFile));
+      table->missedFileWriter.setDevice(&(table->outFile));
+      table->inFile.open(QIODevice::ReadOnly | QIODevice::Text);
+      table->outFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      table->missedFileWriter.seek(0);
+      table->alphagramReader.seek(0);
+      // CLOSE table->inFile
+      // COPY missed%1 to tmp%1
+      // repeat code above to load the file into memory, shuffle, etc
+
+    }
+
 
   QStringList lineList;
   QString line;
@@ -414,33 +515,9 @@ void MainServer::prepareTableAlphagrams(tableData* table)
 	      }
 	  }
 
-	table->alphagrams.append(thisGameData);
+	table->unscrambleGameQuestions.append(thisGameData);
+	table->alphagramIndices.insert(thisGameData.alphagram, i*5 + j);
       }
-  
-
-  if (table->cycleState == 1 && table->alphagramReader.atEnd())
-    {
-      table->inFile.close();
-      table->inFile.remove();
-      table->outFile.close();
-      table->outFile.copy(QString("tmp%1").arg(table->tableNumber));
-      table->outFile.remove();
-
-      table->inFile.setFileName(QString("tmp%1").arg(table->tableNumber));
-      table->outFile.setFileName(QString("missed%1").arg(table->tableNumber));
-      table->alphagramReader.setDevice(&(table->inFile));
-      table->missedFileWriter.setDevice(&(table->outFile));
-      table->inFile.open(QIODevice::ReadOnly | QIODevice::Text);
-      table->outFile.open(QIODevice::WriteOnly | QIODevice::Text);
-      
-
-      // TODO
-      //
-      // CLOSE table->inFile
-      // COPY missed%1 to tmp%1
-      // repeat code above to load the file into memory, shuffle, etc
-
-    }
 }
 
 void MainServer::sendUserCurrentAlphagrams(tableData* table, QTcpSocket* socket)
@@ -452,9 +529,9 @@ void MainServer::sendUserCurrentAlphagrams(tableData* table, QTcpSocket* socket)
  
   for (int i = 0; i < 45; i++)
     {
-      out << table->alphagrams.at(i).alphagram;
-      out << table->alphagrams.at(i).numNotYetSolved;
-      out << table->alphagrams.at(i).solutions;
+      out << table->unscrambleGameQuestions.at(i).alphagram;
+      out << table->unscrambleGameQuestions.at(i).numNotYetSolved;
+      out << table->unscrambleGameQuestions.at(i).solutions;
     }
 
   fixHeaderLength();  
@@ -672,7 +749,12 @@ void MainServer::processPrivateMessage(QTcpSocket* socket, connectionData* connD
   connData->in >> username;
   QString message;
   connData->in >> message;
-  
+  if (username.length() + message.length() > 400)
+    {
+      socket->disconnectFromHost();
+      return;
+    }
+
   if (usernamesHash.find(username) != usernamesHash.end())
     {
       // the username exists
@@ -859,21 +941,21 @@ void MainServer::endGame(tableData* tmp)
     }
 
   // if in cycle mode, update list
-  if (tmp->cycleState)
+  if (tmp->cycleState == 1)
     {
       for (int i = 0; i < 45; i++)
 	{
-	  if (tmp->alphagrams.at(i).alphagram != "")
+	  if (tmp->unscrambleGameQuestions.at(i).numNotYetSolved > 0)
 	    {
 	      // this one has not been solved!
 	      
-	      tmp->missedFileWriter << tmp->alphagrams.at(i).alphagram;
-	      for (int j = 0; j < tmp->alphagrams.at(i).solutions.size(); j++)
-		tmp->missedFileWriter << " " << tmp->alphagrams.at(i).solutions.at(j);
+	      tmp->missedFileWriter << tmp->unscrambleGameQuestions.at(i).alphagram;
+	      for (int j = 0; j < tmp->unscrambleGameQuestions.at(i).solutions.size(); j++)
+		tmp->missedFileWriter << " " << tmp->unscrambleGameQuestions.at(i).solutions.at(j);
 	      tmp->missedFileWriter << "\n";
 
-	      qDebug() << "wrote" << tmp->alphagrams.at(i).alphagram << 
-		tmp->alphagrams.at(i).solutions << " to missed file.";
+	      qDebug() << "wrote" << tmp->unscrambleGameQuestions.at(i).alphagram << 
+		tmp->unscrambleGameQuestions.at(i).solutions << " to missed file.";
 	    }
 	}
 
@@ -888,6 +970,13 @@ void MainServer::processChat(QTcpSocket* socket, connectionData* connData)
   QString username = connData->username;
   QString chattext;
   connData->in >> chattext;
+  
+
+  if (chattext.length() > 400) 
+    {
+      socket->disconnectFromHost();
+      return;
+    }
   
   writeHeaderData();  
   out << (quint8) 'C';
@@ -989,7 +1078,10 @@ void MainServer::writeToClient(QTcpSocket* socket, QString parameter, packetHead
       out << parameter;
       debugstring = "logged out.";
       break;
-      
+    case S_SERVERMESSAGE:
+      out << (quint8) 'S';
+      out << parameter;
+      break;
     }
   fixHeaderLength();
   socket->write(block);

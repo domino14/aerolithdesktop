@@ -9,17 +9,18 @@ int main (int argc, char **argv)
   QCoreApplication app(argc, argv);
   quint16 port = 0;
   bool ok = false;
-  if (argc > 0)
+  if (argc > 1)
     {
-      port = QString(argv[0]).toInt(&ok);
+      port = QString(argv[1]).toInt(&ok);
     }
   if (!ok)
     {
       port = DEFAULT_PORT;
     }
+  
   MainServer mainServer;
   mainServer.listen(QHostAddress::Any, port);
-  
+  qDebug() << "listening on port " << port;
 
 
   return app.exec();
