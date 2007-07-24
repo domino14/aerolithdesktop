@@ -1,7 +1,8 @@
 #include "mainwindow.h"
 
 const quint16 MAGIC_NUMBER = 25345;
-const QString WindowTitle = "Aerolith 0.1.1";
+const QString WindowTitle = "Aerolith 0.1.2";
+const QString thisVersion = "0.1.2";
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
 out(&block, QIODevice::WriteOnly)
 {
@@ -299,8 +300,16 @@ void MainWindow::submitChatLEContents()
 		commsSocket->write(block);
 		chatLE->clear();
 	}
+	else if (chatLE->text().indexOf("/me ") == 0)
+	{
+		writeHeaderData();
+		out << (quint8)'a';
+		out << chatLE->text().mid(4);
+		fixHeaderLength();
+		commsSocket->write(block);
+		chatLE->clear();
+	}
 	else
-
 	{
 		if (currentTablenum == 0)
 		{
@@ -393,6 +402,7 @@ void MainWindow::readFromServer()
 					connectStatusLabel->setText("You have connected!");
 					gameStackedWidget->setCurrentIndex(0);
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
+				//	sendClientVersion();   // not yet. add this for the actual version 0.12
 				}
 			}
 			break;
@@ -534,6 +544,16 @@ void MainWindow::readFromServer()
 
 			}
 			break;
+		case 'S':
+			// server message
+			{
+				QString serverMessage;
+				in >> serverMessage;
+
+				chatText->append("<font color=green>" + serverMessage + "</font>");
+
+
+			}
 		default:
 			QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
 			commsSocket->disconnectFromHost();
@@ -653,8 +673,11 @@ void MainWindow::createNewRoom()
 		out << uiTable.ulistsCbo->currentText();
 
 	out << (quint8)uiTable.playersSpinBox->value();
+
 	if (uiTable.cycleRbo->isChecked() == true) out << (quint8)1;
+	else if (uiTable.endlessRbo->isChecked() == true) out << (quint8)2;
 	else out << (quint8)0;
+
 	out << (quint8)uiTable.timerSpinBox->value();
 	fixHeaderLength();
 	commsSocket->write(block);
@@ -738,66 +761,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		break;
 	case 'E':
 		// the game has ended
-		{
-			chatText->append("<font color=red>This round is over.</font>");
-			gameStarted = false;
-			
-			for (int i = 0; i < 9; i++)
-				for (int j = 0; j < 5; j++)
-				{
-				  wordsWidget->item(i, j)->setText("");
-				  QStringList theseSols = wordsWidget->getCellSolutions(i, j);
-				  QString alphagram = wordsWidget->getCellAlphagram(i, j);
-				  QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
-				  tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
-				  int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-				  
-
-					for (int i = 0; i < theseSols.size(); i++)
-					{
-						uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
-						QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
-						if (wordDb.isOpen())
-						{
-							QString backHooks, frontHooks, definition;
-							QSqlQuery query;
-							query.exec("select back_hooks from words where word='"+theseSols.at(i)+"'");
-							while (query.next())
-								backHooks = query.value(0).toString();
-							QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
-							uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);
-
-							query.exec("select front_hooks from words where word='"+theseSols.at(i)+"'");
-							while (query.next())
-								frontHooks = query.value(0).toString();
-							QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
-							uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
-
-							query.exec("select definition from words where word='"+theseSols.at(i)+"'");
-							while (query.next())
-								definition = query.value(0).toString();
-							QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
-							uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
-						}
-
-						if (!rightAnswers.contains(theseSols.at(i)))
-						{
-							wordItem->setForeground(missedColorBrush);
-							QFont wordItemFont = wordItem->font();
-							wordItemFont.setBold(true);
-							wordItem->setFont(wordItemFont);
-						}
-						wordItem->setTextAlignment(Qt::AlignCenter);
-						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
 		
-					}
-					uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
-				}
-				uiSolutions.solutionsTableWidget->resizeColumnsToContents();
-
-		}
+		chatText->append("<font color=red>This round is over.</font>");
+		gameStarted = false;
+		populateSolutionsTable();
+			
 		break;
-
+		
 
 	case 'C':
 		// chat
@@ -817,11 +787,11 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			{
 				QString alphagram;
 				in >> alphagram;
-				quint8 numSolutions;
-				in >> numSolutions;
+				quint8 numSolutionsNotYetSolved;
+				in >> numSolutionsNotYetSolved;
 				QStringList solutions;
 				in >> solutions;
-				wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutions);
+				wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutionsNotYetSolved);
 			}
 			uiSolutions.solutionsTableWidget->clearContents();
 			uiSolutions.solutionsTableWidget->setRowCount(0);
@@ -1064,4 +1034,72 @@ void MainWindow::aerolithHelpDialog()
   infoText += "- To send text to everyone, type in /shout message in the chat box. <BR>";
   infoText += "- Cycle mode allows you to go through all the words in a list, and at the end, keep going through the missed words.<BR>";
   QMessageBox::information(this, "Aerolith how-to", infoText);
+}
+
+
+void MainWindow::populateSolutionsTable()
+{
+	for (int i = 0; i < 9; i++)
+		for (int j = 0; j < 5; j++)
+		{
+			wordsWidget->item(i, j)->setText("");
+			QStringList theseSols = wordsWidget->getCellSolutions(i, j);
+			QString alphagram = wordsWidget->getCellAlphagram(i, j);
+
+			if (alphagram != "") // if alphagram exists.
+			{
+				QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+				tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+				int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
+
+
+				for (int i = 0; i < theseSols.size(); i++)
+				{
+					uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
+					QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
+					if (wordDb.isOpen())
+					{
+						QString backHooks, frontHooks, definition;
+						QSqlQuery query;
+
+						query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
+						while (query.next())
+						{
+							frontHooks = query.value(0).toString();
+							backHooks = query.value(1).toString();
+							definition = query.value(2).toString();
+						}
+						QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
+						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);							
+						QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
+						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
+						QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
+						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
+					}
+
+
+					if (!rightAnswers.contains(theseSols.at(i)))
+					{
+						wordItem->setForeground(missedColorBrush);
+						QFont wordItemFont = wordItem->font();
+						wordItemFont.setBold(true);
+						wordItem->setFont(wordItemFont);
+					}
+					wordItem->setTextAlignment(Qt::AlignCenter);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
+
+				}
+				uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
+			}
+		}
+	uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+}
+
+void MainWindow::sendClientVersion()
+{
+	writeHeaderData();
+	out << (quint8)'v';
+	out << thisVersion;
+	fixHeaderLength();
+	commsSocket->write(block);
 }
