@@ -21,6 +21,7 @@ public:
 private:
 	QLineEdit *username;
 	QLineEdit *serverAddress;
+	QLineEdit *serverPort;
 	QLineEdit *solutionLE; // this will be submitted (to answers) when pressing enter
 	QLineEdit *chatLE; // as will this (to chat)
 	QTextEdit *chatText; // this is the chat box
