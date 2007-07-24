@@ -22,7 +22,9 @@ out(&block, QIODevice::WriteOnly)
 	QLabel *userLabel = new QLabel("Username: ");
 	QLabel *serverLabel = new QLabel("Address: ");
 	serverAddress = new QLineEdit("cesar.boldlygoingnowhere.org");
-	serverAddress->setFixedWidth(150);
+	serverAddress->setFixedWidth(200);
+	serverPort = new QLineEdit("1988");
+	serverPort->setFixedWidth(50);
 	username->setFixedWidth(150);
 	username->setMaxLength(16);
 	toggleConnection->setFixedWidth(150);
@@ -33,6 +35,7 @@ out(&block, QIODevice::WriteOnly)
 	loginWidgetLayout->addWidget(username, 0, 1);
 	loginWidgetLayout->addWidget(serverLabel, 2, 0);
 	loginWidgetLayout->addWidget(serverAddress, 2, 1);
+	loginWidgetLayout->addWidget(serverPort, 2, 2);
 	loginWidgetLayout->addWidget(toggleConnection, 3, 1);
 	loginWidgetLayout->addWidget(connectStatusLabel, 5, 1);
 
@@ -554,6 +557,7 @@ void MainWindow::readFromServer()
 
 
 			}
+			break;
 		default:
 			QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
 			commsSocket->disconnectFromHost();
@@ -596,7 +600,7 @@ void MainWindow::toggleConnectToServer()
 	{
 
 		commsSocket->abort();
-		commsSocket->connectToHost(serverAddress->text(), 1988);
+		commsSocket->connectToHost(serverAddress->text(), serverPort->text().toInt());
 		connectStatusLabel->setText("Connecting to server...");
 		toggleConnection->setText("Disconnect");
 
