@@ -168,6 +168,7 @@ out(&block, QIODevice::WriteOnly)
 		chatLE->setMaxLength(300);
 		chatText = new QTextEdit;
 		chatText->setReadOnly(true);
+		chatText->setTextInteractionFlags(Qt::TextSelectableByMouse);
 		QVBoxLayout *chatLayout = new QVBoxLayout();
 
 		chatLayout->addWidget(chatLE);
@@ -192,7 +193,7 @@ out(&block, QIODevice::WriteOnly)
 		centralWidget->setLayout(overallGameBoardLayout);
 		//mainTabWidget->addTab(gameBoardWidget, "Game Board");
 		//gameBoardGroupBox->setFixedWidth(800);
-		chatText->setFocusPolicy(Qt::NoFocus);
+		chatText->setFocusPolicy(Qt::ClickFocus);
 		peopleConnected->setFocusPolicy(Qt::NoFocus);
 
 		//mainTabWidget->setTabEnabled(1, false);
@@ -405,7 +406,7 @@ void MainWindow::readFromServer()
 					connectStatusLabel->setText("You have connected!");
 					gameStackedWidget->setCurrentIndex(0);
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
-				//	sendClientVersion();   // not yet. add this for the actual version 0.12
+					sendClientVersion();   // not yet. add this for the actual version 0.1.2
 				}
 			}
 			break;
