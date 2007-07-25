@@ -37,14 +37,6 @@ private:
    // stuff such as packet count, data stream, logged in, etc. tablenum should be in playerdata.
 };
 
- struct playerData
- {
-   QString username;
-   bool readyToPlay;
-   bool gaveUp;
-   quint16 score;
-   quint16 tablenum;
- };
 
 
  enum packetHeaderStatesEnum
@@ -60,7 +52,8 @@ private:
  QHash <QTcpSocket*, connectionData*> connectionParameters;
  QHash <QString, QTcpSocket*> usernamesHash;
  QHash <quint16, tableData*> tables;
- QHash <QString, playerData> playerDataHash;
+
+
  QHash <QString, QString> wordLists;
  QStringList orderedWordLists;
  quint16 blockSize;

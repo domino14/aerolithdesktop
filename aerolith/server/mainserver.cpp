@@ -629,9 +629,9 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   bool foundFreeNumber = false;
 
   
-  QString wordListDescriptor;
+  QString tableName;
   quint8 maxPlayers;
-  connData->in >> wordListDescriptor;
+  connData->in >> tableName;
   connData->in >> maxPlayers;
   
   quint8 cycleState;
@@ -659,7 +659,7 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   writeHeaderData();
   out << (quint8) 'T';
   out << (quint16) tablenum;
-  out << wordListDescriptor;
+  out << tableName;
   out << maxPlayers;
   fixHeaderLength();
 
@@ -671,7 +671,7 @@ void MainServer::processNewTable(QTcpSocket* socket, connectionData* connData)
   playerDataHash[connData->username].gaveUp = false;
 
   tableData *tmp = new tableData;
-  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username, cycleState, tableTimer);
+  tmp->initialize(tablenum, tableName, maxPlayers, connData->username, cycleState, tableTimer, GAMEMODE_UNSCRAMBLE);
 
 
   connect(tmp->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
@@ -830,8 +830,10 @@ void MainServer::processLogin(QTcpSocket* socket, connectionData* connData)
       writeHeaderData();      
       out << (quint8) 'T';
       out << table->tableNumber;
-      out << table->wordListDescriptor;
+      out << table->tableName;
       out << table->maxPlayers;
+
+      // TODO: write more -- time limit, game type?
       fixHeaderLength();
       
       socket->write(block);
