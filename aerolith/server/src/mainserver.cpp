@@ -108,7 +108,7 @@ void MainServer::removeConnection()
       foreach (ClientSocket* connection, connections)
 	writeToClient(connection, username, S_USERLOGGEDOUT);
       
-      //      usernamesHash.remove(username);
+      usernamesHash.remove(username);
     }
   
   connections.removeAll(socket);

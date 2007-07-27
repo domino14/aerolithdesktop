@@ -16,8 +16,6 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
   gameTimer = new QTimer();
   countdownTimer = new QTimer();
 
-  gameTimer->setSingleShot(true);
-  
   connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
   connect(countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
 
@@ -150,7 +148,8 @@ void UnscrambleGame::startGame()
   sendGameStartPacket();
   sendTimerValuePacket(tableTimerVal);
   //  table->currentTimerVal = table->tableTimerVal;                                         
-  gameTimer->start(1000*tableTimerVal);
+  currentTimerVal = tableTimerVal;
+  gameTimer->start(1000);
  
 
 
@@ -200,7 +199,10 @@ void UnscrambleGame::updateCountdownTimer()
 
 void UnscrambleGame::updateGameTimer()
 {
-  endGame();
+  currentTimerVal--;
+  sendTimerValuePacket(currentTimerVal);
+  if (currentTimerVal == 0)
+    endGame();
 }
 
 void UnscrambleGame::generateTempFile()
