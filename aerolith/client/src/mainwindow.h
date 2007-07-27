@@ -33,7 +33,7 @@ private:
 	QString currentUsername;
 	QPushButton *toggleConnection;
 	QPushButton *exitTable;
-	QLabel *timerDial;
+	QLCDNumber *timerDial;
 	QDataStream in;
 	QStackedWidget* gameStackedWidget;
 	QTableWidget* roomTable;
@@ -72,6 +72,8 @@ private:
 	void populateSolutionsTable();
 	void sendClientVersion();
 
+
+	QTimer* gameTimer;
 	public slots:
 		void submitSolutionLEContents();
 		void submitChatLEContents();
@@ -90,7 +92,7 @@ private:
 		void wordsWidgetItemClicked(QTableWidgetItem*);
 		void submitReady();
 		void aerolithHelpDialog();
-
+		void updateGameTimer();
 };
 
 

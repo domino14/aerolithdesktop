@@ -85,7 +85,7 @@ void playerInfoWidget::addPlayers(QStringList playerList)
     }
 }
 
-void playerInfoWidget::addPlayer(QString player)
+void playerInfoWidget::addPlayer(QString player, bool gameStarted)
 {
   bool spotfound = false;
   int spot;
@@ -112,6 +112,11 @@ void playerInfoWidget::addPlayer(QString player)
   playerStatus[spot]->show();
 
   seats.insert(player, spot);
+  
+  if (gameStarted == false)
+    for (int i = 0; i < 6; i++)
+      playerStatus[i]->setText("");
+  
 }
 
 void playerInfoWidget::removePlayer(QString player, bool gameStarted)
