@@ -3,11 +3,15 @@
 playerInfoWidget::playerInfoWidget()
 {
   QGridLayout *playerListsLayout = new QGridLayout;
-  for (int i = 0; i < 6; i++)
+	
+	for (int i = 0; i < 6; i++)
     {
+	playerAvatars[i] = new QLabel("");
+	playerAvatars[i]->setFixedWidth(40);
+
       playerNames[i] = new QLabel("");
-      playerNames[i]->setAlignment(Qt::AlignHCenter);
-      playerNames[i]->setFixedWidth(120);
+      playerNames[i]->setAlignment(Qt::AlignCenter);
+      playerNames[i]->setFixedWidth(80);
       playerLists[i] = new QListWidget();
       playerLists[i]->setFixedWidth(120);
       playerLists[i]->setMinimumHeight(100);
@@ -18,11 +22,16 @@ playerInfoWidget::playerInfoWidget()
       
       if (i != 0)
 	{
+		playerAvatars[i]->hide();
 	  playerLists[i]->hide();
 	  playerNames[i]->hide();
 	  playerStatus[i]->hide();
 	}
-      playerListsLayout->addWidget(playerNames[i], 0, i*2);
+		playerInfoLayout[i] = new QHBoxLayout;
+	  playerInfoLayout[i]->addWidget(playerAvatars[i]);
+	playerInfoLayout[i]->addWidget(playerNames[i]);
+
+      playerListsLayout->addLayout(playerInfoLayout[i], 0, i*2);
       playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
       playerListsLayout->addWidget(playerLists[i], 1, i*2);
       playerListsLayout->addWidget(playerStatus[i], 2, i*2);
@@ -43,10 +52,12 @@ void playerInfoWidget::clearAndHide()
       playerNames[i]->setText("");
       playerStatus[i]->setText("");
       playerLists[i]->clear();
+	  playerAvatars[i]->setText("");
 
       playerLists[i]->hide();
       playerNames[i]->hide();
       playerStatus[i]->hide();
+	  playerAvatars[i]->hide();
 
     }
 }
@@ -77,6 +88,7 @@ void playerInfoWidget::addPlayers(QStringList playerList)
 {
   for (int i = 0; i < playerList.size(); i++)
     {
+		playerAvatars[i]->show();
       playerNames[i]->setText(playerList[i]);
       playerNames[i]->show();
       playerLists[i]->show();
@@ -105,7 +117,8 @@ void playerInfoWidget::addPlayer(QString player, bool gameStarted)
       QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10001");
       return;
     }
-
+	
+  playerAvatars[spot]->show();
   playerNames[spot]->setText(player);
   playerNames[spot]->show();
   playerLists[spot]->show();
@@ -128,7 +141,7 @@ void playerInfoWidget::removePlayer(QString player, bool gameStarted)
     }
   else
     {
-      QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10002");
+      QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10002)");
       return;
     }
 
@@ -136,7 +149,9 @@ void playerInfoWidget::removePlayer(QString player, bool gameStarted)
   playerNames[seat]->setText("");
   playerStatus[seat]->setText("");
   playerLists[seat]->clear();
+  playerAvatars[seat]->setText("");
   
+  playerAvatars[seat]->hide();
   playerNames[seat]->hide();
   playerLists[seat]->hide();
   playerStatus[seat]->hide();
@@ -155,7 +170,28 @@ void playerInfoWidget::leaveTable()
 
 void playerInfoWidget::setReadyIndicator(QString username)
 {
+	int seat;
   if (seats.contains(username))
-    playerStatus[seats.value(username)]->setText("Ready.");
+	  seat = seats.value(username);
+  else
+  {
+	  QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10004)");
+      return;
+  }
+    playerStatus[seat]->setText("Ready.");
+
+}
+
+void playerInfoWidget::setAvatar(QString username, quint8 avatarID)
+{
+	int seat;
+  if (seats.contains(username))
+	  seat = seats.value(username);
+  else
+  {
+	  QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10005)");
+      return;
+  }
+	playerAvatars[seat]->setPixmap(QString(":images/face%1.png").arg(avatarID));
 
 }

@@ -78,7 +78,7 @@ out(&block, QIODevice::WriteOnly)
 	
 	timerDial = new QLCDNumber(3);
 	timerDial->setFixedWidth(50);
-	timerDial->setSegmentStyle(QLCDNumber::Filled);
+	timerDial->setSegmentStyle(QLCDNumber::Flat);
 
 	topSolutionLayout->addWidget(timerDial);
 	topSolutionLayout->addStretch(1);
@@ -556,6 +556,27 @@ void MainWindow::readFromServer()
 				chatText->append("<font color=green>" + serverMessage + "</font>");
 
 
+			}
+			break;
+
+		case 'I':
+			// avatar id
+			{
+				QString username;
+				quint8 avatarID;
+				in >> username >> avatarID;
+				// username changed his avatar to avatarID. if we want to display this avatar, display it
+				// i.e. if we are in a table. in the future consider changing this to just a table packet but do the check now
+					// just in case.
+				if (currentTablenum != 0)
+				{
+					// we are in a table
+					PlayerInfoWidget->setAvatar(username, avatarID);
+
+				}
+				// then here we can do something like chatwidget->setavatar( etc). but this requires the server
+				// to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
+				// this way we can just send everyone's avatar on login. consider changing this!
 			}
 			break;
 		default:

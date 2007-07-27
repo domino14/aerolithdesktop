@@ -15,10 +15,13 @@ class playerInfoWidget : public QWidget
   void removePlayer(QString player, bool gameStarted);
   void leaveTable();
   void setReadyIndicator(QString username);
+  void setAvatar(QString username, quint8 avatarID);
  private:
+	 QHBoxLayout* playerInfoLayout[6];
   QListWidget* playerLists[6];
   QLabel* playerNames[6];
-  QLabel* playerStatus[6];
+  QLabel* playerAvatars[6];
+	QLabel* playerStatus[6];
   QHash <QString, int> seats;
 };
 
