@@ -759,7 +759,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		  chatText->append("<font color=red>The game has started!</font>");
 		  gameStarted = true;
 		  rightAnswers.clear();
-		  gameTimer->start(1000);
+		  //gameTimer->start(1000);
 		}
 
 		break;
@@ -769,7 +769,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		chatText->append("<font color=red>This round is over.</font>");
 		gameStarted = false;
 		populateSolutionsTable();
-		gameTimer->stop();
+		///gameTimer->stop();
 		break;
 		
 
