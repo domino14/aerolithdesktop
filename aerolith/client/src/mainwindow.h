@@ -93,6 +93,7 @@ private:
 		void submitReady();
 		void aerolithHelpDialog();
 		void updateGameTimer();
+		void changeMyAvatar(quint8 avatarID);
 };
 
 

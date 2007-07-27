@@ -6,8 +6,11 @@ playerInfoWidget::playerInfoWidget()
 	
 	for (int i = 0; i < 6; i++)
     {
-	playerAvatars[i] = new QLabel("");
+	playerAvatars[i] = new avatarLabel;
 	playerAvatars[i]->setFixedWidth(40);
+
+	connect(playerAvatars[i], SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
+	connect(playerAvatars[i], SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
 
       playerNames[i] = new QLabel("");
       playerNames[i]->setAlignment(Qt::AlignCenter);
@@ -44,6 +47,40 @@ playerInfoWidget::playerInfoWidget()
 #endif
   setLayout(playerListsLayout);
 }
+
+void playerInfoWidget::possibleChangeAvatarLeft()
+{
+	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
+	if (clickedLabel->property("username").toString() == myUsername)
+	{
+	
+		quint8 avatarID = clickedLabel->property("avatarID").toInt();
+		if (avatarID == NUM_AVATAR_IDS) avatarID = 1;
+		else avatarID++;
+
+		emit avatarChange(avatarID);
+	}
+}
+
+void playerInfoWidget::possibleChangeAvatarRight()
+{
+	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
+	if (clickedLabel->property("username").toString() == myUsername)
+	{
+	
+		quint8 avatarID = clickedLabel->property("avatarID").toInt();
+		if (avatarID == 1) avatarID = NUM_AVATAR_IDS;
+		else avatarID--;
+
+		emit avatarChange(avatarID);
+	}
+}
+
+void playerInfoWidget::setMyUsername(QString username)
+{
+	myUsername = username;
+}
+
 
 void playerInfoWidget::clearAndHide()
 {
@@ -193,5 +230,44 @@ void playerInfoWidget::setAvatar(QString username, quint8 avatarID)
       return;
   }
 	playerAvatars[seat]->setPixmap(QString(":images/face%1.png").arg(avatarID));
+	playerAvatars[seat]->setProperty("avatarID", QVariant(avatarID));
+	playerAvatars[seat]->setProperty("username", QVariant(username));	// shouldn't have to repeat this, 
+																		// will eventually come up with an actual seat system
 
+}
+
+avatarLabel::avatarLabel(QWidget *parent) : QLabel(parent)
+{
+	left_pressed = false;
+	right_pressed = false;
+
+}
+
+void avatarLabel::mousePressEvent(QMouseEvent *e)
+{
+	if (e->button() == Qt::LeftButton)
+	{
+		left_pressed = true;
+	}
+	else if (e->button() == Qt::RightButton)
+	{
+		right_pressed = true;
+	}
+}
+
+void avatarLabel::mouseReleaseEvent(QMouseEvent *e)
+{
+	if (left_pressed && e->button() == Qt::LeftButton && inLabel(e->pos()))
+		emit leftMouseClicked();
+	else if (right_pressed && e->button() == Qt::RightButton && inLabel(e->pos()))
+		emit rightMouseClicked();
+
+	left_pressed = false;
+	right_pressed = false;
+
+}
+
+bool avatarLabel::inLabel(const QPoint &p)
+{
+	return rect().contains(p);
 }

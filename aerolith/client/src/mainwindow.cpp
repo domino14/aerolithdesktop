@@ -107,6 +107,7 @@ out(&block, QIODevice::WriteOnly)
 	// Players box
 
 	PlayerInfoWidget = new playerInfoWidget(); // includes lists, etc
+	connect(PlayerInfoWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
 
 	QVBoxLayout *gameBoardLayout = new QVBoxLayout;
 	gameBoardLayout->addLayout(topSolutionLayout);
@@ -406,6 +407,7 @@ void MainWindow::readFromServer()
 					gameStackedWidget->setCurrentIndex(0);
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 					sendClientVersion();   // not yet. add this for the actual version 0.1.2
+					PlayerInfoWidget->setMyUsername(username);
 				}
 			}
 			break;
@@ -1126,6 +1128,14 @@ void MainWindow::sendClientVersion()
 	writeHeaderData();
 	out << (quint8)'v';
 	out << thisVersion;
+	fixHeaderLength();
+	commsSocket->write(block);
+}
+
+void MainWindow::changeMyAvatar(quint8 avatarID)
+{
+	writeHeaderData();
+	out << (quint8) 'i' << avatarID;
 	fixHeaderLength();
 	commsSocket->write(block);
 }
