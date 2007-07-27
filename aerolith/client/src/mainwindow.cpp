@@ -76,24 +76,21 @@ out(&block, QIODevice::WriteOnly)
 	
 	QHBoxLayout *topSolutionLayout = new QHBoxLayout;
 	
+	timerDial = new QLCDNumber(3);
+	timerDial->setFixedWidth(50);
+	timerDial->setSegmentStyle(QLCDNumber::Filled);
+
+	topSolutionLayout->addWidget(timerDial);
 	topSolutionLayout->addStretch(1);
 	topSolutionLayout->addWidget(giveup);
 	topSolutionLayout->addSpacing(50);
 	topSolutionLayout->addWidget(exitTable);
 	QHBoxLayout *bottomSolutionLayout = new QHBoxLayout;
-	/*		timerDial = new QDial();
-			timerDial->setMaximum(300);
-			timerDial->setMinimum(0);
-			timerDial->setValue(0);
-			timerDial->setNotchesVisible(true);
-			timerDial->setEnabled(false);*/
-	timerDial = new QLabel;
-	timerDial->setFixedWidth(30);
-	timerDial->setAlignment(Qt::AlignCenter);
+	
 	bottomSolutionLayout->addWidget(solutionLabel);
 	bottomSolutionLayout->addWidget(solutionLE);
 	bottomSolutionLayout->addStretch(1);
-	bottomSolutionLayout->addWidget(timerDial);
+	//bottomSolutionLayout->addWidget(timerDial);
 	bottomSolutionLayout->addWidget(start);
 	bottomSolutionLayout->addWidget(solutions);
 	bottomSolutionLayout->addWidget(alpha);
@@ -255,6 +252,8 @@ out(&block, QIODevice::WriteOnly)
 		connect(helpAction, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
 		missedColorBrush.setColor(Qt::red);
 
+		gameTimer = new QTimer();
+		connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
 		//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
 }
 
@@ -476,7 +475,7 @@ void MainWindow::readFromServer()
 					int row = findRoomTableRow(tablenum);
 					QString wList = roomTable->item(row, 1)->text();
 					gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
-					timerDial->setText("0");
+					timerDial->display(0);
 					
 					PlayerInfoWidget->clearAndHide();
 					wordsWidget->clearCells();
@@ -738,7 +737,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			quint16 timerval;	
 			in >> timerval;
-			timerDial->setText(QString("%1").arg(timerval));
+			timerDial->display(timerval);
 
 
 		}
@@ -760,7 +759,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		  chatText->append("<font color=red>The game has started!</font>");
 		  gameStarted = true;
 		  rightAnswers.clear();
-		  
+		  gameTimer->start(1000);
 		}
 
 		break;
@@ -770,7 +769,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		chatText->append("<font color=red>This round is over.</font>");
 		gameStarted = false;
 		populateSolutionsTable();
-			
+		gameTimer->stop();
 		break;
 		
 
@@ -889,7 +888,7 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
   if (modification == 1)
 	  // player has been added
 	  // find a spot
-	  PlayerInfoWidget->addPlayer(player);
+	  PlayerInfoWidget->addPlayer(player, gameStarted);
   
   else if (modification == -1)
     PlayerInfoWidget->removePlayer(player, gameStarted);
@@ -1108,4 +1107,12 @@ void MainWindow::sendClientVersion()
 	out << thisVersion;
 	fixHeaderLength();
 	commsSocket->write(block);
+}
+
+void MainWindow::updateGameTimer()
+{
+  if (timerDial->value() == 0) return;
+  
+  timerDial->display(timerDial->value() - 1);
+
 }

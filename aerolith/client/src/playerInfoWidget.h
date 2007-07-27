@@ -11,7 +11,7 @@ class playerInfoWidget : public QWidget
   void setupForGameStart();
   void answered(QString username, QString answer);
   void addPlayers(QStringList playerList);
-  void addPlayer(QString player);
+  void addPlayer(QString player, bool gameStarted);
   void removePlayer(QString player, bool gameStarted);
   void leaveTable();
   void setReadyIndicator(QString username);
