@@ -111,7 +111,7 @@ out(&block, QIODevice::WriteOnly)
 
 	QVBoxLayout *gameBoardLayout = new QVBoxLayout;
 	gameBoardLayout->addLayout(topSolutionLayout);
-	gameBoardLayout->addWidget(wordsWidget);
+	gameBoardLayout->addWidget(wordsWidget, 0, Qt::AlignHCenter);
 	gameBoardLayout->addSpacing(10);
 	gameBoardLayout->addLayout(bottomSolutionLayout);
 	gameBoardLayout->addSpacing(10);
@@ -396,6 +396,15 @@ void MainWindow::readFromServer()
 		qDebug() << "Packet type " << (char)packetType << "block length" << blockSize;
 		switch(packetType)
 		{
+		case '?':
+
+		  // keep alive
+		  writeHeaderData();
+		  out << (quint8)'?';
+		  fixHeaderLength();
+		  commsSocket->write(block);		  
+		  break;
+
 		case 'E':	// logged in (entered)
 			{
 				QString username;

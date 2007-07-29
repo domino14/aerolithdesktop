@@ -4,14 +4,14 @@ playerInfoWidget::playerInfoWidget()
 {
   QGridLayout *playerListsLayout = new QGridLayout;
 	
-	for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 6; i++)
     {
-	playerAvatars[i] = new avatarLabel;
-	playerAvatars[i]->setFixedWidth(40);
-
-	connect(playerAvatars[i], SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
-	connect(playerAvatars[i], SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
-
+      playerAvatars[i] = new avatarLabel;
+      playerAvatars[i]->setFixedWidth(40);
+      
+      connect(playerAvatars[i], SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
+      connect(playerAvatars[i], SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
+      
       playerNames[i] = new QLabel("");
       playerNames[i]->setAlignment(Qt::AlignCenter);
       playerNames[i]->setFixedWidth(80);
@@ -25,15 +25,15 @@ playerInfoWidget::playerInfoWidget()
       
       if (i != 0)
 	{
-		playerAvatars[i]->hide();
+	  playerAvatars[i]->hide();
 	  playerLists[i]->hide();
 	  playerNames[i]->hide();
 	  playerStatus[i]->hide();
 	}
-		playerInfoLayout[i] = new QHBoxLayout;
-	  playerInfoLayout[i]->addWidget(playerAvatars[i]);
-	playerInfoLayout[i]->addWidget(playerNames[i]);
-
+      playerInfoLayout[i] = new QHBoxLayout;
+      playerInfoLayout[i]->addWidget(playerAvatars[i]);
+      playerInfoLayout[i]->addWidget(playerNames[i]);
+      
       playerListsLayout->addLayout(playerInfoLayout[i], 0, i*2);
       playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
       playerListsLayout->addWidget(playerLists[i], 1, i*2);
@@ -89,12 +89,12 @@ void playerInfoWidget::clearAndHide()
       playerNames[i]->setText("");
       playerStatus[i]->setText("");
       playerLists[i]->clear();
-	  playerAvatars[i]->setText("");
-
+      playerAvatars[i]->setText("");
+      
       playerLists[i]->hide();
       playerNames[i]->hide();
       playerStatus[i]->hide();
-	  playerAvatars[i]->hide();
+      playerAvatars[i]->hide();
 
     }
 }
@@ -125,7 +125,7 @@ void playerInfoWidget::addPlayers(QStringList playerList)
 {
   for (int i = 0; i < playerList.size(); i++)
     {
-		playerAvatars[i]->show();
+      playerAvatars[i]->show();
       playerNames[i]->setText(playerList[i]);
       playerNames[i]->show();
       playerLists[i]->show();
