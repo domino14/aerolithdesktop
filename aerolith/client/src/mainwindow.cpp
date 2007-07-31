@@ -1,5 +1,27 @@
 #include "mainwindow.h"
 
+struct tempHighScoresStruct
+{
+  QString username;
+  quint16 numCorrect;
+  quint16 timeRemaining;
+  tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
+  {
+    this->username = username;
+    this->numCorrect = numCorrect;
+    this->timeRemaining = timeRemaining;
+  }
+
+};
+
+bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
+{
+  if (a.numCorrect == b.numCorrect) return (a.timeRemaining > b.timeRemaining);
+  else return (a.numCorrect > b.numCorrect);
+}
+
+
+
 const quint16 MAGIC_NUMBER = 25345;
 const QString WindowTitle = "Aerolith 0.1.2";
 const QString thisVersion = "0.1.2";
@@ -12,46 +34,12 @@ out(&block, QIODevice::WriteOnly)
 	//setCentralWidget(mainTabWidget);
 
 
-	// create login widget
-	QWidget *loginWidget = new QWidget;
-	username = new QLineEdit;
-
-	toggleConnection = new QPushButton("Connect");
-
-	connectStatusLabel = new QLabel("Please enter your desired username");  
-	QLabel *userLabel = new QLabel("Username: ");
-	QLabel *serverLabel = new QLabel("Address: ");
-	serverAddress = new QLineEdit("cesar.boldlygoingnowhere.org");
-	serverAddress->setFixedWidth(200);
-	serverPort = new QLineEdit("1988");
-	serverPort->setFixedWidth(50);
-	username->setFixedWidth(150);
-	username->setMaxLength(16);
-	toggleConnection->setFixedWidth(150);
-	connectStatusLabel->setFixedWidth(600);
-
-	QGridLayout *loginWidgetLayout = new QGridLayout;
-	loginWidgetLayout->addWidget(userLabel, 0, 0);
-	loginWidgetLayout->addWidget(username, 0, 1);
-	loginWidgetLayout->addWidget(serverLabel, 2, 0);
-	loginWidgetLayout->addWidget(serverAddress, 2, 1);
-	loginWidgetLayout->addWidget(serverPort, 2, 2);
-	loginWidgetLayout->addWidget(toggleConnection, 3, 1);
-	loginWidgetLayout->addWidget(connectStatusLabel, 5, 1);
-
-	QHBoxLayout *overallLoginWidgetLayout = new QHBoxLayout;
-	overallLoginWidgetLayout->addLayout(loginWidgetLayout);
-	overallLoginWidgetLayout->addStretch(1);
-
-	loginWidget->setLayout(overallLoginWidgetLayout);
-
-	//  mainTabWidget->addTab(loginWidget, "Login window");
 
 	// create game board widget
 	gameBoardGroupBox = new QGroupBox("Game board");
 
 
-	QWidget *centralWidget = new QWidget;	 // the 'overall'  widget
+	centralWidget = new QWidget;	 // the 'overall'  widget
 
 	wordsWidget = new wordsTableWidget();
 	connect(wordsWidget, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
@@ -139,20 +127,33 @@ out(&block, QIODevice::WriteOnly)
 		roomTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
 		QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
 		roomSelectorLayout->addWidget(roomTable);
-		/*  QPushButton *joinRoom1 = new QPushButton("Join");
-		QPushButton *joinRoom2 = new QPushButton("Join");
-		roomTable->setCellWidget(0, 4, joinRoom1);
-		roomTable->setCellWidget(1, 4, joinRoom2);*/
 
+		QHBoxLayout *newRoomLayout = new QHBoxLayout;
 		QPushButton *newRoom = new QPushButton("Create new table");
-		roomSelectorLayout->addWidget(newRoom);
 		newRoom->setFixedWidth(150);
+		QPushButton *dailyChallenges = new QPushButton("Daily challenges.");
+		dailyChallenges->setFixedWidth(150);
+
+		QMenu *challengesMenu = new QMenu;
+		for (int i = 4; i <= 9; i++)
+		  challengesMenu->addAction(QString("Daily %1s").arg(i));
+		challengesMenu->addAction("Get today's scores");
+
+		connect(challengesMenu, SIGNAL(triggered(QAction*)), this, SLOT(dailyChallengeSelected(QAction*)));
+		dailyChallenges->setMenu(challengesMenu);
+
+
+		newRoomLayout->addWidget(newRoom);
+		newRoomLayout->addWidget(dailyChallenges);
+		roomSelectorLayout->addLayout(newRoomLayout);
+
+		
 		roomSelectorGroupBox->setLayout(roomSelectorLayout);
 
 		gameStackedWidget = new QStackedWidget;
 		gameStackedWidget->addWidget(roomSelectorGroupBox);
 		gameStackedWidget->addWidget(gameBoardGroupBox);
-		gameStackedWidget->addWidget(loginWidget);
+		
 		//gameStackedWidget->setFixedWidth(850);
 
 
@@ -206,25 +207,39 @@ out(&block, QIODevice::WriteOnly)
 		connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
 			this, SLOT(displayError(QAbstractSocket::SocketError)));
 		connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
-		connect(toggleConnection, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
+		//		connect(toggleConnection, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
 		connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
 		connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
 
 		createTableDialog = new QDialog(this);
 		uiTable.setupUi(createTableDialog);
+
 		solutionsDialog = new QDialog(this);
 		uiSolutions.setupUi(solutionsDialog);
 		uiSolutions.solutionsTableWidget->verticalHeader()->hide();
 		
+		scoresDialog = new QDialog(this);
+		uiScores.setupUi(scoresDialog);
+		uiScores.scoresTableWidget->verticalHeader()->hide();
+		connect(uiScores.getScoresPushbutton, SIGNAL(clicked()), this, SLOT(getScores()));
+
+		loginDialog = new QDialog(this);
+		uiLogin.setupUi(loginDialog);
+		
 		solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
+		scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
+	       
 
 		gameStarted = false;
 		connect(solutions, SIGNAL(clicked()), solutionsDialog, SLOT(show())); 
 		blockSize = 0; 
 
 		currentTablenum = 0;
-		gameStackedWidget->setCurrentIndex(2);
+		gameStackedWidget->setCurrentIndex(0);
+		// TODO replace with show login dialog
+		loginDialog->show();
 
+		centralWidget->hide();
 		setCentralWidget(centralWidget);  
 		out.setVersion(QDataStream::Qt_4_2);  
 
@@ -412,8 +427,9 @@ void MainWindow::readFromServer()
 				QListWidgetItem *it = new QListWidgetItem(username, peopleConnected);
 				if (username == currentUsername) 
 				{
-					connectStatusLabel->setText("You have connected!");
+				  //					connectStatusLabel->setText("You have connected!");
 					gameStackedWidget->setCurrentIndex(0);
+					centralWidget->show();
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 					sendClientVersion();   // not yet. add this for the actual version 0.1.2
 					PlayerInfoWidget->setMyUsername(username);
@@ -569,7 +585,15 @@ void MainWindow::readFromServer()
 
 			}
 			break;
+		case 'H':
+		  // high scores!
+		  {
+		    displayHighScores();
 
+		  }
+
+
+		  break;
 		case 'I':
 			// avatar id
 			{
@@ -622,8 +646,8 @@ void MainWindow::displayError(QAbstractSocket::SocketError socketError)
 		  tr("The following error occurred: %1.")
 		  .arg(commsSocket->errorString()));
 	}
-	toggleConnection->setText("Connect");
-	connectStatusLabel->setText("Disconnected.");
+	//toggleConnection->setText("Connect");
+	//connectStatusLabel->setText("Disconnected.");
 }
 
 void MainWindow::toggleConnectToServer()
@@ -632,9 +656,10 @@ void MainWindow::toggleConnectToServer()
 	{
 
 		commsSocket->abort();
-		commsSocket->connectToHost(serverAddress->text(), serverPort->text().toInt());
-		connectStatusLabel->setText("Connecting to server...");
-		toggleConnection->setText("Disconnect");
+		// TODO FIX!
+		//		commsSocket->connectToHost(serverAddress->text(), serverPort->text().toInt());
+		//connectStatusLabel->setText("Connecting to server...");
+		//toggleConnection->setText("Disconnect");
 
 
 		roomTable->clearContents();
@@ -642,10 +667,12 @@ void MainWindow::toggleConnectToServer()
 	}
 	else
 	{	
-		connectStatusLabel->setText("Disconnected from server");
+	  //		connectStatusLabel->setText("Disconnected from server");
 		commsSocket->disconnectFromHost();
-		toggleConnection->setText("Connect");
-		gameStackedWidget->setCurrentIndex(2);
+		//toggleConnection->setText("Connect");
+		//gameStackedWidget->setCurrentIndex(2);
+		centralWidget->hide();
+		loginDialog->show();
 	}
 
 }
@@ -653,11 +680,13 @@ void MainWindow::toggleConnectToServer()
 void MainWindow::serverDisconnection()
 {
 
-	connectStatusLabel->setText("You are disconnected.");
+  //	connectStatusLabel->setText("You are disconnected.");
 	peopleConnected->clear();
 	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
-	toggleConnection->setText("Connect");
-	gameStackedWidget->setCurrentIndex(2);
+	//toggleConnection->setText("Connect");
+	centralWidget->hide();
+	loginDialog->show();
+
 	roomTable->clearContents();
 	roomTable->setRowCount(0);
 	setWindowTitle("Aerolith - disconnected");
@@ -671,7 +700,8 @@ void MainWindow::writeUsernameToServer()
 	blockSize = 0;
 	in.setDevice(commsSocket);
 	in.setVersion(QDataStream::Qt_4_2);
-	currentUsername = username->text();
+	//	currentUsername = username->text();
+	// TODO FIX!
 
 	writeHeaderData();
 	out << (quint8)'e';
@@ -1072,6 +1102,43 @@ void MainWindow::aerolithHelpDialog()
   QMessageBox::information(this, "Aerolith how-to", infoText);
 }
 
+void MainWindow::displayHighScores()
+{
+  quint8 wordLength;
+  quint16 numSolutions;
+  quint16 numEntries;
+  in >> wordLength >> numSolutions >> numEntries;
+  QString username;
+  quint16 numCorrect;
+  quint16 timeRemaining;
+  uiScores.scoresTableWidget->clearContents();
+  uiScores.scoresTableWidget->setRowCount(0);
+
+  
+  QList <tempHighScoresStruct> temp;
+  for (int i = 0; i < numEntries; i++)
+    {
+      in >> username >> numCorrect >> timeRemaining;
+      temp << tempHighScoresStruct(username, numCorrect, timeRemaining);
+    }
+  qSort(temp.begin(), temp.end(), highScoresLessThan);
+  
+  for (int i = 0; i < numEntries; i++)
+    {
+
+      QTableWidgetItem* rankItem = new QTableWidgetItem(QString("%1").arg(i+1));
+      QTableWidgetItem* usernameItem = new QTableWidgetItem(temp.at(i).username);
+      QTableWidgetItem* correctItem = new QTableWidgetItem(QString("%1%").arg(100.0*(double)temp.at(i).numCorrect/(double)numSolutions));
+      QTableWidgetItem* timeItem = new QTableWidgetItem(QString("%1 s").arg(temp.at(i).timeRemaining));
+      uiScores.scoresTableWidget->insertRow(uiScores.scoresTableWidget->rowCount());
+      uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 0, rankItem);
+      uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 1, usernameItem);
+      uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 2, correctItem);
+      uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 3, timeItem);
+    }
+
+  uiScores.scoresTableWidget->resizeColumnsToContents();
+}
 
 void MainWindow::populateSolutionsTable()
 {
@@ -1154,5 +1221,52 @@ void MainWindow::updateGameTimer()
   if (timerDial->value() == 0) return;
   
   timerDial->display(timerDial->value() - 1);
+
+}
+
+void MainWindow::dailyChallengeSelected(QAction* challengeAction)
+{
+  if (challengeAction->text() == "Get today's scores")
+    {
+      uiScores.scoresTableWidget->clearContents();
+      uiScores.scoresTableWidget->setRowCount(0);
+      scoresDialog->show();
+    }
+  else
+    {
+	writeHeaderData();
+	out << (quint8)'t';
+	out << challengeAction->text(); // create a table 
+	out << (quint8)1; // 1 player
+	out << (quint8)3; // 3 is for daily challenges (TODO: HARDCODE BAD)
+
+	if (challengeAction->text() == "Daily 4s")
+	  out << (quint8)3; // 3 mins
+	else
+	  out << (quint8)4;
+
+	fixHeaderLength();
+	commsSocket->write(block);
+    }
+}
+
+void MainWindow::getScores()
+{
+  uiScores.scoresTableWidget->clearContents();
+  uiScores.scoresTableWidget->setRowCount(0);
+  writeHeaderData();
+  out << (quint8)'h';
+  out << (quint8)(uiScores.scoresComboBox->currentIndex() + 4);
+  fixHeaderLength();
+  commsSocket->write(block);
+
+
+}
+
+void MainWindow::registerName()
+{
+
+  //  int retval = registerDialog->exec();
+  //if (retval == QDialog::Rejected) return;
 
 }
