@@ -6,7 +6,8 @@
 #include <QtSql>
 #include "ui_tableCreateForm.h"
 #include "ui_solutionsForm.h"
-
+#include "ui_scoresForm.h"
+#include "ui_loginForm.h"
 #include "wordsTableWidget.h"
 #include "playerInfoWidget.h"
 
@@ -19,19 +20,17 @@ class MainWindow : public QMainWindow
 public:
 	MainWindow();
 private:
-	QLineEdit *username;
-	QLineEdit *serverAddress;
-	QLineEdit *serverPort;
-	QLineEdit *solutionLE; // this will be submitted (to answers) when pressing enter
-	QLineEdit *chatLE; // as will this (to chat)
-	QTextEdit *chatText; // this is the chat box
+	QWidget* centralWidget;
+	QLineEdit* chatLE;
+	QLineEdit* solutionLE;
+	QTextEdit* chatText;
 	QTcpSocket *commsSocket;
 	QListWidget *peopleConnected;
 	quint16 blockSize; // used for socket
-	QLabel *connectStatusLabel;
+
 	void processServerString(QString);
+
 	QString currentUsername;
-	QPushButton *toggleConnection;
 	QPushButton *exitTable;
 	QLCDNumber *timerDial;
 	QDataStream in;
@@ -61,9 +60,14 @@ private:
 	QDialog *createTableDialog;
 	QDialog *solutionsDialog;
 	QDialog *helpDialog;
+	QDialog *scoresDialog;
+	QDialog *loginDialog;
 
 	Ui::tableCreateForm uiTable;
 	Ui::solutionsForm uiSolutions;
+	Ui::scoresForm uiScores;
+	Ui::loginForm uiLogin;
+
 	QString alphagrammizeString(QString);
 	QString shuffleString(QString);
 	QSet <QString> rightAnswers;
@@ -71,7 +75,7 @@ private:
 	QSqlDatabase wordDb;
 	void populateSolutionsTable();
 	void sendClientVersion();
-
+	void displayHighScores();
 
 	QTimer* gameTimer;
 	public slots:
@@ -94,6 +98,9 @@ private:
 		void aerolithHelpDialog();
 		void updateGameTimer();
 		void changeMyAvatar(quint8 avatarID);
+		void dailyChallengeSelected(QAction*);
+		void getScores();
+		void registerName();
 };
 
 
