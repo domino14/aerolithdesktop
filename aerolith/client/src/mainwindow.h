@@ -103,6 +103,19 @@ private:
 		void registerName();
 };
 
+struct tempHighScoresStruct
+{
+  QString username;
+  quint16 numCorrect;
+  quint16 timeRemaining;
+  tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
+  {
+    this->username = username;
+    this->numCorrect = numCorrect;
+    this->timeRemaining = timeRemaining;
+  }
 
+};
 
+bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b);
 #endif
