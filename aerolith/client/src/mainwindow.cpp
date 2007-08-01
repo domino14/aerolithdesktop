@@ -1,18 +1,8 @@
 #include "mainwindow.h"
 
-struct tempHighScoresStruct
-{
-  QString username;
-  quint16 numCorrect;
-  quint16 timeRemaining;
-  tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
-  {
-    this->username = username;
-    this->numCorrect = numCorrect;
-    this->timeRemaining = timeRemaining;
-  }
-
-};
+const quint16 MAGIC_NUMBER = 25345;
+const QString WindowTitle = "Aerolith 0.1.2";
+const QString thisVersion = "0.1.2";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -20,11 +10,6 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
   else return (a.numCorrect > b.numCorrect);
 }
 
-
-
-const quint16 MAGIC_NUMBER = 25345;
-const QString WindowTitle = "Aerolith 0.1.2";
-const QString thisVersion = "0.1.2";
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
 out(&block, QIODevice::WriteOnly)
 {
@@ -207,7 +192,7 @@ out(&block, QIODevice::WriteOnly)
 		connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
 			this, SLOT(displayError(QAbstractSocket::SocketError)));
 		connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
-		//		connect(toggleConnection, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
+		
 		connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
 		connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
 
@@ -226,9 +211,11 @@ out(&block, QIODevice::WriteOnly)
 		loginDialog = new QDialog(this);
 		uiLogin.setupUi(loginDialog);
 		
+		connect(uiLogin.loginPushButton, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
+
 		solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
 		scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
-	       
+		loginDialog->setAttribute(Qt::WA_QuitOnClose, false);   
 
 		gameStarted = false;
 		connect(solutions, SIGNAL(clicked()), solutionsDialog, SLOT(show())); 
@@ -236,10 +223,10 @@ out(&block, QIODevice::WriteOnly)
 
 		currentTablenum = 0;
 		gameStackedWidget->setCurrentIndex(0);
-		// TODO replace with show login dialog
+		uiLogin.stackedWidget->setCurrentIndex(0);
 		loginDialog->show();
 
-		centralWidget->hide();
+		//centralWidget->hide();
 		setCentralWidget(centralWidget);  
 		out.setVersion(QDataStream::Qt_4_2);  
 
@@ -263,9 +250,11 @@ out(&block, QIODevice::WriteOnly)
 
 		QMenu* helpMenu = menuBar()->addMenu("Help");
 		QAction* helpAction = helpMenu->addAction("Aerolith Help");
-
+		QMenu* loginMenu = menuBar()->addMenu("Connect");
+		QAction* connectAction = loginMenu->addAction("Connect to Aerolith");
 
 		connect(helpAction, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
+		connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(show()));
 		missedColorBrush.setColor(Qt::red);
 
 		gameTimer = new QTimer();
@@ -427,9 +416,11 @@ void MainWindow::readFromServer()
 				QListWidgetItem *it = new QListWidgetItem(username, peopleConnected);
 				if (username == currentUsername) 
 				{
-				  //					connectStatusLabel->setText("You have connected!");
+				  uiLogin.connectStatusLabel->setText("You have connected!");
 					gameStackedWidget->setCurrentIndex(0);
-					centralWidget->show();
+
+					//centralWidget->show();
+					loginDialog->hide();
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 					sendClientVersion();   // not yet. add this for the actual version 0.1.2
 					PlayerInfoWidget->setMyUsername(username);
@@ -646,8 +637,9 @@ void MainWindow::displayError(QAbstractSocket::SocketError socketError)
 		  tr("The following error occurred: %1.")
 		  .arg(commsSocket->errorString()));
 	}
-	//toggleConnection->setText("Connect");
-	//connectStatusLabel->setText("Disconnected.");
+	
+	uiLogin.loginPushButton->setText("Connect");
+	uiLogin.connectStatusLabel->setText("Disconnected.");
 }
 
 void MainWindow::toggleConnectToServer()
@@ -656,10 +648,10 @@ void MainWindow::toggleConnectToServer()
 	{
 
 		commsSocket->abort();
-		// TODO FIX!
-		//		commsSocket->connectToHost(serverAddress->text(), serverPort->text().toInt());
-		//connectStatusLabel->setText("Connecting to server...");
-		//toggleConnection->setText("Disconnect");
+
+		commsSocket->connectToHost(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt());
+		uiLogin.connectStatusLabel->setText("Connecting to server...");
+		uiLogin.loginPushButton->setText("Disconnect");
 
 
 		roomTable->clearContents();
@@ -667,11 +659,11 @@ void MainWindow::toggleConnectToServer()
 	}
 	else
 	{	
-	  //		connectStatusLabel->setText("Disconnected from server");
+	  uiLogin.connectStatusLabel->setText("Disconnected from server");
 		commsSocket->disconnectFromHost();
-		//toggleConnection->setText("Connect");
+		uiLogin.loginPushButton->setText("Connect");
 		//gameStackedWidget->setCurrentIndex(2);
-		centralWidget->hide();
+		//centralWidget->hide();
 		loginDialog->show();
 	}
 
@@ -680,11 +672,11 @@ void MainWindow::toggleConnectToServer()
 void MainWindow::serverDisconnection()
 {
 
-  //	connectStatusLabel->setText("You are disconnected.");
+	uiLogin.connectStatusLabel->setText("You are disconnected.");
 	peopleConnected->clear();
 	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
-	//toggleConnection->setText("Connect");
-	centralWidget->hide();
+	uiLogin.loginPushButton->setText("Connect");
+	//centralWidget->hide();
 	loginDialog->show();
 
 	roomTable->clearContents();
@@ -700,8 +692,8 @@ void MainWindow::writeUsernameToServer()
 	blockSize = 0;
 	in.setDevice(commsSocket);
 	in.setVersion(QDataStream::Qt_4_2);
-	//	currentUsername = username->text();
-	// TODO FIX!
+	currentUsername = uiLogin.usernameLE->text();
+	
 
 	writeHeaderData();
 	out << (quint8)'e';

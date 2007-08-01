@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>416</width>
-    <height>314</height>
+    <width>418</width>
+    <height>337</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -22,7 +22,7 @@
     </rect>
    </property>
    <property name="currentIndex" >
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page" >
     <widget class="QGroupBox" name="groupBox" >
@@ -69,7 +69,7 @@
        <string>Port:</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_3" >
+     <widget class="QLineEdit" name="serverLE" >
       <property name="geometry" >
        <rect>
         <x>90</x>
@@ -82,7 +82,7 @@
        <string>cesar.boldlygoingnowhere.org</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_4" >
+     <widget class="QLineEdit" name="portLE" >
       <property name="geometry" >
        <rect>
         <x>90</x>
@@ -125,7 +125,7 @@
       <string>Password:</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit" >
+    <widget class="QLineEdit" name="usernameLE" >
      <property name="geometry" >
       <rect>
        <x>130</x>
@@ -138,7 +138,7 @@
       <number>16</number>
      </property>
     </widget>
-    <widget class="QLineEdit" name="lineEdit_2" >
+    <widget class="QLineEdit" name="passwordLE" >
      <property name="geometry" >
       <rect>
        <x>130</x>
@@ -159,21 +159,21 @@
       <rect>
        <x>260</x>
        <y>40</y>
-       <width>109</width>
-       <height>32</height>
+       <width>111</width>
+       <height>25</height>
       </rect>
      </property>
      <property name="text" >
-      <string>Log In</string>
+      <string>Connect</string>
      </property>
     </widget>
     <widget class="QPushButton" name="registerPushButton" >
      <property name="geometry" >
       <rect>
-       <x>10</x>
+       <x>20</x>
        <y>220</y>
-       <width>211</width>
-       <height>32</height>
+       <width>181</width>
+       <height>25</height>
       </rect>
      </property>
      <property name="text" >
@@ -195,7 +195,7 @@
       <string>Desired Username:</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="secondPasswordLE" >
+    <widget class="QLineEdit" name="desiredSecondPasswordLE" >
      <property name="geometry" >
       <rect>
        <x>150</x>
@@ -211,7 +211,7 @@
       <enum>QLineEdit::Password</enum>
      </property>
     </widget>
-    <widget class="QLineEdit" name="usernameLE" >
+    <widget class="QLineEdit" name="desiredUsernameLE" >
      <property name="geometry" >
       <rect>
        <x>150</x>
@@ -250,7 +250,7 @@
       <string>Reenter password:</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="firstPasswordLE" >
+    <widget class="QLineEdit" name="desiredFirstPasswordLE" >
      <property name="geometry" >
       <rect>
        <x>150</x>
@@ -293,6 +293,19 @@
      </property>
     </widget>
    </widget>
+  </widget>
+  <widget class="QLabel" name="connectStatusLabel" >
+   <property name="geometry" >
+    <rect>
+     <x>30</x>
+     <y>290</y>
+     <width>351</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
   </widget>
  </widget>
  <resources/>
