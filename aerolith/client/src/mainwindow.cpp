@@ -224,7 +224,7 @@ out(&block, QIODevice::WriteOnly)
 		currentTablenum = 0;
 		gameStackedWidget->setCurrentIndex(0);
 		uiLogin.stackedWidget->setCurrentIndex(0);
-		loginDialog->show();
+		
 
 		//centralWidget->hide();
 		setCentralWidget(centralWidget);  
@@ -260,6 +260,11 @@ out(&block, QIODevice::WriteOnly)
 		gameTimer = new QTimer();
 		connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
 		//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
+
+		show();
+		loginDialog->show();
+		loginDialog->activateWindow();
+		loginDialog->raise();
 }
 
 void MainWindow::writeHeaderData()
