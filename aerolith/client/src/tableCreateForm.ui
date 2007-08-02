@@ -49,11 +49,11 @@
      <height>22</height>
     </rect>
    </property>
-   <property name="maximum" >
-    <number>6</number>
-   </property>
    <property name="minimum" >
     <number>1</number>
+   </property>
+   <property name="maximum" >
+    <number>6</number>
    </property>
   </widget>
   <widget class="QLabel" name="label" >
@@ -191,11 +191,11 @@
    <property name="suffix" >
     <string> minutes</string>
    </property>
-   <property name="maximum" >
-    <number>12</number>
-   </property>
    <property name="minimum" >
     <number>1</number>
+   </property>
+   <property name="maximum" >
+    <number>12</number>
    </property>
    <property name="value" >
     <number>4</number>
@@ -243,6 +243,9 @@
     </property>
    </widget>
    <widget class="QRadioButton" name="endlessRbo" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
     <property name="geometry" >
      <rect>
       <x>10</x>
@@ -252,7 +255,10 @@
      </rect>
     </property>
     <property name="text" >
-     <string>"Endless"</string>
+     <string>Marathon</string>
+    </property>
+    <property name="checkable" >
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
