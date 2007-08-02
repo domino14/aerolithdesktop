@@ -265,6 +265,7 @@ out(&block, QIODevice::WriteOnly)
 		loginDialog->show();
 		loginDialog->activateWindow();
 		loginDialog->raise();
+		setWindowIcon(QIcon(":images/aerolith.png"));
 }
 
 void MainWindow::writeHeaderData()
