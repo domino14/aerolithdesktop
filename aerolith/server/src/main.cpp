@@ -30,22 +30,10 @@ void myMessageOutput(QtMsgType type, const char *msg)
 
 int main (int argc, char **argv)
 {
-  QFile *log = new QFile("log.txt");
-  if (log->open(QIODevice::WriteOnly))
-  {
-    outFile = new QTextStream (log);
-    qInstallMsgHandler(myMessageOutput);
-  }
-  else
-  {
-    delete log;
-    qDebug("Can't open log.txt file, all message will be output to debugger and console.");
-  }
 
-  QCoreApplication app(argc, argv);
   quint16 port = 0;
   bool ok = false;
-  if (argc > 1)
+  if (argc == 2)
     {
       port = QString(argv[1]).toInt(&ok);
     }
@@ -53,6 +41,26 @@ int main (int argc, char **argv)
     {
       port = DEFAULT_PORT;
     }
+
+  if (argc == 3)
+    {
+      if (QString(argv[2]) != "-nolog")
+	{
+	  QFile *log = new QFile(QString(argv[2]));
+	  if (log->open(QIODevice::WriteOnly))
+	    {
+	      outFile = new QTextStream (log);
+	      qInstallMsgHandler(myMessageOutput);
+	    }
+	  else
+	    {
+	      delete log;
+	      qDebug("Can't open log file, all message will be output to debugger and console.");
+	    }
+	}
+    }
+
+  QCoreApplication app(argc, argv);
   
   MainServer mainServer;
   mainServer.listen(QHostAddress::Any, port);

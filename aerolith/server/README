@@ -1,0 +1,3 @@
+at -qb now
+at> ./server 1988 log.txt
+at> ctrl+d
