@@ -3,6 +3,7 @@
 #include <QtDebug>
 #include <QtSql>
 #include "ClientWriter.h"
+#include "UnscrambleGame.h"
 //QList <QVariant> dummyList;
 
 extern QByteArray block;
@@ -39,7 +40,26 @@ MainServer::MainServer()
   //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
   //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
   //wordDb.open();
+  oneMinutePingTimer = new QTimer;
+  connect(oneMinutePingTimer, SIGNAL(timeout()), this, SLOT(pingEveryone()));
+  oneMinutePingTimer->start(60000);
 
+  midnightTimer = new QTimer;
+  connect(midnightTimer, SIGNAL(timeout()), this, SLOT(newDailyChallenges()));
+
+  midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
+  qDebug() << "there are" << 86400000 + QTime::currentTime().msecsTo(midnight) << "msecs to midnight.";
+  // but still generate daily challenges right now.
+  UnscrambleGame::generateDailyChallenges();
+  UnscrambleGame::midnightSwitchoverToggle = true;
+}
+
+void MainServer::newDailyChallenges()
+{
+  midnightTimer->stop();
+  midnightTimer->start(86400000);
+  UnscrambleGame::generateDailyChallenges();
+  
 }
 
 void MainServer::loadWordLists()
@@ -78,12 +98,38 @@ void MainServer::incomingConnection(int socketDescriptor)
       client->connData.in.setVersion(QDataStream::Qt_4_2);
       client->connData.tableNum = 0;
       client->connData.avatarId = 1;
+      client->connData.respondedToLastPing = true; // assume we responded to the last ping
       connect(client, SIGNAL(disconnected()), this, SLOT(removeConnection()));
       connect(client, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
 
     }
   qDebug() << "Incoming connection: " << client->peerAddress();
 
+}
+
+void MainServer::pingEveryone()
+{
+  if (connections.size() > 0)
+    {
+      writeHeaderData();      
+      out << (quint8) '?'; // keep alive
+      fixHeaderLength();
+
+      foreach (ClientSocket* socket, connections)
+	{
+	  // disconnect if did not respond to last ping
+	  if (socket->connData.respondedToLastPing == false)
+	    {
+	      socket->disconnectFromHost();
+	      qDebug() << socket->connData.userName << "lagged out!";
+	    }
+	  else
+	    {
+	      socket->write(block);
+	      socket->connData.respondedToLastPing = false;
+	    }
+	}
+    }
 }
 
 void MainServer::removeConnection()
@@ -177,6 +223,10 @@ void MainServer::receiveMessage()
 	}
       switch(packetType)
 	{
+	case '?':
+	  socket->connData.respondedToLastPing = true;
+	  break;
+	  
 	case 'a':
 	  processChatAction(socket);
 	  break;
@@ -201,6 +251,12 @@ void MainServer::receiveMessage()
 	  processNewTable(socket);
 	  break;
 	case 'i':
+	  // avatar ID
+	  processAvatarID(socket);
+	  break;
+	  
+
+	  //	case 'i':
 	  //table information! 
 	  //this packet should contain the entire word list as calculated by the client
 	  // since this could be fairly large, put a limit of 5000 on it
@@ -211,7 +267,7 @@ void MainServer::receiveMessage()
 	  // #_qs.tmp
 	  // will write errors into a temporary file #_es.tmp    # is the table number.
 	  // these files will be deleted when the table is closed!!
-	  break;
+	  //break;
 	case 'v':
 	  processVersionNumber(socket);
 	  break;
@@ -223,9 +279,12 @@ void MainServer::receiveMessage()
 	  processLeftTable(socket);
 	  break;
 	case '=':
-	  processTableCommand(socket);
-	  
+	  processTableCommand(socket);	  
 	  break;
+	case 'h':
+	  sendHighScores(socket);
+	  break;
+
 	default:
 	  socket->disconnectFromHost(); // possibly a malicious packet
 	  return;
@@ -234,6 +293,66 @@ void MainServer::receiveMessage()
       socket->connData.numBytesInPacket = 0;      
       
     }
+}
+
+
+void MainServer::sendHighScores(ClientSocket* socket)
+{
+  // sends high scores for unscramble game
+  quint8 wordLengthDesired;
+
+  socket->connData.in >> wordLengthDesired;
+  if (wordLengthDesired >= 4 && wordLengthDesired <= 9)
+    {
+      QList <highScoreData> *tmp = &UnscrambleGame::dailyHighScores[wordLengthDesired - 4];
+      if (tmp->size() == 0)
+	return;
+      
+      writeHeaderData();
+      out << (quint8) 'H'; // high scores
+      out << wordLengthDesired;
+      out << tmp->at(0).numSolutions;
+      out << (quint16) tmp->size();
+      qDebug() << "WL: " << wordLengthDesired << "#Sol" << tmp->at(0).numSolutions << "#players" << tmp->size();
+      for (int i = 0; i < tmp->size(); i++)
+	{
+	  out << tmp->at(i).userName;
+	  out << tmp->at(i).numCorrect;
+	  out << tmp->at(i).timeRemaining;
+	  qDebug() << tmp->at(i).userName << tmp->at(i).numCorrect << tmp->at(i).timeRemaining;
+	}
+
+      // 40 bytes per score
+      // max ppl allowed = ~1000 or more. 
+
+      fixHeaderLength();
+      socket->write(block);
+    }
+  
+}
+
+void MainServer::processAvatarID(ClientSocket* socket)
+{
+  QString username;
+  quint8 avatarID;
+
+  username = socket->connData.userName;
+  socket->connData.in >> avatarID;
+  socket->connData.avatarId = avatarID;
+
+  // only send avatars to table and only if this user is in a table
+  // when players join a table, send avatars as well
+
+  if (socket->connData.tableNum != 0)
+    {
+      tableData* table = tables.value(socket->connData.tableNum);
+      //      table->sendAvatarChangePacket(username, avatarID);
+    
+      foreach (ClientSocket *thisConn, table->playerList)
+	sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
+
+    }
+
 }
 
 
@@ -448,9 +567,16 @@ void MainServer::processNewTable(ClientSocket* socket)
   socket->playerData.gaveUp = false;
 
   tableData *tmp = new tableData;
-  tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
-		  tableData::GAMEMODE_UNSCRAMBLE, wordLists.value(tableName));
-
+  if (cycleState != 3)
+    {
+      tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
+		      tableData::GAMEMODE_UNSCRAMBLE, wordLists.value(tableName));
+    }
+  else
+    {
+      tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
+		      tableData::GAMEMODE_UNSCRAMBLE, tableName);
+    }
   tables.insert(tablenum, tmp);
 
   writeHeaderData();
@@ -461,6 +587,9 @@ void MainServer::processNewTable(ClientSocket* socket)
   
   foreach (ClientSocket* connection, connections)
     connection->write(block);  
+  
+  // send avatar change packet to self
+  sendAvatarChangePacket(socket, socket, socket->connData.avatarId);
 
 }
 
@@ -520,9 +649,30 @@ void MainServer::processJoinTable(ClientSocket* socket)
   socket->playerData.gaveUp = false;
 
   foreach (ClientSocket* thisConn, tmp->playerList)
+  {
     thisConn->playerData.readyToPlay = false;
-
+    
+   
+    // send everyone's avatar TO this socket
+    sendAvatarChangePacket(thisConn, socket, thisConn->connData.avatarId);
+    // send this guy's avatar to every socket
+    if (socket != thisConn) 
+      sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
+  }
+  
   tmp->tableGame->playerJoined(socket);
+}
+
+void MainServer::sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *toSocket, quint8 avatarID)
+{
+  // this should not be a table command because there are other situations in which avatars can be changed, i.e. chatroom icons, etc. in the future
+  writeHeaderData();      
+  out << (quint8) 'I';
+  out << fromSocket->connData.userName; // sender of message
+  out << avatarID; 
+  fixHeaderLength();
+  toSocket->write(block); 
+  qDebug() << "told " << toSocket->connData.userName << "that" << fromSocket->connData.userName << "now has avatar id " << avatarID;
 }
 
 void MainServer::processPrivateMessage(ClientSocket* socket)
@@ -541,7 +691,7 @@ void MainServer::processPrivateMessage(ClientSocket* socket)
       ClientSocket* connection = usernamesHash.value(username); // receiver
       writeHeaderData();      
       out << (quint8) 'P';
-      out << username; // sender of message
+      out << socket->connData.userName; // sender of message
       out << message; 
       fixHeaderLength();
       connection->write(block); 
@@ -552,8 +702,8 @@ void MainServer::processPrivateMessage(ClientSocket* socket)
 
 void MainServer::processLogin(ClientSocket* socket)
 {
-  QString username;
-  socket->connData.in >> username;
+  QString username, password;
+  socket->connData.in >> username; // >> password
   qDebug() << "Login: " << username; 
   
   if (socket->connData.loggedIn == true)
@@ -569,10 +719,13 @@ void MainServer::processLogin(ClientSocket* socket)
       socket->disconnectFromHost();
       return;
     }
+
   // TODO REGISTRATION SYSTEM LOL
-  if (usernamesHash.find(username) != usernamesHash.end())
+  if (usernamesHash.contains(username))
     {
-      writeToClient(socket, "That username is already in use! Please select another one.", S_ERROR);
+
+      writeToClient(socket, "It appears that you were already logged in... Your previous connection has been logged out! Please try again.", S_ERROR);
+      usernamesHash.value(username)->disconnectFromHost();
       socket->disconnectFromHost();
       return;
     }
@@ -694,7 +847,7 @@ void MainServer::writeToClient(ClientSocket* socket, QString parameter, packetHe
 
 bool MainServer::isValidUsername(QString username)
 {
-  if (username.length() > 16) return false;
+  if (username.length() > 16 || username.length() < 1) return false;
   if (!username.at(0).isLetter()) return false;
   for (int i = 1; i < username.length(); i++)
     if (!username.at(i).isLetterOrNumber()) return false;

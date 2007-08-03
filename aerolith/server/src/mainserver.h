@@ -1,3 +1,4 @@
+
 #ifndef _MAINSERVER_H_
 #define _MAINSERVER_H_
 
@@ -22,11 +23,14 @@ public:
 private slots:
  void removeConnection();
  void receiveMessage();
+ void pingEveryone();
+ void newDailyChallenges();
  // void updateTimer();
  // void updateCountdownTimer();
 
 private:
-
+ QTimer* oneMinutePingTimer;
+ QTimer* midnightTimer;
  void incomingConnection(int socketDescriptor); // inherited from QTcpServer
  QSqlDatabase wordDb;
  
@@ -47,9 +51,10 @@ private:
  QHash <QString, QString> wordLists;
  QStringList orderedWordLists;
 
+ void sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *toSocket, quint8 avatarID);
 
  void loadWordLists();
-
+ void sendHighScores(ClientSocket*);
  void processLogin(ClientSocket*);
  void processChat(ClientSocket*);
  void processPrivateMessage(ClientSocket*);
@@ -61,6 +66,7 @@ private:
  void processTableCommand(ClientSocket*);
  void processChatAction(ClientSocket*);
  void processVersionNumber(ClientSocket*);
+ void processAvatarID(ClientSocket*);
  bool isValidUsername(QString);
 
 };

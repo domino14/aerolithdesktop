@@ -51,3 +51,12 @@ void tableData::sendChatSentPacket(QString username, QString chat)
   fixHeaderLength();
   sendGenericPacket();
 }
+
+void tableData::sendServerMessage(QString message)
+{
+  writeHeaderData();
+  out << (quint8) 'S';
+  out << message;
+  fixHeaderLength();
+  sendGenericPacket();
+}
