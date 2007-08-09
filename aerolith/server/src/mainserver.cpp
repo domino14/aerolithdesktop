@@ -847,9 +847,25 @@ void MainServer::writeToClient(ClientSocket* socket, QString parameter, packetHe
 
 bool MainServer::isValidUsername(QString username)
 {
+  
+
   if (username.length() > 16 || username.length() < 1) return false;
-  if (!username.at(0).isLetter()) return false;
+  
+  char ch = username.at(0).toLatin1();
+  if (! ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')))
+    return false;
+  
   for (int i = 1; i < username.length(); i++)
-    if (!username.at(i).isLetterOrNumber()) return false;
+    {
+      char ch = username.at(i).toLatin1();
+      qDebug() << "testing" << ch;
+      if ( !((ch >= 'a' && ch <= 'z') || 
+	     (ch >= 'A' && ch <= 'Z') || 
+	     (ch >= '0' && ch <= '9') ||
+	     (ch == '.')))
+	return false;
+
+    }
+
   return true;
 }
