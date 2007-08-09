@@ -204,7 +204,7 @@ out(&block, QIODevice::WriteOnly)
 		uiSolutions.solutionsTableWidget->verticalHeader()->hide();
 		
 		scoresDialog = new QDialog(this);
-		Uiscores.setupUi(scoresDialog);
+		uiScores.setupUi(scoresDialog);
 		uiScores.scoresTableWidget->verticalHeader()->hide();
 		connect(uiScores.getScoresPushbutton, SIGNAL(clicked()), this, SLOT(getScores()));
 
@@ -269,6 +269,7 @@ out(&block, QIODevice::WriteOnly)
 		loginDialog->show();
 		loginDialog->activateWindow();
 		loginDialog->raise();
+		uiLogin.usernameLE->setFocus(Qt::OtherFocusReason);
 		setWindowIcon(QIcon(":images/aerolith.png"));
 }
 

@@ -35,7 +35,7 @@
     </rect>
    </property>
    <property name="currentIndex" >
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page" >
     <widget class="QLabel" name="label" >
@@ -309,22 +309,5 @@
   </widget>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>registerPushButton</sender>
-   <signal>clicked()</signal>
-   <receiver>stackedWidget</receiver>
-   <slot></slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>130</x>
-     <y>252</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>205</x>
-     <y>150</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
