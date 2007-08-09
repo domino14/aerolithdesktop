@@ -191,7 +191,7 @@ out(&block, QIODevice::WriteOnly)
 		connect(commsSocket, SIGNAL(readyRead()), this, SLOT(readFromServer()));
 		connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
 			this, SLOT(displayError(QAbstractSocket::SocketError)));
-		connect(commsSocket, SIGNAL(connected()), this, SLOT(writeUsernameToServer()));
+		connect(commsSocket, SIGNAL(connected()), this, SLOT(connectedToServer()));
 		
 		connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
 		connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
@@ -204,7 +204,7 @@ out(&block, QIODevice::WriteOnly)
 		uiSolutions.solutionsTableWidget->verticalHeader()->hide();
 		
 		scoresDialog = new QDialog(this);
-		uiScores.setupUi(scoresDialog);
+		Uiscores.setupUi(scoresDialog);
 		uiScores.scoresTableWidget->verticalHeader()->hide();
 		connect(uiScores.getScoresPushbutton, SIGNAL(clicked()), this, SLOT(getScores()));
 
@@ -213,6 +213,10 @@ out(&block, QIODevice::WriteOnly)
 		
 		connect(uiLogin.loginPushButton, SIGNAL(clicked()), this, SLOT(toggleConnectToServer()));
 
+		connect(uiLogin.registerPushButton, SIGNAL(clicked()), this, SLOT(showRegisterPage()));
+		connect(uiLogin.cancelRegPushButton, SIGNAL(clicked()), this, SLOT(showLoginPage()));
+
+		connect(uiLogin.submitRegPushButton, SIGNAL(clicked()), this, SLOT(registerName()));
 		solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
 		scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
 		loginDialog->setAttribute(Qt::WA_QuitOnClose, false);   
@@ -652,13 +656,13 @@ void MainWindow::toggleConnectToServer()
 {
 	if (commsSocket->state() != QAbstractSocket::ConnectedState)
 	{
-
+	  connectionMode = MODE_LOGIN;
 		commsSocket->abort();
-
+		
 		commsSocket->connectToHost(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt());
 		uiLogin.connectStatusLabel->setText("Connecting to server...");
 		uiLogin.loginPushButton->setText("Disconnect");
-
+		
 
 		roomTable->clearContents();
 		roomTable->setRowCount(0);
@@ -692,21 +696,38 @@ void MainWindow::serverDisconnection()
 	uiTable.ulistsCbo->clear();
 }
 
-void MainWindow::writeUsernameToServer()
+void MainWindow::connectedToServer()
 {
 	// only after connecting!
 	blockSize = 0;
 	in.setDevice(commsSocket);
 	in.setVersion(QDataStream::Qt_4_2);
-	currentUsername = uiLogin.usernameLE->text();
+
+
+	// here we see if we are registering a name, or if we are connecting with an existing
+	// name/password
 	
+	if (connectionMode == MODE_LOGIN)
+	  {
 
-	writeHeaderData();
-	out << (quint8)'e';
-	out << currentUsername;
-	fixHeaderLength();
-	commsSocket->write(block);
-
+	    currentUsername = uiLogin.usernameLE->text();
+	
+	    
+	    writeHeaderData();
+	    out << (quint8)'e';
+	    out << currentUsername;
+	    fixHeaderLength();
+	    commsSocket->write(block);
+	  }
+	else if (connectionMode == MODE_REGISTER)
+	  {
+	    writeHeaderData();
+	    out << (quint8)'r';
+	    out << uiLogin.desiredUsernameLE->text();
+	    out << uiLogin.desiredFirstPasswordLE->text();
+	    fixHeaderLength();
+	    commsSocket->write(block);
+ 	  }
 }
 
 void MainWindow::sendPM(QListWidgetItem* item)
@@ -1266,5 +1287,33 @@ void MainWindow::registerName()
 
   //  int retval = registerDialog->exec();
   //if (retval == QDialog::Rejected) return;
+  // validate password
+  if (uiLogin.desiredFirstPasswordLE->text() != uiLogin.desiredSecondPasswordLE->text())
+    {
+      QMessageBox::warning(this, "Aerolith", "Your passwords do not match! Please try again");
+      uiLogin.desiredFirstPasswordLE->clear();
+      uiLogin.desiredSecondPasswordLE->clear();
+      return;
+      
+    }
 
+
+
+  // 
+
+  connectionMode = MODE_REGISTER;
+  commsSocket->abort();
+  commsSocket->connectToHost(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt());
+  uiLogin.connectStatusLabel->setText("Connecting to server...");
+  uiLogin.loginPushButton->setText("Disconnect");
+}
+
+void MainWindow::showRegisterPage()
+{
+  uiLogin.stackedWidget->setCurrentIndex(1);
+}
+
+void MainWindow::showLoginPage()
+{
+  uiLogin.stackedWidget->setCurrentIndex(0);
 }
