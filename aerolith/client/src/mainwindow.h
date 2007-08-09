@@ -78,6 +78,10 @@ private:
 	void displayHighScores();
 
 	QTimer* gameTimer;
+
+	enum connectionModes { MODE_LOGIN, MODE_REGISTER};
+
+	connectionModes connectionMode;
 	public slots:
 		void submitSolutionLEContents();
 		void submitChatLEContents();
@@ -85,7 +89,7 @@ private:
 		void displayError(QAbstractSocket::SocketError);
 		void serverDisconnection();
 		void toggleConnectToServer();
-		void writeUsernameToServer();
+		void connectedToServer();
 		void sendPM(QListWidgetItem*);
 		void createNewRoom();
 		void leaveThisTable();
@@ -101,6 +105,9 @@ private:
 		void dailyChallengeSelected(QAction*);
 		void getScores();
 		void registerName();
+
+		void showRegisterPage();
+		void showLoginPage();
 };
 
 struct tempHighScoresStruct
