@@ -438,6 +438,7 @@ void MainWindow::readFromServer()
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 					sendClientVersion();   // not yet. add this for the actual version 0.1.2
 					PlayerInfoWidget->setMyUsername(username);
+					currentTablenum = 0;
 				}
 			}
 			break;
