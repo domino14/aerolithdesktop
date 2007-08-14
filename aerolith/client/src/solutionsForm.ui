@@ -30,7 +30,7 @@
      <x>20</x>
      <y>20</y>
      <width>621</width>
-     <height>491</height>
+     <height>481</height>
     </rect>
    </property>
    <property name="editTriggers" >
@@ -67,6 +67,19 @@
      <string>Definition</string>
     </property>
    </column>
+  </widget>
+  <widget class="QLabel" name="solsLabel" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>510</y>
+     <width>621</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
   </widget>
  </widget>
  <resources/>
