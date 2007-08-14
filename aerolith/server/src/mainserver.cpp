@@ -99,7 +99,7 @@ void MainServer::incomingConnection(int socketDescriptor)
   ClientSocket *client = new ClientSocket();
   if (client->setSocketDescriptor(socketDescriptor))
     {
-      connections.append(client);
+      //      connections.append(client);
       client->connData.loggedIn = false;
       client->connData.numBytesInPacket = 0;
       client->connData.in.setDevice(client);
@@ -161,7 +161,7 @@ void MainServer::removeConnection()
 
       foreach (ClientSocket* connection, connections)
 	writeToClient(connection, username, S_USERLOGGEDOUT);
-      
+	
       usernamesHash.remove(username);
     
       QSqlQuery query;
@@ -411,6 +411,13 @@ void MainServer::processTableCommand(ClientSocket* socket)
   quint8 subcommand;
   socket->connData.in >> subcommand;
   
+  if (!tables.contains(tablenum))
+    {
+      qDebug() << "this table does not exist! Return!";
+      socket->disconnectFromHost();
+      return;
+
+    }
   tableData* table = tables.value(tablenum);
   
   switch (subcommand)
@@ -495,7 +502,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
       
       foreach (ClientSocket* connection, connections)
 	connection->write(block);      
-      
+	
       qDebug() << "wrote " << username << " left " << tablenum;
       if (tmp->playerList.size() == 0)
 	{
@@ -573,6 +580,12 @@ void MainServer::processNewTable(ClientSocket* socket)
   if (socket->connData.loggedIn == false)
     {
       qDebug() << "new table? wait.. still logging in!";
+      return;
+    }
+
+  if (socket->connData.tableNum != 0)
+    {
+      qDebug() << "new table when you are already in a table? must be lag. don't create!";
       return;
     }
 
@@ -820,19 +833,32 @@ void MainServer::processLogin(ClientSocket* socket)
 	}
     }
 
+  foreach (QString thisUsername, usernamesHash.keys())
+    {
+      if (thisUsername.toLower() == username.toLower())
+	{
+	  
+	  writeToClient(socket, "It appears that you were already logged in... Your previous connection has been logged out! Please try again.", S_ERROR);
+
+	  usernamesHash.value(thisUsername)->disconnectFromHost();
+	  socket->disconnectFromHost();
+	  return;
+	  
+	}
+    }
+
+  /*
   if (usernamesHash.contains(username))
     {
 
-      writeToClient(socket, "It appears that you were already logged in... Your previous connection has been logged out! Please try again.", S_ERROR);
-      usernamesHash.value(username)->disconnectFromHost();
-      socket->disconnectFromHost();
-      return;
+
     }
 
-
+  */
 
 
   // got here with no error
+  connections.append(socket);
 
   int avatarID = query.value(2).toInt();
   socket->connData.avatarId = avatarID;
