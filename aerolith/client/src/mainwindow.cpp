@@ -55,6 +55,7 @@ out(&block, QIODevice::WriteOnly)
 
 	wordListInfo = new QLabel;
 	topSolutionLayout->addWidget(timerDial);
+	topSolutionLayout->addSpacing(50);
 	topSolutionLayout->addWidget(wordListInfo);
 	topSolutionLayout->addStretch(1);
 	topSolutionLayout->addWidget(giveup);
@@ -507,7 +508,7 @@ void MainWindow::readFromServer()
 					QString wList = roomTable->item(row, 1)->text();
 					gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
 					timerDial->display(0);
-					
+					wordListInfo->clear();
 					PlayerInfoWidget->clearAndHide();
 					wordsWidget->clearCells();
 					exitTable->setText(QString("Exit table %1").arg(tablenum));
