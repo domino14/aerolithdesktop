@@ -37,6 +37,10 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 	if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
 	  table->sendServerMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
     }
+
+  numRacksSeen = 0;
+  numTotalRacks = 0;
+  numMissedRacks = 0;
 }
 
 UnscrambleGame::UnscrambleGame(tableData* table) : TableGame(table)
@@ -162,6 +166,7 @@ void UnscrambleGame::startGame()
 
   sendGameStartPacket();
   sendTimerValuePacket(tableTimerVal);
+  sendNumQuestionsPacket();
   //  table->currentTimerVal = table->tableTimerVal;                                         
   currentTimerVal = tableTimerVal;
   gameTimer->start(1000);
@@ -198,7 +203,7 @@ void UnscrambleGame::endGame()
 	    missedFileWriter << "\n";                                             
 	    qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram <<     
 	      unscrambleGameQuestions.at(i).solutions << " to missed file.";      
-            
+            numMissedRacks++;
 	  }
       }
   else if (cycleState == 3) // daily challenges
@@ -319,6 +324,9 @@ void UnscrambleGame::generateTempFile()
       QStringList fileContents;                                                          
       while (!inStream.atEnd())                                                          
 	fileContents << inStream.readLine().trimmed();                                   
+      numTotalRacks = fileContents.size();
+      
+      numMissedRacks = 0;
       tempInFile.close();                                                                    
       int index;                                                                         
       while (fileContents.size() > 0)                                                    
@@ -330,6 +338,7 @@ void UnscrambleGame::generateTempFile()
       tempOutFile.close();                                                                   
       tempFileExists = true;                                                      
       qDebug() << "after generating temp file";                                          
+    
     }
   else
     {
@@ -343,6 +352,7 @@ void UnscrambleGame::generateTempFile()
       qDebug() << "copied" << tempInFile.fileName() << " to temp file";
       tempFileExists = true;
       tempInFile.close();
+      numTotalRacks = 45;
     }
 }
 void UnscrambleGame::prepareTableAlphagrams()
@@ -396,7 +406,11 @@ void UnscrambleGame::prepareTableAlphagrams()
       // CLOSE table->inFile                                                             
       // COPY missed%1 to tmp%1                                                          
       // repeat code above to load the file into memory, shuffle, etc                    
-                                                                                         
+                           
+      numRacksSeen = 0;
+      numTotalRacks = numMissedRacks;
+      numMissedRacks = 0;
+      //      numTotalRacks = missedFileWriter
     }                                                                                    
 
   QStringList lineList;                                                                  
@@ -424,7 +438,8 @@ To view scores, please exit table and select 'Get today's scores' from the 'Dail
 	      }
 	  }                                                                              
         else                                                                             
-          {                                                                              
+          {        
+	    numRacksSeen++;
             line = alphagramReader.readLine();                                    
             lineList = line.split(" ");                                                  
             thisGameData.alphagram = lineList.at(0);                                     
@@ -470,6 +485,19 @@ void UnscrambleGame::sendTimerValuePacket(quint16 timerValue)
   out << timerValue;
   fixHeaderLength();
   table->sendGenericPacket();
+}
+
+void UnscrambleGame::sendNumQuestionsPacket()
+{
+  writeHeaderData();
+  out << (quint8) '+';
+  out << (quint16) table->tableNumber;
+  out << (quint8) 'N';
+  out << numRacksSeen;
+  out << numTotalRacks;
+  fixHeaderLength();
+  table->sendGenericPacket();
+
 }
 
 void UnscrambleGame::sendGiveUpPacket(QString username)

@@ -1,6 +1,6 @@
 #include "ClientWriter.h"
 
-extern const quint16 MAGIC_NUMBER = 25345;
+extern const quint16 MAGIC_NUMBER = 25346;
 QByteArray block;
 QDataStream out(&block, QIODevice::WriteOnly);
 

@@ -15,7 +15,7 @@ const QString incompatibleVersionString =
 Please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
-const QString thisVersion = "0.1.2";
+const QString thisVersion = "0.2";
 
 MainServer::MainServer()
 {
@@ -52,6 +52,14 @@ MainServer::MainServer()
   // but still generate daily challenges right now.
   UnscrambleGame::generateDailyChallenges();
   UnscrambleGame::midnightSwitchoverToggle = true;
+
+  userDb = QSqlDatabase::addDatabase("QSQLITE");
+  userDb.setDatabaseName("users.db");
+  userDb.open();
+  
+  QSqlQuery query;
+  query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32))");
+
 }
 
 void MainServer::newDailyChallenges()
@@ -155,6 +163,17 @@ void MainServer::removeConnection()
 	writeToClient(connection, username, S_USERLOGGEDOUT);
       
       usernamesHash.remove(username);
+    
+      QSqlQuery query;
+      query.prepare("UPDATE users SET avatar = :avatar, lastIP = :lastIP, lastLoggedOut = :lastLoggedOut WHERE username = :username");
+      query.bindValue(":avatar", socket->connData.avatarId);
+      query.bindValue(":username", socket->connData.userName.toLower());
+      query.bindValue(":lastIP", socket->peerAddress().toString());
+      query.bindValue(":lastLoggedOut", QDateTime::currentDateTime().toString("dd.MM.yy hh:mm:ss"));
+
+      query.exec();
+
+
     }
   
   connections.removeAll(socket);
@@ -284,6 +303,11 @@ void MainServer::receiveMessage()
 	case 'h':
 	  sendHighScores(socket);
 	  break;
+
+	case 'r':
+	  registerNewName(socket);
+	  break;
+
 
 	default:
 	  socket->disconnectFromHost(); // possibly a malicious packet
@@ -700,11 +724,59 @@ void MainServer::processPrivateMessage(ClientSocket* socket)
   
 }
 
+void MainServer::registerNewName(ClientSocket* socket)
+{
+  QString username, password;
+  socket->connData.in >> username >> password;
+  if (!isValidUsername(username))
+    {
+
+      writeToClient(socket, "That is an invalid username.", S_ERROR);
+      socket->disconnectFromHost();
+      return;
+    }
+  if (!isValidPassword(password))
+    {
+      writeToClient(socket, "That password is invalid. Use only alphanumeric characters, and the password must be between 4 and 16 characters long.", S_ERROR);
+      socket->disconnectFromHost();
+      return;
+    }
+  
+  QSqlQuery query;
+  query.exec("SELECT * from users where username = '" + username.toLower() + "'");
+  if (query.next())
+    {
+      // username exists
+      writeToClient(socket, "That username already exists in the database. Please select another username.", S_ERROR);
+      socket->disconnectFromHost();
+      return;
+    }
+
+
+  else
+    {
+      QString toExecute;
+      toExecute = "INSERT INTO users(username, password, avatar, profile, lastIP, lastLoggedOut) VALUES(:username, :password, :avatar, :profile, :lastIP, :lastLoggedOut)";
+      query.prepare(toExecute);
+      query.bindValue(":username", username.toLower());
+      query.bindValue(":password", password);
+      query.bindValue(":avatar", 1);
+      query.bindValue(":profile", "");
+      query.bindValue(":lastIP", "");
+      query.bindValue(":lastLoggedOut", "");
+      query.exec();
+      writeToClient(socket, "The username " + username + " was successfully registered! Please connect using this username and password.", S_ERROR);
+      socket->disconnectFromHost();
+      return;
+    }
+  
+}
+
 void MainServer::processLogin(ClientSocket* socket)
 {
   QString username, password;
-  socket->connData.in >> username; // >> password
-  qDebug() << "Login: " << username; 
+  socket->connData.in >> username >> password;
+  qDebug() << "Login: " << username << password; 
   
   if (socket->connData.loggedIn == true)
     {
@@ -719,8 +791,35 @@ void MainServer::processLogin(ClientSocket* socket)
       socket->disconnectFromHost();
       return;
     }
+  if (!isValidPassword(password))
+    {
+      writeToClient(socket, "Your password is invalid!", S_ERROR);
+      socket->disconnectFromHost();
+      return;
+    }
 
-  // TODO REGISTRATION SYSTEM LOL
+  // now check the database
+  
+  QSqlQuery query;
+  query.exec("SELECT * from users where username = '" + username.toLower() + "'");
+
+  if (!query.next())
+    {
+      writeToClient(socket, "Your username does not appear in the database. Please register a username and try again.", S_ERROR);
+      socket->disconnectFromHost();
+      return;
+    }
+  else
+    {
+      QString comparePW = query.value(1).toString();
+      if (comparePW != password)
+	{
+	  writeToClient(socket, "Your password is incorrect!", S_ERROR);
+	  socket->disconnectFromHost();
+	  return;
+	}
+    }
+
   if (usernamesHash.contains(username))
     {
 
@@ -729,7 +828,15 @@ void MainServer::processLogin(ClientSocket* socket)
       socket->disconnectFromHost();
       return;
     }
+
+
+
+
   // got here with no error
+
+  int avatarID = query.value(2).toInt();
+  socket->connData.avatarId = avatarID;
+
   usernamesHash.insert(username, socket);
   socket->connData.loggedIn = true;
   socket->connData.userName = username;
@@ -869,3 +976,25 @@ bool MainServer::isValidUsername(QString username)
 
   return true;
 }
+
+bool MainServer::isValidPassword(QString password)
+{
+  if (password.length() > 16 || password.length() < 4) return false;
+
+  for (int i = 0; i < password.length(); i++)
+    {
+      char ch = password.at(i).toLatin1();
+      qDebug() << "testing" << ch;
+      if ( !((ch >= 'a' && ch <= 'z') || 
+	     (ch >= 'A' && ch <= 'Z') || 
+	     (ch >= '0' && ch <= '9') ||
+	     (ch == '.')))
+	return false;
+
+    }
+
+  return true;
+}
+
+  
+

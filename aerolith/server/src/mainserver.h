@@ -32,7 +32,7 @@ private:
  QTimer* oneMinutePingTimer;
  QTimer* midnightTimer;
  void incomingConnection(int socketDescriptor); // inherited from QTcpServer
- QSqlDatabase wordDb;
+ QSqlDatabase userDb;
  
 
  enum packetHeaderStatesEnum
@@ -67,7 +67,9 @@ private:
  void processChatAction(ClientSocket*);
  void processVersionNumber(ClientSocket*);
  void processAvatarID(ClientSocket*);
+ void registerNewName(ClientSocket*);
  bool isValidUsername(QString);
+ bool isValidPassword(QString);
 
 };
 

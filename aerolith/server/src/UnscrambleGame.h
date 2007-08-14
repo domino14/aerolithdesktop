@@ -74,11 +74,14 @@ Q_OBJECT
   quint8 wordLengths; // the word length of this list (used only for daily challenges)
   bool thisTableSwitchoverToggle;
 
+  quint16 numTotalRacks;
+  quint16 numRacksSeen;
+  quint16 numMissedRacks;
   void generateTempFile();
   void sendTimerValuePacket(quint16);
   void sendGiveUpPacket(QString);
   void sendGuessRightPacket(QString, QString, quint8, quint8);
-  
+  void sendNumQuestionsPacket();
   private slots:
     void updateGameTimer();
   void updateCountdownTimer();
