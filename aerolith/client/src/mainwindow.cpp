@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 
-const quint16 MAGIC_NUMBER = 25345;
-const QString WindowTitle = "Aerolith 0.1.2";
-const QString thisVersion = "0.1.2";
+const quint16 MAGIC_NUMBER = 25346;
+const QString WindowTitle = "Aerolith 0.2";
+const QString thisVersion = "0.2";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -54,6 +54,7 @@ out(&block, QIODevice::WriteOnly)
 	timerDial->setSegmentStyle(QLCDNumber::Flat);
 
 	topSolutionLayout->addWidget(timerDial);
+	topSolutionLayout->addWidget(wordListInfo);
 	topSolutionLayout->addStretch(1);
 	topSolutionLayout->addWidget(giveup);
 	topSolutionLayout->addSpacing(50);
@@ -685,7 +686,7 @@ void MainWindow::serverDisconnection()
 
 	uiLogin.connectStatusLabel->setText("You are disconnected.");
 	peopleConnected->clear();
-	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
+//	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
 	uiLogin.loginPushButton->setText("Connect");
 	//centralWidget->hide();
 	loginDialog->show();
@@ -712,11 +713,12 @@ void MainWindow::connectedToServer()
 	  {
 
 	    currentUsername = uiLogin.usernameLE->text();
-	
+		
 	    
 	    writeHeaderData();
 	    out << (quint8)'e';
 	    out << currentUsername;
+		out << uiLogin.passwordLE->text();
 	    fixHeaderLength();
 	    commsSocket->write(block);
 	  }
@@ -881,7 +883,19 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			}
 			uiSolutions.solutionsTableWidget->clearContents();
 			uiSolutions.solutionsTableWidget->setRowCount(0);
+			uiSolutions.solsLabel->clear();
 			break;
+
+	case 'N':
+		// word list info
+
+		{
+			quint16 numRacksSeen;
+			quint16 numTotalRacks;
+			in >> numRacksSeen >> numTotalRacks;
+			wordListInfo->setText(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
+			break;
+		}
 
 	case 'U':
 		// someone cried uncle
@@ -1162,6 +1176,7 @@ void MainWindow::displayHighScores()
 
 void MainWindow::populateSolutionsTable()
 {
+	int numTotalSols = 0, numWrong = 0;
 	for (int i = 0; i < 9; i++)
 		for (int j = 0; j < 5; j++)
 		{
@@ -1178,6 +1193,7 @@ void MainWindow::populateSolutionsTable()
 
 				for (int i = 0; i < theseSols.size(); i++)
 				{
+					numTotalSols++;
 					uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
 					QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
 					if (wordDb.isOpen())
@@ -1204,6 +1220,7 @@ void MainWindow::populateSolutionsTable()
 
 					if (!rightAnswers.contains(theseSols.at(i)))
 					{
+						numWrong++;
 						wordItem->setForeground(missedColorBrush);
 						QFont wordItemFont = wordItem->font();
 						wordItemFont.setBold(true);
@@ -1217,6 +1234,11 @@ void MainWindow::populateSolutionsTable()
 			}
 		}
 	uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+	double percCorrect;
+	if (numTotalSols == 0) percCorrect = 0.0;
+	else
+		percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
+	uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2").arg(numTotalSols).arg(percCorrect));
 }
 
 void MainWindow::sendClientVersion()

@@ -40,6 +40,7 @@ private:
 	quint16 currentTablenum;
 	//	QBrush colorBrushes[9];
 	QBrush missedColorBrush;
+	QLabel* wordListInfo;
 	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
 	void handleDeleteTable(quint16 tablenum);
 	void handleAddToTable(quint16 tablenum, QString player);
