@@ -53,6 +53,7 @@ out(&block, QIODevice::WriteOnly)
 	timerDial->setFixedWidth(50);
 	timerDial->setSegmentStyle(QLCDNumber::Flat);
 
+	wordListInfo = new QLabel;
 	topSolutionLayout->addWidget(timerDial);
 	topSolutionLayout->addWidget(wordListInfo);
 	topSolutionLayout->addStretch(1);
