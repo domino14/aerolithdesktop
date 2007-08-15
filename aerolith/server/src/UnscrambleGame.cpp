@@ -119,8 +119,8 @@ void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
 	    }
 	}
     }
-  qDebug() << " ->GUESS" << socket->connData.userName << guess;
-
+  //  qDebug() << " ->GUESS" << socket->connData.userName << guess;
+  
 
 }
 
@@ -150,16 +150,14 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
 
 void UnscrambleGame::startGame()
 {
-  countingDown = false;                                                           
-  countdownTimer->stop();                                                         
-  
-  
-  // code for starting the game                                                          
-  // steps:                                                                              
-  // 1. list should already be loaded when table was created                             
-  // 2. send to everyone @ the table:                                                    
-  //    - 45 alphagrams                                                                  
-  gameStarted = true; 
+  countingDown = false;
+  countdownTimer->stop();
+  // code for starting the game
+  // steps:
+  //1. list should already be loaded when table was created
+  //2. send to everyone @ the table:  
+  //    - 45 alphagrams  
+  gameStarted = true;
   prepareTableAlphagrams();
   foreach (ClientSocket* socket, table->playerList)
     sendUserCurrentAlphagrams(socket);
@@ -167,7 +165,6 @@ void UnscrambleGame::startGame()
   sendGameStartPacket();
   sendTimerValuePacket(tableTimerVal);
   sendNumQuestionsPacket();
-  //  table->currentTimerVal = table->tableTimerVal;                                         
   currentTimerVal = tableTimerVal;
   gameTimer->start(1000);
   thisTableSwitchoverToggle = midnightSwitchoverToggle;
@@ -179,9 +176,8 @@ void UnscrambleGame::endGame()
 {
   gameTimer->stop();
   gameStarted = false;
-  // TODO here is code for the game ending                                               
-  // send game ended to everyone, etc.                                                   
-  
+  // TODO here is code for the game ending
+  // send game ended to everyone, etc.
   sendGameEndPacket();
   sendTimerValuePacket((quint16)0);
 
@@ -190,21 +186,21 @@ void UnscrambleGame::endGame()
       client->playerData.readyToPlay = false;
       client->playerData.gaveUp = false;  
     }
-  // if in cycle mode, update list                                                       
-  if (cycleState == 1)                                               
-    for (int i = 0; i < 45; i++)                                                       
-      {                                                                   
-	if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)                    
-	  {                                                                            
-	    // this one has not been solved!                                           
+  // if in cycle mode, update list  
+  if (cycleState == 1)
+    for (int i = 0; i < 45; i++)
+      {	
+	if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
+	  {
+	    // this one has not been solved!
 	    missedFileWriter << unscrambleGameQuestions.at(i).alphagram;
 	    for (int j = 0; j < unscrambleGameQuestions.at(i).solutions.size(); j++)
 	      missedFileWriter << " " << unscrambleGameQuestions.at(i).solutions.at(j);
-	    missedFileWriter << "\n";                                             
-	    qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram <<     
-	      unscrambleGameQuestions.at(i).solutions << " to missed file.";      
-            numMissedRacks++;
+	    missedFileWriter << "\n";
+	    //qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram << unscrambleGameQuestions.at(i).solutions << " to missed file.";
+	    numMissedRacks++;
 	  }
+	qDebug() << "Wrote" << numMissedRacks << "racks to missed file.";
       }
   else if (cycleState == 3) // daily challenges
     {
@@ -276,27 +272,24 @@ void UnscrambleGame::generateDailyChallenges()
     {
       QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
       QFile tempOutFile(QString("dailylists/%1s").arg(i));
-      QTextStream inStream(&tempInFile);                                                     
-      QTextStream outStream(&tempOutFile);                                                   
-
-      tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);                                
-      tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);                              
-      
-      QStringList fileContents;                                                          
-      while (!inStream.atEnd())                                                          
-	fileContents << inStream.readLine().trimmed();                                   
-      tempInFile.close();                                                                    
-      int index;                                                                         
+      QTextStream inStream(&tempInFile);
+      QTextStream outStream(&tempOutFile);
+      tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);
+      tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      QStringList fileContents;
+      while (!inStream.atEnd())
+	fileContents << inStream.readLine().trimmed();
+      tempInFile.close();
+      int index;
       int numWords = 0;
       do
-	{                                                                                
-	  index = qrand() % fileContents.size();                                         
-	  outStream << fileContents.at(index) << "\n";                                   
-	  fileContents.removeAt(index);                
+	{
+	  index = qrand() % fileContents.size();
+	  outStream << fileContents.at(index) << "\n";
+	  fileContents.removeAt(index);
 	  numWords++;
 	} while (numWords < 45);
-                                                                                
-      tempOutFile.close();                                                                   
+      tempOutFile.close();
       qDebug() << QString("generated daily %1s").arg(i);
 
     }
@@ -313,32 +306,29 @@ void UnscrambleGame::generateTempFile()
 {
   if (cycleState != 3)
     {
-      qDebug() << "before generating temp file";                                         
+      qDebug() << "before generating temp file";
       QFile tempInFile(wordListFileName);
-      QFile tempOutFile(QString("temp%1").arg(table->tableNumber));                           
-      QTextStream inStream(&tempInFile);                                                     
-      QTextStream outStream(&tempOutFile);                                                   
-      tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);                                
-      tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);                              
-      
-      QStringList fileContents;                                                          
-      while (!inStream.atEnd())                                                          
-	fileContents << inStream.readLine().trimmed();                                   
+      QFile tempOutFile(QString("temp%1").arg(table->tableNumber));
+      QTextStream inStream(&tempInFile);
+      QTextStream outStream(&tempOutFile);
+      tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);
+      tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      QStringList fileContents;
+      while (!inStream.atEnd())
+	fileContents << inStream.readLine().trimmed();
       numTotalRacks = fileContents.size();
-      
       numMissedRacks = 0;
-      tempInFile.close();                                                                    
-      int index;                                                                         
-      while (fileContents.size() > 0)                                                    
-	{                                                                                
-	  index = qrand() % fileContents.size();                                         
-	  outStream << fileContents.at(index) << "\n";                                   
-	  fileContents.removeAt(index);                
-	}                                                                                
-      tempOutFile.close();                                                                   
-      tempFileExists = true;                                                      
-      qDebug() << "after generating temp file";                                          
-    
+      tempInFile.close();
+      int index;
+      while (fileContents.size() > 0)
+	{
+	  index = qrand() % fileContents.size();
+	  outStream << fileContents.at(index) << "\n";
+	  fileContents.removeAt(index);
+	}
+      tempOutFile.close();
+      tempFileExists = true;
+      qDebug() << "after generating temp file";
     }
   else
     {
@@ -357,76 +347,63 @@ void UnscrambleGame::generateTempFile()
 }
 void UnscrambleGame::prepareTableAlphagrams()
 {
-  // load alphagrams into the gamesolutions hash and the alphagrams list                 
-
-                                                                                         
-  if (cycleState == 0) tempFileExists = false;                             
-                                                                                         
-  if (tempFileExists == false)                                                    
-    {                                                                                    
-      inFile.close();                                                             
-      outFile.close();                                                            
-
+  // load alphagrams into the gamesolutions hash and the alphagrams list
+  if (cycleState == 0) tempFileExists = false;
+  if (tempFileExists == false)
+    {
+      inFile.close();
+      outFile.close();
       generateTempFile();
-
-      inFile.setFileName(QString("temp%1").arg(table->tableNumber));               
-      alphagramReader.setDevice(&inFile);                                
-      inFile.open(QIODevice::ReadWrite | QIODevice::Text);                        
-      alphagramReader.seek(0);                                                    
-      // generate missed file                                            
-                
-      outFile.setFileName(QString("missed%1").arg(table->tableNumber));           
-      outFile.open(QIODevice::WriteOnly | QIODevice::Text);                       
-      missedFileWriter.setDevice(&outFile);              
-      missedFileWriter.seek(0);                                                   
- 
-    }                         
-  gameSolutions.clear();                                                          
-  unscrambleGameQuestions.clear();                                                
-  alphagramIndices.clear();           
-  if (cycleState == 1 && alphagramReader.atEnd())                          
-    {                                
-      
-      inFile.close();                                                             
-      inFile.remove();                                                            
-      outFile.close();                                                            
-      outFile.copy(QString("temp%1").arg(table->tableNumber));                     
-      outFile.remove();                                                           
-                                                                                         
-      inFile.setFileName(QString("temp%1").arg(table->tableNumber));               
-      outFile.setFileName(QString("missed%1").arg(table->tableNumber));           
+      inFile.setFileName(QString("temp%1").arg(table->tableNumber));
+      alphagramReader.setDevice(&inFile);
+      inFile.open(QIODevice::ReadWrite | QIODevice::Text);
+      alphagramReader.seek(0);
+      // generate missed file
+      outFile.setFileName(QString("missed%1").arg(table->tableNumber));
+      outFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      missedFileWriter.setDevice(&outFile);
+      missedFileWriter.seek(0);
+    }
+  gameSolutions.clear();
+  unscrambleGameQuestions.clear();
+  alphagramIndices.clear();
+  if (cycleState == 1 && alphagramReader.atEnd())
+    {
+      inFile.close();
+      inFile.remove();
+      outFile.close();
+      outFile.copy(QString("temp%1").arg(table->tableNumber));
+      outFile.remove();
+      inFile.setFileName(QString("temp%1").arg(table->tableNumber));
+      outFile.setFileName(QString("missed%1").arg(table->tableNumber));
       alphagramReader.setDevice(&inFile);
       missedFileWriter.setDevice(&outFile);
-      inFile.open(QIODevice::ReadOnly | QIODevice::Text);                         
-      outFile.open(QIODevice::WriteOnly | QIODevice::Text);                       
-      missedFileWriter.seek(0);                                                   
-      alphagramReader.seek(0);                                                    
-      
+      inFile.open(QIODevice::ReadOnly | QIODevice::Text);
+      outFile.open(QIODevice::WriteOnly | QIODevice::Text);
+      missedFileWriter.seek(0);
+      alphagramReader.seek(0);
       table->sendServerMessage("The list has been exhausted. Now quizzing on missed list.");
-      // CLOSE table->inFile                                                             
-      // COPY missed%1 to tmp%1                                                          
-      // repeat code above to load the file into memory, shuffle, etc                    
-                           
+      // CLOSE table->inFile
+      // COPY missed%1 to tmp%1
+      // repeat code above to load the file into memory, shuffle, etc
       numRacksSeen = 0;
       numTotalRacks = numMissedRacks;
       numMissedRacks = 0;
       //      numTotalRacks = missedFileWriter
-    }                                                                                    
-
-  QStringList lineList;                                                                  
-  QString line;                                                                          
-                                    
+    }
+  QStringList lineList;
+  QString line;
   numTotalSolutions = 0;
-  for (quint8 i = 0; i < 9; i++)                                                         
-    for (quint8 j = 0; j < 5; j++)                                                       
-      {                                                                                  
-        unscrambleGameData thisGameData;                                                 
-        thisGameData.i = i;                                                              
-        thisGameData.j = j;                                                              
-        if (alphagramReader.atEnd())                                              
-          {                                                                              
-            thisGameData.alphagram = ""; 
-	    thisGameData.numNotYetSolved = 0;                                            
+  for (quint8 i = 0; i < 9; i++)
+    for (quint8 j = 0; j < 5; j++)
+      {
+	unscrambleGameData thisGameData;
+	thisGameData.i = i;
+	thisGameData.j = j;
+	if (alphagramReader.atEnd())
+	  {
+	    thisGameData.alphagram = "";
+	    thisGameData.numNotYetSolved = 0;
 	    if (j == 0 && i == 0)
 	      {
 		if (cycleState != 3)
@@ -434,46 +411,41 @@ void UnscrambleGame::prepareTableAlphagrams()
 		else
 		  table->sendServerMessage("This daily challenge is over. \
 To view scores, please exit table and select 'Get today's scores' from the 'Daily Challenges' button.");
-		
 	      }
-	  }                                                                              
-        else                                                                             
-          {        
+	  }
+	else
+	  {
 	    numRacksSeen++;
-            line = alphagramReader.readLine();                                    
-            lineList = line.split(" ");                                                  
-            thisGameData.alphagram = lineList.at(0);                                     
-            thisGameData.numNotYetSolved = (quint8)(lineList.size()-1);                  
-            for (int k = 1; k < lineList.size(); k++)                                    
-              {                                                                          
-                gameSolutions.insert(lineList.at(k), lineList.at(0));             
-                thisGameData.solutions << lineList.at(k);                                
+            line = alphagramReader.readLine();
+	    lineList = line.split(" ");
+	    thisGameData.alphagram = lineList.at(0);
+	    thisGameData.numNotYetSolved = (quint8)(lineList.size()-1);
+	    for (int k = 1; k < lineList.size(); k++)
+	      {
+		gameSolutions.insert(lineList.at(k), lineList.at(0));
+		thisGameData.solutions << lineList.at(k);
 		numTotalSolutions++;
-              }                                                                          
-          }                                                                              
-                                                                                         
-        unscrambleGameQuestions.append(thisGameData);                             
-        alphagramIndices.insert(thisGameData.alphagram, i*5 + j);                 
-      }                 
+	      }
+	  }
+	unscrambleGameQuestions.append(thisGameData);
+	alphagramIndices.insert(thisGameData.alphagram, i*5 + j);
+      }
 }
 
 void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
 {
-  writeHeaderData();                                                                     
-  out << (quint8) '+';                                                                   
-  out << table->tableNumber;                                                             
-  out << (quint8) 'W';                                                                   
-                                                                                         
-  for (int i = 0; i < 45; i++)                                                           
-    {                                                                                    
-      out << unscrambleGameQuestions.at(i).alphagram;                             
-      out << unscrambleGameQuestions.at(i).numNotYetSolved;                       
-      out << unscrambleGameQuestions.at(i).solutions;                             
-    }                                                                                    
-                                                                                         
-  fixHeaderLength();                                                                     
-  socket->write(block);                                                                  
-  
+  writeHeaderData();
+  out << (quint8) '+';
+  out << table->tableNumber;
+  out << (quint8) 'W';
+  for (int i = 0; i < 45; i++)
+    {
+      out << unscrambleGameQuestions.at(i).alphagram;
+      out << unscrambleGameQuestions.at(i).numNotYetSolved;
+      out << unscrambleGameQuestions.at(i).solutions;
+    }
+  fixHeaderLength();
+  socket->write(block);  
 }                 
 
 void UnscrambleGame::sendTimerValuePacket(quint16 timerValue)

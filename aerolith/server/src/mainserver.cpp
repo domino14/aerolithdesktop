@@ -42,7 +42,7 @@ MainServer::MainServer()
   //wordDb.open();
   oneMinutePingTimer = new QTimer;
   connect(oneMinutePingTimer, SIGNAL(timeout()), this, SLOT(pingEveryone()));
-  oneMinutePingTimer->start(60000);
+  oneMinutePingTimer->start(300000);
 
   midnightTimer = new QTimer;
   connect(midnightTimer, SIGNAL(timeout()), this, SLOT(newDailyChallenges()));
