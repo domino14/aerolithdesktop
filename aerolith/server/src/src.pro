@@ -1,6 +1,7 @@
 message (generating makefile from server/src.pro)
 TEMPLATE = app
 QT += network sql
+QT -= gui
 CONFIG += console debug
 CONFIG -= app_bundle
 TARGET = server

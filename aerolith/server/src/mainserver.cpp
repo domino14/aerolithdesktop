@@ -117,6 +117,7 @@ void MainServer::incomingConnection(int socketDescriptor)
 
 void MainServer::pingEveryone()
 {
+  qDebug() << "Called pingEveryone";
   if (connections.size() > 0)
     {
       writeHeaderData();      
@@ -133,6 +134,7 @@ void MainServer::pingEveryone()
 	    }
 	  else
 	    {
+	      qDebug() << "Pinged " << socket->connData.userName;
 	      socket->write(block);
 	      socket->connData.respondedToLastPing = false;
 	    }
@@ -244,6 +246,7 @@ void MainServer::receiveMessage()
 	{
 	case '?':
 	  socket->connData.respondedToLastPing = true;
+	  qDebug() << "PONG" << socket->connData.userName;
 	  break;
 	  
 	case 'a':
