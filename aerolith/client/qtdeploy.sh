@@ -146,6 +146,22 @@ for fwpath in $FRAMEWORKS ; do
 done
 echo
 
+
+## sqlite stuff ####
+echo "sqlite stuff"
+mkdir $BUNDLE/Contents/plugins
+mkdir $BUNDLE/Contents/plugins/sqldrivers
+cp -R /Developer/Applications/Qt/plugins/sqldrivers/libqsqlite.dylib $BUNDLE/Contents/plugins/sqldrivers/
+
+install_name_tool -change QtSql.framework/Versions/4/QtSql \
+    @executable_path/../Frameworks/QtSql.framework/Versions/4/QtSql \
+    $BUNDLE/Contents/plugins/sqldrivers/libqsqlite.dylib
+
+install_name_tool -change QtCore.framework/Versions/4/QtCore \
+    @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+    $BUNDLE/Contents/plugins/sqldrivers/libqsqlite.dylib
+
+
 ### misc cleanup ###############################################
 
 find $BUNDLE/Contents | egrep "CVS" | xargs rm -rf
