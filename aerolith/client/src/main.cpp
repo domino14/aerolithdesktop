@@ -35,6 +35,15 @@ int main(int argc, char *argv[])
 {
 
   QApplication app(argc, argv);
+
+#ifdef Q_WS_MAC
+  //  qDebug() << "Mac defined.";
+  QDir dir(QApplication::applicationDirPath());
+  dir.cdUp();
+  dir.cd("plugins");
+  QApplication::setLibraryPaths(QStringList(dir.absolutePath()));
+#endif
+
  
 QFile *log = new QFile("debug.txt");
 if (log->open(QIODevice::WriteOnly))
@@ -44,9 +53,11 @@ if (log->open(QIODevice::WriteOnly))
 }
 else delete log;
 
-
   MainWindow mainWin;
   mainWin.show();
+
+
+
   
   return app.exec();
 }
