@@ -1,6 +1,6 @@
 #include "playerInfoWidget.h"
 
-playerInfoWidget::playerInfoWidget()
+PlayerInfoWidget::PlayerInfoWidget()
 {
   QGridLayout *playerListsLayout = new QGridLayout;
 	
@@ -48,7 +48,7 @@ playerInfoWidget::playerInfoWidget()
   setLayout(playerListsLayout);
 }
 
-void playerInfoWidget::possibleChangeAvatarLeft()
+void PlayerInfoWidget::possibleChangeAvatarLeft()
 {
 	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
 	if (clickedLabel->property("username").toString() == myUsername)
@@ -62,7 +62,7 @@ void playerInfoWidget::possibleChangeAvatarLeft()
 	}
 }
 
-void playerInfoWidget::possibleChangeAvatarRight()
+void PlayerInfoWidget::possibleChangeAvatarRight()
 {
 	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
 	if (clickedLabel->property("username").toString() == myUsername)
@@ -76,13 +76,13 @@ void playerInfoWidget::possibleChangeAvatarRight()
 	}
 }
 
-void playerInfoWidget::setMyUsername(QString username)
+void PlayerInfoWidget::setMyUsername(QString username)
 {
 	myUsername = username;
 }
 
 
-void playerInfoWidget::clearAndHide()
+void PlayerInfoWidget::clearAndHide()
 {
   for (int i = 0; i < 6; i++)
     {
@@ -99,7 +99,7 @@ void playerInfoWidget::clearAndHide()
     }
 }
 
-void playerInfoWidget::setupForGameStart()
+void PlayerInfoWidget::setupForGameStart()
 {
   for (int i = 0; i < 6; i++)
     {
@@ -109,7 +109,7 @@ void playerInfoWidget::setupForGameStart()
 
 }
 
-void playerInfoWidget::answered(QString username, QString answer)
+void PlayerInfoWidget::answered(QString username, QString answer)
 {
   if (seats.contains(username))
     {
@@ -121,7 +121,7 @@ void playerInfoWidget::answered(QString username, QString answer)
     }
 }
 
-void playerInfoWidget::addPlayers(QStringList playerList)
+void PlayerInfoWidget::addPlayers(QStringList playerList)
 {
   for (int i = 0; i < playerList.size(); i++)
     {
@@ -134,7 +134,7 @@ void playerInfoWidget::addPlayers(QStringList playerList)
     }
 }
 
-void playerInfoWidget::addPlayer(QString player, bool gameStarted)
+void PlayerInfoWidget::addPlayer(QString player, bool gameStarted)
 {
   bool spotfound = false;
   int spot;
@@ -169,7 +169,7 @@ void playerInfoWidget::addPlayer(QString player, bool gameStarted)
   
 }
 
-void playerInfoWidget::removePlayer(QString player, bool gameStarted)
+void PlayerInfoWidget::removePlayer(QString player, bool gameStarted)
 {
   int seat;
   if (seats.contains(player))
@@ -200,12 +200,12 @@ void playerInfoWidget::removePlayer(QString player, bool gameStarted)
       playerStatus[i]->setText("");
 }
 
-void playerInfoWidget::leaveTable()
+void PlayerInfoWidget::leaveTable()
 {
   seats.clear(); // clear seats hash when WE leave.
 }
 
-void playerInfoWidget::setReadyIndicator(QString username)
+void PlayerInfoWidget::setReadyIndicator(QString username)
 {
 	int seat;
   if (seats.contains(username))
@@ -219,7 +219,7 @@ void playerInfoWidget::setReadyIndicator(QString username)
 
 }
 
-void playerInfoWidget::setAvatar(QString username, quint8 avatarID)
+void PlayerInfoWidget::setAvatar(QString username, quint8 avatarID)
 {
 	int seat;
   if (seats.contains(username))
@@ -235,7 +235,19 @@ void playerInfoWidget::setAvatar(QString username, quint8 avatarID)
 																		// will eventually come up with an actual seat system
 
 }
+//===============================================================//
+SinglePlayerInfoWidget::SinglePlayerInfoWidget()
+{
+  clearAndHide();
+}
 
+void SinglePlayerInfoWidget::clearAndHide()
+{
+
+}
+
+
+//===============================================================//
 avatarLabel::avatarLabel(QWidget *parent) : QLabel(parent)
 {
 	left_pressed = false;
@@ -271,3 +283,4 @@ bool avatarLabel::inLabel(const QPoint &p)
 {
 	return rect().contains(p);
 }
+//===============================================================//

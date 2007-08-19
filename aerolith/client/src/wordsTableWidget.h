@@ -8,6 +8,8 @@
 
 class wordsTableWidget : public QTableWidget
 {
+Q_OBJECT
+
  public:
   wordsTableWidget();
   void clearCells();
@@ -25,6 +27,9 @@ class wordsTableWidget : public QTableWidget
   QStringList cellSolutions[FIXED_ROWS][FIXED_COLS];
   QString cellAlphagrams[FIXED_ROWS][FIXED_COLS];
   quint8 cellNumSolutions[FIXED_ROWS][FIXED_COLS];
+
+  public slots:
+    void changeFont();
 
 };
 

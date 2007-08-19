@@ -39,14 +39,17 @@ out(&block, QIODevice::WriteOnly)
 	QPushButton *giveup = new QPushButton("Give up");
 	QPushButton *start = new QPushButton("Start");
 	exitTable = new QPushButton("Exit Table #");
+	QPushButton *changeFont = new QPushButton("Change font");
 	
+	connect(changeFont, SIGNAL(clicked()), wordsWidget, SLOT(changeFont()));
+
 	solutions->setFocusPolicy(Qt::NoFocus);
 	alpha->setFocusPolicy(Qt::NoFocus);
 	shuffle->setFocusPolicy(Qt::NoFocus);
 	giveup->setFocusPolicy(Qt::NoFocus);
 	start->setFocusPolicy(Qt::NoFocus);
 	exitTable->setFocusPolicy(Qt::NoFocus);
-	
+	changeFont->setFocusPolicy(Qt::NoFocus);
 	QHBoxLayout *topSolutionLayout = new QHBoxLayout;
 	
 	timerDial = new QLCDNumber(3);
@@ -57,7 +60,10 @@ out(&block, QIODevice::WriteOnly)
 	topSolutionLayout->addWidget(timerDial);
 	topSolutionLayout->addSpacing(50);
 	topSolutionLayout->addWidget(wordListInfo);
+	topSolutionLayout->addSpacing(50);
+	topSolutionLayout->addWidget(changeFont);
 	topSolutionLayout->addStretch(1);
+
 	topSolutionLayout->addWidget(giveup);
 	topSolutionLayout->addSpacing(50);
 	topSolutionLayout->addWidget(exitTable);
@@ -82,16 +88,14 @@ out(&block, QIODevice::WriteOnly)
 	connect(start, SIGNAL(clicked()), this, SLOT(submitReady()));
 	// Players box
 
-	PlayerInfoWidget = new playerInfoWidget(); // includes lists, etc
-	connect(PlayerInfoWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
+	playerInfoWidget = new PlayerInfoWidget(); // includes lists, etc
+	connect(playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
 
 	QVBoxLayout *gameBoardLayout = new QVBoxLayout;
 	gameBoardLayout->addLayout(topSolutionLayout);
 	gameBoardLayout->addWidget(wordsWidget, 0, Qt::AlignHCenter);
-	gameBoardLayout->addSpacing(10);
 	gameBoardLayout->addLayout(bottomSolutionLayout);
-	gameBoardLayout->addSpacing(10);
-	gameBoardLayout->addWidget(PlayerInfoWidget);
+	gameBoardLayout->addWidget(playerInfoWidget);
 	gameBoardGroupBox->setLayout(gameBoardLayout);
 	
 	// the room selector will be anotehr group box
@@ -437,7 +441,7 @@ void MainWindow::readFromServer()
 					loginDialog->hide();
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 					sendClientVersion();   // not yet. add this for the actual version 0.1.2
-					PlayerInfoWidget->setMyUsername(username);
+					playerInfoWidget->setMyUsername(username);
 					currentTablenum = 0;
 				}
 			}
@@ -510,7 +514,7 @@ void MainWindow::readFromServer()
 					gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
 					timerDial->display(0);
 					wordListInfo->clear();
-					PlayerInfoWidget->clearAndHide();
+					playerInfoWidget->clearAndHide();
 					wordsWidget->clearCells();
 					exitTable->setText(QString("Exit table %1").arg(tablenum));
 
@@ -612,7 +616,7 @@ void MainWindow::readFromServer()
 				if (currentTablenum != 0)
 				{
 					// we are in a table
-					PlayerInfoWidget->setAvatar(username, avatarID);
+					playerInfoWidget->setAvatar(username, avatarID);
 
 				}
 				// then here we can do something like chatwidget->setavatar( etc). but this requires the server
@@ -836,13 +840,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-			PlayerInfoWidget->setReadyIndicator(username);
+			playerInfoWidget->setReadyIndicator(username);
 		}
 		break;
 	case 'S':
 		// the game has started
 		{
-		  PlayerInfoWidget->setupForGameStart();
+		  playerInfoWidget->setupForGameStart();
 		  chatText->append("<font color=red>The game has started!</font>");
 		  gameStarted = true;
 		  rightAnswers.clear();
@@ -914,7 +918,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			quint8 row, column;
 			in >> username >> answer >> row >> column;
 			wordsWidget->answeredCorrectly(row, column);
-			PlayerInfoWidget->answered(username, answer);
+			playerInfoWidget->answered(username, answer);
 			rightAnswers.insert(answer);
 
 		}
@@ -966,14 +970,14 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
     {
       if (modification == -1) 
 	{
-	  PlayerInfoWidget->leaveTable();
+	  playerInfoWidget->leaveTable();
 
 	  return; // the widget will be hid anyway, so we don't need to hide the individual lists
 	  //however, we hide when adding when we join down below
 	}
       else 
 	{
-	  PlayerInfoWidget->addPlayers(plist);
+	  playerInfoWidget->addPlayers(plist);
 	  // add all players including self
 	  return;
 	}
@@ -987,10 +991,10 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
   if (modification == 1)
 	  // player has been added
 	  // find a spot
-	  PlayerInfoWidget->addPlayer(player, gameStarted);
+	  playerInfoWidget->addPlayer(player, gameStarted);
   
   else if (modification == -1)
-    PlayerInfoWidget->removePlayer(player, gameStarted);
+    playerInfoWidget->removePlayer(player, gameStarted);
 
 
 }

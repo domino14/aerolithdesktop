@@ -48,7 +48,7 @@ private:
 	void handleTableCommand(quint16 tablenum, quint8 commandByte);
 	int findRoomTableRow(quint16 tablenum);
 
-	playerInfoWidget* PlayerInfoWidget;
+	PlayerInfoWidget* playerInfoWidget;
 
 	const int PLAYERLIST_ROLE;
 	void writeHeaderData();
