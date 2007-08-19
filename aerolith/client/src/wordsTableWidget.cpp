@@ -12,10 +12,10 @@ wordsTableWidget::wordsTableWidget()
   setSelectionMode(QAbstractItemView::NoSelection);
   setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < FIXED_COLS; i++)
     setColumnWidth(i, 150);
 
-  for (int i = 0; i < 9; i++)
+  for (int i = 0; i < FIXED_ROWS; i++)
     setRowHeight(i, 20);
 
 #ifdef Q_OS_MAC
@@ -46,6 +46,31 @@ wordsTableWidget::wordsTableWidget()
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setFixedSize(752, 182); // argh
   setFocusPolicy(Qt::NoFocus);
+
+}
+
+void wordsTableWidget::changeFont()
+{
+#ifdef Q_OS_MAC
+  QFont wordFont("Arial Black", 16, QFont::Normal);
+#else
+  QFont wordFont("Arial Black", 12, QFont::Normal);
+#endif
+  bool ok;
+  QFont font = QFontDialog::getFont(&ok, wordFont, this);
+  if (ok) 
+    {
+      for (int i = 0; i < 9; i++)
+	for (int j = 0; j < 5; j++)
+	  wordCells[i][j]->setFont(font);
+      
+    // font is set to the font the user selected
+    } 
+  else 
+    {
+      
+    }
+
 
 }
 

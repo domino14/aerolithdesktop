@@ -3,6 +3,9 @@ TEMPLATE = app
 CONFIG += qt
 QT += network sql
 TARGET = aerolith
+QMAKE_MAC_SDK=/Developer/SDKs/MacOSX10.4u.sdk
+CONFIG+= x86 ppc debug
+ICON = macosxicns.icns
 
 ROOT = ../
 DESTDIR = $$ROOT/

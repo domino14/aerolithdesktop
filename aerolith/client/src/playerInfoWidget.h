@@ -23,11 +23,30 @@ protected:
 	bool inLabel(const QPoint &p);
 };
 
-class playerInfoWidget : public QWidget
+class SinglePlayerInfoWidget : public QWidget
+{
+ Q_OBJECT
+   public:
+ SinglePlayerInfoWidget();
+ void clearAndHide();
+ void setReadyIndicator();
+ void answered(QString answer);
+ void setAvatar(quint8 avatarID);
+ 
+
+   private:
+ QLabel playerName;
+ avatarLabel playerAvatar;
+ QLabel playerStatus;
+ QListWidget playerList;
+ QToolButton sitToggle;
+};
+
+class PlayerInfoWidget : public QWidget
 {
 Q_OBJECT
  public:
-  playerInfoWidget();
+  PlayerInfoWidget();
   void clearAndHide();
   void setupForGameStart();
   void answered(QString username, QString answer);
@@ -44,13 +63,14 @@ Q_OBJECT
   QLabel* playerNames[6];
   avatarLabel* playerAvatars[6];
   QLabel* playerStatus[6];
+  SinglePlayerInfoWidget* places[6];
   QHash <QString, int> seats;
   QString myUsername;
 signals:
-	void avatarChange(quint8);
+  void avatarChange(quint8);
 public slots:
-	void possibleChangeAvatarLeft();
-	void possibleChangeAvatarRight();
+  void possibleChangeAvatarLeft();
+ void possibleChangeAvatarRight();
 };
 
 #endif
