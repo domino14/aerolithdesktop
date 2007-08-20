@@ -188,20 +188,23 @@ void UnscrambleGame::endGame()
     }
   // if in cycle mode, update list  
   if (cycleState == 1)
-    for (int i = 0; i < 45; i++)
-      {	
-	if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
-	  {
-	    // this one has not been solved!
-	    missedFileWriter << unscrambleGameQuestions.at(i).alphagram;
-	    for (int j = 0; j < unscrambleGameQuestions.at(i).solutions.size(); j++)
-	      missedFileWriter << " " << unscrambleGameQuestions.at(i).solutions.at(j);
-	    missedFileWriter << "\n";
-	    //qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram << unscrambleGameQuestions.at(i).solutions << " to missed file.";
-	    numMissedRacks++;
-	  }
-	qDebug() << "Wrote" << numMissedRacks << "racks to missed file.";
-      }
+    {
+      for (int i = 0; i < 45; i++)
+	{	
+	  if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
+	    {
+	      // this one has not been solved!
+	      missedFileWriter << unscrambleGameQuestions.at(i).alphagram;
+	      for (int j = 0; j < unscrambleGameQuestions.at(i).solutions.size(); j++)
+		missedFileWriter << " " << unscrambleGameQuestions.at(i).solutions.at(j);
+	      missedFileWriter << "\n";
+	      //qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram << unscrambleGameQuestions.at(i).solutions << " to missed file.";
+	      numMissedRacks++;
+	    }
+	  
+	}
+      qDebug() << "Missed to date:" << numMissedRacks << "racks.";
+    }
   else if (cycleState == 3) // daily challenges
     {
       startEnabled = false;
