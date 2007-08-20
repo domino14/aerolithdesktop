@@ -42,7 +42,7 @@ MainServer::MainServer()
   //wordDb.open();
   oneMinutePingTimer = new QTimer;
   connect(oneMinutePingTimer, SIGNAL(timeout()), this, SLOT(pingEveryone()));
-  oneMinutePingTimer->start(300000);
+  oneMinutePingTimer->start(180000);
 
   midnightTimer = new QTimer;
   connect(midnightTimer, SIGNAL(timeout()), this, SLOT(newDailyChallenges()));
@@ -106,7 +106,7 @@ void MainServer::incomingConnection(int socketDescriptor)
       client->connData.in.setVersion(QDataStream::Qt_4_2);
       client->connData.tableNum = 0;
       client->connData.avatarId = 1;
-      client->connData.respondedToLastPing = true; // assume we responded to the last ping
+      client->connData.isActive = true; // assume we responded to the last ping
       connect(client, SIGNAL(disconnected()), this, SLOT(removeConnection()));
       connect(client, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
 
@@ -127,16 +127,16 @@ void MainServer::pingEveryone()
       foreach (ClientSocket* socket, connections)
 	{
 	  // disconnect if did not respond to last ping
-	  if (socket->connData.respondedToLastPing == false)
+	  if (socket->connData.isActive == false)
 	    {
-	      socket->disconnectFromHost();
 	      qDebug() << socket->connData.userName << "lagged out!";
+	      socket->disconnectFromHost();
 	    }
 	  else
 	    {
 	      qDebug() << "Pinged " << socket->connData.userName;
 	      socket->write(block);
-	      socket->connData.respondedToLastPing = false;
+	      socket->connData.isActive = false;
 	    }
 	}
     }
@@ -194,6 +194,7 @@ void MainServer::receiveMessage()
 
   if (socket->bytesAvailable() > 15000)
     {
+      qDebug() << "too many available bytes.";
       socket->disconnectFromHost();
       return;
     }
@@ -236,7 +237,7 @@ void MainServer::receiveMessage()
       quint8 packetType;
       socket->connData.in >> packetType; // this is the case byte!
       qDebug() << "Received from sender " << socket->connData.userName << " packet " << (char)packetType;      
-      
+      socket->connData.isActive = true; // this connection is active!
       if (socket->connData.numBytesInPacket > 10000) 
 	{
 	  socket->disconnectFromHost();
@@ -245,7 +246,7 @@ void MainServer::receiveMessage()
       switch(packetType)
 	{
 	case '?':
-	  socket->connData.respondedToLastPing = true;
+	  //	  socket->connData.isActive = true;
 	  qDebug() << "PONG" << socket->connData.userName;
 	  break;
 	  
@@ -796,6 +797,7 @@ void MainServer::processLogin(ClientSocket* socket)
   
   if (socket->connData.loggedIn == true)
     {
+      qDebug() << "WEIRD";
       writeToClient(socket, "You are already logged in!", S_ERROR);
       socket->disconnectFromHost();
       return;
@@ -840,7 +842,7 @@ void MainServer::processLogin(ClientSocket* socket)
     {
       if (thisUsername.toLower() == username.toLower())
 	{
-	  
+	  qDebug() << "was already logged in!";
 	  writeToClient(socket, "It appears that you were already logged in... Your previous connection has been logged out! Please try again.", S_ERROR);
 
 	  usernamesHash.value(thisUsername)->disconnectFromHost();
