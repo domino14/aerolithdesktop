@@ -23,6 +23,8 @@ Q_OBJECT
 
  private:
 
+  QString shuffleString(QString);
+
   QTableWidgetItem* wordCells[FIXED_ROWS][FIXED_COLS];
   QStringList cellSolutions[FIXED_ROWS][FIXED_COLS];
   QString cellAlphagrams[FIXED_ROWS][FIXED_COLS];
@@ -30,7 +32,9 @@ Q_OBJECT
 
   public slots:
     void changeFont();
-
+  void alphagrammizeWords();
+  void shuffleWords();
+  void wordsWidgetItemClicked(QTableWidgetItem* clickedItem);
 };
 
 
