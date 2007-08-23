@@ -11,18 +11,17 @@
 #include "wordsTableWidget.h"
 #include "playerInfoWidget.h"
 
+#include "UnscrambleGameTable.h"
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
-
-
 
 public:
 	MainWindow();
 private:
 	QWidget* centralWidget;
 	QLineEdit* chatLE;
-	QLineEdit* solutionLE;
 	QTextEdit* chatText;
 	QTcpSocket *commsSocket;
 	QListWidget *peopleConnected;
@@ -31,16 +30,12 @@ private:
 	void processServerString(QString);
 
 	QString currentUsername;
-	QPushButton *exitTable;
-	QLCDNumber *timerDial;
 	QDataStream in;
-	QStackedWidget* gameStackedWidget;
+	//	QStackedWidget* gameStackedWidget;
 	QTableWidget* roomTable;
-	wordsTableWidget* wordsWidget;
 	quint16 currentTablenum;
 	//	QBrush colorBrushes[9];
 	QBrush missedColorBrush;
-	QLabel* wordListInfo;
 	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
 	void handleDeleteTable(quint16 tablenum);
 	void handleAddToTable(quint16 tablenum, QString player);
@@ -48,7 +43,6 @@ private:
 	void handleTableCommand(quint16 tablenum, quint8 commandByte);
 	int findRoomTableRow(quint16 tablenum);
 
-	PlayerInfoWidget* playerInfoWidget;
 
 	const int PLAYERLIST_ROLE;
 	void writeHeaderData();
@@ -56,7 +50,8 @@ private:
 	QByteArray block;
 	QDataStream out;
 	void modifyPlayerLists(quint16 tablenum, QString player, int modification);
-	QGroupBox *gameBoardGroupBox;
+	UnscrambleGameTable *gameBoardWidget;
+
 	bool gameStarted;
 	QDialog *createTableDialog;
 	QDialog *solutionsDialog;
@@ -69,8 +64,6 @@ private:
 	Ui::scoresForm uiScores;
 	Ui::loginForm uiLogin;
 
-	QString alphagrammizeString(QString);
-	QString shuffleString(QString);
 	QSet <QString> rightAnswers;
 
 	QSqlDatabase wordDb;
@@ -95,10 +88,7 @@ private:
 		void createNewRoom();
 		void leaveThisTable();
 		void joinTable();
-		void alphagrammizeWords();
-		void shuffleWords();
 		void giveUpOnThisGame();
-		void wordsWidgetItemClicked(QTableWidgetItem*);
 		void submitReady();
 		void aerolithHelpDialog();
 		void updateGameTimer();

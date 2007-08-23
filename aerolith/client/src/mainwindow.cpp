@@ -21,83 +21,23 @@ out(&block, QIODevice::WriteOnly)
 
 
 	// create game board widget
-	gameBoardGroupBox = new QGroupBox("Game board");
+	//gameBoardGroupBox = new QGroupBox("Game board");
+	
+
+	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window);
+	gameBoardWidget->setWindowTitle("Table");
+
+	connect(gameBoardWidget->solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
+	
+	connect(gameBoardWidget->giveup, SIGNAL(clicked()), this, SLOT(giveUpOnThisGame()));
+	connect(gameBoardWidget->start, SIGNAL(clicked()), this, SLOT(submitReady()));
+	connect(gameBoardWidget->playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
+
+
 
 
 	centralWidget = new QWidget;	 // the 'overall'  widget
 
-	wordsWidget = new wordsTableWidget();
-	connect(wordsWidget, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
-	// solution box
-	QLabel *solutionLabel = new QLabel("Guess:");
-	solutionLE = new QLineEdit;
-	solutionLE->setFixedWidth(100);
-	solutionLE->setMaxLength(15);
-	QPushButton *solutions = new QPushButton("Solutions");
-	QPushButton *alpha = new QPushButton("Alpha");
-	QPushButton *shuffle = new QPushButton("Shuffle");
-	QPushButton *giveup = new QPushButton("Give up");
-	QPushButton *start = new QPushButton("Start");
-	exitTable = new QPushButton("Exit Table #");
-	QPushButton *changeFont = new QPushButton("Change font");
-	
-	connect(changeFont, SIGNAL(clicked()), wordsWidget, SLOT(changeFont()));
-
-	solutions->setFocusPolicy(Qt::NoFocus);
-	alpha->setFocusPolicy(Qt::NoFocus);
-	shuffle->setFocusPolicy(Qt::NoFocus);
-	giveup->setFocusPolicy(Qt::NoFocus);
-	start->setFocusPolicy(Qt::NoFocus);
-	exitTable->setFocusPolicy(Qt::NoFocus);
-	changeFont->setFocusPolicy(Qt::NoFocus);
-	QHBoxLayout *topSolutionLayout = new QHBoxLayout;
-	
-	timerDial = new QLCDNumber(3);
-	timerDial->setFixedWidth(50);
-	timerDial->setSegmentStyle(QLCDNumber::Flat);
-
-	wordListInfo = new QLabel;
-	topSolutionLayout->addWidget(timerDial);
-	topSolutionLayout->addSpacing(50);
-	topSolutionLayout->addWidget(wordListInfo);
-	topSolutionLayout->addSpacing(50);
-	topSolutionLayout->addWidget(changeFont);
-	topSolutionLayout->addStretch(1);
-
-	topSolutionLayout->addWidget(giveup);
-	topSolutionLayout->addSpacing(50);
-	topSolutionLayout->addWidget(exitTable);
-	QHBoxLayout *bottomSolutionLayout = new QHBoxLayout;
-	
-	bottomSolutionLayout->addWidget(solutionLabel);
-	bottomSolutionLayout->addWidget(solutionLE);
-	bottomSolutionLayout->addStretch(1);
-	//bottomSolutionLayout->addWidget(timerDial);
-	bottomSolutionLayout->addWidget(start);
-	bottomSolutionLayout->addWidget(solutions);
-	bottomSolutionLayout->addWidget(alpha);
-	bottomSolutionLayout->addWidget(shuffle);
-	//solutionLayout->addSpacing(50);
-	//solutionLayout->addWidget(giveup);
-	//solutionLayout->addWidget(exitTable);
-	
-	connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(submitSolutionLEContents()));
-	connect(alpha, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
-	connect(shuffle, SIGNAL(clicked()), this, SLOT(shuffleWords()));
-	connect(giveup, SIGNAL(clicked()), this, SLOT(giveUpOnThisGame()));
-	connect(start, SIGNAL(clicked()), this, SLOT(submitReady()));
-	// Players box
-
-	playerInfoWidget = new PlayerInfoWidget(); // includes lists, etc
-	connect(playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
-
-	QVBoxLayout *gameBoardLayout = new QVBoxLayout;
-	gameBoardLayout->addLayout(topSolutionLayout);
-	gameBoardLayout->addWidget(wordsWidget, 0, Qt::AlignHCenter);
-	gameBoardLayout->addLayout(bottomSolutionLayout);
-	gameBoardLayout->addWidget(playerInfoWidget);
-	gameBoardGroupBox->setLayout(gameBoardLayout);
-	
 	// the room selector will be anotehr group box
 	
 	QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
@@ -115,6 +55,7 @@ out(&block, QIODevice::WriteOnly)
 		roomTable->setColumnWidth(3, 50);
 		roomTable->setColumnWidth(4, 50);
 		roomTable->setColumnWidth(5, 75);
+		roomTable->setFixedWidth(750);
 		roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
 		roomTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
 		QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
@@ -142,9 +83,9 @@ out(&block, QIODevice::WriteOnly)
 		
 		roomSelectorGroupBox->setLayout(roomSelectorLayout);
 
-		gameStackedWidget = new QStackedWidget;
-		gameStackedWidget->addWidget(roomSelectorGroupBox);
-		gameStackedWidget->addWidget(gameBoardGroupBox);
+		//		gameStackedWidget = new QStackedWidget;
+		//	gameStackedWidget->addWidget(roomSelectorGroupBox);
+		//	gameStackedWidget->addWidget(gameBoardGroupBox);
 		
 		//gameStackedWidget->setFixedWidth(850);
 
@@ -177,8 +118,9 @@ out(&block, QIODevice::WriteOnly)
 		connect(peopleConnected, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 		
 		QVBoxLayout *overallGameBoardLayout = new QVBoxLayout;
-		overallGameBoardLayout->addWidget(gameStackedWidget);
-		overallGameBoardLayout->setAlignment(gameStackedWidget, Qt::AlignHCenter);
+		//		overallGameBoardLayout->addWidget(gameStackedWidget);
+		//	overallGameBoardLayout->setAlignment(gameStackedWidget, Qt::AlignHCenter);
+		overallGameBoardLayout->addWidget(roomSelectorGroupBox);
 		overallGameBoardLayout->addStretch(1);
 		overallGameBoardLayout->addWidget(chatGroupBox);
 		centralWidget->setLayout(overallGameBoardLayout);
@@ -201,7 +143,7 @@ out(&block, QIODevice::WriteOnly)
 		connect(commsSocket, SIGNAL(connected()), this, SLOT(connectedToServer()));
 		
 		connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
-		connect(exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
+		connect(gameBoardWidget->exitTable, SIGNAL(clicked()), this, SLOT(leaveThisTable()));
 
 		createTableDialog = new QDialog(this);
 		uiTable.setupUi(createTableDialog);
@@ -229,11 +171,11 @@ out(&block, QIODevice::WriteOnly)
 		loginDialog->setAttribute(Qt::WA_QuitOnClose, false);   
 
 		gameStarted = false;
-		connect(solutions, SIGNAL(clicked()), solutionsDialog, SLOT(show())); 
+		connect(gameBoardWidget->solutions, SIGNAL(clicked()), solutionsDialog, SLOT(show())); 
 		blockSize = 0; 
 
 		currentTablenum = 0;
-		gameStackedWidget->setCurrentIndex(0);
+		//		gameStackedWidget->setCurrentIndex(0);
 		uiLogin.stackedWidget->setCurrentIndex(0);
 		
 
@@ -255,8 +197,8 @@ out(&block, QIODevice::WriteOnly)
 		{
 			chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool found at http://www.zyzzyva.net</font>");
 		}
-		setTabOrder(solutionLE, chatLE);
-		setTabOrder(chatLE, solutionLE);
+		/*		setTabOrder(solutionLE, chatLE);
+				setTabOrder(chatLE, solutionLE);*/ // this should be in the gameboardwidget code
 		
 
 		QMenu* helpMenu = menuBar()->addMenu("Help");
@@ -371,10 +313,10 @@ void MainWindow::submitSolutionLEContents()
 	out << (quint8) '=';
 	out << (quint16) currentTablenum;
 	out << (quint8) 's'; // from solution box
-	out << solutionLE->text();
+	out << gameBoardWidget->solutionLE->text();
 	fixHeaderLength();
 	commsSocket->write(block);
-	solutionLE->clear();
+	gameBoardWidget->solutionLE->clear();
 }
 
 void MainWindow::readFromServer()
@@ -435,14 +377,11 @@ void MainWindow::readFromServer()
 				if (username == currentUsername) 
 				{
 				  uiLogin.connectStatusLabel->setText("You have connected!");
-					gameStackedWidget->setCurrentIndex(0);
-
-					//centralWidget->show();
-					loginDialog->hide();
-					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
-					sendClientVersion();   // not yet. add this for the actual version 0.1.2
-					playerInfoWidget->setMyUsername(username);
-					currentTablenum = 0;
+				  loginDialog->hide();
+				  setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
+				  sendClientVersion();   // not yet. add this for the actual version 0.1.2
+				  gameBoardWidget->playerInfoWidget->setMyUsername(username);
+				  currentTablenum = 0;
 				}
 			}
 			break;
@@ -508,15 +447,12 @@ void MainWindow::readFromServer()
 				if (playerName == currentUsername)
 				{
 					currentTablenum = tablenum;
-					gameStackedWidget->setCurrentIndex(1);
+					//gameStackedWidget->setCurrentIndex(1);
+					gameBoardWidget->show();
 					int row = findRoomTableRow(tablenum);
 					QString wList = roomTable->item(row, 1)->text();
-					gameBoardGroupBox->setTitle("Game board - Word List: " + wList);
-					timerDial->display(0);
-					wordListInfo->clear();
-					playerInfoWidget->clearAndHide();
-					wordsWidget->clearCells();
-					exitTable->setText(QString("Exit table %1").arg(tablenum));
+
+					gameBoardWidget->resetTable(tablenum, wList);
 
 				}
 				if (currentTablenum == tablenum)
@@ -535,7 +471,8 @@ void MainWindow::readFromServer()
 				if (playerName == currentUsername)
 				{
 					currentTablenum = 0;
-					gameStackedWidget->setCurrentIndex(0);
+					//gameStackedWidget->setCurrentIndex(0);
+					gameBoardWidget->hide();
 				}
 
 				// chatText->append(QString("%1 has left %2").arg(playerName).arg(tablenum));
@@ -616,7 +553,7 @@ void MainWindow::readFromServer()
 				if (currentTablenum != 0)
 				{
 					// we are in a table
-					playerInfoWidget->setAvatar(username, avatarID);
+					gameBoardWidget->playerInfoWidget->setAvatar(username, avatarID);
 
 				}
 				// then here we can do something like chatwidget->setavatar( etc). but this requires the server
@@ -828,7 +765,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			quint16 timerval;	
 			in >> timerval;
-			timerDial->display(timerval);
+			gameBoardWidget->timerDial->display(timerval);
 
 
 		}
@@ -840,13 +777,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-			playerInfoWidget->setReadyIndicator(username);
+			gameBoardWidget->playerInfoWidget->setReadyIndicator(username);
 		}
 		break;
 	case 'S':
 		// the game has started
 		{
-		  playerInfoWidget->setupForGameStart();
+		  gameBoardWidget->playerInfoWidget->setupForGameStart();
 		  chatText->append("<font color=red>The game has started!</font>");
 		  gameStarted = true;
 		  rightAnswers.clear();
@@ -886,7 +823,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 				in >> numSolutionsNotYetSolved;
 				QStringList solutions;
 				in >> solutions;
-				wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutionsNotYetSolved);
+				gameBoardWidget->wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutionsNotYetSolved);
 			}
 			uiSolutions.solutionsTableWidget->clearContents();
 			uiSolutions.solutionsTableWidget->setRowCount(0);
@@ -900,7 +837,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			quint16 numRacksSeen;
 			quint16 numTotalRacks;
 			in >> numRacksSeen >> numTotalRacks;
-			wordListInfo->setText(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
+			gameBoardWidget->wordListInfo->setText(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
 			break;
 		}
 
@@ -917,8 +854,8 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		  QString username, answer;
 			quint8 row, column;
 			in >> username >> answer >> row >> column;
-			wordsWidget->answeredCorrectly(row, column);
-			playerInfoWidget->answered(username, answer);
+			gameBoardWidget->wordsWidget->answeredCorrectly(row, column);
+			gameBoardWidget->playerInfoWidget->answered(username, answer);
 			rightAnswers.insert(answer);
 
 		}
@@ -970,14 +907,14 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
     {
       if (modification == -1) 
 	{
-	  playerInfoWidget->leaveTable();
+	  gameBoardWidget->playerInfoWidget->leaveTable();
 
 	  return; // the widget will be hid anyway, so we don't need to hide the individual lists
 	  //however, we hide when adding when we join down below
 	}
       else 
 	{
-	  playerInfoWidget->addPlayers(plist);
+	  gameBoardWidget->playerInfoWidget->addPlayers(plist);
 	  // add all players including self
 	  return;
 	}
@@ -991,10 +928,10 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
   if (modification == 1)
 	  // player has been added
 	  // find a spot
-	  playerInfoWidget->addPlayer(player, gameStarted);
+	  gameBoardWidget->playerInfoWidget->addPlayer(player, gameStarted);
   
   else if (modification == -1)
-    playerInfoWidget->removePlayer(player, gameStarted);
+    gameBoardWidget->playerInfoWidget->removePlayer(player, gameStarted);
 
 
 }
@@ -1059,20 +996,7 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 
 }
 
-void MainWindow::alphagrammizeWords()
-{
-	// wordsWidget
-	for (int i = 0; i < 9; i++)
-		for (int j = 0; j < 5; j++)
-			wordsWidget->item(i,j)->setText(alphagrammizeString(wordsWidget->item(i,j)->text()));
-}
 
-void MainWindow::shuffleWords()
-{
-	for (int i = 0; i < 9; i++)
-		for (int j = 0; j < 5; j++)
-			wordsWidget->item(i,j)->setText(shuffleString(wordsWidget->item(i,j)->text()));
-}
 void MainWindow::giveUpOnThisGame()
 {
 	writeHeaderData();
@@ -1092,45 +1016,6 @@ void MainWindow::submitReady()
   fixHeaderLength();
   commsSocket->write(block);
 
-}
-void MainWindow::wordsWidgetItemClicked(QTableWidgetItem* item)
-{
-	int i = item->row();
-	int j = item->column();
-	wordsWidget->item(i, j)->setText(shuffleString(wordsWidget->item(i, j)->text()));
-
-}
-
-QString MainWindow::alphagrammizeString(QString inputString)
-{
-	int letters[26];
-	for (int i = 0; i < 26; i++)
-		letters[i] = 0;
-
-	for (int i = 0; i < inputString.length(); i++)
-	{
-		letters[inputString[i].toUpper().toAscii() - 'A']++;
-	}
-	QString retString = "";
-	for (int i = 0; i < 26; i++)
-		for (int j = 0; j < letters[i]; j++)
-			retString += (unsigned char)(i + 'A');
-
-	return retString;
-}
-
-QString MainWindow::shuffleString(QString inputString)
-{
-	for (int i = 0; i < inputString.length(); i++)
-	{
-		int j = qrand() % inputString.length();
-		QChar tmp;
-		tmp = inputString[i];
-		inputString[i] = inputString[j];
-		inputString[j] = tmp;
-
-	}
-	return inputString;
 }
 
 void MainWindow::aerolithHelpDialog()
@@ -1187,9 +1072,9 @@ void MainWindow::populateSolutionsTable()
 	for (int i = 0; i < 9; i++)
 		for (int j = 0; j < 5; j++)
 		{
-			wordsWidget->item(i, j)->setText("");
-			QStringList theseSols = wordsWidget->getCellSolutions(i, j);
-			QString alphagram = wordsWidget->getCellAlphagram(i, j);
+			gameBoardWidget->wordsWidget->item(i, j)->setText("");
+			QStringList theseSols = gameBoardWidget->wordsWidget->getCellSolutions(i, j);
+			QString alphagram = gameBoardWidget->wordsWidget->getCellAlphagram(i, j);
 
 			if (alphagram != "") // if alphagram exists.
 			{
@@ -1267,9 +1152,9 @@ void MainWindow::changeMyAvatar(quint8 avatarID)
 
 void MainWindow::updateGameTimer()
 {
-  if (timerDial->value() == 0) return;
+  if (gameBoardWidget->timerDial->value() == 0) return;
   
-  timerDial->display(timerDial->value() - 1);
+  gameBoardWidget->timerDial->display(gameBoardWidget->timerDial->value() - 1);
 
 }
 

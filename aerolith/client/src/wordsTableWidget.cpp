@@ -47,6 +47,15 @@ wordsTableWidget::wordsTableWidget()
   setFixedSize(752, 182); // argh
   setFocusPolicy(Qt::NoFocus);
 
+  connect(this, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
+
+}
+
+void wordsTableWidget::wordsWidgetItemClicked(QTableWidgetItem* clickedItem)
+{
+  int i = clickedItem->row();
+  int j = clickedItem->column();
+  item(i, j)->setText(shuffleString(item(i, j)->text()));
 }
 
 void wordsTableWidget::changeFont()
@@ -109,7 +118,6 @@ void wordsTableWidget::answeredCorrectly(int row, int column)
 
 }
 
-
 void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStringList solutions, quint8 numSolutionsNotYetSolved)
 {
   cellAlphagrams[i][j] = alphagram;
@@ -119,4 +127,33 @@ void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStrin
   cellNumSolutions[i][j] = numSolutionsNotYetSolved;
   cellSolutions[i][j] = solutions;
 
+}
+
+void wordsTableWidget::alphagrammizeWords()
+{
+	// wordsWidget
+  for (int i = 0; i < 9; i++)
+    for (int j = 0; j < 5; j++)
+      if (cellNumSolutions[i][j] != 0) item(i,j)->setText(cellAlphagrams[i][j]);
+}
+
+void wordsTableWidget::shuffleWords()
+{
+  for (int i = 0; i < 9; i++)
+    for (int j = 0; j < 5; j++)
+      item(i,j)->setText(shuffleString(item(i,j)->text()));
+}
+
+QString wordsTableWidget::shuffleString(QString inputString)
+{
+  for (int i = 0; i < inputString.length(); i++)
+    {
+      int j = qrand() % inputString.length();
+      QChar tmp;
+      tmp = inputString[i];
+      inputString[i] = inputString[j];
+      inputString[j] = tmp;
+      
+    }
+  return inputString;
 }
