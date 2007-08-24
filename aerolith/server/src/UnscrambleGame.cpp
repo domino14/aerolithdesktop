@@ -32,10 +32,11 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 
   if (cycleState == 3)
     {
-      wordLengths = wordListFileName.right(2).left(1).toInt();
+      wordListFileName.chop(1);
+      wordLengths = wordListFileName.mid(6).toInt();
       if (wordLengths >= 4 && wordLengths <= 15)
 	if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
-	  table->sendServerMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
+	  table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
     }
 
   numRacksSeen = 0;
@@ -208,7 +209,7 @@ void UnscrambleGame::endGame()
   else if (cycleState == 3) // daily challenges
     {
       startEnabled = false;
-      table->sendServerMessage("This daily challenge is over! To see scores or to try another daily challenge, exit the table and make the appropriate selections with the Daily Challenges button.");
+      table->sendTableMessage("This daily challenge is over! To see scores or to try another daily challenge, exit the table and make the appropriate selections with the Daily Challenges button.");
       if (table->playerList.size() != 1)
 	qDebug() << table->playerList.size() << "More or less than 1 player in a daily challenge table!? WTF";
       else
@@ -222,7 +223,7 @@ void UnscrambleGame::endGame()
 	    {
 	      
 	      if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
-		table->sendServerMessage("You've already played this challenge. These results will not count towards this day's high scores.");
+		table->sendTableMessage("You've already played this challenge. These results will not count towards this day's high scores.");
 	      else
 		{
 		  if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
@@ -236,7 +237,7 @@ void UnscrambleGame::endGame()
 		      peopleWhoPlayed[wordLengths-4].insert(table->playerList.at(0)->connData.userName);
 		    }
 		  else
-		    table->sendServerMessage("The daily lists have changed while you were playing. Please try again with the new list!");
+		    table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
 		}
 	    }
 	}
@@ -340,7 +341,7 @@ void UnscrambleGame::generateTempFile()
       QFile toRemove(QString("temp%1").arg(table->tableNumber));
       toRemove.remove();
       
-      QFile tempInFile("dailylists/" + wordListFileName.right(2)); // looks like dailylists/4s  or dailylists/8s  etc.
+      QFile tempInFile("dailylists/" + wordListFileName.mid(6)); // looks like dailylists/4s  or dailylists/8s  etc.
       tempInFile.copy(QString("temp%1").arg(table->tableNumber));
       qDebug() << "copied" << tempInFile.fileName() << " to temp file";
       tempFileExists = true;
@@ -385,7 +386,7 @@ void UnscrambleGame::prepareTableAlphagrams()
       outFile.open(QIODevice::WriteOnly | QIODevice::Text);
       missedFileWriter.seek(0);
       alphagramReader.seek(0);
-      table->sendServerMessage("The list has been exhausted. Now quizzing on missed list.");
+      table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
       // CLOSE table->inFile
       // COPY missed%1 to tmp%1
       // repeat code above to load the file into memory, shuffle, etc
@@ -410,9 +411,9 @@ void UnscrambleGame::prepareTableAlphagrams()
 	    if (j == 0 && i == 0)
 	      {
 		if (cycleState != 3)
-		  table->sendServerMessage("This list has been completely exhausted. Please exit table and have a nice day.");
+		  table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
 		else
-		  table->sendServerMessage("This daily challenge is over. \
+		  table->sendTableMessage("This daily challenge is over. \
 To view scores, please exit table and select 'Get today's scores' from the 'Daily Challenges' button.");
 	      }
 	  }

@@ -463,6 +463,20 @@ void MainServer::processTableCommand(ClientSocket* socket)
       table->tableGame->gameEndRequest(socket);
       
       break;
+    case 'a':
+      {
+	QString username, actionText;
+	// i.e. cesar knocks bbstenniz over the head
+	username = socket->connData.userName;
+	socket->connData.in >> actionText;
+	if (actionText.length() > 400) 
+	  {
+	    socket->disconnectFromHost();
+	    return;
+	  }
+	table->sendTableMessage("* " + username + " " + actionText);
+      }
+      break;
     default:
       socket->disconnectFromHost();
     }
