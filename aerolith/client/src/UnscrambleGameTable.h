@@ -30,6 +30,7 @@ class UnscrambleGameTable : public QWidget
   private slots:
     void enteredGuess();
   void enteredChat();
+  void sendPM(QListWidgetItem* item);
 
  public:
   wordsTableWidget* wordsWidget;

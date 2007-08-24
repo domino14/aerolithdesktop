@@ -22,6 +22,7 @@ Q_OBJECT
   quint8 getColorBrushIndex(quint8 numSolutions);
   void changeFontSize(QFont&);
   quint8 wordLength;
+  void prepareForStart();
  private:
   
   bool fixedWidth;
@@ -31,7 +32,7 @@ Q_OBJECT
   QStringList cellSolutions[FIXED_ROWS][FIXED_COLS];
   QString cellAlphagrams[FIXED_ROWS][FIXED_COLS];
   quint8 cellNumSolutions[FIXED_ROWS][FIXED_COLS];
-
+	
   public slots:
     void changeFont();
   void alphagrammizeWords();

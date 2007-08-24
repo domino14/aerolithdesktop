@@ -76,6 +76,36 @@
      <string>Daily 9s</string>
     </property>
    </item>
+   <item>
+    <property name="text" >
+     <string>Daily 10s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 11s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 12s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 13s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 14s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 15s</string>
+    </property>
+   </item>
   </widget>
   <widget class="QTableWidget" name="scoresTableWidget" >
    <property name="geometry" >

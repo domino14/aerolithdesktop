@@ -39,6 +39,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   timerDial->setSegmentStyle(QLCDNumber::Flat);
   
   wordListInfo = new QLabel;
+  wordListInfo->setFixedWidth(50);
   topSolutionLayout->addWidget(timerDial);
   topSolutionLayout->addSpacing(50);
   topSolutionLayout->addWidget(wordListInfo);
@@ -77,6 +78,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   chatLE = new QLineEdit;
   tableChat = new QTextEdit;
 
+   connect(peopleInTable, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
   chatLE->setMaxLength(300);
   tableChat->setReadOnly(true);
   tableChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -117,6 +119,12 @@ void UnscrambleGameTable::enteredChat()
 {
   emit chatTable(chatLE->text());
   chatLE->clear();
+}
+
+void UnscrambleGameTable::sendPM(QListWidgetItem* item)
+{
+	chatLE->setText(QString("/msg ") + item->text() + " ");
+	chatLE->setFocus(Qt::OtherFocusReason);
 }
 
 

@@ -20,13 +20,15 @@ wordsTableWidget::wordsTableWidget()
   for (int i = 0; i < FIXED_ROWS; i++)
     setRowHeight(i, 20);
 
+  /*
 #ifdef Q_OS_MAC
-  QFont wordFont("Arial Black", 16, QFont::Normal);
+  QFont wordFont("Helvetica", 16, QFont::Black);
 #else
-  QFont wordFont("Arial Black", 12, QFont::Normal);
+  QFont wordFont("Helvetica", 12, QFont::Black);
 #endif
-  
-  QFontMetrics fm(wordFont);
+  */
+  QFont wordFont("Helvetica", 6, QFont::Black);
+
 
   colorBrushes[0].setColor(Qt::black);
   colorBrushes[1].setColor(Qt::darkGreen);
@@ -64,26 +66,6 @@ void wordsTableWidget::wordsWidgetItemClicked(QTableWidgetItem* clickedItem)
 
 void wordsTableWidget::changeFont()
 {
-  /*#ifdef Q_OS_MAC
-  QFont wordFont("Arial Black", 16, QFont::Normal);
-#else
-  QFont wordFont("Arial Black", 12, QFont::Normal);
-#endif
-  bool ok;
-  QFont font = QFontDialog::getFont(&ok, wordFont, this);
-  if (ok) 
-    {
-      for (int i = 0; i < FIXED_ROWS; i++)
-	for (int j = 0; j < FIXED_COLS; j++)
-	  wordCells[i][j]->setFont(font);
-      
-    // font is set to the font the user selected
-    } 
-  else 
-    {
-      
-    }
-  */
   QFont wordFont;
 
   wordFont.setPointSize(6); // start here
@@ -91,15 +73,15 @@ void wordsTableWidget::changeFont()
     {
       wordFont.setFamily("Courier New");
       wordFont.setStyleHint(QFont::TypeWriter);
-      wordFont.setWeight(QFont::Bold);
+      wordFont.setWeight(QFont::Black);
       
       fixedWidth = true;
     }
   else
     {
-      wordFont.setFamily("Arial Black");
-      wordFont.setStyleHint(QFont::AnyStyle);
-      wordFont.setWeight(QFont::Normal);
+      wordFont.setFamily("Helvetica");
+      wordFont.setStyleHint(QFont::SansSerif);
+      wordFont.setWeight(QFont::Black);
  
       fixedWidth = false;
     }
@@ -112,23 +94,37 @@ void wordsTableWidget::changeFont()
   
 }
 
+void wordsTableWidget::prepareForStart()
+{
+	QFont wordFont = wordCells[0][0]->font();
+	wordFont.setPointSize(6);
+	changeFontSize(wordFont);
+
+  for (int i = 0; i < FIXED_ROWS; i++)
+    for (int j = 0; j < FIXED_COLS; j++)
+      wordCells[i][j]->setFont(wordFont);
+}
+
+
 void wordsTableWidget::changeFontSize(QFont& wordFont)
 {
 
-  QString testStr(wordLength, 'W');
+  QString testStr(wordLength, 'M');
   
   bool stillFits = true;
   while (stillFits)
     {
       wordFont.setPointSize(wordFont.pointSize() + 1);
       QFontMetrics fm(wordFont);
-      if (fm.boundingRect(testStr).width() < 145 && fm.boundingRect(testStr).height() < 19)
+      if (fm.boundingRect(testStr).width() < 135 && fm.boundingRect(testStr).height() < 20)
 	stillFits = true;
       else
 	stillFits = false;
+	  qDebug() << "Test rectangle for" << testStr << "point size" << wordFont.pointSize() 
+			<< "width" << fm.boundingRect(testStr).width() << "height" << fm.boundingRect(testStr).height();
     }
   
-
+	qDebug() << "Set point size to " << wordFont.pointSize();
   
 }
 
@@ -191,6 +187,7 @@ void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStrin
   cellSolutions[i][j] = solutions;
 
 }
+
 
 void wordsTableWidget::alphagrammizeWords()
 {
