@@ -2,7 +2,7 @@
 
 const quint16 MAGIC_NUMBER = 25346;
 const QString WindowTitle = "Aerolith 0.2.1";
-const QString thisVersion = "0.2.1";
+const QString thisVersion = "0.2";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -66,7 +66,7 @@ out(&block, QIODevice::WriteOnly)
   dailyChallenges->setFixedWidth(150);
   
   QMenu *challengesMenu = new QMenu;
-  for (int i = 4; i <= 9; i++)
+  for (int i = 4; i <= 15; i++)
     challengesMenu->addAction(QString("Daily %1s").arg(i));
   challengesMenu->addAction("Get today's scores");
   
@@ -268,7 +268,7 @@ void MainWindow::submitChatLEContents()
       commsSocket->write(block);
       chatLE->clear();
       }*/
-  else if (chatLE->text().indexOf("/me ") == 0)
+ /* else if (chatLE->text().indexOf("/me ") == 0)
     {
       writeHeaderData();
       out << (quint8)'a';
@@ -276,7 +276,7 @@ void MainWindow::submitChatLEContents()
       fixHeaderLength();
       commsSocket->write(block);
       chatLE->clear();
-    }
+    }*/
   else
     {
       writeHeaderData();
@@ -294,6 +294,38 @@ void MainWindow::submitChatLEContents()
 
 void MainWindow::chatTable(QString textToSend)
 {
+	if (textToSend.indexOf("/msg ") == 0)
+    {
+      QString restOfText = textToSend.mid(5);
+      QString username = restOfText.mid(0, restOfText.indexOf(" "));
+      QString message = restOfText.mid(username.length()+1);
+      if (message.simplified() == "" || message.simplified() == " ")
+	{
+	 
+	  return;
+	}
+      gameBoardWidget->tableChat->append("[You write to " + username + "] " + message);
+      writeHeaderData();
+      out << (quint8)'p';
+      out << username;
+      out << message;
+      fixHeaderLength();
+      commsSocket->write(block);
+    }
+	else if (textToSend.indexOf("/me ") == 0)
+    {
+      writeHeaderData();
+      out << (quint8)'=';
+	  out << (quint16)currentTablenum;
+	  out << (quint8)'a';
+      out << textToSend.mid(4);
+      fixHeaderLength();
+      commsSocket->write(block);
+    }
+	else
+	{
+
+
   writeHeaderData();
   out << (quint8)'=';
   out << (quint16)currentTablenum;
@@ -301,7 +333,8 @@ void MainWindow::chatTable(QString textToSend)
   out << textToSend;
   fixHeaderLength();
   commsSocket->write(block);
-  chatLE->clear();
+	}
+
 }
 
 void MainWindow::submitGuess(QString guess)
@@ -763,6 +796,15 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 {
 	switch (commandByte)
 	{
+	case 'M':
+		// a message
+		{
+			QString message;
+			in >> message;
+			gameBoardWidget->tableChat->append("<font color=green>" + message + "</font>");
+
+
+		}
 	case 'T':
 		// a timer byte
 		{
@@ -787,7 +829,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		// the game has started
 		{
 		  gameBoardWidget->playerInfoWidget->setupForGameStart();
-		  chatText->append("<font color=red>The game has started!</font>");
+		  gameBoardWidget->tableChat->append("<font color=red>The game has started!</font>");
 		  gameStarted = true;
 		  rightAnswers.clear();
 		  //gameTimer->start(1000);
@@ -797,7 +839,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 	case 'E':
 		// the game has ended
 		
-		chatText->append("<font color=red>This round is over.</font>");
+		gameBoardWidget->tableChat->append("<font color=red>This round is over.</font>");
 		gameStarted = false;
 		populateSolutionsTable();
 		///gameTimer->stop();
@@ -831,6 +873,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			uiSolutions.solutionsTableWidget->clearContents();
 			uiSolutions.solutionsTableWidget->setRowCount(0);
 			uiSolutions.solsLabel->clear();
+			gameBoardWidget->wordsWidget->prepareForStart();
 			break;
 
 	case 'N':
@@ -849,7 +892,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-			chatText->append("<font color=red>" + username + " has requested to end this game. </font>");
+			gameBoardWidget->tableChat->append("<font color=red>" + username + " has requested to end this game. </font>");
 		}
 		break;
 	case 'A':
