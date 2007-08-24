@@ -77,8 +77,9 @@ private:
 
 	connectionModes connectionMode;
 	public slots:
-		void submitSolutionLEContents();
-		void submitChatLEContents();
+	  void submitGuess(QString);
+	void chatTable(QString);
+	void submitChatLEContents();
 		void readFromServer();
 		void displayError(QAbstractSocket::SocketError);
 		void serverDisconnection();

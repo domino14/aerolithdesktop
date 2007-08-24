@@ -1,6 +1,8 @@
 #include "wordsTableWidget.h"
 
 
+
+
 wordsTableWidget::wordsTableWidget()
 {
   setRowCount(FIXED_ROWS);
@@ -23,6 +25,8 @@ wordsTableWidget::wordsTableWidget()
 #else
   QFont wordFont("Arial Black", 12, QFont::Normal);
 #endif
+  
+  QFontMetrics fm(wordFont);
 
   colorBrushes[0].setColor(Qt::black);
   colorBrushes[1].setColor(Qt::darkGreen);
@@ -34,8 +38,8 @@ wordsTableWidget::wordsTableWidget()
   colorBrushes[7].setColor(Qt::red);
   colorBrushes[8].setColor(Qt::magenta);
   
-  for (int i = 0; i < 9; i++)
-    for (int j = 0; j < 5; j++)
+  for (int i = 0; i < FIXED_ROWS; i++)
+    for (int j = 0; j < FIXED_COLS; j++)
       {
 	wordCells[i][j] = new QTableWidgetItem("");
 	wordCells[i][j]->setTextAlignment(Qt::AlignCenter);
@@ -48,7 +52,7 @@ wordsTableWidget::wordsTableWidget()
   setFocusPolicy(Qt::NoFocus);
 
   connect(this, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));
-
+  fixedWidth = false;
 }
 
 void wordsTableWidget::wordsWidgetItemClicked(QTableWidgetItem* clickedItem)
@@ -60,7 +64,7 @@ void wordsTableWidget::wordsWidgetItemClicked(QTableWidgetItem* clickedItem)
 
 void wordsTableWidget::changeFont()
 {
-#ifdef Q_OS_MAC
+  /*#ifdef Q_OS_MAC
   QFont wordFont("Arial Black", 16, QFont::Normal);
 #else
   QFont wordFont("Arial Black", 12, QFont::Normal);
@@ -69,8 +73,8 @@ void wordsTableWidget::changeFont()
   QFont font = QFontDialog::getFont(&ok, wordFont, this);
   if (ok) 
     {
-      for (int i = 0; i < 9; i++)
-	for (int j = 0; j < 5; j++)
+      for (int i = 0; i < FIXED_ROWS; i++)
+	for (int j = 0; j < FIXED_COLS; j++)
 	  wordCells[i][j]->setFont(font);
       
     // font is set to the font the user selected
@@ -79,14 +83,60 @@ void wordsTableWidget::changeFont()
     {
       
     }
+  */
+  QFont wordFont;
 
+  wordFont.setPointSize(6); // start here
+  if (fixedWidth == false)
+    {
+      wordFont.setFamily("Courier New");
+      wordFont.setStyleHint(QFont::TypeWriter);
+      wordFont.setWeight(QFont::Bold);
+      
+      fixedWidth = true;
+    }
+  else
+    {
+      wordFont.setFamily("Arial Black");
+      wordFont.setStyleHint(QFont::AnyStyle);
+      wordFont.setWeight(QFont::Normal);
+ 
+      fixedWidth = false;
+    }
 
+  changeFontSize(wordFont);
+
+  for (int i = 0; i < FIXED_ROWS; i++)
+    for (int j = 0; j < FIXED_COLS; j++)
+      wordCells[i][j]->setFont(wordFont);
+  
 }
+
+void wordsTableWidget::changeFontSize(QFont& wordFont)
+{
+
+  QString testStr(wordLength, 'W');
+  
+  bool stillFits = true;
+  while (stillFits)
+    {
+      wordFont.setPointSize(wordFont.pointSize() + 1);
+      QFontMetrics fm(wordFont);
+      if (fm.boundingRect(testStr).width() < 145 && fm.boundingRect(testStr).height() < 19)
+	stillFits = true;
+      else
+	stillFits = false;
+    }
+  
+
+  
+}
+
 
 void wordsTableWidget::clearCells()
 {
-  for (int i = 0; i < 9; i++)
-    for (int j = 0; j < 5; j++)
+  for (int i = 0; i < FIXED_ROWS; i++)
+    for (int j = 0; j < FIXED_COLS; j++)
       item(i, j)->setText("");
 
 }
@@ -107,23 +157,36 @@ quint8 wordsTableWidget::getCellNumSolutions(int i, int j)
   return cellNumSolutions[i][j];
 }
 
+quint8 wordsTableWidget::getColorBrushIndex(quint8 numSolutions)
+{
+  Q_ASSERT(numSolutions > 0);
+  if (numSolutions > 9) return 8;
+  else return (numSolutions - 1);
+}
+
 void wordsTableWidget::answeredCorrectly(int row, int column)
 {
+  Q_ASSERT(cellNumSolutions[row][column] > 0);
   cellNumSolutions[row][column]--;
-  if (cellNumSolutions[row][column] > 0)
-    item(row, column)->setForeground(wordsTableWidget::colorBrushes[(cellNumSolutions[row][column] > 9 ? 8 : (cellNumSolutions[row][column] - 1))]);
+  int numSolutions = cellNumSolutions[row][column];
+  if (numSolutions > 0)
+    {      
+      item(row, column)->setForeground(colorBrushes[getColorBrushIndex(numSolutions)]);
+    }
   else
     item(row, column)->setText("");
-
-
 }
 
 void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStringList solutions, quint8 numSolutionsNotYetSolved)
 {
   cellAlphagrams[i][j] = alphagram;
-  if (numSolutionsNotYetSolved > 0) item(i, j)->setText(alphagram);
+  if (numSolutionsNotYetSolved > 0) 
+    {
+      wordLength = alphagram.length();
+      item(i, j)->setText(alphagram);
+      item(i, j)->setForeground(colorBrushes[getColorBrushIndex(numSolutionsNotYetSolved)]);
+    }
   else item(i, j)->setText("");
-  item(i, j)->setForeground(colorBrushes[(numSolutionsNotYetSolved > 9 ? 8 : (numSolutionsNotYetSolved - 1))]);
   cellNumSolutions[i][j] = numSolutionsNotYetSolved;
   cellSolutions[i][j] = solutions;
 
@@ -132,15 +195,15 @@ void wordsTableWidget::setCellProperties(int i, int j, QString alphagram, QStrin
 void wordsTableWidget::alphagrammizeWords()
 {
 	// wordsWidget
-  for (int i = 0; i < 9; i++)
-    for (int j = 0; j < 5; j++)
+  for (int i = 0; i < FIXED_ROWS; i++)
+    for (int j = 0; j < FIXED_COLS; j++)
       if (cellNumSolutions[i][j] != 0) item(i,j)->setText(cellAlphagrams[i][j]);
 }
 
 void wordsTableWidget::shuffleWords()
 {
-  for (int i = 0; i < 9; i++)
-    for (int j = 0; j < 5; j++)
+  for (int i = 0; i < FIXED_ROWS; i++)
+    for (int j = 0; j < FIXED_COLS; j++)
       item(i,j)->setText(shuffleString(item(i,j)->text()));
 }
 
