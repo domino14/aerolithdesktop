@@ -52,10 +52,12 @@ void tableData::sendChatSentPacket(QString username, QString chat)
   sendGenericPacket();
 }
 
-void tableData::sendServerMessage(QString message)
+void tableData::sendTableMessage(QString message)
 {
   writeHeaderData();
-  out << (quint8) 'S';
+  out << (quint8) '+';
+  out << (quint16) tableNumber;
+  out << (quint8) 'M';
   out << message;
   fixHeaderLength();
   sendGenericPacket();

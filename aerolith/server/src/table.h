@@ -34,7 +34,7 @@ class tableData
   
   void sendChatSentPacket(QString, QString);
   void sendGenericPacket();
-  void sendServerMessage(QString);
+  void sendTableMessage(QString);
   // anagrams mode?
   gameModes gameMode; 
   QByteArray letters; // the letters that are showing on the board
