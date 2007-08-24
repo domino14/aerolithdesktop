@@ -5,8 +5,8 @@ extern QDataStream out;
 
 const quint8 COUNTDOWN_TIMER_VAL = 3;
 
-QList <highScoreData> UnscrambleGame::dailyHighScores[6];
-QSet <QString> UnscrambleGame::peopleWhoPlayed[6];
+QList <highScoreData> UnscrambleGame::dailyHighScores[12];
+QSet <QString> UnscrambleGame::peopleWhoPlayed[12];
 bool UnscrambleGame::midnightSwitchoverToggle;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordListFileName)
@@ -33,7 +33,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
   if (cycleState == 3)
     {
       wordLengths = wordListFileName.right(2).left(1).toInt();
-      if (wordLengths >= 4 && wordLengths <= 9)
+      if (wordLengths >= 4 && wordLengths <= 15)
 	if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
 	  table->sendServerMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
     }
@@ -215,7 +215,7 @@ void UnscrambleGame::endGame()
 	{
 	  // search for player. 
 	  
-	  if (wordLengths < 4 || wordLengths > 9)
+	  if (wordLengths < 4 || wordLengths > 15)
 	    qDebug() << wordLengths << " is not a valid word length!";
 	  
 	  else
@@ -271,7 +271,7 @@ void UnscrambleGame::generateDailyChallenges()
 	qDebug () << " and could not create it!";
 
     }
-  for (int i = 4; i <= 9; i++)
+  for (int i = 4; i <= 15; i++)
     {
       QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
       QFile tempOutFile(QString("dailylists/%1s").arg(i));
@@ -298,7 +298,7 @@ void UnscrambleGame::generateDailyChallenges()
     }
   // TODO: also clear high score lists and whatever hash says that a player has already played.
   // 
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 12; i++)
     {
       dailyHighScores[i].clear();
       peopleWhoPlayed[i].clear();
