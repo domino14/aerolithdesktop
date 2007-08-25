@@ -39,7 +39,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   timerDial->setSegmentStyle(QLCDNumber::Flat);
   
   wordListInfo = new QLabel;
-  wordListInfo->setFixedWidth(50);
+  wordListInfo->setFixedWidth(100);
   topSolutionLayout->addWidget(timerDial);
   topSolutionLayout->addSpacing(50);
   topSolutionLayout->addWidget(wordListInfo);
