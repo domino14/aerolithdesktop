@@ -30,15 +30,9 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
   currentTimerVal = tableTimerVal;
   countdownTimerVal = COUNTDOWN_TIMER_VAL;
 
-  if (cycleState == 3)
-    {
-      wordListFileName.chop(1);
-      wordLengths = wordListFileName.mid(6).toInt();
-      if (wordLengths >= 4 && wordLengths <= 15)
-	if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
-	  table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
-    }
+  /*
 
+  */
   numRacksSeen = 0;
   numTotalRacks = 0;
   numMissedRacks = 0;
@@ -87,9 +81,17 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 	  countdownTimerVal = 3;
 	  countdownTimer->start(1000);
 	  sendTimerValuePacket(countdownTimerVal);
+	  if (cycleState == 3)
+	    {
+	      wordListFileName.chop(1);
+	      wordLengths = wordListFileName.mid(6).toInt();
+	      if (wordLengths >= 4 && wordLengths <= 15)
+		if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
+		  table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
+	    }
 	}
     }
-
+  
 }
 
 void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
