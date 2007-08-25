@@ -134,7 +134,7 @@
        </rect>
       </property>
       <property name="text" >
-       <string>cesar.boldlygoingnowhere.org</string>
+       <string>aerolith.org</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="portLE" >
