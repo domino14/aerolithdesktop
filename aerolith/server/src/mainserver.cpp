@@ -15,7 +15,7 @@ const QString incompatibleVersionString =
 Please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
-const QString thisVersion = "0.2";
+const QString thisVersion = "0.3";
 
 MainServer::MainServer()
 {
