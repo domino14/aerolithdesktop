@@ -62,7 +62,7 @@ out(&block, QIODevice::WriteOnly)
   QHBoxLayout *newRoomLayout = new QHBoxLayout;
   QPushButton *newRoom = new QPushButton("Create new table");
   newRoom->setFixedWidth(150);
-  QPushButton *dailyChallenges = new QPushButton("Daily challenges.");
+  QPushButton *dailyChallenges = new QPushButton("Daily challenges");
   dailyChallenges->setFixedWidth(150);
   
   QMenu *challengesMenu = new QMenu;
@@ -549,6 +549,7 @@ void MainWindow::readFromServer()
 				in >> tablenum; 
 				if (tablenum != currentTablenum)
 				{
+				  qDebug() << "HORRIBLE ERROR" << tablenum << currentTablenum;
 					QMessageBox::critical(this, "Aerolith client", "Critical error 10003");
 					exit(0);
 				}
