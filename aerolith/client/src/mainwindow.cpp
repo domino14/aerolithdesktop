@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 
-const quint16 MAGIC_NUMBER = 25346;
-const QString WindowTitle = "Aerolith 0.2.1";
-const QString thisVersion = "0.2";
+const quint16 MAGIC_NUMBER = 25347;
+const QString WindowTitle = "Aerolith 0.3";
+const QString thisVersion = "0.3";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -455,6 +455,7 @@ void MainWindow::readFromServer()
 				QString username, message;
 				in >> username >> message;
 				chatText->append(QString("[")+username+ " writes to you] " + message);
+				gameBoardWidget->tableChat->append(QString("[")+username + " writes to you] " + message);
 			}
 			break;
 		case 'T':	// New table

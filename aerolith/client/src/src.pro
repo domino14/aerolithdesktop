@@ -1,10 +1,10 @@
 message(generating makefile from src.pro)
 TEMPLATE = app
-CONFIG += qt debug
+CONFIG += qt
 QT += network sql
 TARGET = aerolith
 QMAKE_MAC_SDK=/Developer/SDKs/MacOSX10.4u.sdk
-CONFIG+= x86 ppc debug
+CONFIG+= x86 ppc
 ICON = macosxicns.icns
 
 ROOT = ../
