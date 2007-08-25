@@ -1,3 +1,12 @@
+0.3
+Changes: <BR>
+- Moved to a virtual dedicated server! This should result in much less lag, less downtime, faster, etc.
+- Added up to the 15s for regular lists and daily challenges (hey, people actually wanted this!)
+- Tables are now their own windows. (precursor to being in multiple tables and also being able to see the \
+lobby tables better)
+- Eliminated a bad bug that caused sporadic crashes.
+
+
 0.2
 Changes: <BR>
 - Daily challenges<BR>
