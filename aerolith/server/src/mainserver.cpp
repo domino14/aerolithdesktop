@@ -511,6 +511,8 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
       tableData *tmp = tables.value(tablenum);
       tmp->playerList.removeAll(socket);
 
+      qDebug() << "players in table" << tablenum << tmp->playerList;
+
         // write to all connections that username has left table  
       writeHeaderData();      
       out << (quint8) 'L';
@@ -687,8 +689,11 @@ void MainServer::processJoinTable(ClientSocket* socket)
   // got here with no errors, join table!
   
   // does this work?
+
   tmp->playerList << socket;
   if (tmp->playerList.size() == tmp->maxPlayers) tmp->canJoin = false;
+
+  qDebug() << "players in table" << tablenum << tmp->playerList;
 
   writeHeaderData();
   out << (quint8) 'J';
