@@ -69,11 +69,11 @@ Q_OBJECT
   void setAvatar(QString username, quint8 avatarID);
   void setMyUsername(QString username);
  private:
-  QHBoxLayout* playerInfoLayout[6];
-  QListWidget* playerLists[6];
-  QLabel* playerNames[6];
-  avatarLabel* playerAvatars[6];
-  QLabel* playerStatus[6];
+  //QHBoxLayout* playerInfoLayout[6];
+  //QListWidget* playerLists[6];
+  //QLabel* playerNames[6];
+  //avatarLabel* playerAvatars[6];
+  //QLabel* playerStatus[6];
   SinglePlayerInfoWidget* places[6];
   QHash <QString, int> seats;
   QString myUsername;

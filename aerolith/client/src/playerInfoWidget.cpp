@@ -2,53 +2,9 @@
 
 PlayerInfoWidget::PlayerInfoWidget()
 {
-  /*  
-  QGridLayout *playerListsLayout = new QGridLayout;
-	
-  for (int i = 0; i < 6; i++)
-    {
-      playerAvatars[i] = new avatarLabel;
-      playerAvatars[i]->setFixedWidth(40);
-      
-      connect(playerAvatars[i], SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
-      connect(playerAvatars[i], SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
-      
-      playerNames[i] = new QLabel("");
-      playerNames[i]->setAlignment(Qt::AlignCenter);
-      playerNames[i]->setFixedWidth(80);
-      playerLists[i] = new QListWidget();
-      playerLists[i]->setFixedWidth(120);
-      playerLists[i]->setMinimumHeight(100);
-      playerLists[i]->setFrameShape(QFrame::Box);
-      playerStatus[i] = new QLabel("");
-      playerStatus[i]->setFixedWidth(120);
-      playerStatus[i]->setAlignment(Qt::AlignHCenter);
-      
-      if (i != 0)
-	{
-	  playerAvatars[i]->hide();
-	  playerLists[i]->hide();
-	  playerNames[i]->hide();
-	  playerStatus[i]->hide();
-	}
-      playerInfoLayout[i] = new QHBoxLayout;
-      playerInfoLayout[i]->addWidget(playerAvatars[i]);
-      playerInfoLayout[i]->addWidget(playerNames[i]);
-      
-      playerListsLayout->addLayout(playerInfoLayout[i], 0, i*2);
-      playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
-      playerListsLayout->addWidget(playerLists[i], 1, i*2);
-      playerListsLayout->addWidget(playerStatus[i], 2, i*2);
-      playerLists[i]->setFocusPolicy(Qt::NoFocus);
-    }
-#ifdef Q_OS_MAC
-  playerListsLayout->setRowMinimumHeight(1, 100);
-#else
-  playerListsLayout->setRowMinimumHeight(1, 150);
-#endif
-setLayout(playerListsLayout);*/
+ 
 
-  QHBoxLayout *playerInfoWidgetsLayout;
+  QHBoxLayout *playerInfoWidgetsLayout = new QHBoxLayout;
   for (int i = 0; i < 6; i++)
     {
       places[i] = new SinglePlayerInfoWidget(i);
@@ -278,10 +234,9 @@ SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
   //  clearAndHide();
   //QGridLayout *playerListLayout = new QGridLayout;
 	
-  
   playerAvatar = new avatarLabel;
   playerAvatar->setFixedWidth(40);
-  
+  playerAvatar->setFixedHeight(40);
 
   
   playerName = new QLabel("");
@@ -305,6 +260,8 @@ SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
 
   sitButton = new QToolButton;
   sitButton->setText("Sit");
+  sitButton->setFixedWidth(40);
+  sitButton->setMaximumHeight(40);
   avatarStack = new QStackedWidget;
   avatarStack->addWidget(sitButton);
   avatarStack->addWidget(playerAvatar);
