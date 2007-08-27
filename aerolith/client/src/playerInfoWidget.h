@@ -10,17 +10,22 @@ class avatarLabel : public QLabel
 {
 Q_OBJECT
 
-public:
-	avatarLabel(QWidget* parent = 0);
+  public:
+ avatarLabel(QWidget* parent = 0);
+ QString username;
+ quint8 avatarId;
+ 
+ 
 signals:
-	void leftMouseClicked();
-	void rightMouseClicked();
-
+ void leftMouseClicked();
+ void rightMouseClicked();
+ 
 protected:
-	void mousePressEvent(QMouseEvent *e);
-	void mouseReleaseEvent(QMouseEvent *e);
-	bool left_pressed, right_pressed;
-	bool inLabel(const QPoint &p);
+
+ void mousePressEvent(QMouseEvent *e);
+ void mouseReleaseEvent(QMouseEvent *e);
+ bool left_pressed, right_pressed;
+ bool inLabel(const QPoint &p);
 };
 
 class SinglePlayerInfoWidget : public QWidget
@@ -28,14 +33,20 @@ class SinglePlayerInfoWidget : public QWidget
  Q_OBJECT
    public:
  SinglePlayerInfoWidget(quint8);
- void clearAndHide();
+ //void clearAndHide();
  void setReadyIndicator();
+ void setUpForGameStart();
  void answered(QString answer);
  void setAvatar(quint8 avatarID);
+ avatarLabel* playerAvatar;
+
    private:
+ 
+ bool occupied;
+ 
  quint8 seatNumber;
  QLabel* playerName;
- avatarLabel* playerAvatar;
+
  QLabel* playerStatus;
  QListWidget* playerList;
  QToolButton* sitButton;
@@ -47,7 +58,7 @@ class PlayerInfoWidget : public QWidget
 Q_OBJECT
  public:
   PlayerInfoWidget();
-  void clearAndHide();
+ void clearAndHide();
   void setupForGameStart();
   void answered(QString username, QString answer);
   void addPlayers(QStringList playerList);
