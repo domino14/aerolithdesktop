@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 
 const quint16 MAGIC_NUMBER = 25347;
-const QString WindowTitle = "Aerolith 0.3";
-const QString thisVersion = "0.3";
+const QString WindowTitle = "Aerolith 0.3.1";
+const QString thisVersion = "0.3.1";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -807,6 +807,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 
 		}
+		break;
 	case 'T':
 		// a timer byte
 		{

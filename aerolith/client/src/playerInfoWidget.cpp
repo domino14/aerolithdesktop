@@ -2,6 +2,7 @@
 
 PlayerInfoWidget::PlayerInfoWidget()
 {
+  
   QGridLayout *playerListsLayout = new QGridLayout;
 	
   for (int i = 0; i < 6; i++)
@@ -45,7 +46,7 @@ PlayerInfoWidget::PlayerInfoWidget()
 #else
   playerListsLayout->setRowMinimumHeight(1, 150);
 #endif
-  setLayout(playerListsLayout);
+setLayout(playerListsLayout);
 }
 
 void PlayerInfoWidget::possibleChangeAvatarLeft()
@@ -236,9 +237,72 @@ void PlayerInfoWidget::setAvatar(QString username, quint8 avatarID)
 
 }
 //===============================================================//
-SinglePlayerInfoWidget::SinglePlayerInfoWidget()
+SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
 {
-  clearAndHide();
+  this->seatNumber = seatNumber;
+  //  clearAndHide();
+  //QGridLayout *playerListLayout = new QGridLayout;
+	
+  
+  playerAvatar = new avatarLabel;
+  playerAvatar->setFixedWidth(40);
+  
+  //  connect(playerAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
+  //connect(playerAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
+  
+  playerName = new QLabel("");
+  playerName->setAlignment(Qt::AlignCenter);
+  playerName->setFixedWidth(80);
+  playerList = new QListWidget();
+  playerList->setFixedWidth(120);
+  playerList->setMinimumHeight(100);
+  playerList->setFrameShape(QFrame::Box);
+  playerStatus = new QLabel("");
+  playerStatus->setFixedWidth(120);
+  playerStatus->setAlignment(Qt::AlignHCenter);
+  /*
+      if (i != 0)
+	{
+	  playerAvatars[i]->hide();
+	  playerLists[i]->hide();
+	  playerNames[i]->hide();
+	  playerStatus[i]->hide();
+	  }*/
+
+  sitButton = new QToolButton;
+  sitButton->setText("Sit");
+  avatarStack = new QStackedWidget;
+  avatarStack->addWidget(sitButton);
+  avatarStack->addWidget(playerAvatar);
+
+
+  QHBoxLayout* playerInfoLayout = new QHBoxLayout;
+  playerInfoLayout->addWidget(avatarStack);
+  playerInfoLayout->addWidget(playerName);
+  
+  QVBoxLayout* overallLayout = new QVBoxLayout;
+  overallLayout->addLayout(playerInfoLayout);
+  overallLayout->addWidget(playerList);
+  overallLayout->addWidget(playerStatus);
+  
+  
+  
+  /*  playerListLayout->addLayout(playerInfoLayout, 0, i*2);
+  playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
+  playerListsLayout->addWidget(playerLists[i], 1, i*2);
+  playerListsLayout->addWidget(playerStatus[i], 2, i*2);*/
+  
+  playerList->setFocusPolicy(Qt::NoFocus);
+
+  /*  
+#ifdef Q_OS_MAC
+  playerListsLayout->setRowMinimumHeight(1, 100);
+#else
+  playerListsLayout->setRowMinimumHeight(1, 150);
+#endif
+  */
+  setLayout(overallLayout);
+
 }
 
 void SinglePlayerInfoWidget::clearAndHide()
