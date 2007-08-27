@@ -27,19 +27,19 @@ class SinglePlayerInfoWidget : public QWidget
 {
  Q_OBJECT
    public:
- SinglePlayerInfoWidget();
+ SinglePlayerInfoWidget(quint8);
  void clearAndHide();
  void setReadyIndicator();
  void answered(QString answer);
  void setAvatar(quint8 avatarID);
- 
-
    private:
- QLabel playerName;
- avatarLabel playerAvatar;
- QLabel playerStatus;
- QListWidget playerList;
- QToolButton sitToggle;
+ quint8 seatNumber;
+ QLabel* playerName;
+ avatarLabel* playerAvatar;
+ QLabel* playerStatus;
+ QListWidget* playerList;
+ QToolButton* sitButton;
+ QStackedWidget* avatarStack;
 };
 
 class PlayerInfoWidget : public QWidget
