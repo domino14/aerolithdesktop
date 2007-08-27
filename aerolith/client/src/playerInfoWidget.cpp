@@ -2,7 +2,7 @@
 
 PlayerInfoWidget::PlayerInfoWidget()
 {
-  
+  /*  
   QGridLayout *playerListsLayout = new QGridLayout;
 	
   for (int i = 0; i < 6; i++)
@@ -46,45 +46,66 @@ PlayerInfoWidget::PlayerInfoWidget()
 #else
   playerListsLayout->setRowMinimumHeight(1, 150);
 #endif
-setLayout(playerListsLayout);
+setLayout(playerListsLayout);*/
+
+  QHBoxLayout *playerInfoWidgetsLayout;
+  for (int i = 0; i < 6; i++)
+    {
+      places[i] = new SinglePlayerInfoWidget(i);
+      connect(places[i]->playerAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
+      connect(places[i]->playerAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
+      playerInfoWidgetsLayout->addWidget(places[i]);
+    }
+  setLayout(playerInfoWidgetsLayout);
+  
+  
+
+  //  connect(playerAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
+  //connect(playerAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
+
 }
 
 void PlayerInfoWidget::possibleChangeAvatarLeft()
 {
-	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
-	if (clickedLabel->property("username").toString() == myUsername)
-	{
-	
-		quint8 avatarID = clickedLabel->property("avatarID").toInt();
-		if (avatarID == NUM_AVATAR_IDS) avatarID = 1;
-		else avatarID++;
-
-		emit avatarChange(avatarID);
-	}
+  avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
+  if (clickedLabel->username == myUsername)
+    {
+      
+      quint8 avatarId = clickedLabel->avatarId;
+      if (avatarId == NUM_AVATAR_IDS) avatarId = 1;
+      else avatarId++;
+      
+      emit avatarChange(avatarId);
+    }
 }
 
 void PlayerInfoWidget::possibleChangeAvatarRight()
 {
-	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
-	if (clickedLabel->property("username").toString() == myUsername)
-	{
-	
-		quint8 avatarID = clickedLabel->property("avatarID").toInt();
-		if (avatarID == 1) avatarID = NUM_AVATAR_IDS;
-		else avatarID--;
+  avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
+  if (clickedLabel->username == myUsername)
+    {
+      
+      quint8 avatarId = clickedLabel->avatarId;
+      if (avatarId == 1) avatarId = NUM_AVATAR_IDS;
+      else avatarId--;
 
-		emit avatarChange(avatarID);
-	}
+      emit avatarChange(avatarId);
+    }
 }
 
 void PlayerInfoWidget::setMyUsername(QString username)
 {
-	myUsername = username;
+  myUsername = username;
 }
 
 
 void PlayerInfoWidget::clearAndHide()
 {
+  /*
+  for (int i = 0; i < 6; i++)
+    places[i]->clearAndHide();
+  */
+  /*
   for (int i = 0; i < 6; i++)
     {
       playerNames[i]->setText("");
@@ -97,15 +118,16 @@ void PlayerInfoWidget::clearAndHide()
       playerStatus[i]->hide();
       playerAvatars[i]->hide();
 
-    }
+      }*/
 }
 
 void PlayerInfoWidget::setupForGameStart()
 {
   for (int i = 0; i < 6; i++)
     {
-      playerLists[i]->clear();
-      playerStatus[i]->setText("");
+      //places[i]->setupForGameStart();
+      /*    playerLists[i]->clear();
+	      playerStatus[i]->setText("");*/
     }
 
 }
@@ -114,16 +136,21 @@ void PlayerInfoWidget::answered(QString username, QString answer)
 {
   if (seats.contains(username))
     {
+      
       int indexOfPlayer = seats.value(username);
-        playerLists[indexOfPlayer]->insertItem(0, answer);
+      //places[indexOfPlayer]->answered(answer);
+
+      /*
+      playerLists[indexOfPlayer]->insertItem(0, answer);
 	playerLists[indexOfPlayer]->item(0)->setTextAlignment(Qt::AlignCenter);
 	playerStatus[indexOfPlayer]->setText(QString("%1 words").arg(playerLists[indexOfPlayer]->count()));
-	
+      */
     }
 }
 
 void PlayerInfoWidget::addPlayers(QStringList playerList)
 {
+  /*
   for (int i = 0; i < playerList.size(); i++)
     {
       playerAvatars[i]->show();
@@ -133,10 +160,12 @@ void PlayerInfoWidget::addPlayers(QStringList playerList)
       playerStatus[i]->show();
       seats.insert(playerList[i], i);
     }
+  */
 }
 
 void PlayerInfoWidget::addPlayer(QString player, bool gameStarted)
 {
+  /*
   bool spotfound = false;
   int spot;
 
@@ -167,11 +196,13 @@ void PlayerInfoWidget::addPlayer(QString player, bool gameStarted)
   if (gameStarted == false)
     for (int i = 0; i < 6; i++)
       playerStatus[i]->setText("");
+  */
   
 }
 
 void PlayerInfoWidget::removePlayer(QString player, bool gameStarted)
 {
+  /*
   int seat;
   if (seats.contains(player))
     {
@@ -199,6 +230,8 @@ void PlayerInfoWidget::removePlayer(QString player, bool gameStarted)
   if (gameStarted == false)
     for (int i = 0; i < 6; i++)
       playerStatus[i]->setText("");
+
+  */
 }
 
 void PlayerInfoWidget::leaveTable()
@@ -208,8 +241,9 @@ void PlayerInfoWidget::leaveTable()
 
 void PlayerInfoWidget::setReadyIndicator(QString username)
 {
+  /*
 	int seat;
-  if (seats.contains(username))
+	if (seats.contains(username))
 	  seat = seats.value(username);
   else
   {
@@ -217,24 +251,25 @@ void PlayerInfoWidget::setReadyIndicator(QString username)
       return;
   }
     playerStatus[seat]->setText("Ready.");
-
+  */
 }
 
 void PlayerInfoWidget::setAvatar(QString username, quint8 avatarID)
 {
-	int seat;
+  /*
+  int seat;
   if (seats.contains(username))
-	  seat = seats.value(username);
+    seat = seats.value(username);
   else
-  {
-	  QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10005)");
+    {
+      QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10005)");
       return;
-  }
-	playerAvatars[seat]->setPixmap(QString(":images/face%1.png").arg(avatarID));
-	playerAvatars[seat]->setProperty("avatarID", QVariant(avatarID));
-	playerAvatars[seat]->setProperty("username", QVariant(username));	// shouldn't have to repeat this, 
-																		// will eventually come up with an actual seat system
-
+    }
+  playerAvatars[seat]->setPixmap(QString(":images/face%1.png").arg(avatarID));
+  playerAvatars[seat]->avatarId = avatarID;
+  playerAvatars[seat]->username = username;
+  // will eventually come up with an actual seat system
+  */
 }
 //===============================================================//
 SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
@@ -247,8 +282,7 @@ SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
   playerAvatar = new avatarLabel;
   playerAvatar->setFixedWidth(40);
   
-  //  connect(playerAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
-  //connect(playerAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
+
   
   playerName = new QLabel("");
   playerName->setAlignment(Qt::AlignCenter);
@@ -305,46 +339,46 @@ SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
 
 }
 
-void SinglePlayerInfoWidget::clearAndHide()
+/*void SinglePlayerInfoWidget::clearAndHide()
 {
 
-}
+}*/
 
 
 //===============================================================//
 avatarLabel::avatarLabel(QWidget *parent) : QLabel(parent)
 {
-	left_pressed = false;
-	right_pressed = false;
-
+  left_pressed = false;
+  right_pressed = false;
+  
 }
 
 void avatarLabel::mousePressEvent(QMouseEvent *e)
 {
-	if (e->button() == Qt::LeftButton)
-	{
-		left_pressed = true;
-	}
-	else if (e->button() == Qt::RightButton)
-	{
-		right_pressed = true;
-	}
+  if (e->button() == Qt::LeftButton)
+    {
+      left_pressed = true;
+    }
+  else if (e->button() == Qt::RightButton)
+    {
+      right_pressed = true;
+    }
 }
 
 void avatarLabel::mouseReleaseEvent(QMouseEvent *e)
 {
-	if (left_pressed && e->button() == Qt::LeftButton && inLabel(e->pos()))
-		emit leftMouseClicked();
-	else if (right_pressed && e->button() == Qt::RightButton && inLabel(e->pos()))
-		emit rightMouseClicked();
-
-	left_pressed = false;
-	right_pressed = false;
-
+  if (left_pressed && e->button() == Qt::LeftButton && inLabel(e->pos()))
+    emit leftMouseClicked();
+  else if (right_pressed && e->button() == Qt::RightButton && inLabel(e->pos()))
+    emit rightMouseClicked();
+  
+  left_pressed = false;
+  right_pressed = false;
+  
 }
 
 bool avatarLabel::inLabel(const QPoint &p)
 {
-	return rect().contains(p);
+  return rect().contains(p);
 }
 //===============================================================//
