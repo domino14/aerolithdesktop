@@ -13,11 +13,6 @@ PlayerInfoWidget::PlayerInfoWidget()
       playerInfoWidgetsLayout->addWidget(places[i]);
     }
   setLayout(playerInfoWidgetsLayout);
-  
-  
-
-  //  connect(playerAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
-  //connect(playerAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
 
 }
 

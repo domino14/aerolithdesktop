@@ -484,12 +484,12 @@ void MainWindow::readFromServer()
 				{
 					currentTablenum = tablenum;
 					//gameStackedWidget->setCurrentIndex(1);
-					gameBoardWidget->show();
 					int row = findRoomTableRow(tablenum);
 					QString wList = roomTable->item(row, 1)->text();
-
+					
 					gameBoardWidget->resetTable(tablenum, wList, playerName);
-
+					gameBoardWidget->show();
+	
 				}
 				if (currentTablenum == tablenum)
 					modifyPlayerLists(tablenum, playerName, 1);
