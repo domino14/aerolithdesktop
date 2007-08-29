@@ -58,7 +58,31 @@ out(&block, QIODevice::WriteOnly)
   roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
   roomTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
   QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
-  roomSelectorLayout->addWidget(roomTable, 0, Qt::AlignHCenter);
+
+	QWidget* roomSelector[5];
+	Ui::tableJoinerWidget uiJoiners[5];
+
+	QTableWidget *realRoomTable = new QTableWidget(10, 1);
+	realRoomTable->setColumnWidth(0, 610);
+  realRoomTable->setGridStyle(Qt::NoPen);
+  realRoomTable->setSelectionMode(QAbstractItemView::NoSelection);
+  realRoomTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	realRoomTable->setFixedWidth(630);
+	realRoomTable->setMinimumHeight(350);
+	realRoomTable->horizontalHeader()->hide();
+	realRoomTable->verticalHeader()->hide();
+	for (int i = 0; i < 5; i++)
+	{
+		realRoomTable->setRowHeight(i, 60);
+		roomSelector[i] = new QWidget;
+		uiJoiners[i].setupUi(roomSelector[i]);
+		realRoomTable->setCellWidget(i, 0, roomSelector[i]);
+	}
+
+
+
+ // roomSelectorLayout->addWidget(roomTable, 0, Qt::AlignHCenter);
+  roomSelectorLayout->addWidget(realRoomTable, 0, Qt::AlignHCenter);
   QHBoxLayout *newRoomLayout = new QHBoxLayout;
   QPushButton *newRoom = new QPushButton("Create new table");
   newRoom->setFixedWidth(150);
