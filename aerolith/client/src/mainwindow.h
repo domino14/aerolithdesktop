@@ -8,6 +8,7 @@
 #include "ui_solutionsForm.h"
 #include "ui_scoresForm.h"
 #include "ui_loginForm.h"
+#include "ui_tableJoiner.h"
 #include "wordsTableWidget.h"
 #include "playerInfoWidget.h"
 
