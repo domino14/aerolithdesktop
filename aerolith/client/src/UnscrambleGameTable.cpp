@@ -72,7 +72,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   gameBoardLayout->addLayout(topSolutionLayout);
   gameBoardLayout->addWidget(wordsWidget, 0, Qt::AlignHCenter);
   gameBoardLayout->addLayout(bottomSolutionLayout);
-  gameBoardLayout->addWidget(playerInfoWidget);
+  gameBoardLayout->addWidget(playerInfoWidget, 0, Qt::AlignHCenter);
 
   peopleInTable = new QListWidget;
   chatLE = new QLineEdit;
@@ -141,16 +141,19 @@ void UnscrambleGameTable::closeEvent(QCloseEvent* event)
   exitTable->animateClick();
 }
 
-void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QString myUsername)
+void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QString myUsername, quint8 maxPlayers)
 {
   setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3").arg(tableNum).arg(wordListName).arg(myUsername));
   timerDial->display(0);
   wordListInfo->clear();
-  playerInfoWidget->clearAndHide();
   wordsWidget->clearCells();
   exitTable->setText(QString("Exit table %1").arg(tableNum));
   chatLE->clear();
   tableChat->clear();
+  playerInfoWidget->setMaxPlayers(maxPlayers);
+  
+
+
 }
 
 void UnscrambleGameTable::leaveTable()

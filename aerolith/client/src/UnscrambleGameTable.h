@@ -11,7 +11,7 @@ class UnscrambleGameTable : public QWidget
 
     public:
   UnscrambleGameTable(QWidget* parent = 0, Qt::WindowFlags f = 0);
-  void resetTable(quint16, QString, QString);
+  void resetTable(quint16, QString, QString, quint8);
   void leaveTable();
   void addPlayer(QString, bool);
   void removePlayer(QString, bool);
