@@ -78,6 +78,9 @@
        <height>40</height>
       </rect>
      </property>
+     <property name="focusPolicy" >
+      <enum>Qt::NoFocus</enum>
+     </property>
      <property name="text" >
       <string>Sit</string>
      </property>

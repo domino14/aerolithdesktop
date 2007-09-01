@@ -50,7 +50,7 @@ wordsTableWidget::wordsTableWidget()
       }
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setFixedSize(752, 182); // argh
+  setFixedSize(755, 185); // argh  -- 752 182
   setFocusPolicy(Qt::NoFocus);
 
   connect(this, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(wordsWidgetItemClicked(QTableWidgetItem*)));

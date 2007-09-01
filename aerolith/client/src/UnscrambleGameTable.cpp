@@ -14,6 +14,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   QPushButton *shuffle = new QPushButton("Shuffle");
   giveup = new QPushButton("Give up");
   start = new QPushButton("Start");
+  stand = new QPushButton("Stand up");
   exitTable = new QPushButton("Exit Table #");
   QPushButton *changeFont = new QPushButton("Font toggle");
   QPushButton *plusFont = new QPushButton("+");
@@ -46,7 +47,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   topSolutionLayout->addSpacing(50);
   topSolutionLayout->addWidget(changeFont);
   topSolutionLayout->addStretch(1);
-  
+  topSolutionLayout->addWidget(stand);
   topSolutionLayout->addWidget(giveup);
   topSolutionLayout->addSpacing(50);
   topSolutionLayout->addWidget(exitTable);
