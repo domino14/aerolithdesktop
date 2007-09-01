@@ -14,6 +14,23 @@
 
 #include "UnscrambleGameTable.h"
 
+class RoomSelectorWidget : public QWidget, public Ui::tableJoinerWidget
+{
+
+Q_OBJECT
+
+ public:
+  RoomSelectorWidget(QWidget* parent = 0, quint16 tableNum = 0, QString wList = "", quint8 maxPlayers = 0);
+ QStringList peopleList; // all people in the table. 
+ quint16 tableNum;
+ QString wordListDescriptor;
+ quint8 maxPlayers;
+
+ public slots: 
+
+};
+
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -42,9 +59,7 @@ private:
 	void handleAddToTable(quint16 tablenum, QString player);
 	void handleLeaveTable(quint16 tablenum, QString player);
 	void handleTableCommand(quint16 tablenum, quint8 commandByte);
-	int findRoomTableRow(quint16 tablenum);
-
-
+	
 	const int PLAYERLIST_ROLE;
 	void writeHeaderData();
 	void fixHeaderLength();
@@ -52,6 +67,9 @@ private:
 	QDataStream out;
 	void modifyPlayerLists(quint16 tablenum, QString player, int modification);
 	UnscrambleGameTable *gameBoardWidget;
+
+	QList <RoomSelectorWidget*> roomSelectors;
+	QHash <quint16, RoomSelectorWidget*> tables;
 
 	bool gameStarted;
 	QDialog *createTableDialog;

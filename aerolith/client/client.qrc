@@ -74,5 +74,7 @@
 	<file>images/face72.png</file>
 	<file>images/face73.png</file>
 	<file>images/aerolith.png</file>
+	<file>images/ready.png</file>
+	<file>images/notready.png</file>
 </qresource>
 </RCC>

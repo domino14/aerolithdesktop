@@ -7,10 +7,11 @@ PlayerInfoWidget::PlayerInfoWidget()
   QHBoxLayout *playerInfoWidgetsLayout = new QHBoxLayout;
   for (int i = 0; i < 6; i++)
     {
-      places[i] = new SinglePlayerInfoWidget(i);
-      connect(places[i]->playerAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
-      connect(places[i]->playerAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
+      places[i] = new SinglePlayerInfoWidget(this, i);
+      connect(places[i]->thisAvatarLabel, SIGNAL(leftMouseClicked()), this, SLOT(possibleChangeAvatarLeft()));
+      connect(places[i]->thisAvatarLabel, SIGNAL(rightMouseClicked()), this, SLOT(possibleChangeAvatarRight()));
       playerInfoWidgetsLayout->addWidget(places[i]);
+      //      playerInfoWidgetsLayout->addStretch(1);
     }
   setLayout(playerInfoWidgetsLayout);
 
@@ -49,6 +50,16 @@ void PlayerInfoWidget::setMyUsername(QString username)
   myUsername = username;
 }
 
+void PlayerInfoWidget::setMaxPlayers(quint8 maxPlayers)
+{
+  for (int i = 0; i < 6; i++)
+    places[i]->hide();
+  for (int i = 0; i < maxPlayers; i++)
+    {
+      places[i]->show();
+    }
+  
+}
 
 void PlayerInfoWidget::clearAndHide()
 {
@@ -223,71 +234,12 @@ void PlayerInfoWidget::setAvatar(QString username, quint8 avatarID)
   */
 }
 //===============================================================//
-SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
+SinglePlayerInfoWidget::SinglePlayerInfoWidget(QWidget* parent, quint8 seatNumber) : QWidget(parent)
 {
   this->seatNumber = seatNumber;
   //  clearAndHide();
   //QGridLayout *playerListLayout = new QGridLayout;
-	
-  playerAvatar = new avatarLabel;
-  playerAvatar->setFixedWidth(40);
-  playerAvatar->setFixedHeight(40);
-
-  
-  playerName = new QLabel("");
-  playerName->setAlignment(Qt::AlignCenter);
-  playerName->setFixedWidth(80);
-  playerList = new QListWidget();
-  playerList->setFixedWidth(120);
-  playerList->setMinimumHeight(100);
-  playerList->setFrameShape(QFrame::Box);
-  playerStatus = new QLabel("");
-  playerStatus->setFixedWidth(120);
-  playerStatus->setAlignment(Qt::AlignHCenter);
-  /*
-      if (i != 0)
-	{
-	  playerAvatars[i]->hide();
-	  playerLists[i]->hide();
-	  playerNames[i]->hide();
-	  playerStatus[i]->hide();
-	  }*/
-
-  sitButton = new QToolButton;
-  sitButton->setText("Sit");
-  sitButton->setFixedWidth(40);
-  sitButton->setMaximumHeight(40);
-  avatarStack = new QStackedWidget;
-  avatarStack->addWidget(sitButton);
-  avatarStack->addWidget(playerAvatar);
-
-
-  QHBoxLayout* playerInfoLayout = new QHBoxLayout;
-  playerInfoLayout->addWidget(avatarStack);
-  playerInfoLayout->addWidget(playerName);
-  
-  QVBoxLayout* overallLayout = new QVBoxLayout;
-  overallLayout->addLayout(playerInfoLayout);
-  overallLayout->addWidget(playerList);
-  overallLayout->addWidget(playerStatus);
-  
-  
-  
-  /*  playerListLayout->addLayout(playerInfoLayout, 0, i*2);
-  playerListsLayout->setColumnMinimumWidth((i*2)+1, 10);
-  playerListsLayout->addWidget(playerLists[i], 1, i*2);
-  playerListsLayout->addWidget(playerStatus[i], 2, i*2);*/
-  
-  playerList->setFocusPolicy(Qt::NoFocus);
-
-  /*  
-#ifdef Q_OS_MAC
-  playerListsLayout->setRowMinimumHeight(1, 100);
-#else
-  playerListsLayout->setRowMinimumHeight(1, 150);
-#endif
-  */
-  setLayout(overallLayout);
+  setupUi(this);
 
 }
 
@@ -298,39 +250,5 @@ SinglePlayerInfoWidget::SinglePlayerInfoWidget(quint8 seatNumber)
 
 
 //===============================================================//
-avatarLabel::avatarLabel(QWidget *parent) : QLabel(parent)
-{
-  left_pressed = false;
-  right_pressed = false;
-  
-}
 
-void avatarLabel::mousePressEvent(QMouseEvent *e)
-{
-  if (e->button() == Qt::LeftButton)
-    {
-      left_pressed = true;
-    }
-  else if (e->button() == Qt::RightButton)
-    {
-      right_pressed = true;
-    }
-}
-
-void avatarLabel::mouseReleaseEvent(QMouseEvent *e)
-{
-  if (left_pressed && e->button() == Qt::LeftButton && inLabel(e->pos()))
-    emit leftMouseClicked();
-  else if (right_pressed && e->button() == Qt::RightButton && inLabel(e->pos()))
-    emit rightMouseClicked();
-  
-  left_pressed = false;
-  right_pressed = false;
-  
-}
-
-bool avatarLabel::inLabel(const QPoint &p)
-{
-  return rect().contains(p);
-}
 //===============================================================//

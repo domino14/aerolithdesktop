@@ -5,52 +5,24 @@
 // 1-73
 
 #include <QtGui>
+#include "avatarLabel.h"
+#include "ui_playerInfoForm.h"
 
-class avatarLabel : public QLabel
-{
-Q_OBJECT
-
-  public:
- avatarLabel(QWidget* parent = 0);
- QString username;
- quint8 avatarId;
- 
- 
-signals:
- void leftMouseClicked();
- void rightMouseClicked();
- 
-protected:
-
- void mousePressEvent(QMouseEvent *e);
- void mouseReleaseEvent(QMouseEvent *e);
- bool left_pressed, right_pressed;
- bool inLabel(const QPoint &p);
-};
-
-class SinglePlayerInfoWidget : public QWidget
+class SinglePlayerInfoWidget : public QWidget, public Ui::playerInfoForm
 {
  Q_OBJECT
    public:
- SinglePlayerInfoWidget(quint8);
- //void clearAndHide();
+ SinglePlayerInfoWidget(QWidget *parent, quint8);
  void setReadyIndicator();
  void setUpForGameStart();
  void answered(QString answer);
  void setAvatar(quint8 avatarID);
- avatarLabel* playerAvatar;
-
-   private:
+ 
+ private:
  
  bool occupied;
- 
  quint8 seatNumber;
- QLabel* playerName;
-
- QLabel* playerStatus;
- QListWidget* playerList;
- QToolButton* sitButton;
- QStackedWidget* avatarStack;
+ 
 };
 
 class PlayerInfoWidget : public QWidget
@@ -68,12 +40,8 @@ Q_OBJECT
   void setReadyIndicator(QString username);
   void setAvatar(QString username, quint8 avatarID);
   void setMyUsername(QString username);
+  void setMaxPlayers(quint8 maxPlayers);
  private:
-  //QHBoxLayout* playerInfoLayout[6];
-  //QListWidget* playerLists[6];
-  //QLabel* playerNames[6];
-  //avatarLabel* playerAvatars[6];
-  //QLabel* playerStatus[6];
   SinglePlayerInfoWidget* places[6];
   QHash <QString, int> seats;
   QString myUsername;
