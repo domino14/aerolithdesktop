@@ -42,7 +42,7 @@ class UnscrambleGameTable : public QWidget
   QPushButton* solutions;
   QLabel* wordListInfo;
   PlayerInfoWidget* playerInfoWidget;
-
+  QPushButton* stand;
   QLineEdit* chatLE;
   QTextEdit* tableChat;
   QListWidget* peopleInTable;
