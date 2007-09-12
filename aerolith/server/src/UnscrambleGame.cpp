@@ -73,7 +73,7 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
       sendReadyBeginPacket(client->connData.userName);
       client->playerData.readyToPlay = true;
       
-      foreach (ClientSocket* thisClient, table->playerList)
+      foreach (ClientSocket* thisClient, table->sittingList)
 	if (thisClient->playerData.readyToPlay == false)
 	  {
 	    startTheGame = false;
@@ -90,7 +90,7 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 	  if (cycleState == 3)
 	    {
 	      if (wordLengths >= 4 && wordLengths <= 15)
-		if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
+		if (peopleWhoPlayed[wordLengths - 4].contains(table->peopleList.at(0)->connData.userName))
 		  table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
 	    }
 	}
@@ -140,7 +140,7 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
       sendGiveUpPacket(socket->connData.userName);
       socket->playerData.gaveUp = true;
       
-      foreach (ClientSocket* thisSocket, table->playerList)
+      foreach (ClientSocket* thisSocket, table->sittingList)
 	if (thisSocket->playerData.gaveUp == false)
 	  {
 	    giveUp = false;
@@ -166,7 +166,7 @@ void UnscrambleGame::startGame()
   //    - 45 alphagrams  
   gameStarted = true;
   prepareTableAlphagrams();
-  foreach (ClientSocket* socket, table->playerList)
+  foreach (ClientSocket* socket, table->peopleList)
     sendUserCurrentAlphagrams(socket);
 
   sendGameStartPacket();
@@ -188,7 +188,7 @@ void UnscrambleGame::endGame()
   sendGameEndPacket();
   sendTimerValuePacket((quint16)0);
 
-  foreach (ClientSocket* client, table->playerList)
+  foreach (ClientSocket* client, table->peopleList)
     {
       client->playerData.readyToPlay = false;
       client->playerData.gaveUp = false;  
@@ -216,8 +216,8 @@ void UnscrambleGame::endGame()
     {
       startEnabled = false;
       table->sendTableMessage("This daily challenge is over! To see scores or to try another daily challenge, exit the table and make the appropriate selections with the Daily Challenges button.");
-      if (table->playerList.size() != 1)
-	qDebug() << table->playerList.size() << "More or less than 1 player in a daily challenge table!? WTF";
+      if (table->sittingList.size() != 1)
+	qDebug() << table->sittingList.size() << "More or less than 1 player in a daily challenge table!? WTF";
       else
 	{
 	  // search for player. 
@@ -228,19 +228,19 @@ void UnscrambleGame::endGame()
 	  else
 	    {
 	      
-	      if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
+	      if (peopleWhoPlayed[wordLengths - 4].contains(table->peopleList.at(0)->connData.userName))
 		table->sendTableMessage("You've already played this challenge. These results will not count towards this day's high scores.");
 	      else
 		{
 		  if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
 		    {
 		      highScoreData tmp;
-		      tmp.userName = table->playerList.at(0)->connData.userName;
+		      tmp.userName = table->peopleList.at(0)->connData.userName;
 		      tmp.numSolutions = numTotalSolutions;
 		      tmp.numCorrect = numTotalSolutions - gameSolutions.size();
 		      tmp.timeRemaining = currentTimerVal;
 		      dailyHighScores[wordLengths-4].append(tmp);
-		      peopleWhoPlayed[wordLengths-4].insert(table->playerList.at(0)->connData.userName);
+		      peopleWhoPlayed[wordLengths-4].insert(table->peopleList.at(0)->connData.userName);
 		    }
 		  else
 		    table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
@@ -271,17 +271,17 @@ void UnscrambleGame::generateDailyChallenges()
 {
   midnightSwitchoverToggle = !midnightSwitchoverToggle;
   QDir dir(".");
-  if (!dir.exists("dailylists"))
+  if (!dir.exists("dailyliststemp"))
     {
       qDebug() << "daily lists does not exist";
-      if (!dir.mkdir("dailylists"))
+      if (!dir.mkdir("dailyliststemp"))
 	qDebug () << " and could not create it!";
 
     }
   for (int i = 4; i <= 15; i++)
     {
       QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
-      QFile tempOutFile(QString("dailylists/%1s").arg(i));
+      QFile tempOutFile(QString("dailyliststemp/%1s").arg(i));
       QTextStream inStream(&tempInFile);
       QTextStream outStream(&tempOutFile);
       tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -347,7 +347,7 @@ void UnscrambleGame::generateTempFile()
       QFile toRemove(QString("temp%1").arg(table->tableNumber));
       toRemove.remove();
       
-      QFile tempInFile("dailylists/" + wordListFileName.mid(6)); // looks like dailylists/4s  or dailylists/8s  etc.
+      QFile tempInFile("dailyliststemp/" + wordListFileName.mid(6)); // looks like dailylists/4s  or dailylists/8s  etc.
       tempInFile.copy(QString("temp%1").arg(table->tableNumber));
       qDebug() << "copied" << tempInFile.fileName() << " to temp file";
       tempFileExists = true;
