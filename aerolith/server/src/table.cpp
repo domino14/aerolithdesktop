@@ -12,8 +12,11 @@ void tableData::initialize(quint16 tableNumber, QString tableName, quint8 maxPla
   this->tableNumber = tableNumber;
   this->tableName = tableName;
   this->maxPlayers = maxPlayers;
-  playerList << tableCreator;
-
+  tableHost = tableCreator;
+  peopleList << tableCreator;
+  //sittingList.resize(maxPlayers);
+  for (int i = 0; i < maxPlayers; i++)
+    sittingList.push_back(NULL);
   if (maxPlayers == 1) canJoin = false;
   else canJoin = true;
   this->gameMode = gameMode;
@@ -35,10 +38,70 @@ tableData::~tableData()
   qDebug() << "tableData destructor";
   delete tableGame;
 }
+
+//void tableData::
+
 void tableData::sendGenericPacket()
 {
-  foreach (ClientSocket* thisSocket, playerList)
+  foreach (ClientSocket* thisSocket, peopleList)
     thisSocket->write(block);
+}
+/*
+void tableData::sendStoodUpPacket(quint8 vacantSeat)
+{
+  writeHeaderData();
+  out << (quint8) '+' << (quint16) tableNumber << (quint8)'^';
+  out << vacantSeat;
+  fixHeaderLength();
+  sendGenericPacket();
+}
+
+void tableData::sendSatPacket(quint8 seat, QString username)
+{
+  writeHeaderData();
+  out << (quint8) '+' << (quint16) tableNumber << (quint8)'_';
+  out << username << seat;
+  fixHeaderLength();
+  sendGenericPacket();
+}
+*/
+
+bool tableData::tryToSit(ClientSocket* socket, int seat)
+{
+  if (peopleList.contains(socket) && !sittingList.contains(socket))
+    {
+      // can maybe sit
+      if (seat > 0 && seat <= maxPlayers && socket->connData.seatNum == 0) // 
+	{
+	  if (sittingList.at(seat-1) == NULL)
+	    {
+	      sittingList[seat-1] = socket;
+	      // sat!
+	      socket->connData.seatNum = seat;
+	      return true;
+	    }
+	}
+
+
+    }
+  return false;
+}
+
+void tableData::standUp(ClientSocket* socket, int seat)
+{
+  if (seat > 0 && seat <= maxPlayers)
+    {
+      if (sittingList.at(seat-1) == socket)
+	{
+	  sittingList[seat-1] = NULL;
+	  socket->connData.seatNum = 0;
+	}
+      else
+	{
+	  qDebug() << "not sitting here?";
+	}
+    }
+
 }
 
 void tableData::sendChatSentPacket(QString username, QString chat)

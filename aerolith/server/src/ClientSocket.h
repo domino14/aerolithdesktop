@@ -16,6 +16,7 @@ public:
     QString userName;
     quint16 numBytesInPacket;
     quint16 tableNum; // adding here because table number is pretty essential to the workings of this particular server
+    quint8 seatNum; // sitting in this seat
     quint8 avatarId;
     bool isActive;
   };

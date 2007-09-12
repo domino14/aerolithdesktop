@@ -27,11 +27,16 @@ class tableData
   quint16 tableNumber;
   //QString wordListDescriptor; // todo: change this to table name
   QString tableName;
-  QList <ClientSocket*> playerList;
+  QList <ClientSocket*> peopleList;
+  QList<ClientSocket*> sittingList;
   quint8 maxPlayers;
   bool canJoin; 
   TableGame* tableGame;
+  ClientSocket* tableHost;
   
+  bool tryToSit(ClientSocket*, int);
+  void standUp(ClientSocket*, int);
+
   void sendChatSentPacket(QString, QString);
   void sendGenericPacket();
   void sendTableMessage(QString);
