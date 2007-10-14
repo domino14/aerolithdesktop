@@ -100,6 +100,7 @@ private:
 	void chatTable(QString);
 	void submitChatLEContents();
 		void readFromServer();
+		void standUp();
 		void displayError(QAbstractSocket::SocketError);
 		void serverDisconnection();
 		void toggleConnectToServer();

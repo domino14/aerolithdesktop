@@ -50,6 +50,10 @@ void PlayerInfoWidget::setMyUsername(QString username)
   myUsername = username;
 }
 
+quint8 PlayerInfoWidget::getMySeat()
+{
+  return mySeat;
+}
 void PlayerInfoWidget::setMaxPlayers(quint8 maxPlayers)
 {
   for (int i = 0; i < 6; i++)
@@ -215,6 +219,7 @@ void PlayerInfoWidget::setReadyIndicator(QString username)
     playerStatus[seat]->setText("Ready.");
   */
 }
+
 
 void PlayerInfoWidget::setAvatar(QString username, quint8 avatarID)
 {

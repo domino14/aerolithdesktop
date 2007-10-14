@@ -41,10 +41,12 @@ Q_OBJECT
   void setAvatar(QString username, quint8 avatarID);
   void setMyUsername(QString username);
   void setMaxPlayers(quint8 maxPlayers);
+  quint8 getMySeat();
  private:
   SinglePlayerInfoWidget* places[6];
   QHash <QString, int> seats;
   QString myUsername;
+  quint8 mySeat;
 signals:
   void avatarChange(quint8);
 public slots:

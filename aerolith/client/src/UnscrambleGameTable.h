@@ -21,6 +21,7 @@ class UnscrambleGameTable : public QWidget
  protected:
   virtual void closeEvent(QCloseEvent*);
  signals:
+  void standUp();
   void giveUp();
   void sendStartRequest();
   void avatarChange(quint8);

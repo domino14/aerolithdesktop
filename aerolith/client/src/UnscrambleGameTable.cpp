@@ -32,6 +32,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   giveup->setFocusPolicy(Qt::NoFocus);
   start->setFocusPolicy(Qt::NoFocus);
   exitTable->setFocusPolicy(Qt::NoFocus);
+  stand->setFocusPolicy(Qt::NoFocus);
   changeFont->setFocusPolicy(Qt::NoFocus);
   QHBoxLayout *topSolutionLayout = new QHBoxLayout;
   
@@ -110,7 +111,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
   connect(playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SIGNAL(avatarChange(quint8)));
   connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
   connect(exitTable, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
-
+  connect(stand, SIGNAL(clicked()), this, SIGNAL(standUp()));
   connect(chatLE, SIGNAL(returnPressed()), this, SLOT(enteredChat()));
   //  connect(
   
@@ -152,7 +153,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
   chatLE->clear();
   tableChat->clear();
   playerInfoWidget->setMaxPlayers(maxPlayers);
-  
+  playerInfoWidget->setMyUsername(myUsername);
 
 
 }
