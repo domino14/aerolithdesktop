@@ -951,6 +951,12 @@ void MainServer::processLogin(ClientSocket* socket)
 
   */
 
+  // temporary resolution
+
+  //  writeToClient(socket, "All connections are being rejected for the time being. Please visit <a href=""http://www.aerolith.org""> for the reason.", S_ERROR);
+  //socket->disconnectFromHost();
+  //return;
+
 
   // got here with no error
   connections.append(socket);
