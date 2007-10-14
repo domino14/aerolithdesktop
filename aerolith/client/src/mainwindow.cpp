@@ -32,7 +32,7 @@ out(&block, QIODevice::WriteOnly)
   connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
   connect(gameBoardWidget, SIGNAL(guessSubmitted(QString)), this, SLOT(submitGuess(QString)));
   connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
-
+  connect(gameBoardWidget, SIGNAL(standUp()), this, SLOT(standUp()));
   
   centralWidget = new QWidget;	 // the 'overall'  widget
   
@@ -399,7 +399,83 @@ void MainWindow::readFromServer()
 	  fixHeaderLength();
 	  commsSocket->write(block);		  
 	  break;
-	  
+
+	case 'D': // sat down. NOT A TABLE COMMAND
+	  {
+	    quint8 seat;
+	    quint16 tablenum;
+	    QString username;
+	    in >> tablenum >> username >> seat;
+	    if (tables.contains(tablenum))
+	      {
+		RoomSelectorWidget* tmp = tables.value(tablenum);
+		
+		QToolButton* sitButton;
+		switch (seat)
+		  {
+		  case 1:
+		    sitButton = tmp->toolButtonSit1;
+		    break;
+		  case 2:
+		    sitButton = tmp->toolButtonSit2;
+		    break;
+		  case 3:
+		    sitButton = tmp->toolButtonSit3;
+		    break;
+		  case 4:
+		    sitButton = tmp->toolButtonSit4;
+		    break;
+		  case 5:
+		    sitButton = tmp->toolButtonSit5;
+		    break;
+		  case 6:
+		    sitButton = tmp->toolButtonSit6;
+		    break;
+		    
+		  }
+		
+		sitButton->setEnabled(false);
+		sitButton->setText(username);
+	      }
+	  }
+	  break;
+	case 'V': // vacated seat - stood up. NOT A TABLE COMMAND
+	  {
+	    quint8 seat;
+	    quint16 tablenum;
+	    in >> tablenum >> seat;
+	    //	    qDebug() << QString("bacated %1 %2").arg(seat).arg(tablenum);
+	    if (tables.contains(tablenum))
+	      {
+		RoomSelectorWidget* tmp = tables.value(tablenum);	    
+		QToolButton* sitButton;
+		switch (seat)
+		  {
+		  case 1:
+		    sitButton = tmp->toolButtonSit1;
+		    break;
+		  case 2:
+		    sitButton = tmp->toolButtonSit2;
+		    break;
+		  case 3:
+		    sitButton = tmp->toolButtonSit3;
+		    break;
+		  case 4:
+		    sitButton = tmp->toolButtonSit4;
+		    break;
+		  case 5:
+		    sitButton = tmp->toolButtonSit5;
+		    break;
+		  case 6:
+		    sitButton = tmp->toolButtonSit6;
+		    break;
+		    
+		  }
+		sitButton->setEnabled(true);
+		sitButton->setText("Sit");
+	      }
+	  }
+	  break;
 	case 'E':	// logged in (entered)
 	  {
 	    QString username;
@@ -411,7 +487,7 @@ void MainWindow::readFromServer()
 		loginDialog->hide();
 		setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 		sendClientVersion();   // not yet. add this for the actual version 0.1.2
-		gameBoardWidget->playerInfoWidget->setMyUsername(username);
+		//gameBoardWidget->playerInfoWidget->setMyUsername(username);
 		currentTablenum = 0;
 	      }
 	  }
@@ -758,14 +834,50 @@ void MainWindow::createNewRoom()
 
 void MainWindow::joinTable()
 {
-	QPushButton* buttonThatSent = static_cast<QPushButton*> (sender());
-	QVariant tn = buttonThatSent->property("tablenum");
-	quint16 tablenum = (quint16)tn.toInt();
-	writeHeaderData();
-	out << (quint8)'j';
-	out << (quint16) tablenum;
-	fixHeaderLength();
-	commsSocket->write(block);
+	QToolButton* buttonThatSent = static_cast<QToolButton*> (sender());
+	RoomSelectorWidget* tmp = static_cast<RoomSelectorWidget*> (buttonThatSent->parentWidget());
+	quint16 tablenum = tmp->tableNum;
+	//	chatText->append(buttonThatSent->objectName());
+	if (tablenum != currentTablenum && currentTablenum == 0)
+	  {
+	    writeHeaderData();
+	    out << (quint8)'j';
+	    out << (quint16) tablenum;
+	    fixHeaderLength();
+	    commsSocket->write(block);
+	  }
+	if (buttonThatSent->objectName() == "toolButtonWatch")
+	  {
+	    // just watch, do nothing
+	    //  chatText->append("watching");
+	  }
+	else
+	  {
+	    int spot = buttonThatSent->objectName().right(1).toInt();
+	    // sit at this spot as well
+	    //chatText->append(QString("spot %1").arg(spot));
+	    writeHeaderData();
+	    out << (quint8)'=';
+	    out << (quint16) tablenum;
+	    out << (quint8)'d'; // down
+	    out << (quint8)spot;
+	    fixHeaderLength();
+	    commsSocket->write(block);
+
+	  }
+}
+
+void MainWindow::standUp()
+{
+  /*
+  writeHeaderData();
+  out << (quint8)'=';
+  out << (quint16) currentTablenum;
+  out << (quint8)'v';
+  out << (quint8) gameBoardWidget->playerInfoWidget->getMySeat();
+  fixHeaderLength();
+  */
+  chatText->append("stand");
 }
 
 void MainWindow::leaveThisTable()
@@ -903,6 +1015,17 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
   roomTable->insertRow(roomTable->rowCount());
   roomTable->setRowHeight(roomTable->rowCount()-1, 60);
   RoomSelectorWidget *tmp = new RoomSelectorWidget(roomTable, tablenum, wordListDescriptor, maxPlayers);
+  connect(tmp->toolButtonWatch, SIGNAL(clicked()), this, SLOT(joinTable()));
+  connect(tmp->toolButtonSit1, SIGNAL(clicked()), this, SLOT(joinTable()));
+  connect(tmp->toolButtonSit2, SIGNAL(clicked()), this, SLOT(joinTable()));
+  connect(tmp->toolButtonSit3, SIGNAL(clicked()), this, SLOT(joinTable()));
+  connect(tmp->toolButtonSit4, SIGNAL(clicked()), this, SLOT(joinTable()));
+  connect(tmp->toolButtonSit5, SIGNAL(clicked()), this, SLOT(joinTable()));
+  connect(tmp->toolButtonSit6, SIGNAL(clicked()), this, SLOT(joinTable()));
+
+
+	  // use sender for the slots.
+
   roomTable->setCellWidget(roomTable->rowCount() - 1, 0, tmp);
   tables.insert(tablenum, tmp);
   
@@ -977,6 +1100,8 @@ void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
 {
   RoomSelectorWidget* tmp = tables.value(tablenum);
   tmp->peopleList.removeAll(player);
+  // check if this player is sitting
+
 }
 
 void MainWindow::handleAddToTable(quint16 tablenum, QString player)
@@ -1247,7 +1372,8 @@ RoomSelectorWidget::RoomSelectorWidget(QWidget* parent, quint16 tableNum, QStrin
     case 6:
       ;
     }
-  
+
+
 
 }
 
