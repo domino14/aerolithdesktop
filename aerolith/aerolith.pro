@@ -1,3 +1,3 @@
-message(generating subdirs files)
+message(generating subdirs files!)
 TEMPLATE = subdirs
 SUBDIRS += client server
