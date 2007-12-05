@@ -1,0 +1,155 @@
+<ui version="4.0" >
+ <class>scoresForm</class>
+ <widget class="QDialog" name="scoresForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>420</width>
+    <height>393</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>420</width>
+    <height>393</height>
+   </size>
+  </property>
+  <property name="maximumSize" >
+   <size>
+    <width>420</width>
+    <height>393</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string>High Scores</string>
+  </property>
+  <widget class="QPushButton" name="getScoresPushbutton" >
+   <property name="geometry" >
+    <rect>
+     <x>270</x>
+     <y>10</y>
+     <width>109</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Get Scores</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="scoresComboBox" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>10</y>
+     <width>221</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text" >
+     <string>Daily 4s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 5s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 6s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 7s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 8s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 9s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 10s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 11s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 12s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 13s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 14s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 15s</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QTableWidget" name="scoresTableWidget" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>50</y>
+     <width>361</width>
+     <height>311</height>
+    </rect>
+   </property>
+   <property name="editTriggers" >
+    <set>QAbstractItemView::NoEditTriggers</set>
+   </property>
+   <property name="selectionMode" >
+    <enum>QAbstractItemView::NoSelection</enum>
+   </property>
+   <property name="showGrid" >
+    <bool>false</bool>
+   </property>
+   <property name="gridStyle" >
+    <enum>Qt::NoPen</enum>
+   </property>
+   <column>
+    <property name="text" >
+     <string>#</string>
+    </property>
+   </column>
+   <column>
+    <property name="text" >
+     <string>User Name</string>
+    </property>
+   </column>
+   <column>
+    <property name="text" >
+     <string>Correct</string>
+    </property>
+   </column>
+   <column>
+    <property name="text" >
+     <string>Time</string>
+    </property>
+   </column>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
