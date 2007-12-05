@@ -1,0 +1,333 @@
+<ui version="4.0" >
+ <class>tableCreateForm</class>
+ <widget class="QDialog" name="tableCreateForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>400</width>
+    <height>500</height>
+   </size>
+  </property>
+  <property name="maximumSize" >
+   <size>
+    <width>400</width>
+    <height>500</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string>Create Table</string>
+  </property>
+  <property name="accessibleDescription" >
+   <string/>
+  </property>
+  <widget class="QLabel" name="label_2" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>150</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Play mode</string>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="playersSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>20</y>
+     <width>42</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+   <property name="maximum" >
+    <number>6</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string># of Players</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>80</y>
+     <width>91</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Table Timer</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>250</y>
+     <width>91</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Word list</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_3" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>250</y>
+     <width>271</width>
+     <height>161</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string>Word list</string>
+   </property>
+   <widget class="QRadioButton" name="userRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>User List</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="existingRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>121</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Existing List</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="elistsCbo" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
+    <property name="geometry" >
+     <rect>
+      <x>40</x>
+      <y>50</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="ulistsCbo" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
+    <property name="geometry" >
+     <rect>
+      <x>40</x>
+      <y>100</y>
+      <width>211</width>
+      <height>21</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QDialogButtonBox" name="buttonBox" >
+   <property name="geometry" >
+    <rect>
+     <x>140</x>
+     <y>440</y>
+     <width>251</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons" >
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="timerSpinBox" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>80</y>
+     <width>121</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="specialValueText" >
+    <string/>
+   </property>
+   <property name="suffix" >
+    <string> minutes</string>
+   </property>
+   <property name="minimum" >
+    <number>1</number>
+   </property>
+   <property name="maximum" >
+    <number>60</number>
+   </property>
+   <property name="value" >
+    <number>4</number>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox" >
+   <property name="geometry" >
+    <rect>
+     <x>120</x>
+     <y>140</y>
+     <width>131</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="title" >
+    <string>Play mode</string>
+   </property>
+   <widget class="QRadioButton" name="cycleRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Cycle</string>
+    </property>
+    <property name="checked" >
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="randomRbo" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Random</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="endlessRbo" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>60</y>
+      <width>101</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Marathon</string>
+    </property>
+    <property name="checkable" >
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>tableCreateForm</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>308</x>
+     <y>404</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>96</x>
+     <y>380</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>tableCreateForm</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>376</x>
+     <y>410</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>375</x>
+     <y>375</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>userRbo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ulistsCbo</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>171</x>
+     <y>276</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>329</x>
+     <y>295</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>existingRbo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>elistsCbo</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>183</x>
+     <y>227</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>307</x>
+     <y>246</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
