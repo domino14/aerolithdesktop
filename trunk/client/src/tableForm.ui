@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>920</width>
-    <height>720</height>
+    <width>1000</width>
+    <height>740</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -17,14 +17,14 @@
   </property>
   <property name="minimumSize" >
    <size>
-    <width>920</width>
-    <height>720</height>
+    <width>1000</width>
+    <height>740</height>
    </size>
   </property>
   <property name="maximumSize" >
    <size>
-    <width>920</width>
-    <height>720</height>
+    <width>1000</width>
+    <height>740</height>
    </size>
   </property>
   <property name="windowTitle" >
@@ -35,8 +35,8 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>900</width>
-     <height>700</height>
+     <width>980</width>
+     <height>720</height>
     </rect>
    </property>
    <property name="focusPolicy" >
@@ -49,11 +49,11 @@
     <enum>Qt::ScrollBarAlwaysOff</enum>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton" >
+  <widget class="QPushButton" name="pushButtonAlphagrams" >
    <property name="geometry" >
     <rect>
-     <x>790</x>
-     <y>510</y>
+     <x>870</x>
+     <y>530</y>
      <width>106</width>
      <height>34</height>
     </rect>
@@ -85,11 +85,11 @@ QPushButton:disabled{&#xd;
     <string>Alphagrams</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_2" >
+  <widget class="QPushButton" name="pushButtonShuffle" >
    <property name="geometry" >
     <rect>
-     <x>790</x>
-     <y>550</y>
+     <x>870</x>
+     <y>580</y>
      <width>106</width>
      <height>34</height>
     </rect>
@@ -121,7 +121,7 @@ QPushButton:disabled{&#xd;
     <string>Shuffle</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_3" >
+  <widget class="QPushButton" name="pushButtonGiveUp" >
    <property name="geometry" >
     <rect>
      <x>20</x>
@@ -157,10 +157,10 @@ QPushButton:disabled{&#xd;
     <string>Give Up</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_4" >
+  <widget class="QPushButton" name="pushButtonExit" >
    <property name="geometry" >
     <rect>
-     <x>775</x>
+     <x>850</x>
      <y>20</y>
      <width>131</width>
      <height>34</height>
@@ -193,7 +193,7 @@ QPushButton:disabled{&#xd;
     <string>Exit Table #</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_5" >
+  <widget class="QPushButton" name="pushButtonStart" >
    <property name="geometry" >
     <rect>
      <x>20</x>
@@ -206,34 +206,34 @@ QPushButton:disabled{&#xd;
     <enum>Qt::NoFocus</enum>
    </property>
    <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(0, 220, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(0, 100, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(0, 150, 0);&#xd;
-     border-style: inset;&#xd;
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
  } </string>
    </property>
    <property name="text" >
     <string>Start!</string>
    </property>
   </widget>
-  <widget class="QLCDNumber" name="lcdNumber" >
+  <widget class="QLCDNumber" name="lcdNumberTimer" >
    <property name="geometry" >
     <rect>
-     <x>780</x>
-     <y>70</y>
+     <x>880</x>
+     <y>60</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -262,11 +262,11 @@ QPushButton:disabled{&#xd;
     <enum>QLCDNumber::Filled</enum>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEdit_2" >
+  <widget class="QLineEdit" name="lineEditSolution" >
    <property name="geometry" >
     <rect>
-     <x>60</x>
-     <y>570</y>
+     <x>50</x>
+     <y>600</y>
      <width>113</width>
      <height>20</height>
     </rect>
@@ -281,12 +281,15 @@ QPushButton:disabled{&#xd;
  } &#xd;
 </string>
    </property>
+   <property name="maxLength" >
+    <number>15</number>
+   </property>
   </widget>
   <widget class="QLabel" name="label" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>570</y>
+     <x>10</x>
+     <y>600</y>
      <width>46</width>
      <height>14</height>
     </rect>
@@ -295,47 +298,11 @@ QPushButton:disabled{&#xd;
     <string>&lt;B>Guess:&lt;/B></string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_6" >
+  <widget class="QLineEdit" name="lineEditChat" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>530</y>
-     <width>106</width>
-     <height>34</height>
-    </rect>
-   </property>
-   <property name="focusPolicy" >
-    <enum>Qt::NoFocus</enum>
-   </property>
-   <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(220, 220, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(0, 100, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(0, 150, 0);&#xd;
-     border-style: inset;&#xd;
- } </string>
-   </property>
-   <property name="text" >
-    <string>Solutions</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="lineEdit" >
-   <property name="geometry" >
-    <rect>
-     <x>20</x>
-     <y>610</y>
+     <x>10</x>
+     <y>640</y>
      <width>601</width>
      <height>20</height>
     </rect>
@@ -350,12 +317,15 @@ QPushButton:disabled{&#xd;
  } &#xd;
 </string>
    </property>
+   <property name="maxLength" >
+    <number>500</number>
+   </property>
   </widget>
-  <widget class="QTextEdit" name="textEdit" >
+  <widget class="QTextEdit" name="textEditChat" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>630</y>
+     <x>10</x>
+     <y>660</y>
      <width>441</width>
      <height>71</height>
     </rect>
@@ -367,18 +337,17 @@ QPushButton:disabled{&#xd;
     <string> QTextEdit, QListView {
      border: 2px solid gray;
      border-radius: 10px;
-     background-color: rgb(255, 255, 105)
  } </string>
    </property>
    <property name="readOnly" >
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QListWidget" name="listWidget" >
+  <widget class="QListWidget" name="listWidgetPeopleInRoom" >
    <property name="geometry" >
     <rect>
-     <x>470</x>
-     <y>630</y>
+     <x>460</x>
+     <y>660</y>
      <width>151</width>
      <height>71</height>
     </rect>
@@ -397,10 +366,10 @@ QPushButton:disabled{&#xd;
   <widget class="QTextEdit" name="textEditGuesses" >
    <property name="geometry" >
     <rect>
-     <x>690</x>
-     <y>610</y>
+     <x>760</x>
+     <y>660</y>
      <width>211</width>
-     <height>91</height>
+     <height>71</height>
     </rect>
    </property>
    <property name="focusPolicy" >
@@ -417,8 +386,8 @@ QPushButton:disabled{&#xd;
   <widget class="QLabel" name="label_2" >
    <property name="geometry" >
     <rect>
-     <x>690</x>
-     <y>590</y>
+     <x>760</x>
+     <y>640</y>
      <width>101</width>
      <height>16</height>
     </rect>
@@ -427,269 +396,62 @@ QPushButton:disabled{&#xd;
     <string>&lt;B>Your guesses:&lt;/B></string>
    </property>
   </widget>
-  <widget class="QListWidget" name="listWidget_2" >
+  <widget class="QPushButton" name="pushButtonSolutions" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>250</y>
-     <width>111</width>
-     <height>81</height>
+     <x>870</x>
+     <y>470</y>
+     <width>106</width>
+     <height>34</height>
     </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
    </property>
    <property name="styleSheet" >
-    <string>QListWidget {
-     border: 2px solid gray;
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
      border-radius: 10px;
-	background-color: rgb(255, 255, 150);
-}</string>
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Solutions</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_3" >
+  <widget class="QLabel" name="labelWordListInfo" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>230</y>
-     <width>46</width>
-     <height>14</height>
+     <x>30</x>
+     <y>110</y>
+     <width>68</width>
+     <height>16</height>
     </rect>
    </property>
    <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_4" >
-   <property name="geometry" >
-    <rect>
-     <x>20</x>
-     <y>340</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidget_3" >
-   <property name="geometry" >
-    <rect>
-     <x>240</x>
-     <y>500</y>
-     <width>111</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="styleSheet" >
-    <string>QListWidget {
-     border: 2px solid gray;
-     border-radius: 10px;
-	background-color: rgb(255, 255, 150);
-}</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5" >
-   <property name="geometry" >
-    <rect>
-     <x>240</x>
-     <y>590</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6" >
-   <property name="geometry" >
-    <rect>
-     <x>240</x>
-     <y>480</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidget_4" >
-   <property name="geometry" >
-    <rect>
-     <x>520</x>
-     <y>500</y>
-     <width>111</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="styleSheet" >
-    <string>QListWidget {
-     border: 2px solid gray;
-     border-radius: 10px;
-	background-color: rgb(255, 255, 150);
-}</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_7" >
-   <property name="geometry" >
-    <rect>
-     <x>520</x>
-     <y>590</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_8" >
-   <property name="geometry" >
-    <rect>
-     <x>520</x>
-     <y>480</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidget_5" >
-   <property name="geometry" >
-    <rect>
-     <x>790</x>
-     <y>250</y>
-     <width>111</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="styleSheet" >
-    <string>QListWidget {
-     border: 2px solid gray;
-     border-radius: 10px;
-	background-color: rgb(255, 255, 150);
-}</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_9" >
-   <property name="geometry" >
-    <rect>
-     <x>790</x>
-     <y>230</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_10" >
-   <property name="geometry" >
-    <rect>
-     <x>790</x>
-     <y>340</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidget_6" >
-   <property name="geometry" >
-    <rect>
-     <x>530</x>
-     <y>30</y>
-     <width>111</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="styleSheet" >
-    <string>QListWidget {
-     border: 2px solid gray;
-     border-radius: 10px;
-	background-color: rgb(255, 255, 150);
-}</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_11" >
-   <property name="geometry" >
-    <rect>
-     <x>530</x>
-     <y>120</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_12" >
-   <property name="geometry" >
-    <rect>
-     <x>530</x>
-     <y>10</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidget_7" >
-   <property name="geometry" >
-    <rect>
-     <x>250</x>
-     <y>30</y>
-     <width>111</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="styleSheet" >
-    <string>QListWidget {
-     border: 2px solid gray;
-     border-radius: 10px;
-	background-color: rgb(255, 255, 150);
-}</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_13" >
-   <property name="geometry" >
-    <rect>
-     <x>250</x>
-     <y>10</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_14" >
-   <property name="geometry" >
-    <rect>
-     <x>250</x>
-     <y>120</y>
-     <width>46</width>
-     <height>14</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>TextLabel</string>
+    <string>Word List Info</string>
    </property>
   </widget>
  </widget>
  <tabstops>
-  <tabstop>lineEdit</tabstop>
-  <tabstop>lineEdit_2</tabstop>
+  <tabstop>lineEditChat</tabstop>
+  <tabstop>lineEditSolution</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="../client.qrc" />
+ </resources>
  <connections/>
 </ui>

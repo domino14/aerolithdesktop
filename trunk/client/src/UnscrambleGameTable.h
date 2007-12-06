@@ -3,9 +3,8 @@
 
 #include <QtCore>
 #include <QtGui>
-#include "playerInfoWidget.h"
-#include "wordsTableWidget.h"
 #include "ui_tableForm.h"
+#include "ui_playerInfoForm.h"
 
 class UnscrambleGameTable : public QWidget
 {
@@ -19,9 +18,20 @@ public:
 	void removePlayer(QString, bool);
 	void addPlayers(QStringList);
 
+	void gotChat(QString);
+	void setAvatar(QString, quint8);
+	void gotTimerValue(quint16 timerval);
+	void gotWordListInfo(QString);
+	void setMyUsername(QString);
 private:
 	QGraphicsScene gfxScene;
 	Ui::tableForm tableUi;
+	Ui::playerInfoForm playerUis[6];
+	
+	QList <QPixmap> tilesList;
+	QList <QPixmap> chipsList; 
+
+	QString myUsername;
 
 protected:
 	virtual void closeEvent(QCloseEvent*);
@@ -32,25 +42,16 @@ signals:
 	void guessSubmitted(QString);
 	void chatTable(QString);
 	void exitThisTable();
+
+	void shouldShowSolutions();
+
 	private slots:
 		void enteredGuess();
 		void enteredChat();
 		void sendPM(QListWidgetItem* item);
 
 public:
-	wordsTableWidget* wordsWidget;
-	QLineEdit* solutionLE;
-	QLCDNumber* timerDial;
-	QPushButton* exitTable;
-	QPushButton* giveup;
-	QPushButton* start;
-	QPushButton* solutions;
-	QLabel* wordListInfo;
-	PlayerInfoWidget* playerInfoWidget;
 
-	QLineEdit* chatLE;
-	QTextEdit* tableChat;
-	QListWidget* peopleInTable;
 
 };
 

@@ -2,120 +2,72 @@
 
 UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f)
 {
-
-	wordsWidget = new wordsTableWidget(5, 5);
-	// solution box
-	QLabel *solutionLabel = new QLabel("Guess:");
-	solutionLE = new QLineEdit;
-	solutionLE->setFixedWidth(100);
-	solutionLE->setMaxLength(15);
-	solutions = new QPushButton("Solutions");
-	QPushButton *alpha = new QPushButton("Alpha");
-	QPushButton *shuffle = new QPushButton("Shuffle");
-	giveup = new QPushButton("Give up");
-	start = new QPushButton("Start");
-	exitTable = new QPushButton("Exit Table #");
-	QPushButton *changeFont = new QPushButton("Font toggle");
-	QPushButton *plusFont = new QPushButton("+");
-	QPushButton *minusFont = new QPushButton("-");
-
-
-	connect(changeFont, SIGNAL(clicked()), wordsWidget, SLOT(changeFont()));
-	//  connect(plusFont, SIGNAL(clicked()), wordsWidget, SLOT(increaseFontSize()));
-	//connect(minusFont, SIGNAL(clicked()), wordsWidget, SLOT(decreaseFontSize()));
-
-
-	solutions->setFocusPolicy(Qt::NoFocus);
-	alpha->setFocusPolicy(Qt::NoFocus);
-	shuffle->setFocusPolicy(Qt::NoFocus);
-	giveup->setFocusPolicy(Qt::NoFocus);
-	start->setFocusPolicy(Qt::NoFocus);
-	exitTable->setFocusPolicy(Qt::NoFocus);
-	changeFont->setFocusPolicy(Qt::NoFocus);
-	QHBoxLayout *topSolutionLayout = new QHBoxLayout;
-
-	timerDial = new QLCDNumber(4);
-	timerDial->setFixedWidth(50);
-	timerDial->setSegmentStyle(QLCDNumber::Flat);
-
-	wordListInfo = new QLabel;
-	wordListInfo->setFixedWidth(100);
-	topSolutionLayout->addWidget(timerDial);
-	topSolutionLayout->addSpacing(50);
-	topSolutionLayout->addWidget(wordListInfo);
-	topSolutionLayout->addSpacing(50);
-	topSolutionLayout->addWidget(changeFont);
-	topSolutionLayout->addStretch(1);
-
-	topSolutionLayout->addWidget(giveup);
-	topSolutionLayout->addSpacing(50);
-	topSolutionLayout->addWidget(exitTable);
-	QHBoxLayout *bottomSolutionLayout = new QHBoxLayout;
-
-	bottomSolutionLayout->addWidget(solutionLabel);
-	bottomSolutionLayout->addWidget(solutionLE);
-	bottomSolutionLayout->addStretch(1);
-	//bottomSolutionLayout->addWidget(timerDial);
-	bottomSolutionLayout->addWidget(start);
-	bottomSolutionLayout->addWidget(solutions);
-	bottomSolutionLayout->addWidget(alpha);
-	bottomSolutionLayout->addWidget(shuffle);
-	//solutionLayout->addSpacing(50);
-	//solutionLayout->addWidget(giveup);
-	//solutionLayout->addWidget(exitTable);
-
-	// Players box
-
-	playerInfoWidget = new PlayerInfoWidget(); // includes lists, etc
-
-	QVBoxLayout *gameBoardLayout = new QVBoxLayout;
-	gameBoardLayout->addLayout(topSolutionLayout);
-	gameBoardLayout->addWidget(wordsWidget, 0, Qt::AlignHCenter);
-	gameBoardLayout->addLayout(bottomSolutionLayout);
-	gameBoardLayout->addWidget(playerInfoWidget);
-
-	peopleInTable = new QListWidget;
-	chatLE = new QLineEdit;
-	tableChat = new QTextEdit;
-
-	connect(peopleInTable, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
-	chatLE->setMaxLength(300);
-	tableChat->setReadOnly(true);
-	tableChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
-
-	QHBoxLayout *chatBoxLayout = new QHBoxLayout;
-	chatBoxLayout->addWidget(tableChat);
-	tableChat->setFrameShape(QFrame::Box);
-	peopleInTable->setFrameShape(QFrame::Box);
-	peopleInTable->setFixedWidth(150);
-	chatBoxLayout->addWidget(peopleInTable);
-
-	gameBoardLayout->addWidget(chatLE);
-	gameBoardLayout->addSpacing(5);
-	gameBoardLayout->addLayout(chatBoxLayout);
-	connect(alpha, SIGNAL(clicked()), wordsWidget, SLOT(alphagrammizeWords()));
-	connect(shuffle, SIGNAL(clicked()), wordsWidget, SLOT(shuffleWords()));
-
-	//  setLayout(gameBoardLayout);
-
-	setTabOrder(solutionLE, chatLE);
-	setTabOrder(chatLE, solutionLE);
-	tableChat->setFocusPolicy(Qt::ClickFocus);
-	peopleInTable->setFocusPolicy(Qt::NoFocus);  
-
-
-	connect(giveup, SIGNAL(clicked()), this, SIGNAL(giveUp()));
-	connect(start, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
-	connect(playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SIGNAL(avatarChange(quint8)));
-	connect(solutionLE, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
-	connect(exitTable, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
-
-	connect(chatLE, SIGNAL(returnPressed()), this, SLOT(enteredChat()));
-
-
 	tableUi.setupUi(this);
 
-	gfxScene.setSceneRect(0, 0, 900, 600);
+
+	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), this, SIGNAL(shouldShowSolutions()));	
+	
+	connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
+	connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
+	//connect(playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SIGNAL(avatarChange(quint8)));
+	connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
+	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
+
+	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
+
+	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+	
+	//connect(tableUi.pushButtonAlphagrams, SIGNAL(clicked()), wordsWidget, SLOT(alphagrammizeWords()));
+	//connect(tableUi.pushButtonShuffle, SIGNAL(clicked()), wordsWidget, SLOT(shuffleWords()));
+
+	connect(tableUi.lineEditChat, SIGNAL(returnPressed()), this, SLOT(enteredChat()));
+
+	// add player widgets
+
+	QWidget* tmpWidget = new QWidget(this);
+	playerUis[0].setupUi(tmpWidget);
+	tmpWidget->move(220, 510);
+
+	tmpWidget = new QWidget(this);
+	playerUis[1].setupUi(tmpWidget);
+	tmpWidget->move(650, 510);
+
+	tmpWidget = new QWidget(this);
+	playerUis[2].setupUi(tmpWidget);
+	tmpWidget->move(870, 250);
+
+	tmpWidget = new QWidget(this);
+	playerUis[3].setupUi(tmpWidget);
+	tmpWidget->move(650, 10);
+
+	tmpWidget = new QWidget(this);
+	playerUis[4].setupUi(tmpWidget);
+	tmpWidget->move(220, 10);
+
+	tmpWidget = new QWidget(this);
+	playerUis[5].setupUi(tmpWidget);
+	tmpWidget->move(10, 250);
+
+
+	
+
+	// load tilesList and chipsList
+
+	for (int i = 0; i < 26; i++)
+	{
+		QPixmap pix(QString(":/images/%1.png").arg((char)(i + 'A')));
+		tilesList.append(pix);
+	}
+
+	for (int i = 0; i < 9; i++)
+	{
+		QPixmap pix(QString(":/images/chip%1.png").arg(i + 1));
+		chipsList.append(pix);
+	}
+
+
+	gfxScene.setSceneRect(0, 0, 980, 700);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
 
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
@@ -123,88 +75,143 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
 	tableUi.graphicsView->setCacheMode(QGraphicsView::CacheBackground); 
 	QGraphicsPixmapItem* tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
 	//tableItem->setFlags(QGraphicsItem::ItemIsMovable);
-	tableItem->setOffset(QPoint(70, 20));
+	tableItem->setOffset(QPoint(50, 80));
+	tableItem->setZValue(-1);
+	tableItem->scale(1.1, 1);
 
-	QGraphicsPixmapItem* aItem = gfxScene.addPixmap(QPixmap(":/images/A.png"));
-	aItem->setFlags(QGraphicsItem::ItemIsMovable);
+	for (int i = 0; i < 26; i++)
+	{
 
-	QGraphicsPixmapItem* bItem = gfxScene.addPixmap(QPixmap(":/images/chip1.png"));
-	bItem->setFlags(QGraphicsItem::ItemIsMovable);
-	
-	QGraphicsPixmapItem* cItem = gfxScene.addPixmap(QPixmap(":/images/chip9plus.png"));
-	cItem->setFlags(QGraphicsItem::ItemIsMovable);
+		QGraphicsPixmapItem* aItem = gfxScene.addPixmap(tilesList.at(i));
+		aItem->setFlags(QGraphicsItem::ItemIsMovable);
+		aItem->setPos(i*30, 0);
+		//aItem->scale(0.7, 0.7);
+		aItem->setTransformationMode(Qt::SmoothTransformation);
+	}
+
+	for (int i = 0; i < 9; i++)
+	{
+		QGraphicsPixmapItem* bItem = gfxScene.addPixmap(chipsList.at(i));
+		bItem->setFlags(QGraphicsItem::ItemIsMovable);
+		bItem->setPos(i*30, 30);
+		bItem->scale(0.7, 0.7);
+		bItem->setTransformationMode(Qt::SmoothTransformation);
+	}
+
+
+	for (int i = 0; i < 10; i++)
+		gfxScene.addRect(120, 180 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
+
+	for (int i = 0; i < 16; i++)
+		gfxScene.addRect(300, 130 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
+
+	for (int i = 0; i < 16; i++)
+		gfxScene.addRect(480, 130 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
+
+	for (int i = 0; i < 10; i++)
+		gfxScene.addRect(660, 180 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
+
+
+
+
 
 	setWindowIcon(QIcon(":/images/aerolith.png"));
 	this->setWindowFlags(Qt::Dialog);
 
+	move(0, 0);
 }
 
 void UnscrambleGameTable::enteredChat()
 {
-	emit chatTable(chatLE->text());
-	chatLE->clear();
+	emit chatTable(tableUi.lineEditChat->text());
+	tableUi.lineEditChat->clear();
 
 }
 
 void UnscrambleGameTable::sendPM(QListWidgetItem* item)
 {
-	chatLE->setText(QString("/msg ") + item->text() + " ");
-	chatLE->setFocus(Qt::OtherFocusReason);
+	tableUi.lineEditChat->setText(QString("/msg ") + item->text() + " ");
+	tableUi.lineEditChat->setFocus(Qt::OtherFocusReason);
 }
 
 
 void UnscrambleGameTable::enteredGuess()
 {
-
-	emit guessSubmitted(solutionLE->text());
-	solutionLE->clear();
+	emit guessSubmitted(tableUi.lineEditSolution->text());
+	tableUi.lineEditSolution->clear();
 }
 
 void UnscrambleGameTable::closeEvent(QCloseEvent* event)
 {
 	event->ignore();
-	exitTable->animateClick();
-
+	tableUi.pushButtonExit->animateClick();
 }
 
 void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QString myUsername)
 {
 	setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3").arg(tableNum).arg(wordListName).arg(myUsername));
-	timerDial->display(0);
-	wordListInfo->clear();
-	playerInfoWidget->clearAndHide();
-	wordsWidget->clearCells();
-	exitTable->setText(QString("Exit table %1").arg(tableNum));
-	chatLE->clear();
-	tableChat->clear();
+	tableUi.labelWordListInfo->clear();
+	tableUi.lcdNumberTimer->display(0);
+//	playerInfoWidget->clearAndHide();	// won't do this anymore - clear all individual widgets
+//	wordsWidget->clearCells();			// instead get rid of all tiles on table
+	tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
+	tableUi.lineEditChat->clear();
+	tableUi.textEditChat->clear();
+
 }
 
 void UnscrambleGameTable::leaveTable()
 {
-	playerInfoWidget->leaveTable();
-	peopleInTable->clear();
-
+//	playerInfoWidget->leaveTable();		// clear the seats hash
+	tableUi.listWidgetPeopleInRoom->clear();
 }
 
 void UnscrambleGameTable::addPlayers(QStringList plist)
 {
-	playerInfoWidget->addPlayers(plist);
-	peopleInTable->addItems(plist);
+	tableUi.listWidgetPeopleInRoom->addItems(plist);
+	//playerInfoWidget->addPlayers(plist);
 }
 
 void UnscrambleGameTable::addPlayer(QString player, bool gameStarted)
 {
-	playerInfoWidget->addPlayer(player, gameStarted);
-	peopleInTable->addItem(player);
+//	playerInfoWidget->addPlayer(player, gameStarted);
+	tableUi.listWidgetPeopleInRoom->addItem(player);
 }
 
 void UnscrambleGameTable::removePlayer(QString player, bool gameStarted)
 {
-	playerInfoWidget->removePlayer(player, gameStarted);
-	for (int i = 0; i < peopleInTable->count(); i++)
-		if (peopleInTable->item(i)->text() == player)
+//	playerInfoWidget->removePlayer(player, gameStarted);
+	for (int i = 0; i < tableUi.listWidgetPeopleInRoom->count(); i++)
+		if (tableUi.listWidgetPeopleInRoom->item(i)->text() == player)
 		{
-			QListWidgetItem *it = peopleInTable->takeItem(i);
+			QListWidgetItem *it = tableUi.listWidgetPeopleInRoom->takeItem(i);
 			delete it;
 		}
+}
+
+
+void UnscrambleGameTable::gotChat(QString chat)
+{
+	tableUi.textEditChat->append(chat);
+}
+
+
+void UnscrambleGameTable::setMyUsername(QString username)
+{
+	myUsername = username;
+}
+
+void UnscrambleGameTable::gotTimerValue(quint16 timerval)
+{
+	tableUi.lcdNumberTimer->display(timerval);
+}
+
+void UnscrambleGameTable::gotWordListInfo(QString info)
+{
+	tableUi.labelWordListInfo->setText(info);
+}
+
+void UnscrambleGameTable::setAvatar(QString, quint8)
+{
+
 }
