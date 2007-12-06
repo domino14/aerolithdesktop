@@ -56,9 +56,9 @@ else delete log;
 
 
 
-  MainWindow mainWin;
-  mainWin.show();
 
+ MainWindow mainWin;
+  mainWin.show();
 
 
   

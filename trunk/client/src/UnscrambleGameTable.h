@@ -5,47 +5,52 @@
 #include <QtGui>
 #include "playerInfoWidget.h"
 #include "wordsTableWidget.h"
+#include "ui_tableForm.h"
+
 class UnscrambleGameTable : public QWidget
 {
-  Q_OBJECT
+	Q_OBJECT
 
-    public:
-  UnscrambleGameTable(QWidget* parent = 0, Qt::WindowFlags f = 0);
-  void resetTable(quint16, QString, QString);
-  void leaveTable();
-  void addPlayer(QString, bool);
-  void removePlayer(QString, bool);
-  void addPlayers(QStringList);
-  
+public:
+	UnscrambleGameTable(QWidget* parent = 0, Qt::WindowFlags f = 0);
+	void resetTable(quint16, QString, QString);
+	void leaveTable();
+	void addPlayer(QString, bool);
+	void removePlayer(QString, bool);
+	void addPlayers(QStringList);
 
- protected:
-  virtual void closeEvent(QCloseEvent*);
- signals:
-  void giveUp();
-  void sendStartRequest();
-  void avatarChange(quint8);
-  void guessSubmitted(QString);
-  void chatTable(QString);
-  void exitThisTable();
-  private slots:
-    void enteredGuess();
-  void enteredChat();
-  void sendPM(QListWidgetItem* item);
+private:
+	QGraphicsScene gfxScene;
+	Ui::tableForm tableUi;
 
- public:
-  wordsTableWidget* wordsWidget;
-  QLineEdit* solutionLE;
-  QLCDNumber* timerDial;
-  QPushButton* exitTable;
-  QPushButton* giveup;
-  QPushButton* start;
-  QPushButton* solutions;
-  QLabel* wordListInfo;
-  PlayerInfoWidget* playerInfoWidget;
+protected:
+	virtual void closeEvent(QCloseEvent*);
+signals:
+	void giveUp();
+	void sendStartRequest();
+	void avatarChange(quint8);
+	void guessSubmitted(QString);
+	void chatTable(QString);
+	void exitThisTable();
+	private slots:
+		void enteredGuess();
+		void enteredChat();
+		void sendPM(QListWidgetItem* item);
 
-  QLineEdit* chatLE;
-  QTextEdit* tableChat;
-  QListWidget* peopleInTable;
+public:
+	wordsTableWidget* wordsWidget;
+	QLineEdit* solutionLE;
+	QLCDNumber* timerDial;
+	QPushButton* exitTable;
+	QPushButton* giveup;
+	QPushButton* start;
+	QPushButton* solutions;
+	QLabel* wordListInfo;
+	PlayerInfoWidget* playerInfoWidget;
+
+	QLineEdit* chatLE;
+	QTextEdit* tableChat;
+	QListWidget* peopleInTable;
 
 };
 
