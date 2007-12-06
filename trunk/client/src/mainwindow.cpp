@@ -171,7 +171,7 @@ out(&block, QIODevice::WriteOnly)
 	gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
 
 	gameStarted = false;
-	connect(gameBoardWidget->solutions, SIGNAL(clicked()), solutionsDialog, SLOT(show())); 
+	connect(gameBoardWidget, SIGNAL(shouldShowSolutions()), solutionsDialog, SLOT(show())); 
 	blockSize = 0; 
 
 	currentTablenum = 0;
@@ -307,7 +307,7 @@ void MainWindow::chatTable(QString textToSend)
 
 			return;
 		}
-		gameBoardWidget->tableChat->append("[You write to " + username + "] " + message);
+		gameBoardWidget->gotChat("[You write to " + username + "] " + message);
 		writeHeaderData();
 		out << (quint8)'p';
 		out << username;
@@ -353,7 +353,6 @@ void MainWindow::submitGuess(QString guess)
 	out << guess;
 	fixHeaderLength();
 	commsSocket->write(block);
-	//  gameBoardWidget->solutionLE->clear();
 }
 
 void MainWindow::readFromServer()
@@ -417,7 +416,7 @@ void MainWindow::readFromServer()
 					loginDialog->hide();
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
 					sendClientVersion();   // not yet. add this for the actual version 0.1.2
-					gameBoardWidget->playerInfoWidget->setMyUsername(username);
+					gameBoardWidget->setMyUsername(username);
 					currentTablenum = 0;
 				}
 			}
@@ -458,7 +457,7 @@ void MainWindow::readFromServer()
 				QString username, message;
 				in >> username >> message;
 				chatText->append(QString("[")+username+ " writes to you] " + message);
-				gameBoardWidget->tableChat->append(QString("[")+username + " writes to you] " + message);
+				gameBoardWidget->gotChat(QString("[")+username + " writes to you] " + message);
 			}
 			break;
 		case 'T':	// New table
@@ -595,7 +594,7 @@ void MainWindow::readFromServer()
 				if (currentTablenum != 0)
 				{
 					// we are in a table
-					gameBoardWidget->playerInfoWidget->setAvatar(username, avatarID);
+					gameBoardWidget->setAvatar(username, avatarID);
 
 				}
 				// then here we can do something like chatwidget->setavatar( etc). but this requires the server
@@ -801,7 +800,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString message;
 			in >> message;
-			gameBoardWidget->tableChat->append("<font color=green>" + message + "</font>");
+			gameBoardWidget->gotChat("<font color=green>" + message + "</font>");
 
 
 		}
@@ -811,7 +810,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			quint16 timerval;	
 			in >> timerval;
-			gameBoardWidget->timerDial->display(timerval);
+			gameBoardWidget->gotTimerValue(timerval);
 
 
 		}
@@ -823,14 +822,14 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-			gameBoardWidget->playerInfoWidget->setReadyIndicator(username);
+		//	gameBoardWidget->playerInfoWidget->setReadyIndicator(username);
 		}
 		break;
 	case 'S':
 		// the game has started
 		{
-			gameBoardWidget->playerInfoWidget->setupForGameStart();
-			gameBoardWidget->tableChat->append("<font color=red>The game has started!</font>");
+		//	gameBoardWidget->playerInfoWidget->setupForGameStart();
+			gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
 			gameStarted = true;
 			rightAnswers.clear();
 			//gameTimer->start(1000);
@@ -840,7 +839,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 	case 'E':
 		// the game has ended
 
-		gameBoardWidget->tableChat->append("<font color=red>This round is over.</font>");
+		gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
 		gameStarted = false;
 		populateSolutionsTable();
 		///gameTimer->stop();
@@ -853,7 +852,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			QString username, chat;
 			in >> username;
 			in >> chat;
-			gameBoardWidget->tableChat->append("[" + username + "] " + chat);
+			gameBoardWidget->gotChat("[" + username + "] " + chat);
 		}
 		break;
 
@@ -869,12 +868,12 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 				in >> numSolutionsNotYetSolved;
 				QStringList solutions;
 				in >> solutions;
-				gameBoardWidget->wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutionsNotYetSolved);
+		//		gameBoardWidget->wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutionsNotYetSolved);
 			}
 			uiSolutions.solutionsTableWidget->clearContents();
 			uiSolutions.solutionsTableWidget->setRowCount(0);
 			uiSolutions.solsLabel->clear();
-			gameBoardWidget->wordsWidget->prepareForStart();
+		//	gameBoardWidget->wordsWidget->prepareForStart();
 			break;
 
 	case 'N':
@@ -884,7 +883,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			quint16 numRacksSeen;
 			quint16 numTotalRacks;
 			in >> numRacksSeen >> numTotalRacks;
-			gameBoardWidget->wordListInfo->setText(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
+			gameBoardWidget->gotWordListInfo(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
 			break;
 		}
 
@@ -893,7 +892,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-			gameBoardWidget->tableChat->append("<font color=red>" + username + " gave up! </font>");
+			gameBoardWidget->gotChat("<font color=red>" + username + " gave up! </font>");
 		}
 		break;
 	case 'A':
@@ -901,8 +900,8 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			QString username, answer;
 			quint8 row, column;
 			in >> username >> answer >> row >> column;
-			gameBoardWidget->wordsWidget->answeredCorrectly(row, column);
-			gameBoardWidget->playerInfoWidget->answered(username, answer);
+		//	gameBoardWidget->wordsWidget->answeredCorrectly(row, column);
+		//	gameBoardWidget->playerInfoWidget->answered(username, answer);
 			rightAnswers.insert(answer);
 
 		}
@@ -1116,69 +1115,69 @@ void MainWindow::displayHighScores()
 
 void MainWindow::populateSolutionsTable()
 {
-	int numTotalSols = 0, numWrong = 0;
-	for (int i = 0; i < gameBoardWidget->wordsWidget->getNumRows(); i++)
-		for (int j = 0; j < gameBoardWidget->wordsWidget->getNumCols(); j++)
-		{
-			gameBoardWidget->wordsWidget->item(i, j)->setText("");
-			QStringList theseSols = gameBoardWidget->wordsWidget->getCellSolutions(i, j);
-			QString alphagram = gameBoardWidget->wordsWidget->getCellAlphagram(i, j);
+	//int numTotalSols = 0, numWrong = 0;
+	//for (int i = 0; i < gameBoardWidget->wordsWidget->getNumRows(); i++)
+	//	for (int j = 0; j < gameBoardWidget->wordsWidget->getNumCols(); j++)
+	//	{
+	//		gameBoardWidget->wordsWidget->item(i, j)->setText("");
+	//		QStringList theseSols = gameBoardWidget->wordsWidget->getCellSolutions(i, j);
+	//		QString alphagram = gameBoardWidget->wordsWidget->getCellAlphagram(i, j);
 
-			if (alphagram != "") // if alphagram exists.
-			{
-				QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
-				tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
-				int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-
-
-				for (int i = 0; i < theseSols.size(); i++)
-				{
-					numTotalSols++;
-					uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
-					QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
-					if (wordDb.isOpen())
-					{
-						QString backHooks, frontHooks, definition;
-						QSqlQuery query;
-
-						query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
-						qDebug() << "select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'";
-						while (query.next())
-						{
-							frontHooks = query.value(0).toString();
-							backHooks = query.value(1).toString();
-							definition = query.value(2).toString();
-						}
-						QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
-						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);							
-						QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
-						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
-						QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
-						uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
-					}
+	//		if (alphagram != "") // if alphagram exists.
+	//		{
+	//			QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+	//			tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+	//			int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
 
 
-					if (!rightAnswers.contains(theseSols.at(i)))
-					{
-						numWrong++;
-						wordItem->setForeground(missedColorBrush);
-						QFont wordItemFont = wordItem->font();
-						wordItemFont.setBold(true);
-						wordItem->setFont(wordItemFont);
-					}
-					wordItem->setTextAlignment(Qt::AlignCenter);
-					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
+	//			for (int i = 0; i < theseSols.size(); i++)
+	//			{
+	//				numTotalSols++;
+	//				uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
+	//				QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
+	//				if (wordDb.isOpen())
+	//				{
+	//					QString backHooks, frontHooks, definition;
+	//					QSqlQuery query;
 
-				}
-				uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
-			}
-		}
-		uiSolutions.solutionsTableWidget->resizeColumnsToContents();
-		double percCorrect;
-		if (numTotalSols == 0) percCorrect = 0.0;
-		else
-			percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
-		uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
+	//					query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
+	//					qDebug() << "select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'";
+	//					while (query.next())
+	//					{
+	//						frontHooks = query.value(0).toString();
+	//						backHooks = query.value(1).toString();
+	//						definition = query.value(2).toString();
+	//					}
+	//					QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
+	//					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);							
+	//					QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
+	//					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
+	//					QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
+	//					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
+	//				}
+
+
+	//				if (!rightAnswers.contains(theseSols.at(i)))
+	//				{
+	//					numWrong++;
+	//					wordItem->setForeground(missedColorBrush);
+	//					QFont wordItemFont = wordItem->font();
+	//					wordItemFont.setBold(true);
+	//					wordItem->setFont(wordItemFont);
+	//				}
+	//				wordItem->setTextAlignment(Qt::AlignCenter);
+	//				uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
+
+	//			}
+	//			uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
+	//		}
+	//	}
+	//	uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+	//	double percCorrect;
+	//	if (numTotalSols == 0) percCorrect = 0.0;
+	//	else
+	//		percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
+	//	uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
 }
 
 void MainWindow::sendClientVersion()
@@ -1200,9 +1199,9 @@ void MainWindow::changeMyAvatar(quint8 avatarID)
 
 void MainWindow::updateGameTimer()
 {
-	if (gameBoardWidget->timerDial->value() == 0) return;
+	//if (gameBoardWidget->timerDial->value() == 0) return;
 
-	gameBoardWidget->timerDial->display(gameBoardWidget->timerDial->value() - 1);
+	//gameBoardWidget->timerDial->display(gameBoardWidget->timerDial->value() - 1);
 
 }
 

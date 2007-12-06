@@ -110,6 +110,6 @@
 	<file>images/chip6.png</file>
 	<file>images/chip7.png</file>
 	<file>images/chip8.png</file>
-	<file>images/chip9plus.png</file>
+	<file>images/chip9.png</file>
 </qresource>
 </RCC>
