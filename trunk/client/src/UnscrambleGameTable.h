@@ -6,7 +6,47 @@
 #include "ui_tableForm.h"
 #include "ui_playerInfoForm.h"
 
-class UnscrambleGameTable : public QWidget
+#define NUM_AVATAR_IDS 73 
+
+class GameTable : public QWidget
+{
+
+	Q_OBJECT
+public:
+	GameTable(QWidget* parent = 0, Qt::WindowFlags f = 0, int gamePlayers = 6);
+
+	void setMyUsername(QString);
+
+	void setAvatar(QString, quint8);
+	void setReadyIndicator(QString);
+	void setupForGameStart();
+	void addToPlayerList(QString, QString);
+
+signals:
+	void avatarChange(quint8);
+protected:
+	QString myUsername;
+
+	// most of these have to do with the player widgets.
+	QHash <QString, int> seats;
+	QList <Ui::playerInfoForm> playerUis;
+	QList <QWidget*> playerWidgets;
+	int numPlayers;
+	void clearAndHidePlayers(bool hide);
+	void playerLeaveTable();
+
+
+	void addPlayersToWidgets(QStringList playerList);
+	void removePlayerFromWidgets(QString, bool);
+	void addPlayerToWidgets(QString, bool);
+
+private slots:
+		
+	void possibleAvatarChangeLeft();
+	void possibleAvatarChangeRight();
+};
+
+class UnscrambleGameTable : public GameTable
 {
 	Q_OBJECT
 
@@ -19,19 +59,18 @@ public:
 	void addPlayers(QStringList);
 
 	void gotChat(QString);
-	void setAvatar(QString, quint8);
 	void gotTimerValue(quint16 timerval);
 	void gotWordListInfo(QString);
-	void setMyUsername(QString);
+	
 private:
 	QGraphicsScene gfxScene;
 	Ui::tableForm tableUi;
-	Ui::playerInfoForm playerUis[6];
+
 	
 	QList <QPixmap> tilesList;
 	QList <QPixmap> chipsList; 
 
-	QString myUsername;
+	
 
 protected:
 	virtual void closeEvent(QCloseEvent*);
@@ -54,6 +93,7 @@ public:
 
 
 };
+
 
 
 #endif

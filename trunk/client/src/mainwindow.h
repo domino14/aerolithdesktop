@@ -93,7 +93,7 @@ private:
 		void submitReady();
 		void aerolithHelpDialog();
 		void updateGameTimer();
-		void changeMyAvatar(quint8 avatarID);
+		void changeMyAvatar(quint8);
 		void dailyChallengeSelected(QAction*);
 		void getScores();
 		void registerName();
