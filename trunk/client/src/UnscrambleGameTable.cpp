@@ -1,7 +1,222 @@
 #include "UnscrambleGameTable.h"
 
-UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : QWidget(parent, f)
+GameTable::GameTable(QWidget *parent, Qt::WindowFlags f, int numPlayers) : QWidget(parent, f)
 {
+	this->numPlayers = numPlayers;
+
+	for (int i = 0; i < numPlayers; i++)
+	{
+		QWidget* tmpWidget = new QWidget(this);
+		Ui::playerInfoForm tempUi;
+		tempUi.setupUi(tmpWidget);
+		playerUis.append(tempUi);
+		playerWidgets.append(tmpWidget);
+	}
+
+	connect(playerUis.at(0).labelAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleAvatarChangeLeft()));
+	connect(playerUis.at(0).labelAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleAvatarChangeRight()));
+
+}
+
+void GameTable::clearAndHidePlayers(bool hide)
+{
+	// assumes setupUi has been called on all these Ui objects. (a widget exists for each)
+	for (int i = 0; i < numPlayers; i++)
+	{
+		playerUis.at(i).labelAvatar->clear();
+		playerUis.at(i).labelUsername->clear();
+		playerUis.at(i).labelAddInfo->clear();
+		playerUis.at(i).listWidgetAnswers->clear();
+		if (hide) playerWidgets.at(i)->hide();
+	}
+
+}
+
+void GameTable::playerLeaveTable()
+{	
+	seats.clear();
+}	
+
+void GameTable::possibleAvatarChangeLeft()
+{
+	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
+	if (clickedLabel->property("username").toString() == myUsername)
+	{
+		quint8 avatarID = clickedLabel->property("avatarID").toInt();
+		if (avatarID == NUM_AVATAR_IDS) avatarID = 1;
+		else avatarID++;
+
+		emit avatarChange(avatarID);
+		qDebug() << "emitted avatar change with id: " << avatarID;
+	}
+}
+
+void GameTable::possibleAvatarChangeRight()
+{
+	avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
+	if (clickedLabel->property("username").toString() == myUsername)
+	{
+
+		quint8 avatarID = clickedLabel->property("avatarID").toInt();
+		if (avatarID == 1) avatarID = NUM_AVATAR_IDS;
+		else avatarID--;
+
+		emit avatarChange(avatarID);
+	}
+}
+
+void GameTable::setAvatar(QString username, quint8 avatarID)
+{
+	int seat;
+	if (seats.contains(username))
+		seat = seats.value(username);
+	else
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10005)");
+		return;
+	}
+	playerUis.at(seat).labelAvatar->setPixmap(QString(":images/face%1.png").arg(avatarID));
+	playerUis.at(seat).labelAvatar->setProperty("avatarID", QVariant(avatarID));
+	playerUis.at(seat).labelAvatar->setProperty("username", QVariant(username));
+}
+
+void GameTable::setReadyIndicator(QString username)
+{
+	int seat;
+	if (seats.contains(username))
+		seat = seats.value(username);
+	else
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10004)");
+		return;
+	}
+	playerUis.at(seat).labelAddInfo->setText("<font color=green>!</font>");
+
+}
+
+void GameTable::setupForGameStart()
+{
+	for (int i = 0; i < numPlayers; i++)
+	{
+		playerUis.at(i).listWidgetAnswers->clear();
+		playerUis.at(i).labelAddInfo->clear();
+	}
+}
+
+void GameTable::addToPlayerList(QString username, QString stringToAdd)
+{
+	if (seats.contains(username))
+	{
+		int indexOfPlayer = seats.value(username);
+		playerUis.at(indexOfPlayer).listWidgetAnswers->insertItem(0, stringToAdd);
+		playerUis.at(indexOfPlayer).listWidgetAnswers->item(0)->setTextAlignment(Qt::AlignCenter);
+		playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("<font color=red>%1</font>").
+			arg(playerUis.at(indexOfPlayer).listWidgetAnswers->count()));
+
+	}
+}
+
+void GameTable::addPlayersToWidgets(QStringList playerList)
+{
+	// adds players, including ourselves
+	if (!playerList.contains(myUsername))
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 20001)");
+		return;
+	}
+	else
+	{
+		// put US at seat #0
+		playerList.removeAll(myUsername);
+		playerWidgets.at(0)->show();
+		playerUis.at(0).labelUsername->setText(myUsername);
+		seats.insert(myUsername, 0);
+	}
+
+	if (playerList.size() > numPlayers-1)
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 20002)");
+		return;
+	}
+
+	for (int i = 0; i < playerList.size(); i++)
+	{
+		playerWidgets.at(i+1)->show();
+		playerUis.at(i+1).labelUsername->setText(playerList[i]);
+		seats.insert(playerList[i], i+1);
+	}
+}
+
+void GameTable::addPlayerToWidgets(QString username, bool gameStarted)
+{
+
+	// add a player that is NOT us
+	bool spotfound = false;
+	int spot;
+
+	for (int i = 1; i < numPlayers; i++)
+	{
+		if (playerUis.at(i).labelUsername->text() == "")
+		{
+			spotfound = true;
+			spot = i;
+			break;
+		}
+	}
+
+	if (spotfound == false)
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10001)");
+		return;
+	}
+
+	playerWidgets.at(spot)->show();
+	playerUis.at(spot).labelUsername->setText(username);
+	seats.insert(username, spot);
+
+	if (gameStarted == false)
+		for (int i = 0; i < 6; i++)
+			playerUis.at(i).labelAddInfo->setText("");
+}
+
+void GameTable::removePlayerFromWidgets(QString username, bool gameStarted)
+{ 
+	// a player has left OUR table
+	int seat;
+	if (seats.contains(username))
+	{
+		seat = seats.value(username);
+	}
+	else
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10002)");
+		return;
+	}
+
+	seats.remove(username);
+
+	playerWidgets.at(seat)->hide();
+	playerUis.at(seat).labelUsername->clear();
+	playerUis.at(seat).labelAddInfo->clear();
+	playerUis.at(seat).listWidgetAnswers->clear();
+	playerUis.at(seat).labelAvatar->clear();
+
+	// clear "Ready" for everyone if someone left.
+	if (gameStarted == false)
+		for (int i = 0; i < 6; i++)
+			playerUis.at(seat).labelAddInfo->clear();
+}
+
+void GameTable::setMyUsername(QString username)
+{
+	myUsername = username;
+}
+
+
+///////////////////////////
+UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : GameTable(parent, f, 6)
+{
+
 	tableUi.setupUi(this);
 
 
@@ -9,7 +224,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
 	
 	connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
 	connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
-	//connect(playerInfoWidget, SIGNAL(avatarChange(quint8)), this, SIGNAL(avatarChange(quint8)));
 	connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
 	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
 
@@ -22,35 +236,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
 	//connect(tableUi.pushButtonShuffle, SIGNAL(clicked()), wordsWidget, SLOT(shuffleWords()));
 
 	connect(tableUi.lineEditChat, SIGNAL(returnPressed()), this, SLOT(enteredChat()));
-
-	// add player widgets
-
-	QWidget* tmpWidget = new QWidget(this);
-	playerUis[0].setupUi(tmpWidget);
-	tmpWidget->move(220, 510);
-
-	tmpWidget = new QWidget(this);
-	playerUis[1].setupUi(tmpWidget);
-	tmpWidget->move(650, 510);
-
-	tmpWidget = new QWidget(this);
-	playerUis[2].setupUi(tmpWidget);
-	tmpWidget->move(870, 250);
-
-	tmpWidget = new QWidget(this);
-	playerUis[3].setupUi(tmpWidget);
-	tmpWidget->move(650, 10);
-
-	tmpWidget = new QWidget(this);
-	playerUis[4].setupUi(tmpWidget);
-	tmpWidget->move(220, 10);
-
-	tmpWidget = new QWidget(this);
-	playerUis[5].setupUi(tmpWidget);
-	tmpWidget->move(10, 250);
-
-
-	
 
 	// load tilesList and chipsList
 
@@ -67,7 +252,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
 	}
 
 
-	gfxScene.setSceneRect(0, 0, 980, 700);
+	gfxScene.setSceneRect(0, 0, 980, 720);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
 
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
@@ -119,6 +304,20 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : Q
 	this->setWindowFlags(Qt::Dialog);
 
 	move(0, 0);
+
+
+	for (int i = 0; i < 6; i++)
+		playerWidgets.at(i)->raise();
+	
+	playerWidgets.at(0)->move(220, 510);
+	playerWidgets.at(1)->move(650, 510);
+	playerWidgets.at(2)->move(870, 250);
+	playerWidgets.at(3)->move(650, 10);
+	playerWidgets.at(4)->move(220, 10);
+	playerWidgets.at(5)->move(10, 250);	
+
+	//connect(
+
 }
 
 void UnscrambleGameTable::enteredChat()
@@ -152,7 +351,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 	setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3").arg(tableNum).arg(wordListName).arg(myUsername));
 	tableUi.labelWordListInfo->clear();
 	tableUi.lcdNumberTimer->display(0);
-//	playerInfoWidget->clearAndHide();	// won't do this anymore - clear all individual widgets
+	clearAndHidePlayers(true);
 //	wordsWidget->clearCells();			// instead get rid of all tiles on table
 	tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
 	tableUi.lineEditChat->clear();
@@ -162,25 +361,25 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 
 void UnscrambleGameTable::leaveTable()
 {
-//	playerInfoWidget->leaveTable();		// clear the seats hash
+	playerLeaveTable();	// clear the seats hash
 	tableUi.listWidgetPeopleInRoom->clear();
 }
 
 void UnscrambleGameTable::addPlayers(QStringList plist)
 {
 	tableUi.listWidgetPeopleInRoom->addItems(plist);
-	//playerInfoWidget->addPlayers(plist);
+	addPlayersToWidgets(plist);
 }
 
 void UnscrambleGameTable::addPlayer(QString player, bool gameStarted)
 {
-//	playerInfoWidget->addPlayer(player, gameStarted);
+	addPlayerToWidgets(player, gameStarted);
 	tableUi.listWidgetPeopleInRoom->addItem(player);
 }
 
 void UnscrambleGameTable::removePlayer(QString player, bool gameStarted)
 {
-//	playerInfoWidget->removePlayer(player, gameStarted);
+	removePlayerFromWidgets(player, gameStarted);
 	for (int i = 0; i < tableUi.listWidgetPeopleInRoom->count(); i++)
 		if (tableUi.listWidgetPeopleInRoom->item(i)->text() == player)
 		{
@@ -196,10 +395,7 @@ void UnscrambleGameTable::gotChat(QString chat)
 }
 
 
-void UnscrambleGameTable::setMyUsername(QString username)
-{
-	myUsername = username;
-}
+
 
 void UnscrambleGameTable::gotTimerValue(quint16 timerval)
 {
@@ -211,7 +407,6 @@ void UnscrambleGameTable::gotWordListInfo(QString info)
 	tableUi.labelWordListInfo->setText(info);
 }
 
-void UnscrambleGameTable::setAvatar(QString, quint8)
-{
 
-}
+
+

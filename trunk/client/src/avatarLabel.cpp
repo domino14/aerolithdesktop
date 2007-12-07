@@ -23,10 +23,15 @@ void avatarLabel::mousePressEvent(QMouseEvent *e)
 void avatarLabel::mouseReleaseEvent(QMouseEvent *e)
 {
 	if (left_pressed && e->button() == Qt::LeftButton && inLabel(e->pos()))
+	{
 		emit leftMouseClicked();
+		qDebug() << "emitted left";
+	}
 	else if (right_pressed && e->button() == Qt::RightButton && inLabel(e->pos()))
+	{
 		emit rightMouseClicked();
-
+		qDebug() << "emitted right";
+	}
 	left_pressed = false;
 	right_pressed = false;
 

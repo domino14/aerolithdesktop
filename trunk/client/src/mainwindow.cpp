@@ -15,14 +15,6 @@ out(&block, QIODevice::WriteOnly)
 {
 
 	setWindowTitle(WindowTitle);
-	//QTabWidget *mainTabWidget = new QTabWidget;
-	//setCentralWidget(mainTabWidget);
-
-
-
-	// create game board widget
-	//gameBoardGroupBox = new QGroupBox("Game board");
-
 
 	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window);
 	gameBoardWidget->setWindowTitle("Table");
@@ -212,8 +204,7 @@ out(&block, QIODevice::WriteOnly)
 
 	gameTimer = new QTimer();
 	connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
-	//connect(qApp, SIGNAL(lastWindowClosed()), this, SLOT(
-
+	
 	show();
 	loginDialog->show();
 	//  loginDialog->activateWindow();
@@ -485,7 +476,6 @@ void MainWindow::readFromServer()
 				if (playerName == currentUsername)
 				{
 					currentTablenum = tablenum;
-					//gameStackedWidget->setCurrentIndex(1);
 					gameBoardWidget->show();
 					int row = findRoomTableRow(tablenum);
 					QString wList = roomTable->item(row, 1)->text();
@@ -822,13 +812,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		{
 			QString username;
 			in >> username;
-		//	gameBoardWidget->playerInfoWidget->setReadyIndicator(username);
+			gameBoardWidget->setReadyIndicator(username);
 		}
 		break;
 	case 'S':
 		// the game has started
 		{
-		//	gameBoardWidget->playerInfoWidget->setupForGameStart();
+			gameBoardWidget->setupForGameStart();
 			gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
 			gameStarted = true;
 			rightAnswers.clear();
@@ -901,7 +891,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			quint8 row, column;
 			in >> username >> answer >> row >> column;
 		//	gameBoardWidget->wordsWidget->answeredCorrectly(row, column);
-		//	gameBoardWidget->playerInfoWidget->answered(username, answer);
+			gameBoardWidget->addToPlayerList(username, answer);
 			rightAnswers.insert(answer);
 
 		}
@@ -1191,6 +1181,7 @@ void MainWindow::sendClientVersion()
 
 void MainWindow::changeMyAvatar(quint8 avatarID)
 {
+	qDebug() << "change my fucking avatar";
 	writeHeaderData();
 	out << (quint8) 'i' << avatarID;
 	fixHeaderLength();

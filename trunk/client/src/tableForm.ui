@@ -265,7 +265,7 @@ QPushButton:disabled{&#xd;
   <widget class="QLineEdit" name="lineEditSolution" >
    <property name="geometry" >
     <rect>
-     <x>50</x>
+     <x>60</x>
      <y>600</y>
      <width>113</width>
      <height>20</height>
@@ -288,10 +288,10 @@ QPushButton:disabled{&#xd;
   <widget class="QLabel" name="label" >
    <property name="geometry" >
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>600</y>
-     <width>46</width>
-     <height>14</height>
+     <width>41</width>
+     <height>16</height>
     </rect>
    </property>
    <property name="text" >
