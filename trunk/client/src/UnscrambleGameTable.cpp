@@ -2,6 +2,7 @@
 
 GameTable::GameTable(QWidget *parent, Qt::WindowFlags f, int numPlayers) : QWidget(parent, f)
 {
+	qsrand(QDateTime::currentDateTime().toTime_t());
 	this->numPlayers = numPlayers;
 
 	for (int i = 0; i < numPlayers; i++)
@@ -15,6 +16,8 @@ GameTable::GameTable(QWidget *parent, Qt::WindowFlags f, int numPlayers) : QWidg
 
 	connect(playerUis.at(0).labelAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleAvatarChangeLeft()));
 	connect(playerUis.at(0).labelAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleAvatarChangeRight()));
+
+
 
 }
 
@@ -94,14 +97,6 @@ void GameTable::setReadyIndicator(QString username)
 
 }
 
-void GameTable::setupForGameStart()
-{
-	for (int i = 0; i < numPlayers; i++)
-	{
-		playerUis.at(i).listWidgetAnswers->clear();
-		playerUis.at(i).labelAddInfo->clear();
-	}
-}
 
 void GameTable::addToPlayerList(QString username, QString stringToAdd)
 {
@@ -112,6 +107,7 @@ void GameTable::addToPlayerList(QString username, QString stringToAdd)
 		playerUis.at(indexOfPlayer).listWidgetAnswers->item(0)->setTextAlignment(Qt::AlignCenter);
 		playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("<font color=red>%1</font>").
 			arg(playerUis.at(indexOfPlayer).listWidgetAnswers->count()));
+
 
 	}
 }
@@ -214,14 +210,17 @@ void GameTable::setMyUsername(QString username)
 
 
 ///////////////////////////
-UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : GameTable(parent, f, 6)
+UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb) : GameTable(parent, f, 6)
 {
+
+
+	this->wordDb = wordDb;
+
 
 	tableUi.setupUi(this);
 
 
-	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), this, SIGNAL(shouldShowSolutions()));	
-	
+
 	connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
 	connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
 	connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
@@ -230,10 +229,11 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : G
 	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
-
+	tableUi.textEditChat->document()->setMaximumBlockCount(500);
+	tableUi.textEditGuesses->document()->setMaximumBlockCount(500);
 	
-	//connect(tableUi.pushButtonAlphagrams, SIGNAL(clicked()), wordsWidget, SLOT(alphagrammizeWords()));
-	//connect(tableUi.pushButtonShuffle, SIGNAL(clicked()), wordsWidget, SLOT(shuffleWords()));
+	connect(tableUi.pushButtonAlphagrams, SIGNAL(clicked()), this, SLOT(alphagrammizeWords()));
+	connect(tableUi.pushButtonShuffle, SIGNAL(clicked()), this, SLOT(shuffleWords()));
 
 	connect(tableUi.lineEditChat, SIGNAL(returnPressed()), this, SLOT(enteredChat()));
 
@@ -264,37 +264,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : G
 	tableItem->setZValue(-1);
 	tableItem->scale(1.1, 1);
 
-	for (int i = 0; i < 26; i++)
-	{
-
-		QGraphicsPixmapItem* aItem = gfxScene.addPixmap(tilesList.at(i));
-		aItem->setFlags(QGraphicsItem::ItemIsMovable);
-		aItem->setPos(i*30, 0);
-		//aItem->scale(0.7, 0.7);
-		aItem->setTransformationMode(Qt::SmoothTransformation);
-	}
-
-	for (int i = 0; i < 9; i++)
-	{
-		QGraphicsPixmapItem* bItem = gfxScene.addPixmap(chipsList.at(i));
-		bItem->setFlags(QGraphicsItem::ItemIsMovable);
-		bItem->setPos(i*30, 30);
-		bItem->scale(0.7, 0.7);
-		bItem->setTransformationMode(Qt::SmoothTransformation);
-	}
-
-
-	for (int i = 0; i < 10; i++)
-		gfxScene.addRect(120, 180 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
-
-	for (int i = 0; i < 16; i++)
-		gfxScene.addRect(300, 130 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
-
-	for (int i = 0; i < 16; i++)
-		gfxScene.addRect(480, 130 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
-
-	for (int i = 0; i < 10; i++)
-		gfxScene.addRect(660, 180 + (24*i), 170, 22)->setFlags(QGraphicsItem::ItemIsMovable);
 
 
 
@@ -318,6 +287,14 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) : G
 
 	//connect(
 
+	solutionsDialog = new QDialog(this);
+	uiSolutions.setupUi(solutionsDialog);
+	uiSolutions.solutionsTableWidget->verticalHeader()->hide();
+
+	solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
+	
+	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), solutionsDialog, SLOT(show()));
+	
 }
 
 void UnscrambleGameTable::enteredChat()
@@ -337,6 +314,7 @@ void UnscrambleGameTable::sendPM(QListWidgetItem* item)
 void UnscrambleGameTable::enteredGuess()
 {
 	emit guessSubmitted(tableUi.lineEditSolution->text());
+	tableUi.textEditGuesses->append(tableUi.lineEditSolution->text());
 	tableUi.lineEditSolution->clear();
 }
 
@@ -352,6 +330,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 	tableUi.labelWordListInfo->clear();
 	tableUi.lcdNumberTimer->display(0);
 	clearAndHidePlayers(true);
+	clearAllWordTiles();
 //	wordsWidget->clearCells();			// instead get rid of all tiles on table
 	tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
 	tableUi.lineEditChat->clear();
@@ -407,6 +386,198 @@ void UnscrambleGameTable::gotWordListInfo(QString info)
 	tableUi.labelWordListInfo->setText(info);
 }
 
+void UnscrambleGameTable::clearSolutionsDialog()
+{
+	uiSolutions.solutionsTableWidget->clearContents();
+	uiSolutions.solutionsTableWidget->setRowCount(0);
+	uiSolutions.solsLabel->clear();
+}
 
+void UnscrambleGameTable::populateSolutionsTable()
+{
+	QBrush missedColorBrush;
+	missedColorBrush.setColor(Qt::red);
+	int numTotalSols = 0, numWrong = 0;
+	for (int i = 0; i < wordQuestions.size(); i++)
+	{
+		QStringList theseSols = wordQuestions.at(i).solutions;
+		QString alphagram = wordQuestions.at(i).alphagram;
 
+		if (alphagram != "") // if alphagram exists.
+		{
+			QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+			tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+			int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
 
+			for (int i = 0; i < theseSols.size(); i++)
+			{
+				numTotalSols++;
+				uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
+				QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
+				if (wordDb.isOpen())
+				{
+					QString backHooks, frontHooks, definition;
+					QSqlQuery query;
+
+					query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
+					qDebug() << "select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'";
+					while (query.next())
+					{
+						frontHooks = query.value(0).toString();
+						backHooks = query.value(1).toString();
+						definition = query.value(2).toString();
+					}
+					QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);							
+					QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
+					QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
+				}
+
+				if (!rightAnswers.contains(theseSols.at(i)))
+				{
+					numWrong++;
+					wordItem->setForeground(missedColorBrush);
+					QFont wordItemFont = wordItem->font();
+					wordItemFont.setBold(true);
+					wordItem->setFont(wordItemFont);
+				}
+				wordItem->setTextAlignment(Qt::AlignCenter);
+				uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
+
+			}
+			uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
+			
+		}
+	}	
+		uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+		double percCorrect;
+		if (numTotalSols == 0) percCorrect = 0.0;
+		else
+			percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
+		uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
+}
+
+void UnscrambleGameTable::alphagrammizeWords()
+{
+
+}
+
+void UnscrambleGameTable::shuffleWords()
+{
+
+}
+
+void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList solutions, quint8 numNotSolved)
+{
+	
+	wordQuestion thisWord(alphagram, solutions, numNotSolved);
+	
+	if (numNotSolved > 0)
+	{
+
+		double scale = 1.0;
+		if (alphagram.length() == 9) scale = 0.9;
+		if (alphagram.length() == 10) scale = 0.82;
+		if (alphagram.length() > 10) scale = 0.7;
+		double chipX, chipY;
+
+		double verticalVariation = 2.0;
+
+		for (int i = 0; i < alphagram.length(); i++)
+		{
+			QGraphicsPixmapItem* item = gfxScene.addPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
+			thisRoundItems << item;
+			item->setTransformationMode(Qt::SmoothTransformation);
+			item->scale(scale, scale);
+			if (index >= 0 && index < 10)
+			{
+				item->setPos(150 + i*(19.0 * scale), 180 + 24*index + verticalVariation* (double)qrand()/RAND_MAX);
+				chipX = 150-19;
+				chipY = 180+24*index;
+			}
+			else if (index >= 10 && index < 23)
+			{
+				item->setPos(330 + i*(19.0 * scale), 150 + 24*(index-10)+ verticalVariation* (double)qrand()/RAND_MAX);
+				chipX = 330-19;
+				chipY = 150 + 24*(index-10);
+			}
+			else if (index >= 23 && index < 35)
+			{
+				item->setPos(510 + i*(19.0 * scale), 160 + 24*(index-23)+ verticalVariation* (double)qrand()/RAND_MAX);
+				chipX = 510 -19;
+				chipY = 160+24*(index-23);
+			}
+			else if (index >=35)
+			{
+				item->setPos(690 + i*(19.0*scale),180 + 24*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
+				chipX = 690-19;
+				chipY = 180+24*(index-35);
+			}
+			thisWord.tiles.append(item);
+		}
+		
+		if (numNotSolved >9) numNotSolved = 9;
+		QGraphicsPixmapItem* item = gfxScene.addPixmap(chipsList.at(numNotSolved-1));
+		thisRoundItems << item;
+		item->setTransformationMode(Qt::SmoothTransformation);
+		item->scale(0.85*scale, 0.9*scale);
+		item->setPos(chipX, chipY);
+		thisWord.chipX = chipX;
+		thisWord.chipY = chipY;
+		thisWord.previousChip = item;
+	}
+
+	wordQuestions << thisWord;
+}
+
+void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString answer)
+{
+	QString alphagram = wordQuestions.at(index).alphagram;
+	double scale = 1.0;
+	if (alphagram.length() == 9) scale = 0.9;
+	if (alphagram.length() == 10) scale = 0.82;
+	if (alphagram.length() > 10) scale = 0.7;
+	wordQuestions[index].numNotYetSolved--;
+	int numSolutions = wordQuestions.at(index).numNotYetSolved;
+	if (numSolutions > 0)
+	{
+		QGraphicsPixmapItem* item = gfxScene.addPixmap(chipsList.at(numSolutions-1));
+		thisRoundItems << item;
+		item->setTransformationMode(Qt::SmoothTransformation);
+		item->scale(0.85*scale, 0.9*scale);
+		item->setPos(wordQuestions.at(index).chipX, wordQuestions.at(index).chipY);
+		wordQuestions.at(index).previousChip->hide();
+		wordQuestions[index].previousChip = item;
+	}
+	else
+	{
+		wordQuestions.at(index).previousChip->hide();
+		foreach (QGraphicsPixmapItem* item, wordQuestions.at(index).tiles)
+			item->hide();
+	}
+
+	rightAnswers.insert(answer);
+
+	// maybe later color code by username
+}
+
+void UnscrambleGameTable::clearAllWordTiles()
+{ 
+	while (!thisRoundItems.isEmpty())
+		delete thisRoundItems.takeFirst();
+
+	wordQuestions.clear();
+
+}
+
+void UnscrambleGameTable::setupForGameStart()
+{
+	for (int i = 0; i < numPlayers; i++)
+	{
+		playerUis.at(i).listWidgetAnswers->clear();
+		playerUis.at(i).labelAddInfo->clear();
+	}
+	rightAnswers.clear();
+}

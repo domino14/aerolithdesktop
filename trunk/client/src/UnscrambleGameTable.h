@@ -3,8 +3,10 @@
 
 #include <QtCore>
 #include <QtGui>
+#include <QtSql>
 #include "ui_tableForm.h"
 #include "ui_playerInfoForm.h"
+#include "ui_solutionsForm.h"
 
 #define NUM_AVATAR_IDS 73 
 
@@ -19,7 +21,7 @@ public:
 
 	void setAvatar(QString, quint8);
 	void setReadyIndicator(QString);
-	void setupForGameStart();
+	virtual void setupForGameStart() = 0;
 	void addToPlayerList(QString, QString);
 
 signals:
@@ -46,49 +48,77 @@ private slots:
 	void possibleAvatarChangeRight();
 };
 
+
 class UnscrambleGameTable : public GameTable
 {
 	Q_OBJECT
 
 public:
-	UnscrambleGameTable(QWidget* parent = 0, Qt::WindowFlags f = 0);
+	UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb);
 	void resetTable(quint16, QString, QString);
 	void leaveTable();
 	void addPlayer(QString, bool);
 	void removePlayer(QString, bool);
 	void addPlayers(QStringList);
 
+	void setupForGameStart();
 	void gotChat(QString);
 	void gotTimerValue(quint16 timerval);
 	void gotWordListInfo(QString);
-	
+
+	void clearSolutionsDialog();
+	void populateSolutionsTable();
+
+	void addNewWord(int, QString, QStringList, quint8);
+	void clearAllWordTiles();
+	void answeredCorrectly(int index, QString username, QString answer);
 private:
 	QGraphicsScene gfxScene;
 	Ui::tableForm tableUi;
 
+	QSqlDatabase wordDb;
+	QList <QGraphicsPixmapItem*> thisRoundItems;
+
+	QDialog* solutionsDialog;
+	Ui::solutionsForm uiSolutions;
 	
 	QList <QPixmap> tilesList;
 	QList <QPixmap> chipsList; 
 
-	
+	struct wordQuestion
+	{
+		wordQuestion(QString a, QStringList s, quint8 n)
+		{
+			alphagram = a;
+			solutions = s;
+			numNotYetSolved = n;
+		};
 
+		QString alphagram;
+		QStringList solutions;
+		quint8 numNotYetSolved;
+		double chipX, chipY;
+		QGraphicsPixmapItem* previousChip;
+		QList <QGraphicsPixmapItem*> tiles;
+	};
+	QList <wordQuestion> wordQuestions;
+	QSet <QString> rightAnswers;
 protected:
 	virtual void closeEvent(QCloseEvent*);
 signals:
 	void giveUp();
 	void sendStartRequest();
-	void avatarChange(quint8);
 	void guessSubmitted(QString);
 	void chatTable(QString);
 	void exitThisTable();
-
-	void shouldShowSolutions();
 
 	private slots:
 		void enteredGuess();
 		void enteredChat();
 		void sendPM(QListWidgetItem* item);
 
+		void alphagrammizeWords();
+		void shuffleWords();
 public:
 
 

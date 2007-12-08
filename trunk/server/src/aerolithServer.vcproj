@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="aerolithClient"
-	ProjectGUID="{C20DAC3F-2A74-43DE-9679-D3D7A5889803}"
+	Name="aerolithServer"
+	ProjectGUID="{E40EF16B-48D3-4D7F-AC87-63BC445CFA07}"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
@@ -22,9 +22,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="make debug"
-				ReBuildCommandLine="make clean &amp;&amp; qmake &amp;&amp; make debug"
-				CleanCommandLine="make clean"
+				BuildCommandLine=""
+				ReBuildCommandLine=""
+				CleanCommandLine=""
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
 				IncludeSearchPath=""
@@ -64,35 +64,27 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\avatarLabel.h"
+				RelativePath=".\ClientSocket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\mainwindow.h"
+				RelativePath=".\ClientWriter.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ui_loginForm.h"
+				RelativePath=".\mainserver.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ui_scoresForm.h"
+				RelativePath=".\table.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ui_solutionsForm.h"
+				RelativePath=".\TableGame.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ui_tableCreateForm.h"
-				>
-			</File>
-			<File
-				RelativePath=".\UnscrambleGameTable.h"
-				>
-			</File>
-			<File
-				RelativePath=".\wordsTableWidget.h"
+				RelativePath=".\UnscrambleGame.h"
 				>
 			</File>
 		</Filter>
@@ -108,7 +100,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\avatarLabel.cpp"
+				RelativePath=".\ClientWriter.cpp"
 				>
 			</File>
 			<File
@@ -116,56 +108,40 @@
 				>
 			</File>
 			<File
-				RelativePath=".\mainwindow.cpp"
+				RelativePath=".\mainserver.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\build\moc\moc_mainwindow.cpp"
+				RelativePath=".\build\moc\moc_ClientSocket.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\build\moc\moc_playerInfoWidget.cpp"
+				RelativePath=".\build\moc\moc_mainserver.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\build\moc\moc_UnscrambleGameTable.cpp"
+				RelativePath=".\build\moc\moc_TableGame.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\build\moc\moc_wordsTableWidget.cpp"
+				RelativePath=".\build\moc\moc_UnscrambleGame.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\release\qrc_client.cpp"
+				RelativePath=".\table.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\UnscrambleGameTable.cpp"
+				RelativePath=".\TableGame.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\wordsTableWidget.cpp"
+				RelativePath=".\UnscrambleGame.cpp"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath=".\loginForm.ui"
-			>
-		</File>
-		<File
-			RelativePath=".\scoresForm.ui"
-			>
-		</File>
-		<File
-			RelativePath=".\solutionsForm.ui"
-			>
-		</File>
-		<File
 			RelativePath=".\src.pro"
-			>
-		</File>
-		<File
-			RelativePath=".\tableCreateForm.ui"
 			>
 		</File>
 	</Files>

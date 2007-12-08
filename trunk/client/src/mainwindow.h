@@ -5,11 +5,10 @@
 #include <QtNetwork>
 #include <QtSql>
 #include "ui_tableCreateForm.h"
-#include "ui_solutionsForm.h"
+
 #include "ui_scoresForm.h"
 #include "ui_loginForm.h"
 #include "wordsTableWidget.h"
-#include "playerInfoWidget.h"
 
 #include "UnscrambleGameTable.h"
 
@@ -35,7 +34,7 @@ private:
 	QTableWidget* roomTable;
 	quint16 currentTablenum;
 	//	QBrush colorBrushes[9];
-	QBrush missedColorBrush;
+
 	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
 	void handleDeleteTable(quint16 tablenum);
 	void handleAddToTable(quint16 tablenum, QString player);
@@ -54,20 +53,16 @@ private:
 
 	bool gameStarted;
 	QDialog *createTableDialog;
-	QDialog *solutionsDialog;
 	QDialog *helpDialog;
 	QDialog *scoresDialog;
 	QDialog *loginDialog;
 
 	Ui::tableCreateForm uiTable;
-	Ui::solutionsForm uiSolutions;
 	Ui::scoresForm uiScores;
 	Ui::loginForm uiLogin;
 
-	QSet <QString> rightAnswers;
 
-	QSqlDatabase wordDb;
-	void populateSolutionsTable();
+
 	void sendClientVersion();
 	void displayHighScores();
 
