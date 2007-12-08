@@ -16,7 +16,20 @@ out(&block, QIODevice::WriteOnly)
 
 	setWindowTitle(WindowTitle);
 
-	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window);
+	QSqlDatabase wordDb;
+	if (QFile::exists(QDir::homePath()+"/.zyzzyva/lexicons/OWL2+LWL.db"))
+	{
+		wordDb = QSqlDatabase::addDatabase("QSQLITE");
+		wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
+		wordDb.open();
+	}
+	else
+	{
+		chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool, by Michael Thelen, found at http://www.zyzzyva.net</font>.");
+	}
+
+
+	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, wordDb);
 	gameBoardWidget->setWindowTitle("Table");
 
 	connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
@@ -139,9 +152,7 @@ out(&block, QIODevice::WriteOnly)
 	createTableDialog = new QDialog(this);
 	uiTable.setupUi(createTableDialog);
 
-	solutionsDialog = new QDialog(gameBoardWidget);
-	uiSolutions.setupUi(solutionsDialog);
-	uiSolutions.solutionsTableWidget->verticalHeader()->hide();
+
 
 	scoresDialog = new QDialog(this);
 	uiScores.setupUi(scoresDialog);
@@ -157,13 +168,12 @@ out(&block, QIODevice::WriteOnly)
 	connect(uiLogin.cancelRegPushButton, SIGNAL(clicked()), this, SLOT(showLoginPage()));
 
 	connect(uiLogin.submitRegPushButton, SIGNAL(clicked()), this, SLOT(registerName()));
-	solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
+
 	scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
 	loginDialog->setAttribute(Qt::WA_QuitOnClose, false);   
 	gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
 
 	gameStarted = false;
-	connect(gameBoardWidget, SIGNAL(shouldShowSolutions()), solutionsDialog, SLOT(show())); 
 	blockSize = 0; 
 
 	currentTablenum = 0;
@@ -177,18 +187,6 @@ out(&block, QIODevice::WriteOnly)
 	QTime midnight(0, 0, 0);
 	qsrand(midnight.msecsTo(QTime::currentTime()));
 
-	if (QFile::exists(QDir::homePath()+"/.zyzzyva/lexicons/OWL2+LWL.db"))
-	{
-		chatText->append("<font color=red>A suitable Zyzzyva installation was found!</font>");	
-		wordDb = QSqlDatabase::addDatabase("QSQLITE");
-		wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
-		wordDb.open();
-	}
-	else
-	{
-		chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool found at http://www.zyzzyva.net</font>");
-	}
-
 
 
 	QMenu* helpMenu = menuBar()->addMenu("Help");
@@ -200,7 +198,7 @@ out(&block, QIODevice::WriteOnly)
 	connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(raise()));
 
 	connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(show()));
-	missedColorBrush.setColor(Qt::red);
+	
 
 	gameTimer = new QTimer();
 	connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
@@ -449,6 +447,7 @@ void MainWindow::readFromServer()
 				in >> username >> message;
 				chatText->append(QString("[")+username+ " writes to you] " + message);
 				gameBoardWidget->gotChat(QString("[")+username + " writes to you] " + message);
+				activateWindow();
 			}
 			break;
 		case 'T':	// New table
@@ -476,11 +475,12 @@ void MainWindow::readFromServer()
 				if (playerName == currentUsername)
 				{
 					currentTablenum = tablenum;
-					gameBoardWidget->show();
+
 					int row = findRoomTableRow(tablenum);
 					QString wList = roomTable->item(row, 1)->text();
 
 					gameBoardWidget->resetTable(tablenum, wList, playerName);
+					gameBoardWidget->show();
 
 				}
 				if (currentTablenum == tablenum)
@@ -821,7 +821,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			gameBoardWidget->setupForGameStart();
 			gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
 			gameStarted = true;
-			rightAnswers.clear();
+			
 			//gameTimer->start(1000);
 		}
 
@@ -831,8 +831,9 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 		gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
 		gameStarted = false;
-		populateSolutionsTable();
+		gameBoardWidget->populateSolutionsTable();
 		///gameTimer->stop();
+		gameBoardWidget->clearAllWordTiles();
 		break;
 
 
@@ -847,24 +848,22 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		break;
 
 	case 'W':
-		// 45 alphagrams!!!
+		// alphagrams!!!
 
-		for (int i = 0; i < 9; i++)
-			for (int j = 0; j < 5; j++)
-			{
-				QString alphagram;
-				in >> alphagram;
-				quint8 numSolutionsNotYetSolved;
-				in >> numSolutionsNotYetSolved;
-				QStringList solutions;
-				in >> solutions;
-		//		gameBoardWidget->wordsWidget->setCellProperties(i, j, alphagram, solutions, numSolutionsNotYetSolved);
-			}
-			uiSolutions.solutionsTableWidget->clearContents();
-			uiSolutions.solutionsTableWidget->setRowCount(0);
-			uiSolutions.solsLabel->clear();
-		//	gameBoardWidget->wordsWidget->prepareForStart();
-			break;
+		for (int i = 0; i < 45; i++)
+		{
+			QString alphagram;
+			in >> alphagram;
+			quint8 numSolutionsNotYetSolved;
+			in >> numSolutionsNotYetSolved;
+			QStringList solutions;
+			in >> solutions;
+			gameBoardWidget->addNewWord(i, alphagram, solutions, numSolutionsNotYetSolved);
+		}
+
+		gameBoardWidget->clearSolutionsDialog();
+
+		break;
 
 	case 'N':
 		// word list info
@@ -890,9 +889,12 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			QString username, answer;
 			quint8 row, column;
 			in >> username >> answer >> row >> column;
-		//	gameBoardWidget->wordsWidget->answeredCorrectly(row, column);
+			// will change row column to a single number, so hardcode this
+			int index = row*5 + column;
+
+			gameBoardWidget->answeredCorrectly(index, username, answer);
 			gameBoardWidget->addToPlayerList(username, answer);
-			rightAnswers.insert(answer);
+			
 
 		}
 		break;
@@ -1103,72 +1105,6 @@ void MainWindow::displayHighScores()
 	uiScores.scoresTableWidget->resizeColumnsToContents();
 }
 
-void MainWindow::populateSolutionsTable()
-{
-	//int numTotalSols = 0, numWrong = 0;
-	//for (int i = 0; i < gameBoardWidget->wordsWidget->getNumRows(); i++)
-	//	for (int j = 0; j < gameBoardWidget->wordsWidget->getNumCols(); j++)
-	//	{
-	//		gameBoardWidget->wordsWidget->item(i, j)->setText("");
-	//		QStringList theseSols = gameBoardWidget->wordsWidget->getCellSolutions(i, j);
-	//		QString alphagram = gameBoardWidget->wordsWidget->getCellAlphagram(i, j);
-
-	//		if (alphagram != "") // if alphagram exists.
-	//		{
-	//			QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
-	//			tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
-	//			int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-
-
-	//			for (int i = 0; i < theseSols.size(); i++)
-	//			{
-	//				numTotalSols++;
-	//				uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
-	//				QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
-	//				if (wordDb.isOpen())
-	//				{
-	//					QString backHooks, frontHooks, definition;
-	//					QSqlQuery query;
-
-	//					query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
-	//					qDebug() << "select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'";
-	//					while (query.next())
-	//					{
-	//						frontHooks = query.value(0).toString();
-	//						backHooks = query.value(1).toString();
-	//						definition = query.value(2).toString();
-	//					}
-	//					QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
-	//					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);							
-	//					QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
-	//					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
-	//					QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
-	//					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
-	//				}
-
-
-	//				if (!rightAnswers.contains(theseSols.at(i)))
-	//				{
-	//					numWrong++;
-	//					wordItem->setForeground(missedColorBrush);
-	//					QFont wordItemFont = wordItem->font();
-	//					wordItemFont.setBold(true);
-	//					wordItem->setFont(wordItemFont);
-	//				}
-	//				wordItem->setTextAlignment(Qt::AlignCenter);
-	//				uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
-
-	//			}
-	//			uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
-	//		}
-	//	}
-	//	uiSolutions.solutionsTableWidget->resizeColumnsToContents();
-	//	double percCorrect;
-	//	if (numTotalSols == 0) percCorrect = 0.0;
-	//	else
-	//		percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
-	//	uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
-}
 
 void MainWindow::sendClientVersion()
 {
@@ -1181,7 +1117,7 @@ void MainWindow::sendClientVersion()
 
 void MainWindow::changeMyAvatar(quint8 avatarID)
 {
-	qDebug() << "change my fucking avatar";
+
 	writeHeaderData();
 	out << (quint8) 'i' << avatarID;
 	fixHeaderLength();

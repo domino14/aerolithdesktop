@@ -232,8 +232,8 @@ QPushButton:disabled{
   <widget class="QLCDNumber" name="lcdNumberTimer" >
    <property name="geometry" >
     <rect>
-     <x>880</x>
-     <y>60</y>
+     <x>20</x>
+     <y>110</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -331,7 +331,7 @@ QPushButton:disabled{&#xd;
     </rect>
    </property>
    <property name="focusPolicy" >
-    <enum>Qt::NoFocus</enum>
+    <enum>Qt::ClickFocus</enum>
    </property>
    <property name="styleSheet" >
     <string> QTextEdit, QListView {
@@ -366,9 +366,9 @@ QPushButton:disabled{&#xd;
   <widget class="QTextEdit" name="textEditGuesses" >
    <property name="geometry" >
     <rect>
-     <x>760</x>
+     <x>820</x>
      <y>660</y>
-     <width>211</width>
+     <width>161</width>
      <height>71</height>
     </rect>
    </property>
@@ -386,7 +386,7 @@ QPushButton:disabled{&#xd;
   <widget class="QLabel" name="label_2" >
    <property name="geometry" >
     <rect>
-     <x>760</x>
+     <x>820</x>
      <y>640</y>
      <width>101</width>
      <height>16</height>
@@ -435,8 +435,8 @@ QPushButton:disabled{
   <widget class="QLabel" name="labelWordListInfo" >
    <property name="geometry" >
     <rect>
-     <x>30</x>
-     <y>110</y>
+     <x>20</x>
+     <y>150</y>
      <width>68</width>
      <height>16</height>
     </rect>
