@@ -55,6 +55,7 @@ class UnscrambleGameTable : public GameTable
 
 public:
 	UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb);
+	~UnscrambleGameTable();
 	void resetTable(quint16, QString, QString);
 	void leaveTable();
 	void addPlayer(QString, bool);
@@ -77,7 +78,8 @@ private:
 	Ui::tableForm tableUi;
 
 	QSqlDatabase wordDb;
-	QList <QGraphicsPixmapItem*> thisRoundItems;
+	QList <QGraphicsPixmapItem*> gfxItems;
+	int gfxItemsIndex;
 
 	QDialog* solutionsDialog;
 	Ui::solutionsForm uiSolutions;
