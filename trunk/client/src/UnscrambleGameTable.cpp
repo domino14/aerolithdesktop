@@ -18,7 +18,7 @@ GameTable::GameTable(QWidget *parent, Qt::WindowFlags f, int numPlayers) : QWidg
 	connect(playerUis.at(0).labelAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleAvatarChangeRight()));
 
 
-
+	
 }
 
 void GameTable::clearAndHidePlayers(bool hide)
@@ -295,8 +295,27 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	
 	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), solutionsDialog, SLOT(show()));
 	
+	// generate gfx items
+
+	// 45 * 24 = 1080. maximum possible number of items.
+	for (int i = 0; i < 1125; i++)
+	{
+		QGraphicsPixmapItem *gfxItem = new QGraphicsPixmapItem;
+		gfxItems << gfxItem;
+		gfxScene.addItem(gfxItem);
+	
+	}
+
+	gfxItemsIndex = 0;
 }
 
+UnscrambleGameTable::~UnscrambleGameTable()
+{
+	qDebug() << "UnscrambleGameTable destructor";
+	while (!gfxItems.isEmpty())
+		delete gfxItems.takeFirst();
+
+}
 void UnscrambleGameTable::enteredChat()
 {
 	emit chatTable(tableUi.lineEditChat->text());
@@ -487,8 +506,12 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 
 		for (int i = 0; i < alphagram.length(); i++)
 		{
-			QGraphicsPixmapItem* item = gfxScene.addPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
-			thisRoundItems << item;
+			//QGraphicsPixmapItem* item = gfxScene.addPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
+			//thisRoundItems << item;
+			QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
+			gfxItemsIndex++;
+
+			item->setPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
 			item->setTransformationMode(Qt::SmoothTransformation);
 			item->scale(scale, scale);
 			if (index >= 0 && index < 10)
@@ -519,8 +542,10 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		}
 		
 		if (numNotSolved >9) numNotSolved = 9;
-		QGraphicsPixmapItem* item = gfxScene.addPixmap(chipsList.at(numNotSolved-1));
-		thisRoundItems << item;
+
+		QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
+		gfxItemsIndex++;
+		item->setPixmap(chipsList.at(numNotSolved-1));
 		item->setTransformationMode(Qt::SmoothTransformation);
 		item->scale(0.85*scale, 0.9*scale);
 		item->setPos(chipX, chipY);
@@ -543,8 +568,9 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 	int numSolutions = wordQuestions.at(index).numNotYetSolved;
 	if (numSolutions > 0)
 	{
-		QGraphicsPixmapItem* item = gfxScene.addPixmap(chipsList.at(numSolutions-1));
-		thisRoundItems << item;
+		QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
+		gfxItemsIndex++;
+		item->setPixmap(chipsList.at(numSolutions-1));
 		item->setTransformationMode(Qt::SmoothTransformation);
 		item->scale(0.85*scale, 0.9*scale);
 		item->setPos(wordQuestions.at(index).chipX, wordQuestions.at(index).chipY);
@@ -565,9 +591,8 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 
 void UnscrambleGameTable::clearAllWordTiles()
 { 
-	while (!thisRoundItems.isEmpty())
-		delete thisRoundItems.takeFirst();
-
+	
+	gfxItemsIndex = 0;
 	wordQuestions.clear();
 
 }
