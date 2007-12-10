@@ -42,8 +42,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="make"
-				ReBuildCommandLine="qmake &amp;&amp; make"
+				BuildCommandLine="make release"
+				ReBuildCommandLine="qmake &amp;&amp; make release"
 				CleanCommandLine="make clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
@@ -69,6 +69,10 @@
 			</File>
 			<File
 				RelativePath=".\mainwindow.h"
+				>
+			</File>
+			<File
+				RelativePath=".\tile.h"
 				>
 			</File>
 			<File
@@ -137,6 +141,10 @@
 			</File>
 			<File
 				RelativePath=".\release\qrc_client.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\tile.cpp"
 				>
 			</File>
 			<File

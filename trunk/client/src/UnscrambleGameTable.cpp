@@ -307,6 +307,19 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	}
 
 	gfxItemsIndex = 0;
+
+
+	// generate 26 tiles
+
+	for (int i = 0; i < 26; i++)
+	{
+		Tile* t = new Tile;
+		t->setTileLetter(QString("%1").arg((char)('A' + i)));
+		
+		gfxScene.addItem(t);
+		t->setPos(i * 25, 300);
+	}
+
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
