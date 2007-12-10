@@ -2,7 +2,7 @@
     <shortName>aerolith</shortName>
     <fullName>Aerolith</fullName>
     <version>0.4</version>
-    <licenseFile>C:\Documents and Settings\Cesar\Desktop\Play\aerolithCode\client\LICENSE.txt</licenseFile>
+    <licenseFile>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/LICENSE.txt</licenseFile>
     <enableRollback>1</enableRollback>
     <componentList>
         <component>
@@ -81,7 +81,7 @@
                 </startMenuShortcut>
                 <startMenuShortcut>
                     <comment>Aerolith</comment>
-                    <name>Aerolith</name>
+                    <name>${product_fullname}</name>
                     <runInTerminal>0</runInTerminal>
                     <windowsExec>${installdir}/aerolith.exe</windowsExec>
                     <windowsExecArgs></windowsExecArgs>

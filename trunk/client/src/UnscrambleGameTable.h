@@ -7,6 +7,7 @@
 #include "ui_tableForm.h"
 #include "ui_playerInfoForm.h"
 #include "ui_solutionsForm.h"
+#include "tile.h"
 
 #define NUM_AVATAR_IDS 73 
 
