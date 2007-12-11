@@ -35,6 +35,7 @@ void GameTable::clearAndHidePlayers(bool hide)
 		playerUis.at(i).listWidgetAnswers->clear();
 		if (hide) playerWidgets.at(i)->hide();
 	}
+	clearReadyIndicators();
 
 }
 
@@ -86,20 +87,6 @@ void GameTable::setAvatar(QString username, quint8 avatarID)
 	playerUis.at(seat).labelAvatar->setProperty("username", QVariant(username));
 }
 
-void GameTable::setReadyIndicator(QString username)
-{
-	int seat;
-	if (seats.contains(username))
-		seat = seats.value(username);
-	else
-	{
-		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10004)");
-		return;
-	}
-	playerUis.at(seat).labelAddInfo->setText("<font color=green>!</font>");
-
-}
-
 
 void GameTable::addToPlayerList(QString username, QString stringToAdd)
 {
@@ -108,7 +95,7 @@ void GameTable::addToPlayerList(QString username, QString stringToAdd)
 		int indexOfPlayer = seats.value(username);
 		playerUis.at(indexOfPlayer).listWidgetAnswers->insertItem(0, stringToAdd);
 		playerUis.at(indexOfPlayer).listWidgetAnswers->item(0)->setTextAlignment(Qt::AlignCenter);
-		playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("<font color=red>%1</font>").
+		playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("<font color=black><b>%1</b></font>").
 			arg(playerUis.at(indexOfPlayer).listWidgetAnswers->count()));
 
 
@@ -176,6 +163,7 @@ void GameTable::addPlayerToWidgets(QString username, bool gameStarted)
 	if (gameStarted == false)
 		for (int i = 0; i < 6; i++)
 			playerUis.at(i).labelAddInfo->setText("");
+	clearReadyIndicators();
 }
 
 void GameTable::removePlayerFromWidgets(QString username, bool gameStarted)
@@ -202,8 +190,7 @@ void GameTable::removePlayerFromWidgets(QString username, bool gameStarted)
 
 	// clear "Ready" for everyone if someone left.
 	if (gameStarted == false)
-		for (int i = 0; i < 6; i++)
-			playerUis.at(seat).labelAddInfo->clear();
+	  clearReadyIndicators();
 }
 
 void GameTable::setMyUsername(QString username)
@@ -305,14 +292,25 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		c->hide();
 	}
 
-/*	for (int i = 1; i < 10; i++)
+	for (int i = 0; i < numPlayers; i++)
 	{
 		Chip *c = new Chip;
 		gfxScene.addItem(c);
-		c->setChipNumber(i);
-		c->setPos(i * 50, 300);
-	}*/
+		c->setChipString("");
+		c->hide();
+		QBrush readyChipBrush = QBrush(Qt::black);
+		QPen foregroundPen = QPen(Qt::white);
+		QPen edgePen = QPen(QColor(1, 1, 1).lighter(150), 0);
+		c->setChipProperties(readyChipBrush, foregroundPen, edgePen);
+		readyChips << c;
+	}
 
+	readyChips.at(0)->setPos(260, 470);
+	readyChips.at(1)->setPos(690, 470);
+	readyChips.at(2)->setPos(810, 290);
+	readyChips.at(3)->setPos(690, 150);
+	readyChips.at(4)->setPos(260, 150);
+	readyChips.at(5)->setPos(150, 290);
 
 }
 
@@ -325,6 +323,35 @@ UnscrambleGameTable::~UnscrambleGameTable()
 		delete tiles.takeFirst();
 
 }
+
+void UnscrambleGameTable::setReadyIndicator(QString username)
+{
+	int seat;
+	if (seats.contains(username))
+		seat = seats.value(username);
+	else
+	{
+		QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10004)");
+		return;
+	}
+	//	playerUis.at(seat).labelAddInfo->setText("<font color=green>!</font>");
+
+	readyChips.at(seat)->show();
+	
+
+
+}
+
+void UnscrambleGameTable::clearReadyIndicators()
+{
+  for (int i = 0; i < numPlayers; i++)
+    readyChips.at(i)->hide();
+
+
+}
+
+
+
 void UnscrambleGameTable::enteredChat()
 {
 	emit chatTable(tableUi.lineEditChat->text());
@@ -359,7 +386,6 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 	tableUi.lcdNumberTimer->display(0);
 	clearAndHidePlayers(true);
 	clearAllWordTiles();
-//	wordsWidget->clearCells();			// instead get rid of all tiles on table
 	tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
 	tableUi.lineEditChat->clear();
 	tableUi.textEditChat->clear();
@@ -621,4 +647,5 @@ void UnscrambleGameTable::setupForGameStart()
 		playerUis.at(i).labelAddInfo->clear();
 	}
 	rightAnswers.clear();
+	clearReadyIndicators();
 }

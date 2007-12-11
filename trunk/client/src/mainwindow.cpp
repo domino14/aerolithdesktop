@@ -849,6 +849,9 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 	case 'W':
 		// alphagrams!!!
+	  {
+	    QTime t;
+	    t.start();
 
 		for (int i = 0; i < 45; i++)
 		{
@@ -860,9 +863,11 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			in >> solutions;
 			gameBoardWidget->addNewWord(i, alphagram, solutions, numSolutionsNotYetSolved);
 		}
-
+		qDebug() << "Time elapsed for 45 words: " << t.elapsed();
 		gameBoardWidget->clearSolutionsDialog();
-
+		qDebug() << "Time elapsed after clearing: " << t.elapsed();
+		
+	  }
 		break;
 
 	case 'N':
