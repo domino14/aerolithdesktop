@@ -239,18 +239,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 	// load tilesList and chipsList
 
-	for (int i = 0; i < 26; i++)
-	{
-		QPixmap pix(QString(":/images/%1.png").arg((char)(i + 'A')));
-		tilesList.append(pix);
-	}
-
-	for (int i = 0; i < 9; i++)
-	{
-		QPixmap pix(QString(":/images/chip%1.png").arg(i + 1));
-		chipsList.append(pix);
-	}
-
 
 	gfxScene.setSceneRect(0, 0, 980, 720);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
@@ -300,25 +288,14 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	// 45 * 24 = 1080. maximum possible number of items.
 	for (int i = 0; i < 1125; i++)
 	{
-		QGraphicsPixmapItem *gfxItem = new QGraphicsPixmapItem;
-		gfxItems << gfxItem;
-		gfxScene.addItem(gfxItem);
+		Tile *t = new Tile;
+		gfxItems << t;
+		gfxScene.addItem(t);
+		t->hide();
 	
 	}
 
 	gfxItemsIndex = 0;
-
-
-	// generate 26 tiles
-
-	for (int i = 0; i < 26; i++)
-	{
-		Tile* t = new Tile;
-		t->setTileLetter(QString("%1").arg((char)('A' + i)));
-		
-		gfxScene.addItem(t);
-		t->setPos(i * 25, 300);
-	}
 
 }
 
@@ -521,11 +498,9 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		{
 			//QGraphicsPixmapItem* item = gfxScene.addPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
 			//thisRoundItems << item;
-			QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
+			Tile* item = (Tile*)gfxItems.at(gfxItemsIndex);
 			gfxItemsIndex++;
-
-			item->setPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
-			item->setTransformationMode(Qt::SmoothTransformation);
+			
 			item->scale(scale, scale);
 			if (index >= 0 && index < 10)
 			{
@@ -552,10 +527,12 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 				chipY = 180+24*(index-35);
 			}
 			thisWord.tiles.append(item);
+			item->setTileLetter(alphagram.at(i));
+			item->show();
 		}
 		
 		if (numNotSolved >9) numNotSolved = 9;
-
+/*
 		QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
 		gfxItemsIndex++;
 		item->setPixmap(chipsList.at(numNotSolved-1));
@@ -564,7 +541,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		item->setPos(chipX, chipY);
 		thisWord.chipX = chipX;
 		thisWord.chipY = chipY;
-		thisWord.previousChip = item;
+		thisWord.previousChip = item;*/
 	}
 
 	wordQuestions << thisWord;
@@ -581,19 +558,19 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 	int numSolutions = wordQuestions.at(index).numNotYetSolved;
 	if (numSolutions > 0)
 	{
-		QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
+		/*QGraphicsPixmapItem* item = gfxItems.at(gfxItemsIndex);
 		gfxItemsIndex++;
 		item->setPixmap(chipsList.at(numSolutions-1));
 		item->setTransformationMode(Qt::SmoothTransformation);
 		item->scale(0.85*scale, 0.9*scale);
 		item->setPos(wordQuestions.at(index).chipX, wordQuestions.at(index).chipY);
 		wordQuestions.at(index).previousChip->hide();
-		wordQuestions[index].previousChip = item;
+		wordQuestions[index].previousChip = item;*/
 	}
 	else
 	{
-		wordQuestions.at(index).previousChip->hide();
-		foreach (QGraphicsPixmapItem* item, wordQuestions.at(index).tiles)
+	//	wordQuestions.at(index).previousChip->hide();
+		foreach (QGraphicsItem* item, wordQuestions.at(index).tiles)
 			item->hide();
 	}
 
