@@ -79,14 +79,12 @@ private:
 	Ui::tableForm tableUi;
 
 	QSqlDatabase wordDb;
-	QList <QGraphicsPixmapItem*> gfxItems;
+	QList <QGraphicsItem*> gfxItems;
 	int gfxItemsIndex;
 
 	QDialog* solutionsDialog;
 	Ui::solutionsForm uiSolutions;
-	
-	QList <QPixmap> tilesList;
-	QList <QPixmap> chipsList; 
+
 
 	struct wordQuestion
 	{
@@ -100,9 +98,9 @@ private:
 		QString alphagram;
 		QStringList solutions;
 		quint8 numNotYetSolved;
-		double chipX, chipY;
-		QGraphicsPixmapItem* previousChip;
-		QList <QGraphicsPixmapItem*> tiles;
+		//double chipX, chipY;
+		//QGraphicsPixmapItem* previousChip;
+		QList <QGraphicsItem*> tiles;
 	};
 	QList <wordQuestion> wordQuestions;
 	QSet <QString> rightAnswers;

@@ -8,6 +8,7 @@ Tile::Tile()
 	tileBrush = QBrush(linearGrad);
 
 	foregroundPen = QPen(Qt::white);
+	setFlag(QGraphicsItem::ItemIsMovable);
 }
 
 QRectF Tile::boundingRect() const
@@ -32,8 +33,8 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 	painter->drawLine(18, 18, 18, 1);
     // Draw text
    
-	QFont font("Courier New", 18, 80);
-	font.setStyleStrategy(QFont::ForceOutline);
+	QFont font("Courier New", 18, 70);
+	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
     painter->drawText(2, 16, tileLetter);
