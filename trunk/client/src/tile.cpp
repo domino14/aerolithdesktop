@@ -3,11 +3,20 @@
 Tile::Tile()
 {
 	QLinearGradient linearGrad(QPointF(0, 0), QPointF(18, 18));
-	linearGrad.setColorAt(0, QColor(7, 9, 184));
-	linearGrad.setColorAt(1, QColor(55, 75, 175));
+	linearGrad.setColorAt(0, QColor(7, 9, 184).lighter(200));			// 7 9 184
+	linearGrad.setColorAt(1, QColor(55, 75, 175).lighter(200));			// 55 75 175
+	
+	//linearGrad.setColorAt(0, QColor(255, 255, 255));
+	//linearGrad.setColorAt(1, QColor(255, 255, 255));
+
 	tileBrush = QBrush(linearGrad);
 
-	foregroundPen = QPen(Qt::white);
+	//foregroundPen = QPen(Qt::white);
+	foregroundPen = QPen(Qt::black);
+
+	edgePen = QPen(Qt::black, 2);
+	//edgePen = QPen(Qt::white, 2);
+
 	setFlag(QGraphicsItem::ItemIsMovable);
 }
 
@@ -24,27 +33,25 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 	painter->setBrush(tileBrush);
     painter->drawRect(0, 0, 18, 18);
 
-    QPen oldPen = painter->pen();
-    QPen pen = oldPen;
-	
 	// draw black shadow
-	painter->setPen(QPen(Qt::black, 2));
+	painter->setPen(edgePen);
 	painter->drawLine(1, 18, 18, 18);
 	painter->drawLine(18, 18, 18, 1);
     // Draw text
    
-	QFont font("Courier New", 18, 70);
+	QFont font("Courier", 16, 70);
 	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
-    painter->drawText(2, 16, tileLetter);
+    painter->drawText(2, 15, tileLetter);
    
 }
 
-void Tile::setTileProperties(QBrush& b, QPen& p)
+void Tile::setTileProperties(QBrush& b, QPen& p, QPen &e)
 {
 	tileBrush = b;
 	foregroundPen = p;
+	edgePen = e;
 }
 
 void Tile::setTileLetter(QString tileLetter)

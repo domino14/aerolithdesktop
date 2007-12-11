@@ -68,6 +68,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\chip.h"
+				>
+			</File>
+			<File
 				RelativePath=".\mainwindow.h"
 				>
 			</File>
@@ -113,6 +117,10 @@
 			>
 			<File
 				RelativePath=".\avatarLabel.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\chip.cpp"
 				>
 			</File>
 			<File

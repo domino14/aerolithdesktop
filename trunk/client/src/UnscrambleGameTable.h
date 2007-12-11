@@ -8,6 +8,7 @@
 #include "ui_playerInfoForm.h"
 #include "ui_solutionsForm.h"
 #include "tile.h"
+#include "chip.h"
 
 #define NUM_AVATAR_IDS 73 
 
@@ -17,7 +18,7 @@ class GameTable : public QWidget
 	Q_OBJECT
 public:
 	GameTable(QWidget* parent = 0, Qt::WindowFlags f = 0, int gamePlayers = 6);
-
+	virtual ~GameTable() = 0;
 	void setMyUsername(QString);
 
 	void setAvatar(QString, quint8);
@@ -79,8 +80,8 @@ private:
 	Ui::tableForm tableUi;
 
 	QSqlDatabase wordDb;
-	QList <QGraphicsItem*> gfxItems;
-	int gfxItemsIndex;
+	QList <Tile*> tiles;
+	QList <Chip*> chips;
 
 	QDialog* solutionsDialog;
 	Ui::solutionsForm uiSolutions;
@@ -98,8 +99,7 @@ private:
 		QString alphagram;
 		QStringList solutions;
 		quint8 numNotYetSolved;
-		//double chipX, chipY;
-		//QGraphicsPixmapItem* previousChip;
+		Chip* chip;
 		QList <QGraphicsItem*> tiles;
 	};
 	QList <wordQuestion> wordQuestions;
