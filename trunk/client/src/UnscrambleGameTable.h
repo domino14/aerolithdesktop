@@ -22,7 +22,8 @@ public:
 	void setMyUsername(QString);
 
 	void setAvatar(QString, quint8);
-	void setReadyIndicator(QString);
+	virtual void setReadyIndicator(QString) = 0;
+	virtual void clearReadyIndicators() = 0;
 	virtual void setupForGameStart() = 0;
 	void addToPlayerList(QString, QString);
 
@@ -75,6 +76,11 @@ public:
 	void addNewWord(int, QString, QStringList, quint8);
 	void clearAllWordTiles();
 	void answeredCorrectly(int index, QString username, QString answer);
+
+	void setReadyIndicator(QString)
+;
+	void clearReadyIndicators();
+
 private:
 	QGraphicsScene gfxScene;
 	Ui::tableForm tableUi;
@@ -82,7 +88,7 @@ private:
 	QSqlDatabase wordDb;
 	QList <Tile*> tiles;
 	QList <Chip*> chips;
-
+	QList <Chip*> readyChips;
 	QDialog* solutionsDialog;
 	Ui::solutionsForm uiSolutions;
 
