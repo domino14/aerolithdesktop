@@ -1,23 +1,25 @@
-#ifndef _TILE_H_
-#define _TILE_H_
+#ifndef _CHIP_H_
+#define _CHIP_H_
 
 #include <QtGui>
 #include <QtCore>
 
-class Tile : public QGraphicsItem
+class Chip : public QGraphicsItem
 {
 public:
-	Tile();
+	Chip();
 	void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget);
 	QRectF boundingRect() const;
-	void setTileProperties(QBrush& b, QPen& p, QPen &e);
-	void setTileLetter(QString tileLetter);
+
+	void setChipProperties(QBrush& b, QPen& p, QPen &e);
+	void setChipNumber(quint8 number);
 
 private:
-	QBrush tileBrush;
+	QBrush chipBrush;
 	QPen foregroundPen;
 	QPen edgePen;
-	QString tileLetter;
+	quint8 number;
 };
+
 
 #endif

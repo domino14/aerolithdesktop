@@ -74,42 +74,7 @@
 	<file>images/face72.png</file>
 	<file>images/face73.png</file>
 	<file>images/aerolith.png</file>
-	<file>images/A.png</file>
-	<file>images/B.png</file>
-	<file>images/C.png</file>
-	<file>images/D.png</file>
-	<file>images/E.png</file>
-	<file>images/F.png</file>
-	<file>images/G.png</file>
-	<file>images/H.png</file>
-	<file>images/I.png</file>
-	<file>images/J.png</file>
-	<file>images/K.png</file>
-	<file>images/L.png</file>
-	<file>images/M.png</file>
-	<file>images/N.png</file>
-	<file>images/O.png</file>
-	<file>images/P.png</file>
-	<file>images/Q.png</file>
-	<file>images/R.png</file>
-	<file>images/S.png</file>
-	<file>images/T.png</file>
-	<file>images/U.png</file>
-	<file>images/V.png</file>
-	<file>images/W.png</file>
-	<file>images/X.png</file>
-	<file>images/Y.png</file>
-	<file>images/Z.png</file>
 	<file>images/canvas.png</file>
 	<file>images/table.png</file>
-	<file>images/chip1.png</file>
-	<file>images/chip2.png</file>
-	<file>images/chip3.png</file>
-	<file>images/chip4.png</file>
-	<file>images/chip5.png</file>
-	<file>images/chip6.png</file>
-	<file>images/chip7.png</file>
-	<file>images/chip8.png</file>
-	<file>images/chip9.png</file>
 </qresource>
 </RCC>

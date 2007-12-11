@@ -211,7 +211,7 @@ out(&block, QIODevice::WriteOnly)
 	setWindowIcon(QIcon(":images/aerolith.png"));
 
 
-
+	move(0, 0);
 }
 
 void MainWindow::writeHeaderData()
