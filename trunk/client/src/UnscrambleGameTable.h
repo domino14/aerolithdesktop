@@ -126,6 +126,7 @@ signals:
 
 		void alphagrammizeWords();
 		void shuffleWords();
+		void setZoom(int);
 public:
 
 
