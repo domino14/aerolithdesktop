@@ -232,7 +232,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 	gfxScene.setSceneRect(0, 0, 980, 720);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
-
+	tableUi.graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
 
 	tableUi.graphicsView->setCacheMode(QGraphicsView::CacheBackground); 
