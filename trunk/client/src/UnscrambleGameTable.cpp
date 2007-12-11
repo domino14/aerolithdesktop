@@ -215,9 +215,9 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
 	connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
 	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
-
 	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 
+	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
 	tableUi.textEditChat->document()->setMaximumBlockCount(500);
 	tableUi.textEditGuesses->document()->setMaximumBlockCount(500);
@@ -312,6 +312,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	readyChips.at(4)->setPos(260, 150);
 	readyChips.at(5)->setPos(150, 290);
 
+
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -321,6 +322,15 @@ UnscrambleGameTable::~UnscrambleGameTable()
 		delete chips.takeFirst();
 	while (!tiles.isEmpty())
 		delete tiles.takeFirst();
+
+}
+
+void UnscrambleGameTable::setZoom(int zoom)
+{
+	QMatrix matrix;
+	matrix.scale((double)zoom/50.0, (double)zoom/50.0);
+
+	tableUi.graphicsView->setMatrix(matrix);
 
 }
 

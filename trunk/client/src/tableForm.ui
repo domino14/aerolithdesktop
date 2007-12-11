@@ -445,6 +445,28 @@ QPushButton:disabled{
     <string>Word List Info</string>
    </property>
   </widget>
+  <widget class="QSlider" name="horizontalSlider" >
+   <property name="geometry" >
+    <rect>
+     <x>830</x>
+     <y>620</y>
+     <width>160</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="minimum" >
+    <number>35</number>
+   </property>
+   <property name="maximum" >
+    <number>70</number>
+   </property>
+   <property name="value" >
+    <number>50</number>
+   </property>
+   <property name="orientation" >
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>lineEditChat</tabstop>

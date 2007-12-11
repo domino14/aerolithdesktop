@@ -128,7 +128,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidge
 	  painter->drawArc(QRectF(1.0, 1.0, 15.0, 15.0), i * 16, 10 * 16);
 
 
-	QFont font("Courier", 14, 70);
+	QFont font("Courier", 16, 70);
 	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);

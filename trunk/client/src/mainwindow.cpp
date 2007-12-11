@@ -13,7 +13,7 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
 MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
 out(&block, QIODevice::WriteOnly)
 {
-
+	
 	setWindowTitle(WindowTitle);
 
 	QSqlDatabase wordDb;
@@ -211,7 +211,7 @@ out(&block, QIODevice::WriteOnly)
 	setWindowIcon(QIcon(":images/aerolith.png"));
 
 
-	move(0, 0);
+
 }
 
 void MainWindow::writeHeaderData()

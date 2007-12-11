@@ -5,34 +5,33 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>418</width>
-    <height>337</height>
+    <width>406</width>
+    <height>310</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Aerolith Login</string>
   </property>
-  <widget class="QLabel" name="connectStatusLabel" >
-   <property name="geometry" >
-    <rect>
-     <x>30</x>
-     <y>290</y>
-     <width>351</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string/>
-   </property>
-  </widget>
   <widget class="QStackedWidget" name="stackedWidget" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>20</y>
-     <width>371</width>
-     <height>261</height>
+     <x>10</x>
+     <y>10</y>
+     <width>382</width>
+     <height>250</height>
     </rect>
+   </property>
+   <property name="minimumSize" >
+    <size>
+     <width>382</width>
+     <height>250</height>
+    </size>
+   </property>
+   <property name="maximumSize" >
+    <size>
+     <width>382</width>
+     <height>250</height>
+    </size>
    </property>
    <property name="currentIndex" >
     <number>0</number>
@@ -83,8 +82,8 @@
     <widget class="QGroupBox" name="groupBox" >
      <property name="geometry" >
       <rect>
-       <x>30</x>
-       <y>80</y>
+       <x>20</x>
+       <y>110</y>
        <width>311</width>
        <height>101</height>
       </rect>
@@ -154,26 +153,13 @@
       </property>
      </widget>
     </widget>
-    <widget class="QPushButton" name="registerPushButton" >
-     <property name="geometry" >
-      <rect>
-       <x>20</x>
-       <y>220</y>
-       <width>181</width>
-       <height>25</height>
-      </rect>
-     </property>
-     <property name="text" >
-      <string>Register new name</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="loginPushButton" >
      <property name="geometry" >
       <rect>
-       <x>260</x>
+       <x>253</x>
        <y>40</y>
        <width>111</width>
-       <height>25</height>
+       <height>32</height>
       </rect>
      </property>
      <property name="text" >
@@ -191,6 +177,35 @@
      </property>
      <property name="maxLength" >
       <number>16</number>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="registerPushButton" >
+     <property name="geometry" >
+      <rect>
+       <x>20</x>
+       <y>220</y>
+       <width>160</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>Register new name</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox" >
+     <property name="geometry" >
+      <rect>
+       <x>30</x>
+       <y>70</y>
+       <width>121</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>Save password</string>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
@@ -307,21 +322,20 @@
     </widget>
    </widget>
   </widget>
+  <widget class="QLabel" name="connectStatusLabel" >
+   <property name="geometry" >
+    <rect>
+     <x>30</x>
+     <y>280</y>
+     <width>351</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
+  </widget>
  </widget>
- <tabstops>
-  <tabstop>desiredUsernameLE</tabstop>
-  <tabstop>desiredFirstPasswordLE</tabstop>
-  <tabstop>desiredSecondPasswordLE</tabstop>
-  <tabstop>submitRegPushButton</tabstop>
-  <tabstop>cancelRegPushButton</tabstop>
-  <tabstop>usernameLE</tabstop>
-  <tabstop>passwordLE</tabstop>
-  <tabstop>loginPushButton</tabstop>
-  <tabstop>groupBox</tabstop>
-  <tabstop>serverLE</tabstop>
-  <tabstop>portLE</tabstop>
-  <tabstop>registerPushButton</tabstop>
- </tabstops>
  <resources/>
  <connections/>
 </ui>
