@@ -99,10 +99,6 @@
 				RelativePath=".\UnscrambleGameTable.h"
 				>
 			</File>
-			<File
-				RelativePath=".\wordsTableWidget.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -157,10 +153,6 @@
 			</File>
 			<File
 				RelativePath=".\UnscrambleGameTable.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\wordsTableWidget.cpp"
 				>
 			</File>
 		</Filter>

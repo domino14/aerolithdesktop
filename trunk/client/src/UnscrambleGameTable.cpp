@@ -655,12 +655,38 @@ void UnscrambleGameTable::populateSolutionsTable()
 
 void UnscrambleGameTable::alphagrammizeWords()
 {
+	foreach (wordQuestion wq, wordQuestions)
+	{
+		// server always sends alphagram, so arrange tiles in order
+
+		// chipX, chipY is 19 to the left of the tile
+		for (int i = 0; i < wq.tiles.size(); i++)
+		{
+			wq.tiles.at(i)->setPos(wq.chip->x() + 19*(i+1), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+		}
+	}
 
 }
 
 void UnscrambleGameTable::shuffleWords()
 {
+	foreach (wordQuestion wq, wordQuestions)
+	{
+		// chipX, chipY is 19 to the left of the tile
+		for (int i = 0; i < wq.tiles.size(); i++)
+		{
+			swapXPos(wq.tiles.at(i), wq.tiles.at(qrand() % wq.tiles.size()));
+			wq.tiles.at(i)->setPos(wq.tiles.at(i)->x(), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+		}
+	}
+}
 
+void UnscrambleGameTable::swapXPos(Tile* a, Tile* b)
+{
+	// swaps the x positions of two Tiles
+	qreal t = a->x();
+	a->setPos(b->x(), a->y());
+	b->setPos(t, b->y());
 }
 
 void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList solutions, quint8 numNotSolved)

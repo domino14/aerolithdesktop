@@ -68,7 +68,7 @@ out(&block, QIODevice::WriteOnly)
 	QHBoxLayout *newRoomLayout = new QHBoxLayout;
 	QPushButton *newRoom = new QPushButton("Create new table");
 	newRoom->setFixedWidth(150);
-	QPushButton *dailyChallenges = new QPushButton("Words of the day");
+	QPushButton *dailyChallenges = new QPushButton("Challenges");
 	dailyChallenges->setFixedWidth(180);
 
 	QMenu *challengesMenu = new QMenu;
@@ -1191,14 +1191,10 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
 	{
 		writeHeaderData();
 		out << (quint8)'t';
-		out << challengeAction->text(); // create a table 
+		out << challengeAction->text().replace("Today's", "Daily"); // create a table 
 		out << (quint8)1; // 1 player
 		out << (quint8)3; // 3 is for daily challenges (TODO: HARDCODE BAD)
-
-		if (challengeAction->text() == "Daily 4s")
-			out << (quint8)3; // 3 mins
-		else
-			out << (quint8)4;
+		out << (quint8)4;
 
 		fixHeaderLength();
 		commsSocket->write(block);

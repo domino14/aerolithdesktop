@@ -2,10 +2,11 @@
     <shortName>aerolith</shortName>
     <fullName>Aerolith</fullName>
     <version>0.4</version>
+    <installerFilename></installerFilename>
     <licenseFile>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/LICENSE.txt</licenseFile>
-    <leftImage>C:\Documents and Settings\Cesar\Desktop\Play\aerolithCode\client\images\aerolithLarge.png</leftImage>
-    <logoImage>C:\Documents and Settings\Cesar\Desktop\Play\aerolithCode\client\images\aerolithLarge.png</logoImage>
-    <splashImage>C:\Documents and Settings\Cesar\Desktop\Play\aerolithCode\client\images\aerolithLarge.png</splashImage>
+    <leftImage>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/images/aerolithLarge.png</leftImage>
+    <logoImage>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/images/aerolithLarge.png</logoImage>
+    <splashImage>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/images/aerolithLarge.png</splashImage>
     <enableRollback>1</enableRollback>
     <componentList>
         <component>

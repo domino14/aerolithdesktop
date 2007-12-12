@@ -15,7 +15,7 @@ const QString incompatibleVersionString =
 Please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org/aerolith"">http://www.aerolith.org/aerolith</a> for the new client.";
-const QString thisVersion = "0.3";
+const QString thisVersion = "0.3.1";
 
 MainServer::MainServer()
 {
@@ -58,7 +58,7 @@ MainServer::MainServer()
   userDb.open();
   
   QSqlQuery query;
-  query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32))");
+  query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), points INTEGER)");
 
 }
 

@@ -17,7 +17,7 @@ Tile::Tile()
 	edgePen = QPen(Qt::black, 2);
 	//edgePen = QPen(Qt::white, 2);
 
-	setFlag(QGraphicsItem::ItemIsMovable);
+	//setFlag(QGraphicsItem::ItemIsMovable);
 }
 
 QRectF Tile::boundingRect() const

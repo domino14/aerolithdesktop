@@ -48,6 +48,16 @@
    </property>
    <item>
     <property name="text" >
+     <string>Daily 2s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Daily 3s</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
      <string>Daily 4s</string>
     </property>
    </item>
@@ -145,7 +155,7 @@
    </column>
    <column>
     <property name="text" >
-     <string>Time</string>
+     <string>Time remaining</string>
     </property>
    </column>
   </widget>

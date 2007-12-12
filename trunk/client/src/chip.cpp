@@ -10,7 +10,7 @@ Chip::Chip()
 
 	edgePen = QPen(chipBrush.color().darker(200), 0);
 
-	setFlag(QGraphicsItem::ItemIsMovable);
+	//setFlag(QGraphicsItem::ItemIsMovable);
 	numberMode = true;
 }
 

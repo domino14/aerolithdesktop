@@ -5,8 +5,8 @@ extern QDataStream out;
 
 const quint8 COUNTDOWN_TIMER_VAL = 3;
 
-QList <highScoreData> UnscrambleGame::dailyHighScores[12];
-QSet <QString> UnscrambleGame::peopleWhoPlayed[12];
+QList <highScoreData> UnscrambleGame::dailyHighScores[14];
+QHash <QString, QString> UnscrambleGame::peopleWhoPlayed[14];
 bool UnscrambleGame::midnightSwitchoverToggle;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordListFileName)
@@ -89,8 +89,8 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 				sendTimerValuePacket(countdownTimerVal);
 				if (cycleState == 3)
 				{
-					if (wordLengths >= 4 && wordLengths <= 15)
-						if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
+					if (wordLengths >= 2 && wordLengths <= 15)
+						if (peopleWhoPlayed[wordLengths - 2].contains(table->playerList.at(0)->connData.userName.toLower()))
 							table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
 				}
 			}
@@ -215,20 +215,20 @@ void UnscrambleGame::endGame()
 	else if (cycleState == 3) // daily challenges
 	{
 		startEnabled = false;
-		table->sendTableMessage("This daily challenge is over! To see scores or to try another daily challenge, exit the table and make the appropriate selections with the Daily Challenges button.");
+		table->sendTableMessage("This daily challenge is over! To see scores or to try another daily challenge, exit the table and make the appropriate selections with the Challenges button.");
 		if (table->playerList.size() != 1)
 			qDebug() << table->playerList.size() << "More or less than 1 player in a daily challenge table!? WTF";
 		else
 		{
 			// search for player. 
 
-			if (wordLengths < 4 || wordLengths > 15)
+			if (wordLengths < 2 || wordLengths > 15)
 				qDebug() << wordLengths << " is not a valid word length!";
 
 			else
 			{
 
-				if (peopleWhoPlayed[wordLengths - 4].contains(table->playerList.at(0)->connData.userName))
+				if (peopleWhoPlayed[wordLengths - 2].contains(table->playerList.at(0)->connData.userName.toLower()))
 					table->sendTableMessage("You've already played this challenge. These results will not count towards this day's high scores.");
 				else
 				{
@@ -239,8 +239,9 @@ void UnscrambleGame::endGame()
 						tmp.numSolutions = numTotalSolutions;
 						tmp.numCorrect = numTotalSolutions - gameSolutions.size();
 						tmp.timeRemaining = currentTimerVal;
-						dailyHighScores[wordLengths-4].append(tmp);
-						peopleWhoPlayed[wordLengths-4].insert(table->playerList.at(0)->connData.userName);
+						dailyHighScores[wordLengths-2].append(tmp);
+						peopleWhoPlayed[wordLengths-2].insert(table->playerList.at(0)->connData.userName.toLower(), 
+							table->playerList.at(0)->connData.userName);
 					}
 					else
 						table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
@@ -278,7 +279,7 @@ void UnscrambleGame::generateDailyChallenges()
 			qDebug () << " and could not create it!";
 
 	}
-	for (int i = 4; i <= 15; i++)
+	for (int i = 2; i <= 15; i++)
 	{
 		QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
 		QFile tempOutFile(QString("dailylists/%1s").arg(i));
@@ -305,7 +306,7 @@ void UnscrambleGame::generateDailyChallenges()
 	}
 	// TODO: also clear high score lists and whatever hash says that a player has already played.
 	// 
-	for (int i = 0; i < 12; i++)
+	for (int i = 0; i < 14; i++)
 	{
 		dailyHighScores[i].clear();
 		peopleWhoPlayed[i].clear();
@@ -420,7 +421,7 @@ void UnscrambleGame::prepareTableAlphagrams()
 						table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
 					else
 						table->sendTableMessage("This daily challenge is over. \
-												To view scores, please exit table and select 'Get today's scores' from the 'Daily Challenges' button.");
+												To view scores, please exit table and select 'Get today's scores' from the 'Challenges' button.");
 				}
 			}
 			else
