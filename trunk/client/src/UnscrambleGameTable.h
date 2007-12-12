@@ -119,6 +119,7 @@ private:
 
 	void loadUserPreferences();
 	void swapXPos(Tile*, Tile*);
+	double getScaleFactor(int wordLength);
 protected:
 	virtual void closeEvent(QCloseEvent*);
 signals:
@@ -141,6 +142,8 @@ signals:
 		void changeTableStyle(int);
 		void changeTileBorderStyle(bool);
 		void changeVerticalVariation(bool);
+		void changeBackground(int index);
+
 		void saveUserPreferences();
 
 public:

@@ -187,6 +187,54 @@
      <string>Light blue</string>
     </property>
    </item>
+   <item>
+    <property name="text" >
+     <string>No table</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QComboBox" name="comboBoxBackground" >
+   <property name="geometry" >
+    <rect>
+     <x>280</x>
+     <y>50</y>
+     <width>91</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text" >
+     <string>Canvas</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>White</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Lava</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Stars</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QLabel" name="label" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>50</y>
+     <width>60</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Background:</string>
+   </property>
   </widget>
  </widget>
  <resources/>

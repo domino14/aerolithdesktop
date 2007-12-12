@@ -217,6 +217,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
 	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 
+
 	preferencesWidget = new QWidget(this);
 	uiPreferences.setupUi(preferencesWidget);
 	preferencesWidget->setWindowFlags(Qt::Dialog);
@@ -228,6 +229,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(uiPreferences.checkBoxTileBorders, SIGNAL(toggled(bool)), this, SLOT(changeTileBorderStyle(bool)));
 	connect(uiPreferences.checkBoxRandomVerticalPositions, SIGNAL(toggled(bool)), this, SLOT(changeVerticalVariation(bool)));
 	connect(uiPreferences.pushButtonSavePrefs, SIGNAL(clicked()), this, SLOT(saveUserPreferences()));
+	connect(uiPreferences.comboBoxBackground, SIGNAL(currentIndexChanged(int)), this, SLOT(changeBackground(int)));
 
 	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -416,10 +418,20 @@ void UnscrambleGameTable::changeFontColors(int option)
 void UnscrambleGameTable::changeTableStyle(int index)
 {
 	if (index == 0)
+	{
+		
 		tableItem->setPixmap(QPixmap(":/images/table.png"));
+		tableItem->show();
+	}
 	else if (index == 1)
+	{
 		tableItem->setPixmap(QPixmap(":/images/table2.png"));
-
+		tableItem->show();
+	}
+	else if (index == 2)
+	{
+		tableItem->hide();
+	}
 }
 
 void UnscrambleGameTable::changeTileBorderStyle(bool borderOn)
@@ -453,8 +465,17 @@ void UnscrambleGameTable::changeVerticalVariation(bool vert)
 			}
 		}
 	}
-
 }
+
+void UnscrambleGameTable::changeBackground(int index)
+{
+	if (index == 0) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
+	if (index == 1) tableUi.graphicsView->setBackgroundBrush(QBrush(Qt::white));
+	if (index == 2) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/lava.png"));
+	if (index == 3) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/stars.png"));
+	
+}
+
 void UnscrambleGameTable::setZoom(int zoom)
 {
 	QMatrix matrix;
@@ -655,14 +676,15 @@ void UnscrambleGameTable::populateSolutionsTable()
 
 void UnscrambleGameTable::alphagrammizeWords()
 {
+	
 	foreach (wordQuestion wq, wordQuestions)
 	{
 		// server always sends alphagram, so arrange tiles in order
-
+		double scale = getScaleFactor(wq.alphagram.length());
 		// chipX, chipY is 19 to the left of the tile
 		for (int i = 0; i < wq.tiles.size(); i++)
 		{
-			wq.tiles.at(i)->setPos(wq.chip->x() + 19*(i+1), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+			wq.tiles.at(i)->setPos(wq.chip->x() + 19*scale*(i+1), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
 		}
 	}
 
@@ -689,6 +711,12 @@ void UnscrambleGameTable::swapXPos(Tile* a, Tile* b)
 	b->setPos(t, b->y());
 }
 
+double UnscrambleGameTable::getScaleFactor(int wordLength)
+{
+	return (-0.0475 * (double)wordLength + 1.3325);
+	// derived from a linear relation: scale of 1 at length 7, scale of 0.62 at length 15
+}
+
 void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList solutions, quint8 numNotSolved)
 {
 	QTime t;
@@ -698,12 +726,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 	if (numNotSolved > 0)
 	{
 
-		double scale = 1.0;
-		if (alphagram.length() < 7) scale = 1.2;
-		if (alphagram.length() == 9) scale = 0.9;
-		if (alphagram.length() == 10) scale = 0.82;
-		if (alphagram.length() > 10 && alphagram.length () < 14) scale = 0.68;
-		if (alphagram.length() >= 14) scale = 0.62;
+		double scale = getScaleFactor(alphagram.length());
 		
 		double chipX, chipY;
 
@@ -716,9 +739,9 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 			item->scale(scale, scale);
 			if (index >= 0 && index < 10)
 			{
-				item->setPos(150 + i*(19.0 * scale), 180 + 26*index + verticalVariation* (double)qrand()/RAND_MAX);
+				item->setPos(150 + i*(19.0 * scale), 190 + 26*index + verticalVariation* (double)qrand()/RAND_MAX);
 				chipX = 150-19*scale;
-				chipY = 180+26*index;
+				chipY = 190+26*index;
 			}
 			else if (index >= 10 && index < 23)
 			{
@@ -734,9 +757,9 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 			}
 			else if (index >=35)
 			{
-				item->setPos(690 + i*(19.0*scale),180 + 26*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
+				item->setPos(690 + i*(19.0*scale),170 + 26*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
 				chipX = 690-19*scale;
-				chipY = 180+26*(index-35);
+				chipY = 170+26*(index-35);
 			}
 			thisWord.tiles.append(item);
 			item->setTileLetter(alphagram.at(i));
@@ -762,12 +785,8 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString answer)
 {
 	QString alphagram = wordQuestions.at(index).alphagram;
-	double scale = 1.0;
-	if (alphagram.length() < 7) scale = 1.2;
-	if (alphagram.length() == 9) scale = 0.9;
-	if (alphagram.length() == 10) scale = 0.82;
-	if (alphagram.length() > 10 && alphagram.length () < 14) scale = 0.68;
-	if (alphagram.length() >= 14) scale = 0.62;
+	double scale = getScaleFactor(alphagram.length());
+
 
 	wordQuestions[index].numNotYetSolved--;
 	int numSolutions = wordQuestions.at(index).numNotYetSolved;
@@ -826,6 +845,7 @@ void UnscrambleGameTable::saveUserPreferences()
 	settings.setValue("TileBorders", uiPreferences.checkBoxTileBorders->isChecked());
 	settings.setValue("RandomVerticalPositions", uiPreferences.checkBoxRandomVerticalPositions->isChecked());
 	settings.setValue("TableStyle", uiPreferences.comboBoxTableStyle->currentIndex());
+	settings.setValue("BackgroundStyle", uiPreferences.comboBoxBackground->currentIndex());
 
 	settings.endGroup();
 	preferencesWidget->hide();
@@ -842,13 +862,14 @@ void UnscrambleGameTable::loadUserPreferences()
 	uiPreferences.checkBoxTileBorders->setChecked(settings.value("TileBorders", true).toBool());
 	uiPreferences.checkBoxRandomVerticalPositions->setChecked(settings.value("RandomVerticalPositions", true).toBool());
 	uiPreferences.comboBoxTableStyle->setCurrentIndex(settings.value("TableStyle", 0).toInt());
+	uiPreferences.comboBoxBackground->setCurrentIndex(settings.value("BackgroundStyle", 0).toInt());
 
 	changeTileColors(uiPreferences.comboBoxTileColor->currentIndex());
 	changeFontColors(uiPreferences.comboBoxFontColor->currentIndex());
 	changeTableStyle(uiPreferences.comboBoxTableStyle->currentIndex());
 	changeTileBorderStyle(uiPreferences.checkBoxTileBorders->isChecked());
 	changeVerticalVariation(uiPreferences.checkBoxRandomVerticalPositions->isChecked());
-
+	changeBackground(uiPreferences.comboBoxBackground->currentIndex());
 	settings.endGroup();
 
 }

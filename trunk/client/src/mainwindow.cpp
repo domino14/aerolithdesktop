@@ -102,9 +102,10 @@ out(&block, QIODevice::WriteOnly)
 	// chat related stuff
 	chatLE = new QLineEdit;
 	chatLE->setMaxLength(300);
-	chatText = new QTextEdit;
+	chatText = new QTextBrowser;
 	chatText->setReadOnly(true);
-	chatText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+	chatText->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
+	chatText->setOpenExternalLinks(true);
 	QVBoxLayout *chatLayout = new QVBoxLayout();
 
 	chatLayout->addWidget(chatLE);
