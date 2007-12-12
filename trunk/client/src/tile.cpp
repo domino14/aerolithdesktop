@@ -39,11 +39,11 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 	painter->drawLine(18, 18, 18, 1);
     // Draw text
    
-	QFont font("Courier", 16, 70);
+	QFont font("Courier", 18, 70);
 	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
-    painter->drawText(2, 15, tileLetter);
+	painter->drawText(QRectF(0,	1, 17, 17), Qt::AlignCenter, tileLetter);
    
 }
 

@@ -20,7 +20,7 @@ public:
 private:
 	QWidget* centralWidget;
 	QLineEdit* chatLE;
-	QTextEdit* chatText;
+	QTextBrowser* chatText;
 	QTcpSocket *commsSocket;
 	QListWidget *peopleConnected;
 	quint16 blockSize; // used for socket
