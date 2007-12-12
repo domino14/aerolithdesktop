@@ -1207,7 +1207,7 @@ void MainWindow::getScores()
 	uiScores.scoresTableWidget->setRowCount(0);
 	writeHeaderData();
 	out << (quint8)'h';
-	out << (quint8)(uiScores.scoresComboBox->currentIndex() + 4);
+	out << (quint8)(uiScores.scoresComboBox->currentIndex() + 2);
 	fixHeaderLength();
 	commsSocket->write(block);
 

@@ -330,9 +330,9 @@ void MainServer::sendHighScores(ClientSocket* socket)
   quint8 wordLengthDesired;
 
   socket->connData.in >> wordLengthDesired;
-  if (wordLengthDesired >= 4 && wordLengthDesired <= 15)
+  if (wordLengthDesired >= 2 && wordLengthDesired <= 15)
     {
-      QList <highScoreData> *tmp = &UnscrambleGame::dailyHighScores[wordLengthDesired - 4];
+      QList <highScoreData> *tmp = &UnscrambleGame::dailyHighScores[wordLengthDesired - 2];
       if (tmp->size() == 0)
 	return;
       
