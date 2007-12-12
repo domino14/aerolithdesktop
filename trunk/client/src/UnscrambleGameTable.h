@@ -7,6 +7,7 @@
 #include "ui_tableForm.h"
 #include "ui_playerInfoForm.h"
 #include "ui_solutionsForm.h"
+#include "ui_tableCustomizationForm.h"
 #include "tile.h"
 #include "chip.h"
 
@@ -89,8 +90,12 @@ private:
 	QList <Tile*> tiles;
 	QList <Chip*> chips;
 	QList <Chip*> readyChips;
+	QGraphicsPixmapItem* tableItem;
 	QDialog* solutionsDialog;
 	Ui::solutionsForm uiSolutions;
+
+	QWidget* preferencesWidget;
+	Ui::tableCustomizationForm uiPreferences;
 
 
 	struct wordQuestion
@@ -106,10 +111,14 @@ private:
 		QStringList solutions;
 		quint8 numNotYetSolved;
 		Chip* chip;
-		QList <QGraphicsItem*> tiles;
+		QList <Tile*> tiles;
 	};
 	QList <wordQuestion> wordQuestions;
 	QSet <QString> rightAnswers;
+	double verticalVariation;
+
+	void loadUserPreferences();
+
 protected:
 	virtual void closeEvent(QCloseEvent*);
 signals:
@@ -127,6 +136,13 @@ signals:
 		void alphagrammizeWords();
 		void shuffleWords();
 		void setZoom(int);
+		void changeTileColors(int);
+		void changeFontColors(int);
+		void changeTableStyle(int);
+		void changeTileBorderStyle(bool);
+		void changeVerticalVariation(bool);
+		void saveUserPreferences();
+
 public:
 
 

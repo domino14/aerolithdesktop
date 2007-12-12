@@ -18,19 +18,19 @@
      <x>10</x>
      <y>10</y>
      <width>382</width>
-     <height>250</height>
+     <height>260</height>
     </rect>
    </property>
    <property name="minimumSize" >
     <size>
      <width>382</width>
-     <height>250</height>
+     <height>260</height>
     </size>
    </property>
    <property name="maximumSize" >
     <size>
      <width>382</width>
-     <height>250</height>
+     <height>260</height>
     </size>
    </property>
    <property name="currentIndex" >
@@ -192,7 +192,7 @@
       <string>Register new name</string>
      </property>
     </widget>
-    <widget class="QCheckBox" name="checkBox" >
+    <widget class="QCheckBox" name="checkBoxSavePassword" >
      <property name="geometry" >
       <rect>
        <x>30</x>
@@ -336,6 +336,21 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>usernameLE</tabstop>
+  <tabstop>passwordLE</tabstop>
+  <tabstop>checkBoxSavePassword</tabstop>
+  <tabstop>loginPushButton</tabstop>
+  <tabstop>groupBox</tabstop>
+  <tabstop>serverLE</tabstop>
+  <tabstop>portLE</tabstop>
+  <tabstop>registerPushButton</tabstop>
+  <tabstop>desiredUsernameLE</tabstop>
+  <tabstop>desiredFirstPasswordLE</tabstop>
+  <tabstop>desiredSecondPasswordLE</tabstop>
+  <tabstop>submitRegPushButton</tabstop>
+  <tabstop>cancelRegPushButton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

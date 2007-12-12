@@ -71,10 +71,15 @@ private:
 	enum connectionModes { MODE_LOGIN, MODE_REGISTER};
 
 	connectionModes connectionMode;
+
+	void closeEvent(QCloseEvent*);
+	void writeWindowSettings();
+	void readWindowSettings();
+
 	public slots:
-	  void submitGuess(QString);
-	void chatTable(QString);
-	void submitChatLEContents();
+		void submitGuess(QString);
+		void chatTable(QString);
+		void submitChatLEContents();
 		void readFromServer();
 		void displayError(QAbstractSocket::SocketError);
 		void serverDisconnection();
@@ -99,15 +104,15 @@ private:
 
 struct tempHighScoresStruct
 {
-  QString username;
-  quint16 numCorrect;
-  quint16 timeRemaining;
-  tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
-  {
-    this->username = username;
-    this->numCorrect = numCorrect;
-    this->timeRemaining = timeRemaining;
-  }
+	QString username;
+	quint16 numCorrect;
+	quint16 timeRemaining;
+	tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
+	{
+		this->username = username;
+		this->numCorrect = numCorrect;
+		this->timeRemaining = timeRemaining;
+	}
 
 };
 

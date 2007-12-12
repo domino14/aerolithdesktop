@@ -76,5 +76,6 @@
 	<file>images/aerolith.png</file>
 	<file>images/canvas.png</file>
 	<file>images/table.png</file>
+	<file>images/table2.png</file>
 </qresource>
 </RCC>

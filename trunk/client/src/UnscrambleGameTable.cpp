@@ -208,7 +208,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 
 	tableUi.setupUi(this);
-
+	
 
 
 	connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
@@ -216,6 +216,18 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
 	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
 	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
+
+	preferencesWidget = new QWidget(this);
+	uiPreferences.setupUi(preferencesWidget);
+	preferencesWidget->setWindowFlags(Qt::Dialog);
+	connect(tableUi.pushButtonPreferences, SIGNAL(clicked()), preferencesWidget, SLOT(show()));
+
+	connect(uiPreferences.comboBoxTileColor, SIGNAL(currentIndexChanged(int)), this, SLOT(changeTileColors(int)));
+	connect(uiPreferences.comboBoxFontColor, SIGNAL(currentIndexChanged(int)), this, SLOT(changeFontColors(int)));
+	connect(uiPreferences.comboBoxTableStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(changeTableStyle(int)));
+	connect(uiPreferences.checkBoxTileBorders, SIGNAL(toggled(bool)), this, SLOT(changeTileBorderStyle(bool)));
+	connect(uiPreferences.checkBoxRandomVerticalPositions, SIGNAL(toggled(bool)), this, SLOT(changeVerticalVariation(bool)));
+	connect(uiPreferences.pushButtonSavePrefs, SIGNAL(clicked()), this, SLOT(saveUserPreferences()));
 
 	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -236,8 +248,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
 
 	tableUi.graphicsView->setCacheMode(QGraphicsView::CacheBackground); 
-	QGraphicsPixmapItem* tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
-	//tableItem->setFlags(QGraphicsItem::ItemIsMovable);
+	tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
 	tableItem->setOffset(QPoint(50, 80));
 	tableItem->setZValue(-1);
 	tableItem->scale(1.1, 1);
@@ -248,7 +259,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 
 	setWindowIcon(QIcon(":/images/aerolith.png"));
-	this->setWindowFlags(Qt::Dialog);
 
 	move(0, 0);
 
@@ -270,6 +280,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	uiSolutions.solutionsTableWidget->verticalHeader()->hide();
 
 	solutionsDialog->setAttribute(Qt::WA_QuitOnClose, false);
+	preferencesWidget->setAttribute(Qt::WA_QuitOnClose, false);
 	
 	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), solutionsDialog, SLOT(show()));
 	
@@ -311,8 +322,11 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	readyChips.at(3)->setPos(690, 150);
 	readyChips.at(4)->setPos(260, 150);
 	readyChips.at(5)->setPos(150, 290);
+	
+	verticalVariation = 2.0;
 
 
+	loadUserPreferences();
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -325,6 +339,122 @@ UnscrambleGameTable::~UnscrambleGameTable()
 
 }
 
+void UnscrambleGameTable::changeTileColors(int option)
+{
+
+	QLinearGradient linearGrad(QPointF(0, 0), QPointF(18, 18));
+	QBrush tileBrush;
+	switch(option)
+	{
+	case 0:	//light blue
+	
+		linearGrad.setColorAt(0, QColor(7, 9, 184).lighter(200));			
+		linearGrad.setColorAt(1, QColor(55, 75, 175).lighter(200));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	case 1:	// dark blue
+		linearGrad.setColorAt(0, QColor(7, 9, 184));			
+		linearGrad.setColorAt(1, QColor(55, 75, 175));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	case 2:	// light red
+		linearGrad.setColorAt(0, QColor(184, 7, 9).lighter(200));			
+		linearGrad.setColorAt(1, QColor(175, 55, 75).lighter(200));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	case 3:	// dark red
+		linearGrad.setColorAt(0, QColor(184, 7, 9));			
+		linearGrad.setColorAt(1, QColor(175, 55, 75));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	case 4:	// black
+		linearGrad.setColorAt(0, QColor(55, 55, 55));			
+		linearGrad.setColorAt(1, QColor(0, 0, 0));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	case 5:	// white
+		linearGrad.setColorAt(0, QColor(255, 255, 255));			
+		linearGrad.setColorAt(1, QColor(255, 255, 255));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	}
+	QPen edgePen;
+	if (uiPreferences.checkBoxTileBorders->isChecked()) edgePen = QPen(Qt::black, 2);
+	else edgePen = QPen(tileBrush, 2);
+
+	foreach (Tile* tile, tiles)
+	{
+		tile->setTileBrush(tileBrush);
+		tile->setEdgePen(edgePen);
+	}
+
+
+	gfxScene.update();
+}
+
+void UnscrambleGameTable::changeFontColors(int option)
+{
+	QPen foregroundPen;
+	if (option == 0)
+		// black
+	{
+		foregroundPen = QPen(Qt::black);
+
+	}
+	else if (option == 1)
+		// white
+	{
+		foregroundPen = QPen(Qt::white);
+	}
+	foreach (Tile* tile, tiles)
+	{
+		tile->setForegroundPen(foregroundPen);
+	}
+	gfxScene.update();
+}
+
+void UnscrambleGameTable::changeTableStyle(int index)
+{
+	if (index == 0)
+		tableItem->setPixmap(QPixmap(":/images/table.png"));
+	else if (index == 1)
+		tableItem->setPixmap(QPixmap(":/images/table2.png"));
+
+}
+
+void UnscrambleGameTable::changeTileBorderStyle(bool borderOn)
+{
+	QBrush tileBrush = tiles.at(0)->getTileBrush();
+	QPen edgePen;
+	if (borderOn)
+		edgePen = QPen(Qt::black, 2);
+	else
+		edgePen = QPen(tileBrush, 2);
+
+	foreach (Tile* tile, tiles)
+	{
+		tile->setEdgePen(edgePen);
+	}
+	gfxScene.update();
+}
+
+void UnscrambleGameTable::changeVerticalVariation(bool vert)
+{
+	if (vert) verticalVariation = 2.0;
+	else verticalVariation = 0.0;
+
+	foreach (wordQuestion wq, wordQuestions)
+	{
+		if (wq.numNotYetSolved > 0)
+		{
+			foreach(Tile* tile, wq.tiles)
+			{
+				tile->setPos(tile->x(), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+			}
+		}
+	}
+
+}
 void UnscrambleGameTable::setZoom(int zoom)
 {
 	QMatrix matrix;
@@ -546,13 +676,10 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		if (alphagram.length() < 7) scale = 1.2;
 		if (alphagram.length() == 9) scale = 0.9;
 		if (alphagram.length() == 10) scale = 0.82;
-		if (alphagram.length() > 10 && alphagram.length () < 14) scale = 0.7;
-		if (alphagram.length() >= 14) scale = 0.6;
+		if (alphagram.length() > 10 && alphagram.length () < 14) scale = 0.68;
+		if (alphagram.length() >= 14) scale = 0.62;
 		
 		double chipX, chipY;
-
-		double verticalVariation = 2.0;
-		if (alphagram.length() > 11) verticalVariation = 0.0;
 
 		for (int i = 0; i < alphagram.length(); i++)
 		{
@@ -610,10 +737,12 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 {
 	QString alphagram = wordQuestions.at(index).alphagram;
 	double scale = 1.0;
+	if (alphagram.length() < 7) scale = 1.2;
 	if (alphagram.length() == 9) scale = 0.9;
 	if (alphagram.length() == 10) scale = 0.82;
-	if (alphagram.length() > 10 && alphagram.length () < 14) scale = 0.7;
-	if (alphagram.length() >= 14) scale = 0.6;
+	if (alphagram.length() > 10 && alphagram.length () < 14) scale = 0.68;
+	if (alphagram.length() >= 14) scale = 0.62;
+
 	wordQuestions[index].numNotYetSolved--;
 	int numSolutions = wordQuestions.at(index).numNotYetSolved;
 
@@ -628,8 +757,8 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 	else
 	{
 		wordQuestions.at(index).chip->hide();
-		foreach (QGraphicsItem* item, wordQuestions.at(index).tiles)
-			item->hide();
+		foreach (Tile* tile, wordQuestions.at(index).tiles)
+			tile->hide();
 	}
 
 	rightAnswers.insert(answer);
@@ -658,4 +787,42 @@ void UnscrambleGameTable::setupForGameStart()
 	}
 	rightAnswers.clear();
 	clearReadyIndicators();
+}
+
+void UnscrambleGameTable::saveUserPreferences()
+{
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                        "CesarWare", "Aerolith"); 
+	settings.beginGroup("Unscramble Table Preferences");
+
+	settings.setValue("TileColorOption", uiPreferences.comboBoxTileColor->currentIndex());
+	settings.setValue("FontColorOption", uiPreferences.comboBoxFontColor->currentIndex());
+	settings.setValue("TileBorders", uiPreferences.checkBoxTileBorders->isChecked());
+	settings.setValue("RandomVerticalPositions", uiPreferences.checkBoxRandomVerticalPositions->isChecked());
+	settings.setValue("TableStyle", uiPreferences.comboBoxTableStyle->currentIndex());
+
+	settings.endGroup();
+	preferencesWidget->hide();
+}
+
+void UnscrambleGameTable::loadUserPreferences()
+{
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                        "CesarWare", "Aerolith"); 
+	settings.beginGroup("Unscramble Table Preferences");
+
+	uiPreferences.comboBoxTileColor->setCurrentIndex(settings.value("TileColorOption", 0).toInt());
+	uiPreferences.comboBoxFontColor->setCurrentIndex(settings.value("FontColorOption", 0).toInt());
+	uiPreferences.checkBoxTileBorders->setChecked(settings.value("TileBorders", true).toBool());
+	uiPreferences.checkBoxRandomVerticalPositions->setChecked(settings.value("RandomVerticalPositions", true).toBool());
+	uiPreferences.comboBoxTableStyle->setCurrentIndex(settings.value("TableStyle", 0).toInt());
+
+	changeTileColors(uiPreferences.comboBoxTileColor->currentIndex());
+	changeFontColors(uiPreferences.comboBoxFontColor->currentIndex());
+	changeTableStyle(uiPreferences.comboBoxTableStyle->currentIndex());
+	changeTileBorderStyle(uiPreferences.checkBoxTileBorders->isChecked());
+	changeVerticalVariation(uiPreferences.checkBoxRandomVerticalPositions->isChecked());
+
+	settings.endGroup();
+
 }
