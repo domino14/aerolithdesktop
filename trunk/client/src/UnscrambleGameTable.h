@@ -78,8 +78,7 @@ public:
 	void clearAllWordTiles();
 	void answeredCorrectly(int index, QString username, QString answer);
 
-	void setReadyIndicator(QString)
-;
+	void setReadyIndicator(QString);
 	void clearReadyIndicators();
 
 private:
@@ -113,12 +112,13 @@ private:
 		Chip* chip;
 		QList <Tile*> tiles;
 	};
+
 	QList <wordQuestion> wordQuestions;
 	QSet <QString> rightAnswers;
 	double verticalVariation;
 
 	void loadUserPreferences();
-
+	void swapXPos(Tile*, Tile*);
 protected:
 	virtual void closeEvent(QCloseEvent*);
 signals:
