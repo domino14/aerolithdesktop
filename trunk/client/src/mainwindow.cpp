@@ -31,6 +31,7 @@ out(&block, QIODevice::WriteOnly)
 
 	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, wordDb);
 	gameBoardWidget->setWindowTitle("Table");
+	gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
 
 	connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
 	connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
@@ -203,6 +204,9 @@ out(&block, QIODevice::WriteOnly)
 	gameTimer = new QTimer();
 	connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
 	
+	readWindowSettings();
+
+
 	show();
 	loginDialog->show();
 	//  loginDialog->activateWindow();
@@ -211,7 +215,45 @@ out(&block, QIODevice::WriteOnly)
 	setWindowIcon(QIcon(":images/aerolith.png"));
 
 
+	
+}
 
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+	 writeWindowSettings();
+	 event->accept();
+}
+
+void MainWindow::writeWindowSettings()
+{
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                        "CesarWare", "Aerolith"); 
+	settings.beginGroup("MainWindow");
+	settings.setValue("pos", pos());
+	settings.setValue("username", uiLogin.usernameLE->text());
+	if (uiLogin.checkBoxSavePassword->isChecked())
+	{
+		settings.setValue("password", uiLogin.passwordLE->text());
+	}
+	else
+	{	
+		settings.setValue("password", "");
+	}
+	settings.setValue("savePassword", uiLogin.checkBoxSavePassword->isChecked());
+	settings.endGroup();
+
+}
+
+void MainWindow::readWindowSettings()
+{
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+                        "CesarWare", "Aerolith"); 
+	settings.beginGroup("MainWindow");
+	move(settings.value("pos", QPoint(100, 100)).toPoint());
+	uiLogin.usernameLE->setText(settings.value("username", "").toString());
+	uiLogin.passwordLE->setText(settings.value("password", "").toString());
+	uiLogin.checkBoxSavePassword->setChecked(settings.value("savePassword", true).toBool());
+	settings.endGroup();
 }
 
 void MainWindow::writeHeaderData()

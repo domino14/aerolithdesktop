@@ -12,6 +12,10 @@ public:
 	QRectF boundingRect() const;
 	void setTileProperties(QBrush& b, QPen& p, QPen &e);
 	void setTileLetter(QString tileLetter);
+	void setTileBrush(QBrush& b);
+	void setForegroundPen(QPen& p);
+	void setEdgePen(QPen& e);
+	QBrush getTileBrush();
 
 private:
 	QBrush tileBrush;

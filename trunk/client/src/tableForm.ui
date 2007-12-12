@@ -454,6 +454,25 @@ QPushButton:disabled{
      <height>22</height>
     </rect>
    </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QSlider::groove:horizontal {
+         border: 1px solid #999999;
+         height: 8px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
+         background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFF88, stop:1 #FFFFBB);
+         margin: 2px 0;
+     }
+
+     QSlider::handle:horizontal {
+         background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #BBBB88, stop:1 #888822);
+         border: 1px solid #5c5c5c;
+         width: 18px;
+         margin: -2px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+         border-radius: 3px;
+     } </string>
+   </property>
    <property name="minimum" >
     <number>35</number>
    </property>
@@ -465,6 +484,42 @@ QPushButton:disabled{
    </property>
    <property name="orientation" >
     <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonPreferences" >
+   <property name="geometry" >
+    <rect>
+     <x>660</x>
+     <y>690</y>
+     <width>136</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Table Preferences</string>
    </property>
   </widget>
  </widget>

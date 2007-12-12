@@ -54,6 +54,26 @@ void Tile::setTileProperties(QBrush& b, QPen& p, QPen &e)
 	edgePen = e;
 }
 
+void Tile::setTileBrush(QBrush& b)
+{
+	tileBrush = b;
+}
+
+QBrush Tile::getTileBrush()
+{
+	return tileBrush;
+}
+
+void Tile::setForegroundPen(QPen& p)
+{
+	foregroundPen = p;
+}
+
+void Tile::setEdgePen(QPen &e)
+{
+	edgePen = e;
+}
+
 void Tile::setTileLetter(QString tileLetter)
 {
 	this->tileLetter = tileLetter;
