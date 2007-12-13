@@ -39,6 +39,7 @@ out(&block, QIODevice::WriteOnly)
 	connect(gameBoardWidget, SIGNAL(guessSubmitted(QString)), this, SLOT(submitGuess(QString)));
 	connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
 
+	connect(gameBoardWidget, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
 
 	centralWidget = new QWidget;	 // the 'overall'  widget
 
@@ -275,6 +276,7 @@ void MainWindow::submitChatLEContents()
 {
 	//  chatText->append(QString("From chat: ") + chatLE->text());
 
+	/*
 	if (chatLE->text().indexOf("/msg ") == 0)
 	{
 		QString restOfText = chatLE->text().mid(5);
@@ -293,7 +295,7 @@ void MainWindow::submitChatLEContents()
 		fixHeaderLength();
 		commsSocket->write(block);
 		chatLE->clear();
-	}
+	}*/
 	/*  else if (chatLE->text().indexOf("/shout ") == 0)
 	{
 	writeHeaderData();
@@ -312,15 +314,14 @@ void MainWindow::submitChatLEContents()
 	commsSocket->write(block);
 	chatLE->clear();
 	}*/
-	else
-	{
+
 		writeHeaderData();
 		out << (quint8)'c';
 		out << chatLE->text();
 		fixHeaderLength();
 		commsSocket->write(block);
 		chatLE->clear();
-	}
+	
 	/*  else
 	{
 
@@ -329,6 +330,7 @@ void MainWindow::submitChatLEContents()
 
 void MainWindow::chatTable(QString textToSend)
 {
+	/*
 	if (textToSend.indexOf("/msg ") == 0)
 	{
 		QString restOfText = textToSend.mid(5);
@@ -347,7 +349,8 @@ void MainWindow::chatTable(QString textToSend)
 		fixHeaderLength();
 		commsSocket->write(block);
 	}
-	else if (textToSend.indexOf("/me ") == 0)
+	else */
+	if (textToSend.indexOf("/me ") == 0)
 	{
 		writeHeaderData();
 		out << (quint8)'=';
@@ -488,9 +491,7 @@ void MainWindow::readFromServer()
 			{
 				QString username, message;
 				in >> username >> message;
-				chatText->append(QString("[")+username+ " writes to you] " + message);
-				gameBoardWidget->gotChat(QString("[")+username + " writes to you] " + message);
-				activateWindow();
+				receivedPM(username, message);
 			}
 			break;
 		case 'T':	// New table
@@ -752,8 +753,64 @@ void MainWindow::connectedToServer()
 
 void MainWindow::sendPM(QListWidgetItem* item)
 {
-	chatLE->setText(QString("/msg ") + item->text() + " ");
-	chatLE->setFocus(Qt::OtherFocusReason);
+//chatLE->setText(QString("/msg ") + item->text() + " ");
+//	chatLE->setFocus(Qt::OtherFocusReason);
+	sendPM(item->text());
+}
+
+void MainWindow::sendPM(QString person)
+{
+	QString hashString = person.toLower();
+	if (pmWindows.contains(hashString))
+	{
+		PMWidget* w = pmWindows.value(hashString);
+		w->show();
+		w->activateWindow();
+	}
+	else
+	{
+		PMWidget *w = new PMWidget(0, currentUsername, person);
+		connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
+		w->show();
+		pmWindows.insert(hashString, w);
+	}
+
+}
+
+void MainWindow::sendPM(QString username, QString message)
+{
+	if (message.simplified() == "")
+	{
+		return;
+	}
+
+	writeHeaderData();
+	out << (quint8)'p';
+	out << username;
+	out << message;
+	fixHeaderLength();
+	commsSocket->write(block);
+}
+
+void MainWindow::receivedPM(QString username, QString message)
+{
+	QString hashString = username.toLower();
+	if (pmWindows.contains(hashString))
+	{
+		PMWidget* w = pmWindows.value(hashString);
+		w->appendText("[" + username + "] " + message);
+		w->show();
+		w->activateWindow();
+	}
+	else
+	{
+		PMWidget *w = new PMWidget(0, currentUsername, username);
+		connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
+		w->appendText("[" + username + "] " + message);
+		w->show();
+		pmWindows.insert(hashString, w);
+	}
+
 }
 
 void MainWindow::createNewRoom()
@@ -1108,9 +1165,6 @@ void MainWindow::submitReady()
 void MainWindow::aerolithHelpDialog()
 {
 	QString infoText;
-
-	infoText = "- To send text to a single player, double click his or her name and type in your message, or type /msg username message in the chat box.<BR>";
-	//infoText += "- To send text to everyone, type in /shout message in the chat box. <BR>";
 	infoText += "- Cycle mode allows you to go through all the words in a list, and at the end, keep going through the missed words.<BR>";
 	QMessageBox::information(this, "Aerolith how-to", infoText);
 }
@@ -1249,4 +1303,28 @@ void MainWindow::showRegisterPage()
 void MainWindow::showLoginPage()
 {
 	uiLogin.stackedWidget->setCurrentIndex(0);
+}
+/////////////////////////////////////////////////////
+
+PMWidget::PMWidget(QWidget* parent, QString senderUsername, QString receiverUsername) : 
+	QWidget(parent), senderUsername(senderUsername), receiverUsername(receiverUsername)
+{
+
+	uiPm.setupUi(this);
+	connect(uiPm.lineEdit, SIGNAL(returnPressed()), this, SLOT(readAndSendLEContents()));
+	setWindowTitle("Conversation with " + receiverUsername);
+}
+
+void PMWidget::readAndSendLEContents()
+{
+	emit sendPM(receiverUsername, uiPm.lineEdit->text());
+	uiPm.textEdit->append("[" + senderUsername + "] " + uiPm.lineEdit->text());
+
+	uiPm.lineEdit->clear();
+
+}
+
+void PMWidget::appendText(QString text)
+{
+	uiPm.textEdit->append(text);
 }

@@ -40,7 +40,7 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // Draw text
    
 	QFont font("Courier", 18, 70);
-	font.setStyleStrategy(QFont::PreferAntialias);
+//	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
 	painter->drawText(QRectF(0,	1, 17, 17), Qt::AlignCenter, tileLetter);
@@ -78,4 +78,9 @@ void Tile::setTileLetter(QString tileLetter)
 {
 	this->tileLetter = tileLetter;
 
+}
+
+void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
+{
+	emit mousePressed();
 }

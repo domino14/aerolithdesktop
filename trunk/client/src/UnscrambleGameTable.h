@@ -120,6 +120,7 @@ private:
 	void loadUserPreferences();
 	void swapXPos(Tile*, Tile*);
 	double getScaleFactor(int wordLength);
+	void getBasePosition(int index, double scale, double& x, double& y);
 protected:
 	virtual void closeEvent(QCloseEvent*);
 signals:
@@ -127,6 +128,7 @@ signals:
 	void sendStartRequest();
 	void guessSubmitted(QString);
 	void chatTable(QString);
+	void sendPM(QString);
 	void exitThisTable();
 
 	private slots:
@@ -136,6 +138,7 @@ signals:
 
 		void alphagrammizeWords();
 		void shuffleWords();
+		void tileWasClicked();
 		void setZoom(int);
 		void changeTileColors(int);
 		void changeFontColors(int);
@@ -145,6 +148,7 @@ signals:
 		void changeBackground(int index);
 
 		void saveUserPreferences();
+
 
 public:
 
