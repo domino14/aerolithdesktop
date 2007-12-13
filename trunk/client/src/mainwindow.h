@@ -8,8 +8,25 @@
 
 #include "ui_scoresForm.h"
 #include "ui_loginForm.h"
-
+#include "ui_pmForm.h"
 #include "UnscrambleGameTable.h"
+
+class PMWidget : public QWidget
+{
+	Q_OBJECT
+public:
+	PMWidget (QWidget *parent, QString senderUsername, QString receiverUsername);
+	void appendText(QString);
+
+private:
+	Ui::pmForm uiPm;
+	QString senderUsername;
+	QString receiverUsername;
+signals:
+	void sendPM(QString user, QString text);
+	private slots:
+		void readAndSendLEContents();
+};
 
 class MainWindow : public QMainWindow
 {
@@ -75,6 +92,8 @@ private:
 	void writeWindowSettings();
 	void readWindowSettings();
 
+	QHash <QString, PMWidget*> pmWindows;
+
 	public slots:
 		void submitGuess(QString);
 		void chatTable(QString);
@@ -85,6 +104,10 @@ private:
 		void toggleConnectToServer();
 		void connectedToServer();
 		void sendPM(QListWidgetItem*);
+		void sendPM(QString);
+		void sendPM(QString, QString);
+		void receivedPM(QString, QString);
+
 		void createNewRoom();
 		void leaveThisTable();
 		void joinTable();
@@ -96,7 +119,7 @@ private:
 		void dailyChallengeSelected(QAction*);
 		void getScores();
 		void registerName();
-
+		
 		void showRegisterPage();
 		void showLoginPage();
 };

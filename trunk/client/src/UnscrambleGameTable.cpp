@@ -245,6 +245,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 
 	gfxScene.setSceneRect(0, 0, 980, 720);
+	tableUi.graphicsView->setSceneRect(0, 0, 980, 720);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
 	tableUi.graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
@@ -254,12 +255,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	tableItem->setOffset(QPoint(50, 80));
 	tableItem->setZValue(-1);
 	tableItem->scale(1.1, 1);
-
-
-
-
-
-
+	
 	setWindowIcon(QIcon(":/images/aerolith.png"));
 
 	move(0, 0);
@@ -295,6 +291,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		tiles << t;
 		gfxScene.addItem(t);
 		t->hide();
+		connect(t, SIGNAL(mousePressed()), this, SLOT(tileWasClicked()));
 	}
 
 	for (int i = 0; i < 45; i++)
@@ -522,8 +519,9 @@ void UnscrambleGameTable::enteredChat()
 
 void UnscrambleGameTable::sendPM(QListWidgetItem* item)
 {
-	tableUi.lineEditChat->setText(QString("/msg ") + item->text() + " ");
-	tableUi.lineEditChat->setFocus(Qt::OtherFocusReason);
+//	tableUi.lineEditChat->setText(QString("/msg ") + item->text() + " ");
+//	tableUi.lineEditChat->setFocus(Qt::OtherFocusReason);
+	emit sendPM(item->text());
 }
 
 
@@ -550,6 +548,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 	tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
 	tableUi.lineEditChat->clear();
 	tableUi.textEditChat->clear();
+	tableUi.graphicsView->centerOn(tableItem);
 
 }
 
@@ -703,6 +702,24 @@ void UnscrambleGameTable::shuffleWords()
 	}
 }
 
+void UnscrambleGameTable::tileWasClicked()
+{
+	Tile* tile = static_cast<Tile*> (sender());
+	// find which word question it belongs to
+	int index = tile->data(0).toInt();
+	if (index >= 0 && index < wordQuestions.size())
+	{
+		wordQuestion wq = wordQuestions.at(index);
+		for (int i = 0; i < wq.tiles.size(); i++)
+		{
+			swapXPos(wq.tiles.at(i), wq.tiles.at(qrand() % wq.tiles.size()));
+			wq.tiles.at(i)->setPos(wq.tiles.at(i)->x(), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+		}
+
+
+	}
+}
+
 void UnscrambleGameTable::swapXPos(Tile* a, Tile* b)
 {
 	// swaps the x positions of two Tiles
@@ -717,6 +734,36 @@ double UnscrambleGameTable::getScaleFactor(int wordLength)
 	// derived from a linear relation: scale of 1 at length 7, scale of 0.62 at length 15
 }
 
+void UnscrambleGameTable::getBasePosition(int index, double scale, double& x, double& y)
+{
+	int tileWidth = 19;
+
+	if (index >= 0 && index < 10)
+	{
+		//item->setPos(150 + i*(19.0 * scale), 190 + 26*index + verticalVariation* (double)qrand()/RAND_MAX);
+		x = 150 - tileWidth * scale;
+		y = 190 +26 * index;
+	}
+	else if (index >= 10 && index < 23)
+	{
+		//item->setPos(330 + i*(19.0 * scale), 150 + 26*(index-10)+ verticalVariation* (double)qrand()/RAND_MAX);
+		x = 330 - tileWidth * scale;
+		y = 150 + 26*(index-10);
+	}
+	else if (index >= 23 && index < 35)
+	{
+		//item->setPos(510 + i*(19.0 * scale), 160 + 26*(index-23)+ verticalVariation* (double)qrand()/RAND_MAX);
+		x = 510 - tileWidth * scale;
+		y = 160 + 26*(index-23);
+	}
+	else if (index >=35)
+	{
+		//item->setPos(690 + i*(19.0*scale),170 + 26*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
+		x = 690 - tileWidth * scale;
+		y = 170+26*(index-35);
+	}
+}
+
 void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList solutions, quint8 numNotSolved)
 {
 	QTime t;
@@ -729,7 +776,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		double scale = getScaleFactor(alphagram.length());
 		
 		double chipX, chipY;
-
+		getBasePosition(index, scale, chipX, chipY);	// gets the chip position for index
 		for (int i = 0; i < alphagram.length(); i++)
 		{
 			//QGraphicsPixmapItem* item = gfxScene.addPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
@@ -737,30 +784,10 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 			Tile* item = tiles.at(index * 15 + i);
 			item->resetTransform();
 			item->scale(scale, scale);
-			if (index >= 0 && index < 10)
-			{
-				item->setPos(150 + i*(19.0 * scale), 190 + 26*index + verticalVariation* (double)qrand()/RAND_MAX);
-				chipX = 150-19*scale;
-				chipY = 190+26*index;
-			}
-			else if (index >= 10 && index < 23)
-			{
-				item->setPos(330 + i*(19.0 * scale), 150 + 26*(index-10)+ verticalVariation* (double)qrand()/RAND_MAX);
-				chipX = 330-19*scale;
-				chipY = 150 + 26*(index-10);
-			}
-			else if (index >= 23 && index < 35)
-			{
-				item->setPos(510 + i*(19.0 * scale), 160 + 26*(index-23)+ verticalVariation* (double)qrand()/RAND_MAX);
-				chipX = 510 -19*scale;
-				chipY = 160+26*(index-23);
-			}
-			else if (index >=35)
-			{
-				item->setPos(690 + i*(19.0*scale),170 + 26*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
-				chipX = 690-19*scale;
-				chipY = 170+26*(index-35);
-			}
+			item->setPos(chipX + (i + 1) * (19.0 * scale),
+				chipY + verticalVariation* (double)qrand()/RAND_MAX);
+			item->setData(0, index);	// set the item data to index to keep track of which word this tile belongs to
+
 			thisWord.tiles.append(item);
 			item->setTileLetter(alphagram.at(i));
 			item->show();
@@ -821,10 +848,13 @@ void UnscrambleGameTable::clearAllWordTiles()
 	foreach (Chip* chip, chips)
 		chip->hide();
 
+	tableUi.graphicsView->centerOn(tableItem);
+
 }
 
 void UnscrambleGameTable::setupForGameStart()
 {
+	tableUi.graphicsView->centerOn(tableItem);
 	for (int i = 0; i < numPlayers; i++)
 	{
 		playerUis.at(i).listWidgetAnswers->clear();

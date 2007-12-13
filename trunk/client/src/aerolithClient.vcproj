@@ -157,6 +157,10 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath="..\client.qrc"
+			>
+		</File>
+		<File
 			RelativePath=".\loginForm.ui"
 			>
 		</File>

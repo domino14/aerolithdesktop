@@ -4,8 +4,9 @@
 #include <QtGui>
 #include <QtCore>
 
-class Tile : public QGraphicsItem
+class Tile : public QObject, public QGraphicsItem
 {
+	Q_OBJECT
 public:
 	Tile();
 	void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget);
@@ -22,6 +23,10 @@ private:
 	QPen foregroundPen;
 	QPen edgePen;
 	QString tileLetter;
+	void mousePressEvent ( QGraphicsSceneMouseEvent * event);
+
+signals:
+	void mousePressed();
 };
 
 #endif

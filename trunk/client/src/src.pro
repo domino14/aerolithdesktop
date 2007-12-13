@@ -14,7 +14,7 @@ OBJECTS_DIR = build/obj
 INCLUDEPATH += build/moc
 DEPENDPATH += build/moc
 
-FORMS = tableCreateForm.ui solutionsForm.ui scoresForm.ui loginForm.ui tableForm.ui playerInfoForm.ui tableCustomizationForm.ui
+FORMS = tableCreateForm.ui solutionsForm.ui scoresForm.ui loginForm.ui tableForm.ui playerInfoForm.ui tableCustomizationForm.ui pmForm.ui
 SOURCES += main.cpp mainwindow.cpp UnscrambleGameTable.cpp avatarLabel.cpp tile.cpp chip.cpp
 HEADERS += mainwindow.h UnscrambleGameTable.h avatarLabel.h tile.h chip.h
 RESOURCES = ../client.qrc
