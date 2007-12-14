@@ -46,7 +46,7 @@ Q_OBJECT
   // holds data for each word
     QString alphagram;
     quint8 numNotYetSolved;
-    quint8 i, j; // indices in table
+    quint8 index;	// index
     QStringList solutions;
   };
 
@@ -80,7 +80,7 @@ Q_OBJECT
   void generateTempFile();
   void sendTimerValuePacket(quint16);
   void sendGiveUpPacket(QString);
-  void sendGuessRightPacket(QString, QString, quint8, quint8);
+  void sendGuessRightPacket(QString, QString, quint8);
   void sendNumQuestionsPacket();
   private slots:
     void updateGameTimer();
