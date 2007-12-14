@@ -4,7 +4,7 @@ extern QByteArray block;
 extern QDataStream out;
 
 const quint8 COUNTDOWN_TIMER_VAL = 3;
-
+const quint8 maxRacks = 50;
 QList <highScoreData> UnscrambleGame::dailyHighScores[14];
 QHash <QString, QString> UnscrambleGame::peopleWhoPlayed[14];
 bool UnscrambleGame::midnightSwitchoverToggle;
@@ -35,6 +35,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 		QString temp = wordListFileName;
 		temp.chop(1);
 		wordLengths = temp.mid(6).toInt();
+		tableTimerVal = 270;	// 4.5 minutes for 50 words - server decides time for challenges!
 	}
 	/*
 
@@ -115,13 +116,10 @@ void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
 			{
 				QString alphagram = gameSolutions.value(guess);
 				gameSolutions.remove(guess);
-				quint8 rowIndex = 0, columnIndex = 0;
 				quint8 indexOfQuestion = alphagramIndices.value(alphagram);
 				unscrambleGameQuestions[indexOfQuestion].numNotYetSolved--;
-				rowIndex = unscrambleGameQuestions[indexOfQuestion].i;
-				columnIndex = unscrambleGameQuestions[indexOfQuestion].j;
 
-				sendGuessRightPacket(socket->connData.userName, guess, rowIndex, columnIndex);
+				sendGuessRightPacket(socket->connData.userName, guess, indexOfQuestion);
 				if (gameSolutions.isEmpty()) endGame();
 			}
 		}
@@ -163,7 +161,7 @@ void UnscrambleGame::startGame()
 	// steps:
 	//1. list should already be loaded when table was created
 	//2. send to everyone @ the table:  
-	//    - 45 alphagrams  
+	//    - maxRacks alphagrams  
 	gameStarted = true;
 	prepareTableAlphagrams();
 	foreach (ClientSocket* socket, table->playerList)
@@ -196,7 +194,7 @@ void UnscrambleGame::endGame()
 	// if in cycle mode, update list  
 	if (cycleState == 1)
 	{
-		for (int i = 0; i < 45; i++)
+		for (int i = 0; i < maxRacks; i++)
 		{	
 			if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
 			{
@@ -299,7 +297,7 @@ void UnscrambleGame::generateDailyChallenges()
 			outStream << fileContents.at(index) << "\n";
 			fileContents.removeAt(index);
 			numWords++;
-		} while (numWords < 45);
+		} while (numWords < maxRacks);
 		tempOutFile.close();
 		qDebug() << QString("generated daily %1s").arg(i);
 
@@ -353,7 +351,7 @@ void UnscrambleGame::generateTempFile()
 		qDebug() << "copied" << tempInFile.fileName() << " to temp file";
 		tempFileExists = true;
 		tempInFile.close();
-		numTotalRacks = 45;
+		numTotalRacks = maxRacks;
 	}
 }
 void UnscrambleGame::prepareTableAlphagrams()
@@ -405,42 +403,40 @@ void UnscrambleGame::prepareTableAlphagrams()
 	QStringList lineList;
 	QString line;
 	numTotalSolutions = 0;
-	for (quint8 i = 0; i < 9; i++)
-		for (quint8 j = 0; j < 5; j++)
+	for (quint8 i = 0; i < maxRacks; i++)
+	{
+		unscrambleGameData thisGameData;
+		thisGameData.index = i;
+		if (alphagramReader.atEnd())
 		{
-			unscrambleGameData thisGameData;
-			thisGameData.i = i;
-			thisGameData.j = j;
-			if (alphagramReader.atEnd())
+			thisGameData.alphagram = "";
+			thisGameData.numNotYetSolved = 0;
+			if (i == 0)
 			{
-				thisGameData.alphagram = "";
-				thisGameData.numNotYetSolved = 0;
-				if (j == 0 && i == 0)
-				{
-					if (cycleState != 3)
-						table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
-					else
-						table->sendTableMessage("This daily challenge is over. \
-												To view scores, please exit table and select 'Get today's scores' from the 'Challenges' button.");
-				}
+				if (cycleState != 3)
+					table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
+				else
+					table->sendTableMessage("This daily challenge is over. \
+											To view scores, please exit table and select 'Get today's scores' from the 'Challenges' button.");
 			}
-			else
-			{
-				numRacksSeen++;
-				line = alphagramReader.readLine();
-				lineList = line.split(" ");
-				thisGameData.alphagram = lineList.at(0);
-				thisGameData.numNotYetSolved = (quint8)(lineList.size()-1);
-				for (int k = 1; k < lineList.size(); k++)
-				{
-					gameSolutions.insert(lineList.at(k), lineList.at(0));
-					thisGameData.solutions << lineList.at(k);
-					numTotalSolutions++;
-				}
-			}
-			unscrambleGameQuestions.append(thisGameData);
-			alphagramIndices.insert(thisGameData.alphagram, i*5 + j);
 		}
+		else
+		{
+			numRacksSeen++;
+			line = alphagramReader.readLine();
+			lineList = line.split(" ");
+			thisGameData.alphagram = lineList.at(0);
+			thisGameData.numNotYetSolved = (quint8)(lineList.size()-1);
+			for (int k = 1; k < lineList.size(); k++)
+			{
+				gameSolutions.insert(lineList.at(k), lineList.at(0));
+				thisGameData.solutions << lineList.at(k);
+				numTotalSolutions++;
+			}
+		}
+		unscrambleGameQuestions.append(thisGameData);
+		alphagramIndices.insert(thisGameData.alphagram, i);
+	}
 }
 
 void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
@@ -449,7 +445,8 @@ void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
 	out << (quint8) '+';
 	out << table->tableNumber;
 	out << (quint8) 'W';
-	for (int i = 0; i < 45; i++)
+	out << (quint8) maxRacks;
+	for (int i = 0; i < maxRacks; i++)
 	{
 		out << unscrambleGameQuestions.at(i).alphagram;
 		out << unscrambleGameQuestions.at(i).numNotYetSolved;
@@ -494,13 +491,13 @@ void UnscrambleGame::sendGiveUpPacket(QString username)
 	table->sendGenericPacket();
 }
 
-void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quint8 row, quint8 column)
+void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quint8 index)
 {
 	writeHeaderData();
 	out << (quint8) '+';
 	out << (quint16) table->tableNumber;
 	out << (quint8)'A';
-	out << username << answer << row << column;
+	out << username << answer << index;
 	fixHeaderLength();
 	table->sendGenericPacket();
 }

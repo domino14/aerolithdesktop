@@ -952,8 +952,9 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 	  {
 	    QTime t;
 	    t.start();
-
-		for (int i = 0; i < 45; i++)
+		quint8 numRacks;
+		in >> numRacks;
+		for (int i = 0; i < numRacks; i++)
 		{
 			QString alphagram;
 			in >> alphagram;
@@ -963,9 +964,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			in >> solutions;
 			gameBoardWidget->addNewWord(i, alphagram, solutions, numSolutionsNotYetSolved);
 		}
-		qDebug() << "Time elapsed for 45 words: " << t.elapsed();
 		gameBoardWidget->clearSolutionsDialog();
-		qDebug() << "Time elapsed after clearing: " << t.elapsed();
 		
 	  }
 		break;
@@ -1249,7 +1248,7 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
 		out << challengeAction->text().replace("Today's", "Daily"); // create a table 
 		out << (quint8)1; // 1 player
 		out << (quint8)3; // 3 is for daily challenges (TODO: HARDCODE BAD)
-		out << (quint8)4;
+		out << (quint8)0;	// server should decide time for daily challenge
 
 		fixHeaderLength();
 		commsSocket->write(block);

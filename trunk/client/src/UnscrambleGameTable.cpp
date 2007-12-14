@@ -284,8 +284,8 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	
 	// generate gfx items
 	
-	// 45 letters * 15 = 
-	for (int i = 0; i < 675; i++)
+	// 50 letters * 15 = 
+	for (int i = 0; i < 750; i++)
 	{
 		Tile *t = new Tile;
 		tiles << t;
@@ -294,7 +294,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		connect(t, SIGNAL(mousePressed()), this, SLOT(tileWasClicked()));
 	}
 
-	for (int i = 0; i < 45; i++)
+	for (int i = 0; i < 50; i++)
 	{
 		Chip *c = new Chip;
 		chips << c;
@@ -738,29 +738,29 @@ void UnscrambleGameTable::getBasePosition(int index, double scale, double& x, do
 {
 	int tileWidth = 19;
 
-	if (index >= 0 && index < 10)
+	if (index >= 0 && index < 12)
 	{
 		//item->setPos(150 + i*(19.0 * scale), 190 + 26*index + verticalVariation* (double)qrand()/RAND_MAX);
 		x = 150 - tileWidth * scale;
-		y = 190 +26 * index;
+		y = 164 +26 * index;
 	}
-	else if (index >= 10 && index < 23)
+	else if (index >= 12 && index < 25)
 	{
 		//item->setPos(330 + i*(19.0 * scale), 150 + 26*(index-10)+ verticalVariation* (double)qrand()/RAND_MAX);
 		x = 330 - tileWidth * scale;
-		y = 150 + 26*(index-10);
+		y = 150 + 26*(index-12);
 	}
-	else if (index >= 23 && index < 35)
+	else if (index >= 25 && index < 38)
 	{
 		//item->setPos(510 + i*(19.0 * scale), 160 + 26*(index-23)+ verticalVariation* (double)qrand()/RAND_MAX);
 		x = 510 - tileWidth * scale;
-		y = 160 + 26*(index-23);
+		y = 160 + 26*(index-25);
 	}
-	else if (index >=35)
+	else if (index >=38)
 	{
 		//item->setPos(690 + i*(19.0*scale),170 + 26*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
 		x = 690 - tileWidth * scale;
-		y = 170+26*(index-35);
+		y = 170+26*(index-38);
 	}
 }
 
@@ -779,8 +779,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		getBasePosition(index, scale, chipX, chipY);	// gets the chip position for index
 		for (int i = 0; i < alphagram.length(); i++)
 		{
-			//QGraphicsPixmapItem* item = gfxScene.addPixmap(tilesList.at(alphagram.at(i).toAscii() - 'A'));
-			//thisRoundItems << item;
+	
 			Tile* item = tiles.at(index * 15 + i);
 			item->resetTransform();
 			item->scale(scale, scale);
@@ -793,8 +792,6 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 			item->show();
 		}
 		
-		//if (numNotSolved >9) numNotSolved = 9;
-
 		Chip *item = chips.at(index);
 
 		item->setChipNumber(numNotSolved);
