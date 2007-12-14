@@ -5,7 +5,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
+    <width>1024</width>
     <height>740</height>
    </rect>
   </property>
@@ -17,14 +17,14 @@
   </property>
   <property name="minimumSize" >
    <size>
-    <width>1000</width>
+    <width>1024</width>
     <height>740</height>
    </size>
   </property>
   <property name="maximumSize" >
    <size>
-    <width>1000</width>
-    <height>740</height>
+    <width>2000</width>
+    <height>2000</height>
    </size>
   </property>
   <property name="windowTitle" >
@@ -34,9 +34,9 @@
    <property name="geometry" >
     <rect>
      <x>10</x>
-     <y>10</y>
-     <width>980</width>
-     <height>720</height>
+     <y>50</y>
+     <width>870</width>
+     <height>450</height>
     </rect>
    </property>
    <property name="focusPolicy" >
@@ -52,8 +52,8 @@
   <widget class="QPushButton" name="pushButtonAlphagrams" >
    <property name="geometry" >
     <rect>
-     <x>870</x>
-     <y>530</y>
+     <x>820</x>
+     <y>660</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -88,8 +88,8 @@ QPushButton:disabled{&#xd;
   <widget class="QPushButton" name="pushButtonShuffle" >
    <property name="geometry" >
     <rect>
-     <x>870</x>
-     <y>580</y>
+     <x>820</x>
+     <y>700</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -124,33 +124,33 @@ QPushButton:disabled{&#xd;
   <widget class="QPushButton" name="pushButtonGiveUp" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>60</y>
-     <width>111</width>
-     <height>34</height>
+     <x>280</x>
+     <y>10</y>
+     <width>94</width>
+     <height>28</height>
     </rect>
    </property>
    <property name="focusPolicy" >
     <enum>Qt::NoFocus</enum>
    </property>
    <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(220, 0, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(50, 0, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(100, 0, 0);&#xd;
-     border-style: inset;&#xd;
+    <string> QPushButton {
+     background-color: rgb(220, 0, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 8px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 0px;
+ }
+QPushButton:disabled{
+	background-color: rgb(50, 0, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(100, 0, 0);
+     border-style: inset;
  } </string>
    </property>
    <property name="text" >
@@ -160,8 +160,8 @@ QPushButton:disabled{&#xd;
   <widget class="QPushButton" name="pushButtonExit" >
    <property name="geometry" >
     <rect>
-     <x>850</x>
-     <y>20</y>
+     <x>880</x>
+     <y>10</y>
      <width>131</width>
      <height>34</height>
     </rect>
@@ -170,23 +170,23 @@ QPushButton:disabled{&#xd;
     <enum>Qt::NoFocus</enum>
    </property>
    <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(220, 0, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(50, 0, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(100, 0, 0);&#xd;
-     border-style: inset;&#xd;
+    <string> QPushButton {
+     background-color: rgb(220, 0, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(50, 0, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(100, 0, 0);
+     border-style: inset;
  } </string>
    </property>
    <property name="text" >
@@ -196,8 +196,8 @@ QPushButton:disabled{&#xd;
   <widget class="QPushButton" name="pushButtonStart" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>20</y>
+     <x>10</x>
+     <y>10</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -232,8 +232,8 @@ QPushButton:disabled{
   <widget class="QLCDNumber" name="lcdNumberTimer" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>110</y>
+     <x>130</x>
+     <y>10</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -366,7 +366,7 @@ QPushButton:disabled{&#xd;
   <widget class="QTextEdit" name="textEditGuesses" >
    <property name="geometry" >
     <rect>
-     <x>820</x>
+     <x>650</x>
      <y>660</y>
      <width>161</width>
      <height>71</height>
@@ -386,7 +386,7 @@ QPushButton:disabled{&#xd;
   <widget class="QLabel" name="label_2" >
    <property name="geometry" >
     <rect>
-     <x>820</x>
+     <x>650</x>
      <y>640</y>
      <width>101</width>
      <height>16</height>
@@ -399,8 +399,8 @@ QPushButton:disabled{&#xd;
   <widget class="QPushButton" name="pushButtonSolutions" >
    <property name="geometry" >
     <rect>
-     <x>870</x>
-     <y>470</y>
+     <x>410</x>
+     <y>10</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -435,8 +435,8 @@ QPushButton:disabled{
   <widget class="QLabel" name="labelWordListInfo" >
    <property name="geometry" >
     <rect>
-     <x>20</x>
-     <y>150</y>
+     <x>10</x>
+     <y>550</y>
      <width>111</width>
      <height>18</height>
     </rect>
@@ -445,53 +445,12 @@ QPushButton:disabled{
     <string>Word List Info</string>
    </property>
   </widget>
-  <widget class="QSlider" name="horizontalSlider" >
-   <property name="geometry" >
-    <rect>
-     <x>830</x>
-     <y>620</y>
-     <width>160</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="focusPolicy" >
-    <enum>Qt::NoFocus</enum>
-   </property>
-   <property name="styleSheet" >
-    <string> QSlider::groove:horizontal {
-         border: 1px solid #999999;
-         height: 8px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-         background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFF88, stop:1 #FFFFBB);
-         margin: 2px 0;
-     }
-
-     QSlider::handle:horizontal {
-         background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #BBBB88, stop:1 #888822);
-         border: 1px solid #5c5c5c;
-         width: 18px;
-         margin: -2px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-         border-radius: 3px;
-     } </string>
-   </property>
-   <property name="minimum" >
-    <number>35</number>
-   </property>
-   <property name="maximum" >
-    <number>70</number>
-   </property>
-   <property name="value" >
-    <number>50</number>
-   </property>
-   <property name="orientation" >
-    <enum>Qt::Horizontal</enum>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButtonPreferences" >
    <property name="geometry" >
     <rect>
-     <x>660</x>
-     <y>690</y>
-     <width>136</width>
+     <x>720</x>
+     <y>10</y>
+     <width>106</width>
      <height>34</height>
     </rect>
    </property>
@@ -519,7 +478,7 @@ QPushButton:disabled{
  } </string>
    </property>
    <property name="text" >
-    <string>Table Preferences</string>
+    <string>Preferences</string>
    </property>
   </widget>
  </widget>
