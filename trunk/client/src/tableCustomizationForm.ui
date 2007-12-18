@@ -197,6 +197,11 @@
      <string>No table</string>
     </property>
    </item>
+   <item>
+    <property name="text" >
+     <string>Rock</string>
+    </property>
+   </item>
   </widget>
   <widget class="QComboBox" name="comboBoxBackground" >
    <property name="geometry" >

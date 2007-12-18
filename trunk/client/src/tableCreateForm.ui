@@ -5,19 +5,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>250</width>
+    <width>380</width>
     <height>400</height>
    </rect>
   </property>
   <property name="minimumSize" >
    <size>
-    <width>250</width>
+    <width>380</width>
     <height>400</height>
    </size>
   </property>
   <property name="maximumSize" >
    <size>
-    <width>250</width>
+    <width>380</width>
     <height>400</height>
    </size>
   </property>
@@ -53,7 +53,7 @@
     <number>1</number>
    </property>
    <property name="maximum" >
-    <number>6</number>
+    <number>8</number>
    </property>
   </widget>
   <widget class="QLabel" name="label" >
@@ -202,7 +202,7 @@
     <rect>
      <x>100</x>
      <y>190</y>
-     <width>131</width>
+     <width>261</width>
      <height>161</height>
     </rect>
    </property>
