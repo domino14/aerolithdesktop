@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 
-const quint16 MAGIC_NUMBER = 25347;
+const quint16 MAGIC_NUMBER = 25348;
 const QString WindowTitle = "Aerolith 0.4";
 const QString thisVersion = "0.4";
 
@@ -73,9 +73,6 @@ out(&block, QIODevice::WriteOnly)
 	dailyChallenges->setFixedWidth(180);
 
 	challengesMenu = new QMenu;
-	/*for (int i = 2; i <= 15; i++)
-		challengesMenu->addAction(QString("Today's %1s").arg(i));
-	challengesMenu->addAction("Get today's scores");*/
 
 	connect(challengesMenu, SIGNAL(triggered(QAction*)), this, SLOT(dailyChallengeSelected(QAction*)));
 	dailyChallenges->setMenu(challengesMenu);
@@ -194,12 +191,15 @@ out(&block, QIODevice::WriteOnly)
 
 	QMenu* helpMenu = menuBar()->addMenu("Help");
 	QAction* helpAction = helpMenu->addAction("Aerolith Help");
+	QAction* acknowledgementsAction = helpMenu->addAction("Acknowledgements");
+	QAction* aboutQt = helpMenu->addAction("About Qt");
 	QMenu* loginMenu = menuBar()->addMenu("Connect");
 	QAction* connectAction = loginMenu->addAction("Connect to Aerolith");
 
 	connect(helpAction, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
 	connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(raise()));
-
+	connect(acknowledgementsAction, SIGNAL(triggered()), this, SLOT(aerolithAcknowledgementsDialog()));
+	connect(aboutQt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
 	connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(show()));
 	
 
@@ -730,6 +730,7 @@ void MainWindow::toggleConnectToServer()
 		//centralWidget->hide();
 		loginDialog->show();
 		loginDialog->raise();
+		//gameBoardWidget->hide();
 	}
 
 }
@@ -747,6 +748,7 @@ void MainWindow::serverDisconnection()
 	roomTable->clearContents();
 	roomTable->setRowCount(0);
 	setWindowTitle("Aerolith - disconnected");
+	gameBoardWidget->hide();
 }
 
 void MainWindow::connectedToServer()
@@ -856,7 +858,7 @@ void MainWindow::createNewRoom()
 	uiTable.playersSpinBox->setValue(1);
 	uiTable.timerSpinBox->setValue(4);
 	int retval = createTableDialog->exec();
-	if (retval == QDialog::Rejected) return;
+	if (retval == QDialog::Rejected || uiTable.listWidgetTopLevelList->currentItem() == NULL) return;
 
 	// else its not rejected
 
@@ -1193,15 +1195,28 @@ void MainWindow::aerolithHelpDialog()
 {
 	QString infoText;
 	infoText += "- Cycle mode allows you to go through all the words in a list, and at the end, keep going through the missed words.<BR>";
+	infoText += "- Tables are very customizable. To customize the colors and tiles in a table, please enter a table, and click the ""Preferences"" button. It may help to click start to see what the tiles will look like. Click Save when you are done.<BR>";
 	QMessageBox::information(this, "Aerolith how-to", infoText);
+}
+void MainWindow::aerolithAcknowledgementsDialog()
+{
+	QString infoText;
+	infoText += "Special thanks to the following people who have helped me in the development of Aerolith in some way, and to anyone else I may have forgotten:";
+	infoText += "<BR>Joseph Bihlmeyer, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Danny McMullan, David Wiegand, Gabriel Wong, Maria Ho, Elana Lehrer, James Leong, Kenji Matsumoto, Michael Thelen.<BR>";
+	QMessageBox::information(this, "Acknowledgements", infoText);
+}
+
+void MainWindow::showAboutQt()
+{
+	QMessageBox::aboutQt(this, "About Qt");
 }
 
 void MainWindow::displayHighScores()
 {
-	quint8 wordLength;
+	QString challengeName;
 	quint16 numSolutions;
 	quint16 numEntries;
-	in >> wordLength >> numSolutions >> numEntries;
+	in >> challengeName >> numSolutions >> numEntries;
 	QString username;
 	quint16 numCorrect;
 	quint16 timeRemaining;

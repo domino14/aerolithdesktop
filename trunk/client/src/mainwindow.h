@@ -124,6 +124,9 @@ private:
 		
 		void showRegisterPage();
 		void showLoginPage();
+
+		void aerolithAcknowledgementsDialog();
+		void showAboutQt();
 };
 
 struct tempHighScoresStruct

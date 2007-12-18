@@ -95,7 +95,7 @@ void GameTable::addToPlayerList(QString username, QString stringToAdd)
 		int indexOfPlayer = seats.value(username);
 		playerUis.at(indexOfPlayer).listWidgetAnswers->insertItem(0, stringToAdd);
 		playerUis.at(indexOfPlayer).listWidgetAnswers->item(0)->setTextAlignment(Qt::AlignCenter);
-		playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("<font color=black><b>%1</b></font>").
+		playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("%1").
 			arg(playerUis.at(indexOfPlayer).listWidgetAnswers->count()));
 
 
@@ -161,7 +161,7 @@ void GameTable::addPlayerToWidgets(QString username, bool gameStarted)
 	seats.insert(username, spot);
 
 	if (gameStarted == false)
-		for (int i = 0; i < 6; i++)
+		for (int i = 0; i < numPlayers; i++)
 			playerUis.at(i).labelAddInfo->setText("");
 	clearReadyIndicators();
 }
@@ -200,7 +200,7 @@ void GameTable::setMyUsername(QString username)
 
 
 ///////////////////////////
-UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb) : GameTable(parent, f, 6)
+UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb) : GameTable(parent, f, 8)
 {
 
 
@@ -259,15 +259,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	move(0, 0);
 
 
-	for (int i = 0; i < 6; i++)
-		playerWidgets.at(i)->raise();
-	
-	playerWidgets.at(0)->move(220, 500);
-	playerWidgets.at(1)->move(400, 500);
-	playerWidgets.at(2)->move(580, 500);
-	playerWidgets.at(3)->move(880, 350);
-	playerWidgets.at(4)->move(880, 200);
-	playerWidgets.at(5)->move(880, 50);	
 
 	//connect(
 
@@ -313,12 +304,30 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		readyChips << c;
 	}
 
-	readyChips.at(0)->setPos(260, 390);
-	readyChips.at(1)->setPos(440, 390);
-	readyChips.at(2)->setPos(620, 390);
-	readyChips.at(3)->setPos(800, 340);
-	readyChips.at(4)->setPos(800, 190);
-	readyChips.at(5)->setPos(800, 50);
+	readyChips.at(0)->setPos(200, 390);
+	readyChips.at(1)->setPos(370, 390);
+	readyChips.at(2)->setPos(540, 390);
+	readyChips.at(3)->setPos(710, 390);
+	readyChips.at(4)->setPos(800, 330);
+	readyChips.at(5)->setPos(800, 190);
+	readyChips.at(6)->setPos(800, 50);
+
+	readyChips.at(7)->setPos(785, 385);
+
+	for (int i = 0; i < numPlayers; i++)
+		playerWidgets.at(i)->raise();
+	
+	playerWidgets.at(0)->move(150, 500);
+	playerWidgets.at(1)->move(320, 500);
+	playerWidgets.at(2)->move(490, 500);
+	playerWidgets.at(3)->move(650, 500);
+	playerWidgets.at(4)->move(880, 320);	
+	playerWidgets.at(5)->move(880, 180);
+	playerWidgets.at(6)->move(880, 40);
+
+	playerWidgets.at(7)->move(820, 470);
+
+
 	
 
 	verticalVariation = 2.0;
@@ -433,6 +442,11 @@ void UnscrambleGameTable::changeTableStyle(int index)
 	{
 		tableItem->hide();
 	}
+	else if (index == 3)
+	{
+		tableItem->setPixmap(QPixmap(":/images/table3.png"));
+		tableItem->show();
+	}
 }
 
 void UnscrambleGameTable::changeTileBorderStyle(bool borderOn)
@@ -470,12 +484,47 @@ void UnscrambleGameTable::changeVerticalVariation(bool vert)
 
 void UnscrambleGameTable::changeBackground(int index)
 {
-	if (index == 0) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
-	if (index == 1) tableUi.graphicsView->setBackgroundBrush(QBrush(QColor(212, 208, 200)));
-	if (index == 2) tableUi.graphicsView->setBackgroundBrush(QBrush(Qt::white));
-	if (index == 3) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/lava.png"));
-	if (index == 4) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/stars.png"));
-	
+	QString colorHtml = "black";
+	switch (index)
+	{
+	case 0:
+		tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
+		colorHtml = "black";
+		break;
+
+	case 1:
+		tableUi.graphicsView->setBackgroundBrush(QBrush(QColor(212, 208, 200)));
+		colorHtml = "black";
+		break;
+
+	case 2: 
+		tableUi.graphicsView->setBackgroundBrush(QBrush(Qt::white));
+		colorHtml = "black";
+		break;
+
+	case 3: 
+		tableUi.graphicsView->setBackgroundBrush(QImage(":/images/lava.png"));
+		colorHtml = "white";
+		break;
+
+	case 4:
+		tableUi.graphicsView->setBackgroundBrush(QImage(":/images/stars.png"));
+		colorHtml = "white";
+		break;
+	}
+
+
+	QString sheet = QString("QLabel { font: bold; color: %1; }").arg(colorHtml);
+     tableUi.labelWordListInfo->setStyleSheet(sheet); 
+	 tableUi.labelGuess->setStyleSheet(sheet);
+	 tableUi.labelYourGuesses->setStyleSheet(sheet);
+
+	 for (int i = 0; i < numPlayers; i++)
+	 {
+		playerUis.at(i).labelUsername->setStyleSheet(sheet);
+		playerUis.at(i).labelAddInfo->setStyleSheet(sheet);
+	 }
+
 }
 
 void UnscrambleGameTable::setZoom(int zoom)
