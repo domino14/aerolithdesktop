@@ -33,7 +33,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 	{
 		QString temp = wordListFileName;
 		temp.chop(1);
-		wordLengths = temp.right(1).toInt();
+		//		wordLengths = temp.right(1).toInt();
 		tableTimerVal = 270;	// 4.5 minutes for 50 words - server decides time for challenges!
 	}
 	/*
@@ -288,7 +288,7 @@ void UnscrambleGame::generateDailyChallenges()
 		challenges.insert(challengeName, tmpChallenge);
 
 		QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
-		QFile tempOutFile(QString("dailylists/%1s").arg(i));
+		QFile tempOutFile("dailylists/" + challengeName);
 		QTextStream inStream(&tempInFile);
 		QTextStream outStream(&tempOutFile);
 		tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -348,7 +348,7 @@ void UnscrambleGame::generateTempFile()
 		QFile toRemove(QString("temp%1").arg(table->tableNumber));
 		toRemove.remove();
 
-		QFile tempInFile("dailylists/" + wordListFileName.mid(6)); // looks like dailylists/4s  or dailylists/8s  etc.
+		QFile tempInFile("dailylists/" + wordListFileName);
 		tempInFile.copy(QString("temp%1").arg(table->tableNumber));
 		qDebug() << "copied" << tempInFile.fileName() << " to temp file";
 		tempFileExists = true;

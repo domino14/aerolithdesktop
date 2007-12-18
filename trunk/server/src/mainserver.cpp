@@ -15,7 +15,7 @@ const QString incompatibleVersionString =
 Please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
-const QString thisVersion = "0.3.1";
+const QString thisVersion = "0.4";
 
 MainServer::MainServer()
 {
@@ -338,6 +338,7 @@ void MainServer::sendHighScores(ClientSocket* socket)
 
 		QList <highScoreData> tmpList = UnscrambleGame::challenges.value(challengeName).highScores->values();
       
+		if (tmpList.size() == 0) return;
       writeHeaderData();
       out << (quint8) 'H'; // high scores
       out << challengeName;
