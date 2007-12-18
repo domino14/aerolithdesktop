@@ -43,13 +43,20 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 	painter->drawLine(1, width-1, width-1, width-1);
 	painter->drawLine(width-1, width-1, width-1, 1);
     // Draw text
-   
+
+#ifdef Q_WS_MAC
+	QFont font("Courier", width+4, 75);
+#else
 	QFont font("Courier", width-1, 100);
+#endif
 //	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
+#ifdef Q_WS_MAC
+	painter->drawText(QRectF(0, 0, width-2, width-2), Qt::AlignCenter, tileLetter);
+#else
 	painter->drawText(QRectF(0,	1, width-2, width-2), Qt::AlignCenter, tileLetter);
-   
+#endif   
 }
 
 void Tile::setTileProperties(QBrush& b, QPen& p, QPen &e)
