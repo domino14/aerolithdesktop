@@ -127,13 +127,7 @@ void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
 			}
 		}
 	}
-<<<<<<< .mine
-	qDebug() << " ->GUESS" << socket->connData.userName << guess;
-=======
 	 qDebug() << " ->GUESS" << socket->connData.userName << guess;
->>>>>>> .r199
-
-
 }
 
 void UnscrambleGame::gameEndRequest(ClientSocket* socket)
