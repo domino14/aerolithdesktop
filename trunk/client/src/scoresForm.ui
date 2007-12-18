@@ -24,99 +24,6 @@
   <property name="windowTitle" >
    <string>High Scores</string>
   </property>
-  <widget class="QPushButton" name="getScoresPushbutton" >
-   <property name="geometry" >
-    <rect>
-     <x>270</x>
-     <y>10</y>
-     <width>109</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string>Get Scores</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="scoresComboBox" >
-   <property name="geometry" >
-    <rect>
-     <x>20</x>
-     <y>10</y>
-     <width>221</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <item>
-    <property name="text" >
-     <string>Daily 2s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 3s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 4s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 5s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 6s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 7s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 8s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 9s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 10s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 11s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 12s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 13s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 14s</string>
-    </property>
-   </item>
-   <item>
-    <property name="text" >
-     <string>Daily 15s</string>
-    </property>
-   </item>
-  </widget>
   <widget class="QTableWidget" name="scoresTableWidget" >
    <property name="geometry" >
     <rect>
@@ -159,7 +66,32 @@
     </property>
    </column>
   </widget>
+  <widget class="QComboBox" name="comboBoxChallenges" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>251</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonGetScores" >
+   <property name="geometry" >
+    <rect>
+     <x>284</x>
+     <y>18</y>
+     <width>101</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Get Scores</string>
+   </property>
+  </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../client.qrc" />
+ </resources>
  <connections/>
 </ui>

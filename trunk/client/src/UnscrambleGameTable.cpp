@@ -231,7 +231,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(uiPreferences.pushButtonSavePrefs, SIGNAL(clicked()), this, SLOT(saveUserPreferences()));
 	connect(uiPreferences.comboBoxBackground, SIGNAL(currentIndexChanged(int)), this, SLOT(changeBackground(int)));
 
-	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
+//	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
 	tableUi.textEditChat->document()->setMaximumBlockCount(500);
 	tableUi.textEditGuesses->document()->setMaximumBlockCount(500);
@@ -244,17 +244,15 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	// load tilesList and chipsList
 
 
-	gfxScene.setSceneRect(0, 0, 980, 720);
-	tableUi.graphicsView->setSceneRect(0, 0, 980, 720);
+	//gfxScene.setSceneRect(0, 0, 980, 720);
+	//tableUi.graphicsView->setSceneRect(0, 0, 980, 720);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
 	tableUi.graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
-
+	tableUi.graphicsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 	tableUi.graphicsView->setCacheMode(QGraphicsView::CacheBackground); 
 	tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
-	tableItem->setOffset(QPoint(50, 80));
 	tableItem->setZValue(-1);
-	tableItem->scale(1.1, 1);
 	
 	setWindowIcon(QIcon(":/images/aerolith.png"));
 
@@ -264,12 +262,12 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	for (int i = 0; i < 6; i++)
 		playerWidgets.at(i)->raise();
 	
-	playerWidgets.at(0)->move(220, 510);
-	playerWidgets.at(1)->move(650, 510);
-	playerWidgets.at(2)->move(870, 250);
-	playerWidgets.at(3)->move(650, 10);
-	playerWidgets.at(4)->move(220, 10);
-	playerWidgets.at(5)->move(10, 250);	
+	playerWidgets.at(0)->move(220, 500);
+	playerWidgets.at(1)->move(400, 500);
+	playerWidgets.at(2)->move(580, 500);
+	playerWidgets.at(3)->move(880, 350);
+	playerWidgets.at(4)->move(880, 200);
+	playerWidgets.at(5)->move(880, 50);	
 
 	//connect(
 
@@ -315,13 +313,14 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		readyChips << c;
 	}
 
-	readyChips.at(0)->setPos(260, 470);
-	readyChips.at(1)->setPos(690, 470);
-	readyChips.at(2)->setPos(810, 290);
-	readyChips.at(3)->setPos(690, 150);
-	readyChips.at(4)->setPos(260, 150);
-	readyChips.at(5)->setPos(150, 290);
+	readyChips.at(0)->setPos(260, 390);
+	readyChips.at(1)->setPos(440, 390);
+	readyChips.at(2)->setPos(620, 390);
+	readyChips.at(3)->setPos(800, 340);
+	readyChips.at(4)->setPos(800, 190);
+	readyChips.at(5)->setPos(800, 50);
 	
+
 	verticalVariation = 2.0;
 
 
@@ -374,6 +373,11 @@ void UnscrambleGameTable::changeTileColors(int option)
 	case 5:	// white
 		linearGrad.setColorAt(0, QColor(255, 255, 255));			
 		linearGrad.setColorAt(1, QColor(255, 255, 255));			
+		tileBrush = QBrush(linearGrad);
+		break;
+	case 6: // gray
+		linearGrad.setColorAt(0, QColor(212, 208, 200));			
+		linearGrad.setColorAt(1, QColor(212, 208, 200));			
 		tileBrush = QBrush(linearGrad);
 		break;
 	}
@@ -467,9 +471,10 @@ void UnscrambleGameTable::changeVerticalVariation(bool vert)
 void UnscrambleGameTable::changeBackground(int index)
 {
 	if (index == 0) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
-	if (index == 1) tableUi.graphicsView->setBackgroundBrush(QBrush(Qt::white));
-	if (index == 2) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/lava.png"));
-	if (index == 3) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/stars.png"));
+	if (index == 1) tableUi.graphicsView->setBackgroundBrush(QBrush(QColor(212, 208, 200)));
+	if (index == 2) tableUi.graphicsView->setBackgroundBrush(QBrush(Qt::white));
+	if (index == 3) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/lava.png"));
+	if (index == 4) tableUi.graphicsView->setBackgroundBrush(QImage(":/images/stars.png"));
 	
 }
 
@@ -679,11 +684,11 @@ void UnscrambleGameTable::alphagrammizeWords()
 	foreach (wordQuestion wq, wordQuestions)
 	{
 		// server always sends alphagram, so arrange tiles in order
-		double scale = getScaleFactor(wq.alphagram.length());
+		int tileWidth = getTileWidth(wq.alphagram.length());
 		// chipX, chipY is 19 to the left of the tile
 		for (int i = 0; i < wq.tiles.size(); i++)
 		{
-			wq.tiles.at(i)->setPos(wq.chip->x() + 19*scale*(i+1), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+			wq.tiles.at(i)->setPos(wq.chip->x() + tileWidth*(i+1), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
 		}
 	}
 
@@ -693,7 +698,6 @@ void UnscrambleGameTable::shuffleWords()
 {
 	foreach (wordQuestion wq, wordQuestions)
 	{
-		// chipX, chipY is 19 to the left of the tile
 		for (int i = 0; i < wq.tiles.size(); i++)
 		{
 			swapXPos(wq.tiles.at(i), wq.tiles.at(qrand() % wq.tiles.size()));
@@ -728,39 +732,40 @@ void UnscrambleGameTable::swapXPos(Tile* a, Tile* b)
 	b->setPos(t, b->y());
 }
 
-double UnscrambleGameTable::getScaleFactor(int wordLength)
+int UnscrambleGameTable::getTileWidth(int wordLength)
 {
-	return (-0.0475 * (double)wordLength + 1.3325);
-	// derived from a linear relation: scale of 1 at length 7, scale of 0.62 at length 15
+	if (wordLength > 10)
+		return (int)(19.0*(-0.0475 * (double)wordLength + 1.3925)) + 1;
+	else return 19;
+	
 }
 
-void UnscrambleGameTable::getBasePosition(int index, double scale, double& x, double& y)
+void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int tileWidth)
 {
-	int tileWidth = 19;
 
 	if (index >= 0 && index < 12)
 	{
 		//item->setPos(150 + i*(19.0 * scale), 190 + 26*index + verticalVariation* (double)qrand()/RAND_MAX);
-		x = 150 - tileWidth * scale;
-		y = 164 +26 * index;
+		x = 50 - tileWidth;
+		y = 60 +26 * index;
 	}
 	else if (index >= 12 && index < 25)
 	{
 		//item->setPos(330 + i*(19.0 * scale), 150 + 26*(index-10)+ verticalVariation* (double)qrand()/RAND_MAX);
-		x = 330 - tileWidth * scale;
-		y = 150 + 26*(index-12);
+		x = 255 - tileWidth;
+		y = 46 + 26*(index-12);
 	}
 	else if (index >= 25 && index < 38)
 	{
 		//item->setPos(510 + i*(19.0 * scale), 160 + 26*(index-23)+ verticalVariation* (double)qrand()/RAND_MAX);
-		x = 510 - tileWidth * scale;
-		y = 160 + 26*(index-25);
+		x = 460 - tileWidth;
+		y = 56 + 26*(index-25);
 	}
 	else if (index >=38)
 	{
 		//item->setPos(690 + i*(19.0*scale),170 + 26*(index-35)+ verticalVariation* (double)qrand()/RAND_MAX);
-		x = 690 - tileWidth * scale;
-		y = 170+26*(index-38);
+		x = 665 - tileWidth;
+		y = 66+26*(index-38);
 	}
 }
 
@@ -773,17 +778,16 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 	if (numNotSolved > 0)
 	{
 
-		double scale = getScaleFactor(alphagram.length());
-		
+		int tileWidth = getTileWidth(alphagram.length());
 		double chipX, chipY;
-		getBasePosition(index, scale, chipX, chipY);	// gets the chip position for index
+		getBasePosition(index,  chipX, chipY, tileWidth);	// gets the chip position for index
 		for (int i = 0; i < alphagram.length(); i++)
 		{
 	
 			Tile* item = tiles.at(index * 15 + i);
 			item->resetTransform();
-			item->scale(scale, scale);
-			item->setPos(chipX + (i + 1) * (19.0 * scale),
+			item->setWidth(tileWidth);
+			item->setPos(chipX + (i + 1) * (tileWidth),
 				chipY + verticalVariation* (double)qrand()/RAND_MAX);
 			item->setData(0, index);	// set the item data to index to keep track of which word this tile belongs to
 
@@ -797,6 +801,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 		item->setChipNumber(numNotSolved);
 		item->setPos(chipX, chipY);
 		item->resetTransform();
+		double scale = (double)tileWidth / 19.0;
 		item->scale(scale, scale);
 		item->show();
 		thisWord.chip = item;
@@ -809,9 +814,8 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString answer)
 {
 	QString alphagram = wordQuestions.at(index).alphagram;
-	double scale = getScaleFactor(alphagram.length());
-
-
+	int tileWidth = getTileWidth(alphagram.length());
+	double scale = (double)tileWidth/19.0;
 	wordQuestions[index].numNotYetSolved--;
 	int numSolutions = wordQuestions.at(index).numNotYetSolved;
 

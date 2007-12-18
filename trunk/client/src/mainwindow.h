@@ -73,6 +73,8 @@ private:
 	QDialog *scoresDialog;
 	QDialog *loginDialog;
 
+	QMenu *challengesMenu;
+
 	Ui::tableCreateForm uiTable;
 	Ui::scoresForm uiScores;
 	Ui::loginForm uiLogin;

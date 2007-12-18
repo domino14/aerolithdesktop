@@ -5,19 +5,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>250</width>
     <height>400</height>
    </rect>
   </property>
   <property name="minimumSize" >
    <size>
-    <width>400</width>
+    <width>250</width>
     <height>400</height>
    </size>
   </property>
   <property name="maximumSize" >
    <size>
-    <width>400</width>
+    <width>250</width>
     <height>400</height>
    </size>
   </property>
@@ -43,7 +43,7 @@
   <widget class="QSpinBox" name="playersSpinBox" >
    <property name="geometry" >
     <rect>
-     <x>120</x>
+     <x>100</x>
      <y>20</y>
      <width>42</width>
      <height>22</height>
@@ -95,75 +95,10 @@
     <string>Word list</string>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox_3" >
-   <property name="geometry" >
-    <rect>
-     <x>120</x>
-     <y>190</y>
-     <width>271</width>
-     <height>161</height>
-    </rect>
-   </property>
-   <property name="title" >
-    <string>Word list</string>
-   </property>
-   <widget class="QRadioButton" name="userRbo" >
-    <property name="geometry" >
-     <rect>
-      <x>20</x>
-      <y>80</y>
-      <width>83</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>User List</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="existingRbo" >
-    <property name="geometry" >
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>121</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Existing List</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="elistsCbo" >
-    <property name="enabled" >
-     <bool>false</bool>
-    </property>
-    <property name="geometry" >
-     <rect>
-      <x>40</x>
-      <y>50</y>
-      <width>211</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="ulistsCbo" >
-    <property name="enabled" >
-     <bool>false</bool>
-    </property>
-    <property name="geometry" >
-     <rect>
-      <x>40</x>
-      <y>100</y>
-      <width>211</width>
-      <height>21</height>
-     </rect>
-    </property>
-   </widget>
-  </widget>
   <widget class="QDialogButtonBox" name="buttonBox" >
    <property name="geometry" >
     <rect>
-     <x>229</x>
+     <x>70</x>
      <y>360</y>
      <width>162</width>
      <height>32</height>
@@ -179,7 +114,7 @@
   <widget class="QSpinBox" name="timerSpinBox" >
    <property name="geometry" >
     <rect>
-     <x>120</x>
+     <x>100</x>
      <y>60</y>
      <width>121</width>
      <height>27</height>
@@ -204,7 +139,7 @@
   <widget class="QGroupBox" name="groupBox" >
    <property name="geometry" >
     <rect>
-     <x>120</x>
+     <x>100</x>
      <y>90</y>
      <width>131</width>
      <height>91</height>
@@ -262,6 +197,16 @@
     </property>
    </widget>
   </widget>
+  <widget class="QListWidget" name="listWidgetTopLevelList" >
+   <property name="geometry" >
+    <rect>
+     <x>100</x>
+     <y>190</y>
+     <width>131</width>
+     <height>161</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
@@ -294,38 +239,6 @@
     <hint type="destinationlabel" >
      <x>375</x>
      <y>375</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>userRbo</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>ulistsCbo</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>171</x>
-     <y>276</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>329</x>
-     <y>295</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>existingRbo</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>elistsCbo</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>183</x>
-     <y>227</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>307</x>
-     <y>246</y>
     </hint>
    </hints>
   </connection>

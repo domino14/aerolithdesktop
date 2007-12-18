@@ -35,12 +35,21 @@
     <rect>
      <x>10</x>
      <y>50</y>
-     <width>870</width>
-     <height>450</height>
+     <width>1001</width>
+     <height>681</height>
     </rect>
    </property>
    <property name="focusPolicy" >
     <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="frameShape" >
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="frameShadow" >
+    <enum>QFrame::Plain</enum>
+   </property>
+   <property name="lineWidth" >
+    <number>0</number>
    </property>
    <property name="verticalScrollBarPolicy" >
     <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -53,7 +62,7 @@
    <property name="geometry" >
     <rect>
      <x>820</x>
-     <y>660</y>
+     <y>650</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -89,7 +98,7 @@ QPushButton:disabled{&#xd;
    <property name="geometry" >
     <rect>
      <x>820</x>
-     <y>700</y>
+     <y>690</y>
      <width>111</width>
      <height>34</height>
     </rect>

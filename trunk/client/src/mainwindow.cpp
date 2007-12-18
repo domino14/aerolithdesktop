@@ -72,10 +72,10 @@ out(&block, QIODevice::WriteOnly)
 	QPushButton *dailyChallenges = new QPushButton("Challenges");
 	dailyChallenges->setFixedWidth(180);
 
-	QMenu *challengesMenu = new QMenu;
-	for (int i = 2; i <= 15; i++)
+	challengesMenu = new QMenu;
+	/*for (int i = 2; i <= 15; i++)
 		challengesMenu->addAction(QString("Today's %1s").arg(i));
-	challengesMenu->addAction("Get today's scores");
+	challengesMenu->addAction("Get today's scores");*/
 
 	connect(challengesMenu, SIGNAL(triggered(QAction*)), this, SLOT(dailyChallengeSelected(QAction*)));
 	dailyChallenges->setMenu(challengesMenu);
@@ -160,7 +160,7 @@ out(&block, QIODevice::WriteOnly)
 	scoresDialog = new QDialog(this);
 	uiScores.setupUi(scoresDialog);
 	uiScores.scoresTableWidget->verticalHeader()->hide();
-	connect(uiScores.getScoresPushbutton, SIGNAL(clicked()), this, SLOT(getScores()));
+	connect(uiScores.pushButtonGetScores, SIGNAL(clicked()), this, SLOT(getScores()));
 
 	loginDialog = new QDialog(this);
 	uiLogin.setupUi(loginDialog);
@@ -571,9 +571,44 @@ void MainWindow::readFromServer()
 		case 'W':
 			{
 				// word lists
-				QString listTitle;
-				in >> listTitle;
-				uiTable.elistsCbo->addItem(listTitle);
+				quint8 listSubType;
+				in >> listSubType;
+				switch (listSubType)
+				{
+				case 'R':
+					{
+						uiTable.listWidgetTopLevelList->clear();
+						quint16 numLists;
+						in >> numLists;
+
+						for (int i = 0; i < numLists; i++)
+						{
+							QString listTitle;
+							in >> listTitle;
+							uiTable.listWidgetTopLevelList->addItem(listTitle);
+						}
+					}
+					break;
+
+				case 'D':
+					{
+						challengesMenu->clear();
+						uiScores.comboBoxChallenges->clear();
+						
+						quint8 numLists;
+						in >> numLists;
+
+						for (int i = 0; i < numLists; i++)
+						{
+							QString listTitle;
+							in >> listTitle;
+							challengesMenu->addAction(listTitle);
+							uiScores.comboBoxChallenges->addItem(listTitle);
+						}
+						challengesMenu->addAction("Get today's scores");
+					}
+					break;
+				}
 
 			}
 			break;
@@ -712,8 +747,6 @@ void MainWindow::serverDisconnection()
 	roomTable->clearContents();
 	roomTable->setRowCount(0);
 	setWindowTitle("Aerolith - disconnected");
-	uiTable.elistsCbo->clear();
-	uiTable.ulistsCbo->clear();
 }
 
 void MainWindow::connectedToServer()
@@ -800,11 +833,12 @@ void MainWindow::receivedPM(QString username, QString message)
 		PMWidget* w = pmWindows.value(hashString);
 		w->appendText("[" + username + "] " + message);
 		w->show();
-		w->activateWindow();
+		//w->activateWindow();
 	}
 	else
 	{
 		PMWidget *w = new PMWidget(0, currentUsername, username);
+		w->setAttribute(Qt::WA_QuitOnClose, false);
 		connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
 		w->appendText("[" + username + "] " + message);
 		w->show();
@@ -818,8 +852,7 @@ void MainWindow::createNewRoom()
 
 	// reset dialog to defaults first.
 	uiTable.cycleRbo->setChecked(true);
-	uiTable.existingRbo->setChecked(true);
-	uiTable.userRbo->setEnabled(false);
+	
 	uiTable.playersSpinBox->setValue(1);
 	uiTable.timerSpinBox->setValue(4);
 	int retval = createTableDialog->exec();
@@ -829,11 +862,7 @@ void MainWindow::createNewRoom()
 
 	writeHeaderData();
 	out << (quint8)'t';
-	if (uiTable.existingRbo->isChecked() == true)
-		out << uiTable.elistsCbo->currentText();
-	else
-		out << uiTable.ulistsCbo->currentText();
-
+	out << uiTable.listWidgetTopLevelList->currentItem()->text();
 	out << (quint8)uiTable.playersSpinBox->value();
 
 	if (uiTable.cycleRbo->isChecked() == true) out << (quint8)1;
@@ -991,10 +1020,9 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 	case 'A':
 		{
 			QString username, answer;
-			quint8 row, column;
-			in >> username >> answer >> row >> column;
+			quint8 index;
+			in >> username >> answer >> index;
 			// will change row column to a single number, so hardcode this
-			int index = row*5 + column;
 
 			gameBoardWidget->answeredCorrectly(index, username, answer);
 			gameBoardWidget->addToPlayerList(username, answer);
@@ -1245,7 +1273,7 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
 	{
 		writeHeaderData();
 		out << (quint8)'t';
-		out << challengeAction->text().replace("Today's", "Daily"); // create a table 
+		out << challengeAction->text(); // create a table 
 		out << (quint8)1; // 1 player
 		out << (quint8)3; // 3 is for daily challenges (TODO: HARDCODE BAD)
 		out << (quint8)0;	// server should decide time for daily challenge
@@ -1261,7 +1289,7 @@ void MainWindow::getScores()
 	uiScores.scoresTableWidget->setRowCount(0);
 	writeHeaderData();
 	out << (quint8)'h';
-	out << (quint8)(uiScores.scoresComboBox->currentIndex() + 2);
+	out << uiScores.comboBoxChallenges->currentText();
 	fixHeaderLength();
 	commsSocket->write(block);
 

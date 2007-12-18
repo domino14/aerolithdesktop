@@ -119,8 +119,8 @@ private:
 
 	void loadUserPreferences();
 	void swapXPos(Tile*, Tile*);
-	double getScaleFactor(int wordLength);
-	void getBasePosition(int index, double scale, double& x, double& y);
+	int getTileWidth(int wordLength);
+	void getBasePosition(int index, double& x, double& y, int tileWidth);
 protected:
 	virtual void closeEvent(QCloseEvent*);
 signals:

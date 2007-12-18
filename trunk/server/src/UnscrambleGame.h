@@ -13,6 +13,11 @@ struct highScoreData
   quint16 timeRemaining;
 };
 
+struct challengeInfo
+{
+	QHash <QString, highScoreData> *highScores;
+};
+
 class UnscrambleGame : public TableGame
 {
 
@@ -33,8 +38,13 @@ Q_OBJECT
  void startGame();
 
  static void generateDailyChallenges();
- static QList <highScoreData> dailyHighScores[14];
- static QHash <QString, QString> peopleWhoPlayed[14];
+ //static QList <highScoreData> dailyHighScores[14];
+ //static QHash <QString, QString> peopleWhoPlayed[14];
+
+
+
+	static QHash <QString, challengeInfo> challenges;
+
  static bool midnightSwitchoverToggle;
  private:
 
