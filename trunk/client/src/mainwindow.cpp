@@ -25,7 +25,7 @@ out(&block, QIODevice::WriteOnly)
 	}
 	else
 	{
-		chatText->append("<font color=red>A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool, by Michael Thelen, found at http://www.zyzzyva.net</font>.");
+		QMessageBox::warning(this, "Zyzzyva not found", "A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool, by Michael Thelen, found at <a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
 	}
 
 
