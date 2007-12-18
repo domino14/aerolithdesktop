@@ -1,0 +1,257 @@
+<ui version="4.0" >
+ <class>tableCustomizationForm</class>
+ <widget class="QWidget" name="tableCustomizationForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>390</width>
+    <height>133</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>390</width>
+    <height>133</height>
+   </size>
+  </property>
+  <property name="maximumSize" >
+   <size>
+    <width>390</width>
+    <height>133</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string>Table Customization</string>
+  </property>
+  <widget class="QLabel" name="label_3" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>46</width>
+     <height>14</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Tile color:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBoxTileColor" >
+   <property name="geometry" >
+    <rect>
+     <x>80</x>
+     <y>20</y>
+     <width>121</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text" >
+     <string>Light blue</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Dark blue</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Pink</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Dark red</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Black</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>White</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Gray</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QLabel" name="label_4" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>50</y>
+     <width>52</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Font color:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBoxFontColor" >
+   <property name="geometry" >
+    <rect>
+     <x>80</x>
+     <y>50</y>
+     <width>121</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text" >
+     <string>Black</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>White</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QLabel" name="label_5" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>20</y>
+     <width>71</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Table style:</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBoxTileBorders" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>80</y>
+     <width>121</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Tile borders</string>
+   </property>
+   <property name="checked" >
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonSavePrefs" >
+   <property name="geometry" >
+    <rect>
+     <x>310</x>
+     <y>100</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Save</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkBoxRandomVerticalPositions" >
+   <property name="geometry" >
+    <rect>
+     <x>140</x>
+     <y>80</y>
+     <width>161</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Random vertical positions</string>
+   </property>
+   <property name="checked" >
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="comboBoxTableStyle" >
+   <property name="geometry" >
+    <rect>
+     <x>280</x>
+     <y>20</y>
+     <width>91</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text" >
+     <string>Green</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Light blue</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>No table</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Rock</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QComboBox" name="comboBoxBackground" >
+   <property name="geometry" >
+    <rect>
+     <x>280</x>
+     <y>50</y>
+     <width>91</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text" >
+     <string>Canvas</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Gray</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>White</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Lava</string>
+    </property>
+   </item>
+   <item>
+    <property name="text" >
+     <string>Stars</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QLabel" name="label" >
+   <property name="geometry" >
+    <rect>
+     <x>220</x>
+     <y>50</y>
+     <width>60</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Background:</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

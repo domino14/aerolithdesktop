@@ -1,0 +1,502 @@
+<ui version="4.0" >
+ <class>tableForm</class>
+ <widget class="QWidget" name="tableForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>740</height>
+   </rect>
+  </property>
+  <property name="sizePolicy" >
+   <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>1024</width>
+    <height>740</height>
+   </size>
+  </property>
+  <property name="maximumSize" >
+   <size>
+    <width>2000</width>
+    <height>2000</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string/>
+  </property>
+  <widget class="QGraphicsView" name="graphicsView" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>50</y>
+     <width>1010</width>
+     <height>685</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="frameShape" >
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <property name="frameShadow" >
+    <enum>QFrame::Plain</enum>
+   </property>
+   <property name="lineWidth" >
+    <number>0</number>
+   </property>
+   <property name="verticalScrollBarPolicy" >
+    <enum>Qt::ScrollBarAlwaysOff</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy" >
+    <enum>Qt::ScrollBarAlwaysOff</enum>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonAlphagrams" >
+   <property name="geometry" >
+    <rect>
+     <x>820</x>
+     <y>650</y>
+     <width>111</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {&#xd;
+     background-color: rgb(0, 220, 0);&#xd;
+     border-style: outset;&#xd;
+     border-width: 2px;&#xd;
+     border-radius: 10px;&#xd;
+     border-color: beige;&#xd;
+     font: bold 14px;&#xd;
+     min-width: 5em;&#xd;
+     padding: 6px;&#xd;
+ }&#xd;
+QPushButton:disabled{&#xd;
+	background-color: rgb(0, 100, 0);&#xd;
+	color: rgb(100, 100, 100);&#xd;
+}&#xd;
+ QPushButton:pressed {&#xd;
+     background-color: rgb(0, 150, 0);&#xd;
+     border-style: inset;&#xd;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Alphagrams</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonShuffle" >
+   <property name="geometry" >
+    <rect>
+     <x>820</x>
+     <y>690</y>
+     <width>111</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {&#xd;
+     background-color: rgb(0, 220, 0);&#xd;
+     border-style: outset;&#xd;
+     border-width: 2px;&#xd;
+     border-radius: 10px;&#xd;
+     border-color: beige;&#xd;
+     font: bold 14px;&#xd;
+     min-width: 5em;&#xd;
+     padding: 6px;&#xd;
+ }&#xd;
+QPushButton:disabled{&#xd;
+	background-color: rgb(0, 100, 0);&#xd;
+	color: rgb(100, 100, 100);&#xd;
+}&#xd;
+ QPushButton:pressed {&#xd;
+     background-color: rgb(0, 150, 0);&#xd;
+     border-style: inset;&#xd;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Shuffle</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonGiveUp" >
+   <property name="geometry" >
+    <rect>
+     <x>280</x>
+     <y>10</y>
+     <width>94</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {
+     background-color: rgb(220, 0, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 8px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 0px;
+ }
+QPushButton:disabled{
+	background-color: rgb(50, 0, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(100, 0, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Give Up</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonExit" >
+   <property name="geometry" >
+    <rect>
+     <x>880</x>
+     <y>10</y>
+     <width>131</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {
+     background-color: rgb(220, 0, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(50, 0, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(100, 0, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Exit Table #</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonStart" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>111</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Start!</string>
+   </property>
+  </widget>
+  <widget class="QLCDNumber" name="lcdNumberTimer" >
+   <property name="geometry" >
+    <rect>
+     <x>130</x>
+     <y>10</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {&#xd;
+     background-color: rgb(220, 0, 0);&#xd;
+     border-style: outset;&#xd;
+     border-width: 2px;&#xd;
+     border-radius: 10px;&#xd;
+     border-color: beige;&#xd;
+     font: bold 14px;&#xd;
+     min-width: 5em;&#xd;
+     padding: 6px;&#xd;
+ }&#xd;
+QPushButton:disabled{&#xd;
+	background-color: rgb(50, 0, 0);&#xd;
+	color: rgb(100, 100, 100);&#xd;
+}&#xd;
+ QPushButton:pressed {&#xd;
+     background-color: rgb(100, 0, 0);&#xd;
+     border-style: inset;&#xd;
+ } </string>
+   </property>
+   <property name="segmentStyle" >
+    <enum>QLCDNumber::Filled</enum>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEditSolution" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>610</y>
+     <width>113</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="styleSheet" >
+    <string> QLineEdit {&#xd;
+     border: 2px solid gray;&#xd;
+     border-radius: 10px;&#xd;
+     padding: 0 8px;&#xd;
+     background: rgb(250, 250, 150);&#xd;
+     selection-background-color: darkgray;&#xd;
+ } &#xd;
+</string>
+   </property>
+   <property name="maxLength" >
+    <number>15</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="labelGuess" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>590</y>
+     <width>61</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>&lt;B>Guess:&lt;/B></string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEditChat" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>640</y>
+     <width>601</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="styleSheet" >
+    <string> QLineEdit {&#xd;
+     border: 2px solid gray;&#xd;
+     border-radius: 10px;&#xd;
+     padding: 0 8px;&#xd;
+     background: rgb(250, 250, 120);&#xd;
+     selection-background-color: darkgray;&#xd;
+ } &#xd;
+</string>
+   </property>
+   <property name="maxLength" >
+    <number>500</number>
+   </property>
+  </widget>
+  <widget class="QTextEdit" name="textEditChat" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>660</y>
+     <width>441</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::ClickFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QTextEdit, QListView {
+     border: 2px solid gray;
+     border-radius: 10px;
+ } </string>
+   </property>
+   <property name="readOnly" >
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="listWidgetPeopleInRoom" >
+   <property name="geometry" >
+    <rect>
+     <x>460</x>
+     <y>660</y>
+     <width>151</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string>QListWidget {
+     border: 2px solid gray;
+     border-radius: 10px;
+	background-color: rgb(255, 255, 200);
+}</string>
+   </property>
+  </widget>
+  <widget class="QTextEdit" name="textEditGuesses" >
+   <property name="geometry" >
+    <rect>
+     <x>650</x>
+     <y>660</y>
+     <width>161</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QTextEdit, QListView {
+     border: 2px solid gray;
+     border-radius: 10px;
+     background-color: rgb(255, 255, 105)
+ } </string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="labelYourGuesses" >
+   <property name="geometry" >
+    <rect>
+     <x>650</x>
+     <y>640</y>
+     <width>101</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>&lt;B>Your guesses:&lt;/B></string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonSolutions" >
+   <property name="geometry" >
+    <rect>
+     <x>410</x>
+     <y>10</y>
+     <width>111</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Solutions</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="labelWordListInfo" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>560</y>
+     <width>101</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Word List Info</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonPreferences" >
+   <property name="geometry" >
+    <rect>
+     <x>720</x>
+     <y>10</y>
+     <width>106</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet" >
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text" >
+    <string>Preferences</string>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>lineEditChat</tabstop>
+  <tabstop>lineEditSolution</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../client.qrc" />
+ </resources>
+ <connections/>
+</ui>
