@@ -327,27 +327,29 @@ void MainServer::receiveMessage()
 void MainServer::sendHighScores(ClientSocket* socket)
 {
   // sends high scores for unscramble game
-  quint8 wordLengthDesired;
+  QString challengeName;
 
-  socket->connData.in >> wordLengthDesired;
-  if (wordLengthDesired >= 2 && wordLengthDesired <= 15)
+  socket->connData.in >> challengeName;
+  if (UnscrambleGame::challenges.contains(challengeName))
     {
-      QList <highScoreData> *tmp = &UnscrambleGame::dailyHighScores[wordLengthDesired - 2];
-      if (tmp->size() == 0)
-	return;
+//      highScoreData *tmp = &UnscrambleGame::challenges.value(challengeName).highScores;
+
+		if (UnscrambleGame::challenges.value(challengeName).highScores->size() < 0) return;
+
+		QList <highScoreData> tmpList = UnscrambleGame::challenges.value(challengeName).highScores->values();
       
       writeHeaderData();
       out << (quint8) 'H'; // high scores
-      out << wordLengthDesired;
-      out << tmp->at(0).numSolutions;
-      out << (quint16) tmp->size();
-      qDebug() << "WL: " << wordLengthDesired << "#Sol" << tmp->at(0).numSolutions << "#players" << tmp->size();
-      for (int i = 0; i < tmp->size(); i++)
+      out << challengeName;
+      out << tmpList.at(0).numSolutions;
+      out << (quint16) tmpList.size();
+      qDebug() << challengeName << "#Sol" << tmpList.at(0).numSolutions << "#players" << tmpList.size();
+      for (int i = 0; i < tmpList.size(); i++)
 	{
-	  out << tmp->at(i).userName;
-	  out << tmp->at(i).numCorrect;
-	  out << tmp->at(i).timeRemaining;
-	  qDebug() << tmp->at(i).userName << tmp->at(i).numCorrect << tmp->at(i).timeRemaining;
+	  out << tmpList.at(i).userName;
+	  out << tmpList.at(i).numCorrect;
+	  out << tmpList.at(i).timeRemaining;
+	  qDebug() << tmpList.at(i).userName << tmpList.at(i).numCorrect << tmpList.at(i).timeRemaining;
 	}
 
       // 40 bytes per score
@@ -932,14 +934,28 @@ void MainServer::processLogin(ClientSocket* socket)
     }
   // send existing lists
 
-  foreach (QString listDescriptor, orderedWordLists)
-    {
+
       writeHeaderData();
-      out << (quint8) 'W';
-      out << listDescriptor;
-      fixHeaderLength();
-      socket->write(block);
-    }
+	  out << (quint8) 'W';		// word lists
+	  out << (quint8) 'R';	// regular
+	  out << (quint16)orderedWordLists.size();
+	  foreach (QString listDescriptor, orderedWordLists)
+	  {
+		  out << listDescriptor;
+	  }
+	  fixHeaderLength();
+	  socket->write(block);
+
+	  writeHeaderData();
+	  out << (quint8) 'W';	// word lists
+	  out << (quint8) 'D';	// daily
+	  out << (quint8) 14;
+	  for (int i = 2; i <= 15; i++)
+		  out << QString("Today's %1s").arg(i);
+	  fixHeaderLength();
+	  socket->write(block);
+
+
 }
 
 void MainServer::processChat(ClientSocket* socket)

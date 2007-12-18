@@ -17,8 +17,9 @@ public:
 	void setForegroundPen(QPen& p);
 	void setEdgePen(QPen& e);
 	QBrush getTileBrush();
-
+	void setWidth(int w);
 private:
+	int width;
 	QBrush tileBrush;
 	QPen foregroundPen;
 	QPen edgePen;

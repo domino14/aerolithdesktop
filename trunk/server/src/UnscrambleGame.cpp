@@ -5,8 +5,7 @@ extern QDataStream out;
 
 const quint8 COUNTDOWN_TIMER_VAL = 3;
 const quint8 maxRacks = 50;
-QList <highScoreData> UnscrambleGame::dailyHighScores[14];
-QHash <QString, QString> UnscrambleGame::peopleWhoPlayed[14];
+QHash <QString, challengeInfo> UnscrambleGame::challenges;
 bool UnscrambleGame::midnightSwitchoverToggle;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordListFileName)
@@ -34,7 +33,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 	{
 		QString temp = wordListFileName;
 		temp.chop(1);
-		wordLengths = temp.mid(6).toInt();
+		wordLengths = temp.right(1).toInt();
 		tableTimerVal = 270;	// 4.5 minutes for 50 words - server decides time for challenges!
 	}
 	/*
@@ -89,10 +88,14 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 				countdownTimer->start(1000);
 				sendTimerValuePacket(countdownTimerVal);
 				if (cycleState == 3)
-				{
-					if (wordLengths >= 2 && wordLengths <= 15)
-						if (peopleWhoPlayed[wordLengths - 2].contains(table->playerList.at(0)->connData.userName.toLower()))
-							table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores.");
+				{				
+					if (challenges.contains(wordListFileName))
+					{
+						if (challenges.value(wordListFileName).
+							highScores->contains(table->playerList.at(0)->connData.userName.toLower()))
+							table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores!");
+
+					}
 				}
 			}
 	}
@@ -124,7 +127,7 @@ void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
 			}
 		}
 	}
-	//  qDebug() << " ->GUESS" << socket->connData.userName << guess;
+	 qDebug() << " ->GUESS" << socket->connData.userName << guess;
 
 
 }
@@ -213,20 +216,15 @@ void UnscrambleGame::endGame()
 	else if (cycleState == 3) // daily challenges
 	{
 		startEnabled = false;
-		table->sendTableMessage("This daily challenge is over! To see scores or to try another daily challenge, exit the table and make the appropriate selections with the Challenges button.");
+		table->sendTableMessage("This challenge is over! To see scores or to try another challenge, exit the table and make the appropriate selections with the Challenges button.");
 		if (table->playerList.size() != 1)
-			qDebug() << table->playerList.size() << "More or less than 1 player in a daily challenge table!? WTF";
+			qDebug() << table->playerList.size() << "More or less than 1 player in a challenge table!? WTF";
 		else
 		{
 			// search for player. 
-
-			if (wordLengths < 2 || wordLengths > 15)
-				qDebug() << wordLengths << " is not a valid word length!";
-
-			else
+			if (challenges.contains(wordListFileName))
 			{
-
-				if (peopleWhoPlayed[wordLengths - 2].contains(table->playerList.at(0)->connData.userName.toLower()))
+				if (challenges.value(wordListFileName).highScores->contains(table->playerList.at(0)->connData.userName.toLower()))
 					table->sendTableMessage("You've already played this challenge. These results will not count towards this day's high scores.");
 				else
 				{
@@ -237,13 +235,13 @@ void UnscrambleGame::endGame()
 						tmp.numSolutions = numTotalSolutions;
 						tmp.numCorrect = numTotalSolutions - gameSolutions.size();
 						tmp.timeRemaining = currentTimerVal;
-						dailyHighScores[wordLengths-2].append(tmp);
-						peopleWhoPlayed[wordLengths-2].insert(table->playerList.at(0)->connData.userName.toLower(), 
-							table->playerList.at(0)->connData.userName);
+						challenges.value(wordListFileName).highScores->insert(table->playerList.at(0)->connData.userName.toLower(), tmp);
+						
 					}
 					else
 						table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
 				}
+			
 			}
 		}
 	}
@@ -277,8 +275,18 @@ void UnscrambleGame::generateDailyChallenges()
 			qDebug () << " and could not create it!";
 
 	}
+	QList <challengeInfo> vals = challenges.values();
+	foreach (challengeInfo ci, vals)
+		delete ci.highScores;
+
+	challenges.clear();
 	for (int i = 2; i <= 15; i++)
 	{
+		challengeInfo tmpChallenge;
+		tmpChallenge.highScores = new QHash <QString, highScoreData>;
+		QString challengeName = QString("Today's %1s").arg(i);
+		challenges.insert(challengeName, tmpChallenge);
+
 		QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
 		QFile tempOutFile(QString("dailylists/%1s").arg(i));
 		QTextStream inStream(&tempInFile);
@@ -299,16 +307,10 @@ void UnscrambleGame::generateDailyChallenges()
 			numWords++;
 		} while (numWords < maxRacks);
 		tempOutFile.close();
-		qDebug() << QString("generated daily %1s").arg(i);
+		qDebug() << QString("generated today's %1s").arg(i);
 
 	}
-	// TODO: also clear high score lists and whatever hash says that a player has already played.
-	// 
-	for (int i = 0; i < 14; i++)
-	{
-		dailyHighScores[i].clear();
-		peopleWhoPlayed[i].clear();
-	}
+	
 }
 
 void UnscrambleGame::generateTempFile()
@@ -416,7 +418,7 @@ void UnscrambleGame::prepareTableAlphagrams()
 				if (cycleState != 3)
 					table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
 				else
-					table->sendTableMessage("This daily challenge is over. \
+					table->sendTableMessage("This challenge is over. \
 											To view scores, please exit table and select 'Get today's scores' from the 'Challenges' button.");
 			}
 		}

@@ -16,13 +16,18 @@ Tile::Tile()
 
 	edgePen = QPen(Qt::black, 2);
 	//edgePen = QPen(Qt::white, 2);
-
+	width = 19;
 	//setFlag(QGraphicsItem::ItemIsMovable);
+}
+
+void Tile::setWidth(int w)
+{
+	width = w;
 }
 
 QRectF Tile::boundingRect() const
 {
-	return QRectF(0, 0, 19, 19);
+	return QRectF(0, 0, width, width);
 }
 
 void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -31,19 +36,19 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 	painter->setPen(QPen(tileBrush, 0));
 	painter->setBrush(tileBrush);
-    painter->drawRect(0, 0, 18, 18);
+    painter->drawRect(0, 0, width-1, width-1);
 
 	// draw black shadow
 	painter->setPen(edgePen);
-	painter->drawLine(1, 18, 18, 18);
-	painter->drawLine(18, 18, 18, 1);
+	painter->drawLine(1, width-1, width-1, width-1);
+	painter->drawLine(width-1, width-1, width-1, 1);
     // Draw text
    
-	QFont font("Courier", 18, 70);
+	QFont font("Courier", width-1, 100);
 //	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
-	painter->drawText(QRectF(0,	1, 17, 17), Qt::AlignCenter, tileLetter);
+	painter->drawText(QRectF(0,	1, width-2, width-2), Qt::AlignCenter, tileLetter);
    
 }
 
