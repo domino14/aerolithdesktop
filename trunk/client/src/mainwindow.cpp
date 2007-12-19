@@ -454,6 +454,11 @@ void MainWindow::readFromServer()
 					gameBoardWidget->setMyUsername(username);
 					currentTablenum = 0;
 				}
+				if (username.toLower() == "cesar")
+				{
+					it->setForeground(QBrush(Qt::blue));
+
+				}
 			}
 			break;
 		case 'X':	// logged out
@@ -1202,7 +1207,7 @@ void MainWindow::aerolithAcknowledgementsDialog()
 {
 	QString infoText;
 	infoText += "Special thanks to the following people who have helped me in the development of Aerolith in some way, and to anyone else I may have forgotten:";
-	infoText += "<BR>Joseph Bihlmeyer, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Danny McMullan, David Wiegand, Gabriel Wong, Maria Ho, Elana Lehrer, James Leong, Kenji Matsumoto, Michael Thelen.<BR>";
+	infoText += "<BR>Joseph Bihlmeyer, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Danny McMullan, David Wiegand, Gabriel Wong, Joanna Zhou, Aaron Bader, Maria Ho, Elana Lehrer, James Leong, Seth Lipkin, Kenji Matsumoto, Michael Thelen.<BR>";
 	QMessageBox::information(this, "Acknowledgements", infoText);
 }
 
