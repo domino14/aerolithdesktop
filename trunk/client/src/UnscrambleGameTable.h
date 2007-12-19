@@ -116,7 +116,7 @@ private:
 	QList <wordQuestion> wordQuestions;
 	QSet <QString> rightAnswers;
 	double verticalVariation;
-
+	double heightScale;
 	void loadUserPreferences();
 	void swapXPos(Tile*, Tile*);
 	int getTileWidth(int wordLength);
@@ -146,7 +146,7 @@ signals:
 		void changeTileBorderStyle(bool);
 		void changeVerticalVariation(bool);
 		void changeBackground(int index);
-
+		void changeTileAspectRatio(bool);
 		void saveUserPreferences();
 
 

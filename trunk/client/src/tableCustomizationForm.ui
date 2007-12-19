@@ -251,6 +251,19 @@
     <string>Background:</string>
    </property>
   </widget>
+  <widget class="QCheckBox" name="checkBoxTallTiles" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>100</y>
+     <width>70</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Tall Tiles</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

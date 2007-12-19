@@ -14,17 +14,23 @@ Tile::Tile()
 	//foregroundPen = QPen(Qt::white);
 	foregroundPen = QPen(Qt::black);
 
-	edgePen = QPen(Qt::black, 2);
+	edgePen = QPen(Qt::black, 1);
 	//edgePen = QPen(Qt::white, 2);
 	width = 17;
-	height = (double)width* 0.8;
+	height = (double)width;
 	//setFlag(QGraphicsItem::ItemIsMovable);
 }
 
-void Tile::setWidth(int w)
+int Tile::getWidth()
 {
+	return width;
+}
+
+void Tile::setWidth(int w, double hscale)
+{
+	prepareGeometryChange();
 	width = w;
-	height = (double)width* 1.25;
+	height = (double)width* hscale;
 
 }
 
@@ -47,18 +53,21 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 	painter->drawLine(width-1, height-1, width-1, 1);
     // Draw text
 
+	int baseFontSize;
+	if (width == height) baseFontSize = 0;
+	else baseFontSize = 2;
 #ifdef Q_WS_MAC
-	QFont font("Courier", width+5, 75);
+	QFont font("Courier New", width + 4 + baseFontSize, 75);
 #else
-	QFont font("Courier", width+1, 100);
+	QFont font("Courier New", width + baseFontSize, 100);
 #endif
 //	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
 #ifdef Q_WS_MAC
-	painter->drawText(QRectF(0, 1, width-2, height-2), Qt::AlignCenter, tileLetter);
+	painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
 #else
-	painter->drawText(QRectF(0, 1, width-2, height-2), Qt::AlignCenter, tileLetter);
+	painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
 #endif   
 }
 
@@ -97,5 +106,6 @@ void Tile::setTileLetter(QString tileLetter)
 
 void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
 {
+	event->ignore();
 	emit mousePressed();
 }

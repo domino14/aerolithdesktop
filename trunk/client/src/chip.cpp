@@ -12,6 +12,7 @@ Chip::Chip()
 
 	//setFlag(QGraphicsItem::ItemIsMovable);
 	numberMode = true;
+	setAcceptedMouseButtons(0);
 }
 
 void Chip::setChipProperties(QBrush& b, QPen& p, QPen &e)

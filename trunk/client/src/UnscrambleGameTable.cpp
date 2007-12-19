@@ -230,6 +230,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(uiPreferences.checkBoxRandomVerticalPositions, SIGNAL(toggled(bool)), this, SLOT(changeVerticalVariation(bool)));
 	connect(uiPreferences.pushButtonSavePrefs, SIGNAL(clicked()), this, SLOT(saveUserPreferences()));
 	connect(uiPreferences.comboBoxBackground, SIGNAL(currentIndexChanged(int)), this, SLOT(changeBackground(int)));
+	connect(uiPreferences.checkBoxTallTiles, SIGNAL(toggled(bool)), this, SLOT(changeTileAspectRatio(bool)));
 
 //	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -251,8 +252,10 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
 	tableUi.graphicsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 	tableUi.graphicsView->setCacheMode(QGraphicsView::CacheBackground); 
+	//tableUi.graphicsView->setAcceptedMouseButtons(0);
 	tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
 	tableItem->setZValue(-1);
+	tableItem->setAcceptedMouseButtons(0);
 	
 	setWindowIcon(QIcon(":/images/aerolith.png"));
 
@@ -385,14 +388,14 @@ void UnscrambleGameTable::changeTileColors(int option)
 		tileBrush = QBrush(linearGrad);
 		break;
 	case 6: // gray
-		linearGrad.setColorAt(0, QColor(212, 208, 200));			
-		linearGrad.setColorAt(1, QColor(212, 208, 200));			
+		linearGrad.setColorAt(0, this->palette().color(QPalette::Window));		
+		linearGrad.setColorAt(1, this->palette().color(QPalette::Window));			
 		tileBrush = QBrush(linearGrad);
 		break;
 	}
 	QPen edgePen;
-	if (uiPreferences.checkBoxTileBorders->isChecked()) edgePen = QPen(Qt::black, 2);
-	else edgePen = QPen(tileBrush, 2);
+	if (uiPreferences.checkBoxTileBorders->isChecked()) edgePen = QPen(Qt::black, 0.4);
+	else edgePen = QPen(tileBrush, 0.4);
 
 	foreach (Tile* tile, tiles)
 	{
@@ -454,9 +457,9 @@ void UnscrambleGameTable::changeTileBorderStyle(bool borderOn)
 	QBrush tileBrush = tiles.at(0)->getTileBrush();
 	QPen edgePen;
 	if (borderOn)
-		edgePen = QPen(Qt::black, 2);
+		edgePen = QPen(Qt::black, 0.4);
 	else
-		edgePen = QPen(tileBrush, 2);
+		edgePen = QPen(tileBrush, 0.4);
 
 	foreach (Tile* tile, tiles)
 	{
@@ -482,6 +485,23 @@ void UnscrambleGameTable::changeVerticalVariation(bool vert)
 	}
 }
 
+void UnscrambleGameTable::changeTileAspectRatio(bool on)
+{
+	if (on) heightScale = 1.25;
+	else heightScale = 1.0;
+	foreach (wordQuestion wq, wordQuestions)
+	{
+		if (wq.numNotYetSolved > 0)
+		{
+			foreach(Tile* tile, wq.tiles)
+			{
+				tile->setWidth(tile->getWidth(), heightScale);
+			}
+		}
+	}
+	gfxScene.update();
+}
+
 void UnscrambleGameTable::changeBackground(int index)
 {
 	QString colorHtml = "black";
@@ -493,7 +513,7 @@ void UnscrambleGameTable::changeBackground(int index)
 		break;
 
 	case 1:
-		tableUi.graphicsView->setBackgroundBrush(QBrush(QColor(212, 208, 200)));
+		tableUi.graphicsView->setBackgroundBrush(QBrush(this->palette().color(QPalette::Window)));
 		colorHtml = "black";
 		break;
 
@@ -757,6 +777,7 @@ void UnscrambleGameTable::shuffleWords()
 
 void UnscrambleGameTable::tileWasClicked()
 {
+	tableUi.lineEditSolution->setFocus();
 	Tile* tile = static_cast<Tile*> (sender());
 	// find which word question it belongs to
 	int index = tile->data(0).toInt();
@@ -783,7 +804,7 @@ void UnscrambleGameTable::swapXPos(Tile* a, Tile* b)
 
 int UnscrambleGameTable::getTileWidth(int wordLength)
 {
-  int baseWidth = 19;
+  int baseWidth = 18;
 	if (wordLength > 10)
 		return (int)(baseWidth*(-0.0475 * (double)wordLength + 1.3925)) + 1;
 	else return baseWidth;
@@ -836,7 +857,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 	
 			Tile* item = tiles.at(index * 15 + i);
 			item->resetTransform();
-			item->setWidth(tileWidth);
+			item->setWidth(tileWidth, heightScale);
 			item->setPos(chipX + (i + 1) * (tileWidth),
 				chipY + verticalVariation* (double)qrand()/RAND_MAX);
 			item->setData(0, index);	// set the item data to index to keep track of which word this tile belongs to
@@ -927,7 +948,7 @@ void UnscrambleGameTable::saveUserPreferences()
 	settings.setValue("RandomVerticalPositions", uiPreferences.checkBoxRandomVerticalPositions->isChecked());
 	settings.setValue("TableStyle", uiPreferences.comboBoxTableStyle->currentIndex());
 	settings.setValue("BackgroundStyle", uiPreferences.comboBoxBackground->currentIndex());
-
+	settings.setValue("TallTiles", uiPreferences.checkBoxTallTiles->isChecked());
 	settings.endGroup();
 	preferencesWidget->hide();
 }
@@ -944,6 +965,7 @@ void UnscrambleGameTable::loadUserPreferences()
 	uiPreferences.checkBoxRandomVerticalPositions->setChecked(settings.value("RandomVerticalPositions", true).toBool());
 	uiPreferences.comboBoxTableStyle->setCurrentIndex(settings.value("TableStyle", 0).toInt());
 	uiPreferences.comboBoxBackground->setCurrentIndex(settings.value("BackgroundStyle", 0).toInt());
+	uiPreferences.checkBoxTallTiles->setChecked(settings.value("TallTiles", false).toBool());
 
 	changeTileColors(uiPreferences.comboBoxTileColor->currentIndex());
 	changeFontColors(uiPreferences.comboBoxFontColor->currentIndex());
@@ -951,6 +973,7 @@ void UnscrambleGameTable::loadUserPreferences()
 	changeTileBorderStyle(uiPreferences.checkBoxTileBorders->isChecked());
 	changeVerticalVariation(uiPreferences.checkBoxRandomVerticalPositions->isChecked());
 	changeBackground(uiPreferences.comboBoxBackground->currentIndex());
+	changeTileAspectRatio(uiPreferences.checkBoxTallTiles->isChecked());
 	settings.endGroup();
 
 }
