@@ -783,9 +783,10 @@ void UnscrambleGameTable::swapXPos(Tile* a, Tile* b)
 
 int UnscrambleGameTable::getTileWidth(int wordLength)
 {
+  int baseWidth = 19;
 	if (wordLength > 10)
-		return (int)(19.0*(-0.0475 * (double)wordLength + 1.3925)) + 1;
-	else return 19;
+		return (int)(baseWidth*(-0.0475 * (double)wordLength + 1.3925)) + 1;
+	else return baseWidth;
 	
 }
 
