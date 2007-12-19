@@ -16,18 +16,21 @@ Tile::Tile()
 
 	edgePen = QPen(Qt::black, 2);
 	//edgePen = QPen(Qt::white, 2);
-	width = 19;
+	width = 17;
+	height = (double)width* 0.8;
 	//setFlag(QGraphicsItem::ItemIsMovable);
 }
 
 void Tile::setWidth(int w)
 {
 	width = w;
+	height = (double)width* 1.25;
+
 }
 
 QRectF Tile::boundingRect() const
 {
-	return QRectF(0, 0, width, width);
+	return QRectF(0, 0, width, height);
 }
 
 void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -36,26 +39,26 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 	painter->setPen(QPen(tileBrush, 0));
 	painter->setBrush(tileBrush);
-    painter->drawRect(0, 0, width-1, width-1);
+    painter->drawRect(0, 0, width-1, height-1);
 
 	// draw black shadow
 	painter->setPen(edgePen);
-	painter->drawLine(1, width-1, width-1, width-1);
-	painter->drawLine(width-1, width-1, width-1, 1);
+	painter->drawLine(1, height-1, width-1, height-1);
+	painter->drawLine(width-1, height-1, width-1, 1);
     // Draw text
 
 #ifdef Q_WS_MAC
-	QFont font("Courier", width+4, 75);
+	QFont font("Courier", width+5, 75);
 #else
-	QFont font("Courier", width-1, 100);
+	QFont font("Courier", width+1, 100);
 #endif
 //	font.setStyleStrategy(QFont::PreferAntialias);
 	painter->setFont(font);
 	painter->setPen(foregroundPen);
 #ifdef Q_WS_MAC
-	painter->drawText(QRectF(0, 0, width-2, width-2), Qt::AlignCenter, tileLetter);
+	painter->drawText(QRectF(0, 1, width-2, height-2), Qt::AlignCenter, tileLetter);
 #else
-	painter->drawText(QRectF(0,	1, width-2, width-2), Qt::AlignCenter, tileLetter);
+	painter->drawText(QRectF(0, 1, width-2, height-2), Qt::AlignCenter, tileLetter);
 #endif   
 }
 

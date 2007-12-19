@@ -20,6 +20,7 @@ public:
 	void setWidth(int w);
 private:
 	int width;
+	int height;
 	QBrush tileBrush;
 	QPen foregroundPen;
 	QPen edgePen;
