@@ -40,7 +40,7 @@ QRectF textBoundingRect;
       painter->setFont(font);
       textBoundingRect = painter->boundingRect(QRectF(20, 0, 185, 26), Qt::AlignCenter, text);
      
-    } while (textBoundingRect.width() > 185);
+    } while (textBoundingRect.width() > 182 || textBoundingRect.height() > 25);
 
 
   painter->drawText(QRectF(20, 0, 185, 26), Qt::AlignCenter, text);
