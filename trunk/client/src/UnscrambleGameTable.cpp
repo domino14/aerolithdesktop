@@ -288,6 +288,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	    gfxScene.addItem(w);
 	    w->hide();
 	    w->setPos(-100, -100);
+		w->setZValue(0);
 	    connect (w, SIGNAL(mousePressed()), this, SLOT(rectangleWasClicked()));
 	  }
 	
@@ -298,6 +299,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		tiles << t;
 		gfxScene.addItem(t);
 		t->hide();
+		t->setZValue(1);
 		connect(t, SIGNAL(mousePressed()), this, SLOT(tileWasClicked()));
 	}
 
@@ -307,6 +309,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		chips << c;
 		gfxScene.addItem(c);
 		c->hide();
+		c->setZValue(2);
 	}
 
 	for (int i = 0; i < numPlayers; i++)
@@ -315,6 +318,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		gfxScene.addItem(c);
 		c->setChipString("");
 		c->hide();
+		c->setZValue(3);
 		QBrush readyChipBrush = QBrush(Qt::black);
 		QPen foregroundPen = QPen(Qt::white);
 		QPen edgePen = QPen(QColor(1, 1, 1).lighter(150), 0);
