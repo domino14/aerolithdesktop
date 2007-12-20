@@ -573,6 +573,9 @@ QPushButton:disabled{
      <height>32</height>
     </rect>
    </property>
+   <property name="focusPolicy" >
+    <enum>Qt::NoFocus</enum>
+   </property>
    <property name="text" >
     <string>Font Toggle</string>
    </property>

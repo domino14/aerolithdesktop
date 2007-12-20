@@ -54,7 +54,7 @@ void WordRectangle::paint(QPainter *painter, const QStyleOptionGraphicsItem *ite
     painter->setBrush(QBrush(QColor(230, 230, 230, 50)));
 
   painter->drawRect(0, 0, 205, 26);
-
+	painter->setRenderHint(QPainter::TextAntialiasing);
 
   if (shouldShowText)
     {
@@ -67,7 +67,10 @@ void WordRectangle::paint(QPainter *painter, const QStyleOptionGraphicsItem *ite
 	{
 	  fontSize--;
 	  QFont font(fontFamily, fontSize, 100);  
+//	font.setStyleStrategy(QFont::PreferAntialias);
+
 	  painter->setFont(font);
+
 	  textBoundingRect = painter->boundingRect(QRectF(20, 0, 185, 26), Qt::AlignCenter, text);
 	  
 	} while (textBoundingRect.width() > 182 || textBoundingRect.height() > 26);
