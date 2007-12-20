@@ -206,10 +206,9 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 	this->wordDb = wordDb;
 
-
+	this->setStyle(new QWindowsStyle);
 	tableUi.setupUi(this);
 	
-
 
 	connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
 	connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
@@ -232,6 +231,9 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(uiPreferences.comboBoxBackground, SIGNAL(currentIndexChanged(int)), this, SLOT(changeBackground(int)));
 	connect(uiPreferences.checkBoxTallTiles, SIGNAL(toggled(bool)), this, SLOT(changeTileAspectRatio(bool)));
 
+	connect(uiPreferences.groupBoxUseTiles, SIGNAL(clicked(bool)), this, SLOT(changeUseTiles(bool)));
+	connect(uiPreferences.checkBoxUseFixedWidthFont, SIGNAL(toggled(bool)), this, SLOT(useFixedWidthFontForRectangles(bool)));
+	
 //	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
 	tableUi.textEditChat->document()->setMaximumBlockCount(500);
@@ -275,6 +277,14 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), solutionsDialog, SLOT(show()));
 	
 	// generate gfx items
+
+	for (int i = 0; i < 50; i++)
+	  {
+	    WordRectangle *w = new WordRectangle;
+	    wordRectangles << w;
+	    gfxScene.addItem(w);
+	    w->hide();
+	  }
 	
 	// 50 letters * 15 = 
 	for (int i = 0; i < 750; i++)
@@ -306,6 +316,8 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 		c->setChipProperties(readyChipBrush, foregroundPen, edgePen);
 		readyChips << c;
 	}
+
+
 
 	readyChips.at(0)->setPos(200, 390);
 	readyChips.at(1)->setPos(370, 390);
@@ -356,8 +368,7 @@ void UnscrambleGameTable::changeTileColors(int option)
 	QBrush tileBrush;
 	switch(option)
 	{
-	case 0:	//light blue
-	
+	case 0:	//light blue	
 		linearGrad.setColorAt(0, QColor(7, 9, 184).lighter(200));			
 		linearGrad.setColorAt(1, QColor(55, 75, 175).lighter(200));			
 		tileBrush = QBrush(linearGrad);
@@ -502,6 +513,49 @@ void UnscrambleGameTable::changeTileAspectRatio(bool on)
 	gfxScene.update();
 }
 
+void UnscrambleGameTable::changeUseTiles(bool on)
+{
+  if (on)
+    {
+      uiPreferences.groupBoxUseRectangles->setEnabled(false);
+      	foreach (wordQuestion wq, wordQuestions)
+	{
+		if (wq.numNotYetSolved > 0)
+		{
+			foreach(Tile* tile, wq.tiles)
+			{
+			  tile->show();
+			}
+		}
+	}
+
+	foreach (WordRectangle* wr, wordRectangles)
+	  wr->hide();
+	
+    }
+  else
+    {
+      uiPreferences.groupBoxUseRectangles->setEnabled(true);
+      foreach (Tile* t, tiles)
+	t->hide();
+      foreach (WordRectangle* wr, wordRectangles)
+	wr->show();
+    }
+
+  gfxScene.update();
+
+}
+
+void UnscrambleGameTable::useFixedWidthFontForRectangles(bool on)
+{
+  foreach (WordRectangle* wr, wordRectangles)
+    wr->setFixedWidthFont(on);
+
+  
+  gfxScene.update();
+    
+}
+
 void UnscrambleGameTable::changeBackground(int index)
 {
 	QString colorHtml = "black";
@@ -513,7 +567,7 @@ void UnscrambleGameTable::changeBackground(int index)
 		break;
 
 	case 1:
-		tableUi.graphicsView->setBackgroundBrush(QBrush(this->palette().color(QPalette::Window)));
+	  tableUi.graphicsView->setBackgroundBrush(QBrush(this->palette().color(QPalette::Window)));
 		colorHtml = "black";
 		break;
 
@@ -845,13 +899,20 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 	QTime t;
 	t.start();
 	wordQuestion thisWord(alphagram, solutions, numNotSolved);
-	
+	bool shouldShowTiles = uiPreferences.groupBoxUseTiles->isChecked();
 	if (numNotSolved > 0)
 	{
 
 		int tileWidth = getTileWidth(alphagram.length());
 		double chipX, chipY;
 		getBasePosition(index,  chipX, chipY, tileWidth);	// gets the chip position for index
+		wordRectangles.at(index)->setPos(chipX-5, chipY-5);
+		wordRectangles.at(index)->setText(alphagram);
+		if (!shouldShowTiles) 
+		  {
+		    wordRectangles.at(index)->show();
+		    wordRectangles.at(index)->update();
+		  }
 		for (int i = 0; i < alphagram.length(); i++)
 		{
 	
@@ -864,7 +925,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 
 			thisWord.tiles.append(item);
 			item->setTileLetter(alphagram.at(i));
-			item->show();
+			if (shouldShowTiles) item->show();
 		}
 		
 		Chip *item = chips.at(index);
@@ -896,17 +957,19 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 		chip->resetTransform();
 		chip->scale(scale, scale);
 		chip->setChipNumber(numSolutions);
-		chip->update();
+		
 	}
 	else
 	{
 		wordQuestions.at(index).chip->hide();
 		foreach (Tile* tile, wordQuestions.at(index).tiles)
 			tile->hide();
+
+		wordRectangles.at(index)->setText("");
 	}
 
 	rightAnswers.insert(answer);
-
+	gfxScene.update();
 	// maybe later color code by username
 }
 
@@ -920,8 +983,10 @@ void UnscrambleGameTable::clearAllWordTiles()
 	foreach (Chip* chip, chips)
 		chip->hide();
 
+	foreach (WordRectangle *wr, wordRectangles)
+	  wr->setText("");
 	tableUi.graphicsView->centerOn(tableItem);
-
+	gfxScene.update();
 }
 
 void UnscrambleGameTable::setupForGameStart()
@@ -949,6 +1014,8 @@ void UnscrambleGameTable::saveUserPreferences()
 	settings.setValue("TableStyle", uiPreferences.comboBoxTableStyle->currentIndex());
 	settings.setValue("BackgroundStyle", uiPreferences.comboBoxBackground->currentIndex());
 	settings.setValue("TallTiles", uiPreferences.checkBoxTallTiles->isChecked());
+	settings.setValue("UseTiles", uiPreferences.groupBoxUseTiles->isChecked());
+	settings.setValue("FixedWidthFont", uiPreferences.checkBoxUseFixedWidthFont->isChecked());
 	settings.endGroup();
 	preferencesWidget->hide();
 }
@@ -966,6 +1033,9 @@ void UnscrambleGameTable::loadUserPreferences()
 	uiPreferences.comboBoxTableStyle->setCurrentIndex(settings.value("TableStyle", 0).toInt());
 	uiPreferences.comboBoxBackground->setCurrentIndex(settings.value("BackgroundStyle", 0).toInt());
 	uiPreferences.checkBoxTallTiles->setChecked(settings.value("TallTiles", false).toBool());
+	uiPreferences.groupBoxUseTiles->setChecked(settings.value("UseTiles", true).toBool());
+	uiPreferences.checkBoxUseFixedWidthFont->setChecked(settings.value("FixedWidthFont", false).toBool());
+
 
 	changeTileColors(uiPreferences.comboBoxTileColor->currentIndex());
 	changeFontColors(uiPreferences.comboBoxFontColor->currentIndex());
@@ -974,6 +1044,9 @@ void UnscrambleGameTable::loadUserPreferences()
 	changeVerticalVariation(uiPreferences.checkBoxRandomVerticalPositions->isChecked());
 	changeBackground(uiPreferences.comboBoxBackground->currentIndex());
 	changeTileAspectRatio(uiPreferences.checkBoxTallTiles->isChecked());
+	changeUseTiles(uiPreferences.groupBoxUseTiles->isChecked());
+	useFixedWidthFontForRectangles(uiPreferences.checkBoxUseFixedWidthFont->isChecked());
+
 	settings.endGroup();
 
 }

@@ -15,8 +15,8 @@ INCLUDEPATH += build/moc
 DEPENDPATH += build/moc
 
 FORMS = tableCreateForm.ui solutionsForm.ui scoresForm.ui loginForm.ui tableForm.ui playerInfoForm.ui tableCustomizationForm.ui pmForm.ui
-SOURCES += main.cpp mainwindow.cpp UnscrambleGameTable.cpp avatarLabel.cpp tile.cpp chip.cpp
-HEADERS += mainwindow.h UnscrambleGameTable.h avatarLabel.h tile.h chip.h
+SOURCES += main.cpp mainwindow.cpp UnscrambleGameTable.cpp avatarLabel.cpp tile.cpp chip.cpp wordRectangle.cpp
+HEADERS += mainwindow.h UnscrambleGameTable.h avatarLabel.h tile.h chip.h wordRectangle.h
 RESOURCES = ../client.qrc
 RC_FILE = ../client.rc
 
