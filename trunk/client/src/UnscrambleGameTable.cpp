@@ -205,7 +205,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 
 	this->wordDb = wordDb;
-
+	currentWordLength = 0;
 	this->setStyle(new QWindowsStyle);
 	tableUi.setupUi(this);
 	
@@ -230,10 +230,12 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(uiPreferences.pushButtonSavePrefs, SIGNAL(clicked()), this, SLOT(saveUserPreferences()));
 	connect(uiPreferences.comboBoxBackground, SIGNAL(currentIndexChanged(int)), this, SLOT(changeBackground(int)));
 	connect(uiPreferences.checkBoxTallTiles, SIGNAL(toggled(bool)), this, SLOT(changeTileAspectRatio(bool)));
+	connect(uiPreferences.checkBoxWordBorders, SIGNAL(toggled(bool)), this, SLOT(drawWordBorders(bool)));
+
 
 	connect(uiPreferences.groupBoxUseTiles, SIGNAL(clicked(bool)), this, SLOT(changeUseTiles(bool)));
 	connect(uiPreferences.checkBoxUseFixedWidthFont, SIGNAL(toggled(bool)), this, SLOT(useFixedWidthFontForRectangles(bool)));
-	
+	connect(tableUi.pushButtonFontToggle, SIGNAL(clicked()), this, SLOT(pushedFontToggleButton()));
 //	connect(tableUi.horizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setZoom(int)));
 	tableUi.textEditChat->setTextInteractionFlags(Qt::TextSelectableByMouse);
 	tableUi.textEditChat->document()->setMaximumBlockCount(500);
@@ -248,8 +250,9 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 
 	//gfxScene.setSceneRect(0, 0, 980, 720);
-	//tableUi.graphicsView->setSceneRect(0, 0, 980, 720);
+	
 	tableUi.graphicsView->setScene(&gfxScene);	  	
+	tableUi.graphicsView->setSceneRect(tableUi.graphicsView->contentsRect());
 	tableUi.graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
 	tableUi.graphicsView->setBackgroundBrush(QImage(":/images/canvas.png"));
 	tableUi.graphicsView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -284,6 +287,8 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	    wordRectangles << w;
 	    gfxScene.addItem(w);
 	    w->hide();
+	    w->setPos(-100, -100);
+	    connect (w, SIGNAL(mousePressed()), this, SLOT(rectangleWasClicked()));
 	  }
 	
 	// 50 letters * 15 = 
@@ -513,6 +518,28 @@ void UnscrambleGameTable::changeTileAspectRatio(bool on)
 	gfxScene.update();
 }
 
+void UnscrambleGameTable::drawWordBorders(bool on)
+{
+  foreach (WordRectangle* wr, wordRectangles)
+    {
+      if (on && uiPreferences.groupBoxUseTiles->isChecked())
+	{
+	  wr->hideText();
+	  wr->setTransparentBG();
+	  wr->show();
+	}
+      else
+	{
+	  wr->showText();
+	  wr->setOpaqueBG();
+	  wr->hide();
+	}
+    }
+
+  gfxScene.update();
+
+}
+
 void UnscrambleGameTable::changeUseTiles(bool on)
 {
   if (on)
@@ -530,8 +557,12 @@ void UnscrambleGameTable::changeUseTiles(bool on)
 	}
 
 	foreach (WordRectangle* wr, wordRectangles)
-	  wr->hide();
-	
+	  {
+	    wr->hide();
+
+	  }
+	tableUi.pushButtonFontToggle->hide();
+	drawWordBorders(uiPreferences.checkBoxWordBorders->isChecked());
     }
   else
     {
@@ -539,7 +570,12 @@ void UnscrambleGameTable::changeUseTiles(bool on)
       foreach (Tile* t, tiles)
 	t->hide();
       foreach (WordRectangle* wr, wordRectangles)
-	wr->show();
+	{
+	  wr->show();
+	  wr->setOpaqueBG();
+	  wr->showText();
+	}
+      tableUi.pushButtonFontToggle->show();
     }
 
   gfxScene.update();
@@ -554,6 +590,12 @@ void UnscrambleGameTable::useFixedWidthFontForRectangles(bool on)
   
   gfxScene.update();
     
+}
+
+void UnscrambleGameTable::pushedFontToggleButton()
+{
+  uiPreferences.checkBoxUseFixedWidthFont->animateClick();
+
 }
 
 void UnscrambleGameTable::changeBackground(int index)
@@ -655,9 +697,13 @@ void UnscrambleGameTable::sendPM(QListWidgetItem* item)
 
 void UnscrambleGameTable::enteredGuess()
 {
-	emit guessSubmitted(tableUi.lineEditSolution->text());
-	tableUi.textEditGuesses->append(tableUi.lineEditSolution->text());
-	tableUi.lineEditSolution->clear();
+  if (tableUi.lineEditSolution->text() == "") return;
+  
+  emit guessSubmitted(tableUi.lineEditSolution->text());
+  if (tableUi.lineEditSolution->text().length() == currentWordLength)
+    tableUi.textEditGuesses->append(tableUi.lineEditSolution->text());
+  tableUi.lineEditSolution->clear();
+
 }
 
 void UnscrambleGameTable::closeEvent(QCloseEvent* event)
@@ -678,6 +724,8 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 	tableUi.textEditChat->clear();
 	tableUi.graphicsView->centerOn(tableItem);
 
+	tableUi.lineEditSolution->setFocus();
+	tableUi.textEditGuesses->clear();
 }
 
 void UnscrambleGameTable::leaveTable()
@@ -758,23 +806,28 @@ void UnscrambleGameTable::populateSolutionsTable()
 				QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
 				if (wordDb.isOpen())
 				{
-					QString backHooks, frontHooks, definition;
+					QString backHooks, frontHooks, definition, probability;
 					QSqlQuery query;
+					
+					query.exec("select front_hooks, back_hooks, definition, probability_order from words where word = '" + theseSols.at(i) + "'");
 
-					query.exec("select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'");
-					qDebug() << "select front_hooks, back_hooks, definition from words where word = '" + theseSols.at(i) + "'";
 					while (query.next())
 					{
 						frontHooks = query.value(0).toString();
 						backHooks = query.value(1).toString();
 						definition = query.value(2).toString();
+						probability = query.value(3).toString();
 					}
+
+					QTableWidgetItem *probabilityItem = new QTableWidgetItem(probability);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 0, probabilityItem);
+
 					QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
-					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 3, backHookItem);							
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, backHookItem);							
 					QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
-					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 1, frontHookItem);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 2, frontHookItem);
 					QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
-					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, definitionItem);
+					uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 5, definitionItem);
 				}
 
 				if (!rightAnswers.contains(theseSols.at(i)))
@@ -786,10 +839,10 @@ void UnscrambleGameTable::populateSolutionsTable()
 					wordItem->setFont(wordItemFont);
 				}
 				wordItem->setTextAlignment(Qt::AlignCenter);
-				uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 2, wordItem);
+				uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 3, wordItem);
 
 			}
-			uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, tableAlphagramItem);
+			uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
 			
 		}
 	}	
@@ -803,7 +856,8 @@ void UnscrambleGameTable::populateSolutionsTable()
 
 void UnscrambleGameTable::alphagrammizeWords()
 {
-	
+  if (uiPreferences.groupBoxUseTiles->isChecked())
+    {
 	foreach (wordQuestion wq, wordQuestions)
 	{
 		// server always sends alphagram, so arrange tiles in order
@@ -813,20 +867,46 @@ void UnscrambleGameTable::alphagrammizeWords()
 		{
 			wq.tiles.at(i)->setPos(wq.chip->x() + tileWidth*(i+1), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
 		}
+		
 	}
-
+    }
+  else
+    {
+	foreach (WordRectangle *wr, wordRectangles)
+	  wr->alphagrammizeText();
+	
+	gfxScene.update();
+    }
 }
 
 void UnscrambleGameTable::shuffleWords()
 {
-	foreach (wordQuestion wq, wordQuestions)
+  if (uiPreferences.groupBoxUseTiles->isChecked())
+    {
+      foreach (wordQuestion wq, wordQuestions)
 	{
-		for (int i = 0; i < wq.tiles.size(); i++)
-		{
-			swapXPos(wq.tiles.at(i), wq.tiles.at(qrand() % wq.tiles.size()));
-			wq.tiles.at(i)->setPos(wq.tiles.at(i)->x(), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
-		}
+	  for (int i = 0; i < wq.tiles.size(); i++)
+	    {
+	      swapXPos(wq.tiles.at(i), wq.tiles.at(qrand() % wq.tiles.size()));
+	      wq.tiles.at(i)->setPos(wq.tiles.at(i)->x(), wq.chip->y() + verticalVariation* (double)qrand()/RAND_MAX);
+	    }
 	}
+    }
+  else
+    {
+      foreach (WordRectangle *wr, wordRectangles)
+	wr->shuffleText();
+      gfxScene.update();
+    }
+}
+
+void UnscrambleGameTable::rectangleWasClicked()
+{
+  tableUi.lineEditSolution->setFocus();
+  WordRectangle *wr = static_cast<WordRectangle*> (sender());
+  wr->shuffleText();
+  gfxScene.update();
+
 }
 
 void UnscrambleGameTable::tileWasClicked()
@@ -896,8 +976,7 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
 
 void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList solutions, quint8 numNotSolved)
 {
-	QTime t;
-	t.start();
+  currentWordLength = alphagram.length();
 	wordQuestion thisWord(alphagram, solutions, numNotSolved);
 	bool shouldShowTiles = uiPreferences.groupBoxUseTiles->isChecked();
 	if (numNotSolved > 0)
@@ -940,7 +1019,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 	}
 
 	wordQuestions << thisWord;
-	qDebug() << "Added new word in " << t.elapsed();
+	
 }
 
 void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString answer)
@@ -1016,6 +1095,7 @@ void UnscrambleGameTable::saveUserPreferences()
 	settings.setValue("TallTiles", uiPreferences.checkBoxTallTiles->isChecked());
 	settings.setValue("UseTiles", uiPreferences.groupBoxUseTiles->isChecked());
 	settings.setValue("FixedWidthFont", uiPreferences.checkBoxUseFixedWidthFont->isChecked());
+	settings.setValue("WordBorders", uiPreferences.checkBoxWordBorders->isChecked());
 	settings.endGroup();
 	preferencesWidget->hide();
 }
@@ -1035,7 +1115,7 @@ void UnscrambleGameTable::loadUserPreferences()
 	uiPreferences.checkBoxTallTiles->setChecked(settings.value("TallTiles", false).toBool());
 	uiPreferences.groupBoxUseTiles->setChecked(settings.value("UseTiles", true).toBool());
 	uiPreferences.checkBoxUseFixedWidthFont->setChecked(settings.value("FixedWidthFont", false).toBool());
-
+	uiPreferences.checkBoxWordBorders->setChecked(settings.value("WordBorders", false).toBool());
 
 	changeTileColors(uiPreferences.comboBoxTileColor->currentIndex());
 	changeFontColors(uiPreferences.comboBoxFontColor->currentIndex());
@@ -1046,7 +1126,7 @@ void UnscrambleGameTable::loadUserPreferences()
 	changeTileAspectRatio(uiPreferences.checkBoxTallTiles->isChecked());
 	changeUseTiles(uiPreferences.groupBoxUseTiles->isChecked());
 	useFixedWidthFontForRectangles(uiPreferences.checkBoxUseFixedWidthFont->isChecked());
-
+	drawWordBorders(uiPreferences.checkBoxWordBorders->isChecked());
 	settings.endGroup();
 
 }
