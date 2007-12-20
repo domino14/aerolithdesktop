@@ -10,6 +10,7 @@
 #include "ui_tableCustomizationForm.h"
 #include "tile.h"
 #include "chip.h"
+#include "wordRectangle.h"
 
 #define NUM_AVATAR_IDS 73 
 
@@ -89,6 +90,8 @@ private:
 	QList <Tile*> tiles;
 	QList <Chip*> chips;
 	QList <Chip*> readyChips;
+	QList <WordRectangle*> wordRectangles;
+
 	QGraphicsPixmapItem* tableItem;
 	QDialog* solutionsDialog;
 	Ui::solutionsForm uiSolutions;
@@ -147,6 +150,10 @@ signals:
 		void changeVerticalVariation(bool);
 		void changeBackground(int index);
 		void changeTileAspectRatio(bool);
+		void changeUseTiles(bool);
+		void useFixedWidthFontForRectangles(bool);
+
+
 		void saveUserPreferences();
 
 

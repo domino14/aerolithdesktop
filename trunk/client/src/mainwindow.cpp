@@ -810,8 +810,10 @@ void MainWindow::sendPM(QString person)
 	else
 	{
 		PMWidget *w = new PMWidget(0, currentUsername, person);
+		w->setAttribute(Qt::WA_QuitOnClose, false);
 		connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
 		w->show();
+		
 		pmWindows.insert(hashString, w);
 	}
 
