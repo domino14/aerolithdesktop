@@ -15,7 +15,7 @@ const QString incompatibleVersionString =
 Please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
-const QString thisVersion = "0.4";
+const QString thisVersion = "0.4.1";
 
 MainServer::MainServer()
 {
@@ -134,8 +134,10 @@ void MainServer::pingEveryone()
 	    }
 	  else
 	    {
-	      qDebug() << "Pinged " << socket->connData.userName;
-	      socket->write(block);
+	      
+	      qint64 retval = socket->write(block);
+	      qDebug() << "Pinged " << socket->connData.userName << "ret:" << retval;
+	      if (retval == -1) qDebug() << socket->errorString();
 	      socket->connData.isActive = false;
 	    }
 	}
@@ -448,8 +450,13 @@ void MainServer::processTableCommand(ClientSocket* socket)
 	socket->connData.in >> chat;
 	if (chat == "/reload" && socket->connData.userName == "cesar") 
 	  loadWordLists();
-	
-	if (chat.length() > 400)
+	if (chat == "/goingdown" && socket->connData.userName == "cesar")
+	  {
+	      foreach (ClientSocket* connection, connections)
+		writeToClient(connection, "The server is being restarted in 3 minutes!",  S_SERVERMESSAGE);
+	  }
+
+	if (chat.length() > 1000)
 	  {
 	    socket->disconnectFromHost();
 	    return;
