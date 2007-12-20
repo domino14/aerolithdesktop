@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 
 const quint16 MAGIC_NUMBER = 25348;
-const QString WindowTitle = "Aerolith 0.4";
-const QString thisVersion = "0.4";
+const QString WindowTitle = "Aerolith 0.4.1";
+const QString thisVersion = "0.4.1";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -642,8 +642,8 @@ void MainWindow::readFromServer()
 				QString serverMessage;
 				in >> serverMessage;
 
-				chatText->append("<font color=green>" + serverMessage + "</font>");
-
+				chatText->append("<font color=red>" + serverMessage + "</font>");
+				gameBoardWidget->gotChat("<font color=red>" + serverMessage + "</font>");
 
 			}
 			break;

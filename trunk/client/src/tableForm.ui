@@ -42,9 +42,9 @@
      <colorrole role="Window" >
       <brush brushstyle="SolidPattern" >
        <color alpha="255" >
-        <red>204</red>
-        <green>204</green>
-        <blue>204</blue>
+        <red>223</red>
+        <green>223</green>
+        <blue>223</blue>
        </color>
       </brush>
      </colorrole>
@@ -62,9 +62,9 @@
      <colorrole role="Window" >
       <brush brushstyle="SolidPattern" >
        <color alpha="255" >
-        <red>204</red>
-        <green>204</green>
-        <blue>204</blue>
+        <red>223</red>
+        <green>223</green>
+        <blue>223</blue>
        </color>
       </brush>
      </colorrole>
@@ -73,18 +73,18 @@
      <colorrole role="Base" >
       <brush brushstyle="SolidPattern" >
        <color alpha="255" >
-        <red>204</red>
-        <green>204</green>
-        <blue>204</blue>
+        <red>223</red>
+        <green>223</green>
+        <blue>223</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Window" >
       <brush brushstyle="SolidPattern" >
        <color alpha="255" >
-        <red>204</red>
-        <green>204</green>
-        <blue>204</blue>
+        <red>223</red>
+        <green>223</green>
+        <blue>223</blue>
        </color>
       </brush>
      </colorrole>
@@ -562,6 +562,19 @@ QPushButton:disabled{
    </property>
    <property name="text" >
     <string>Preferences</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonFontToggle" >
+   <property name="geometry" >
+    <rect>
+     <x>560</x>
+     <y>10</y>
+     <width>113</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>Font Toggle</string>
    </property>
   </widget>
  </widget>

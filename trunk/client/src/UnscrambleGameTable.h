@@ -85,7 +85,7 @@ public:
 private:
 	QGraphicsScene gfxScene;
 	Ui::tableForm tableUi;
-
+	int currentWordLength;
 	QSqlDatabase wordDb;
 	QList <Tile*> tiles;
 	QList <Chip*> chips;
@@ -142,6 +142,7 @@ signals:
 		void alphagrammizeWords();
 		void shuffleWords();
 		void tileWasClicked();
+		void rectangleWasClicked();
 		void setZoom(int);
 		void changeTileColors(int);
 		void changeFontColors(int);
@@ -149,10 +150,12 @@ signals:
 		void changeTileBorderStyle(bool);
 		void changeVerticalVariation(bool);
 		void changeBackground(int index);
+		void drawWordBorders(bool);
+
 		void changeTileAspectRatio(bool);
 		void changeUseTiles(bool);
 		void useFixedWidthFontForRectangles(bool);
-
+		void pushedFontToggleButton();
 
 		void saveUserPreferences();
 

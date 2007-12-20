@@ -13,8 +13,17 @@ public:
 	QRectF boundingRect() const;
 	void setText(QString);
 	void setFixedWidthFont(bool on);
+	void showText();
+	void hideText();
+	void setTransparentBG();
+	void setOpaqueBG();
+	void alphagrammizeText();
+	void shuffleText();
 private:
+	QString originalText;
 	QString text;
+	bool opaqueBG;
+	bool shouldShowText;
 	void mousePressEvent ( QGraphicsSceneMouseEvent * event);
 	QString fontFamily;
 signals:

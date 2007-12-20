@@ -46,6 +46,12 @@
      <height>131</height>
     </rect>
    </property>
+   <property name="toolTip" >
+    <string>The "Use Tiles" option uses a tile for each letter. Click the Use Tiles checkbox to toggle this on or off.</string>
+   </property>
+   <property name="statusTip" >
+    <string/>
+   </property>
    <property name="title" >
     <string>Use tiles</string>
    </property>
@@ -187,6 +193,19 @@
       <string>White</string>
      </property>
     </item>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxWordBorders" >
+    <property name="geometry" >
+     <rect>
+      <x>20</x>
+      <y>110</y>
+      <width>111</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Word borders</string>
+    </property>
    </widget>
   </widget>
   <widget class="QGroupBox" name="groupBoxUseRectangles" >
