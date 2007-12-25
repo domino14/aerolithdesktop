@@ -9,6 +9,7 @@
 #include "ui_scoresForm.h"
 #include "ui_loginForm.h"
 #include "ui_pmForm.h"
+#include "ui_MainWindow.h"
 #include "UnscrambleGameTable.h"
 
 class PMWidget : public QWidget
@@ -35,21 +36,16 @@ class MainWindow : public QMainWindow
 public:
 	MainWindow();
 private:
-	QWidget* centralWidget;
-	QLineEdit* chatLE;
-	QTextBrowser* chatText;
+
 	QTcpSocket *commsSocket;
-	QListWidget *peopleConnected;
+
 	quint16 blockSize; // used for socket
 
 	void processServerString(QString);
 
 	QString currentUsername;
 	QDataStream in;
-	//	QStackedWidget* gameStackedWidget;
-	QTableWidget* roomTable;
 	quint16 currentTablenum;
-	//	QBrush colorBrushes[9];
 
 	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
 	void handleDeleteTable(quint16 tablenum);
@@ -75,11 +71,10 @@ private:
 
 	QMenu *challengesMenu;
 
+	Ui::MainWindow uiMainWindow;
 	Ui::tableCreateForm uiTable;
 	Ui::scoresForm uiScores;
 	Ui::loginForm uiLogin;
-
-
 
 	void sendClientVersion();
 	void displayHighScores();

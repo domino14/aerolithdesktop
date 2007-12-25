@@ -216,7 +216,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
 	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 
-
 	preferencesWidget = new QWidget(this);
 	uiPreferences.setupUi(preferencesWidget);
 	preferencesWidget->setWindowFlags(Qt::Dialog);
@@ -250,7 +249,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 
 	//gfxScene.setSceneRect(0, 0, 980, 720);
-	
+	tableUi.graphicsView->viewport()->setFocusPolicy(Qt::NoFocus);
 	tableUi.graphicsView->setScene(&gfxScene);	  	
 	tableUi.graphicsView->setSceneRect(tableUi.graphicsView->contentsRect());
 	tableUi.graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
@@ -341,15 +340,15 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	for (int i = 0; i < numPlayers; i++)
 		playerWidgets.at(i)->raise();
 	
-	playerWidgets.at(0)->move(150, 500);
-	playerWidgets.at(1)->move(320, 500);
-	playerWidgets.at(2)->move(490, 500);
-	playerWidgets.at(3)->move(650, 500);
+	playerWidgets.at(0)->move(150, 480);
+	playerWidgets.at(1)->move(320, 480);
+	playerWidgets.at(2)->move(490, 480);
+	playerWidgets.at(3)->move(650, 480);
 	playerWidgets.at(4)->move(880, 320);	
 	playerWidgets.at(5)->move(880, 180);
 	playerWidgets.at(6)->move(880, 40);
 
-	playerWidgets.at(7)->move(820, 470);
+	playerWidgets.at(7)->move(820, 450);
 
 
 	
