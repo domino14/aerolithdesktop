@@ -14,10 +14,19 @@ MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole),
 out(&block, QIODevice::WriteOnly)
 {
 	
-	setWindowTitle(WindowTitle);
-
 	QSqlDatabase wordDb;
-	if (QFile::exists(QDir::homePath()+"/.zyzzyva/lexicons/OWL2+LWL.db"))
+
+	#ifdef Q_WS_MAC
+	QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
+	#else
+	QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
+	#endif
+	ZyzzyvaSettings.beginGroup("Zyzzyva");
+
+	QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
+	QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
+
+	if (QFile::exists(zyzzyvaDataDir + "/lexicons/OWL2+LWL.db"))
 	{
 		wordDb = QSqlDatabase::addDatabase("QSQLITE");
 		wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
@@ -29,114 +38,31 @@ out(&block, QIODevice::WriteOnly)
 	}
 
 
-	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, wordDb);
-	gameBoardWidget->setWindowTitle("Table");
-	gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
 
-	connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
-	connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
-	connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
-	connect(gameBoardWidget, SIGNAL(guessSubmitted(QString)), this, SLOT(submitGuess(QString)));
-	connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
+	uiMainWindow.setupUi(this);
+	uiMainWindow.roomTableWidget->verticalHeader()->hide();
+	uiMainWindow.roomTableWidget->setColumnWidth(0, 30);
+	uiMainWindow.roomTableWidget->setColumnWidth(1, 200);
+       	uiMainWindow.roomTableWidget->setColumnWidth(2, 300);
+	uiMainWindow.roomTableWidget->setColumnWidth(3, 50);
+      	uiMainWindow.roomTableWidget->setColumnWidth(4, 50);
+	uiMainWindow.roomTableWidget->setColumnWidth(5, 75);
+	uiMainWindow.roomTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
 
-	connect(gameBoardWidget, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
-
-	centralWidget = new QWidget;	 // the 'overall'  widget
-
-	// the room selector will be anotehr group box
-
-	QGroupBox *roomSelectorGroupBox = new QGroupBox("Table selector");
-
-	roomTable = new QTableWidget(0, 6);
-	QStringList headerLabels;
-	headerLabels << "#" << "Word List" << "Players" << "#" << "Max #" << "Join?";
-	roomTable->setHorizontalHeaderLabels(headerLabels);
-	roomTable->setGridStyle(Qt::NoPen);
-	roomTable->setSelectionMode(QAbstractItemView::NoSelection);
-	roomTable->verticalHeader()->hide();
-	roomTable->setColumnWidth(0, 30);
-	roomTable->setColumnWidth(1, 200);
-	roomTable->setColumnWidth(2, 300);
-	roomTable->setColumnWidth(3, 50);
-	roomTable->setColumnWidth(4, 50);
-	roomTable->setColumnWidth(5, 75);
-	roomTable->setFixedWidth(750);
-	roomTable->setMinimumHeight(400);
-	roomTable->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
-	roomTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-	QVBoxLayout *roomSelectorLayout = new QVBoxLayout;
-	roomSelectorLayout->addWidget(roomTable, 0, Qt::AlignHCenter);
-	QHBoxLayout *newRoomLayout = new QHBoxLayout;
-	QPushButton *newRoom = new QPushButton("Create new table");
-	newRoom->setFixedWidth(150);
-	QPushButton *dailyChallenges = new QPushButton("Challenges");
-	dailyChallenges->setFixedWidth(180);
-
+	setWindowTitle(WindowTitle);
+	
 	challengesMenu = new QMenu;
 
 	connect(challengesMenu, SIGNAL(triggered(QAction*)), this, SLOT(dailyChallengeSelected(QAction*)));
-	dailyChallenges->setMenu(challengesMenu);
+	uiMainWindow.pushButtonChallenges->setMenu(challengesMenu);
 
+	connect(uiMainWindow.pushButtonNewTable, SIGNAL(clicked()), this, SLOT(createNewRoom()));
+	uiMainWindow.chatText->setOpenExternalLinks(true);
+	connect(uiMainWindow.listWidgetPeopleConnected, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
 
-	newRoomLayout->addWidget(newRoom);
-	newRoomLayout->addWidget(dailyChallenges);
-	roomSelectorLayout->addLayout(newRoomLayout);
+	uiMainWindow.chatText->document()->setMaximumBlockCount(5000);  // at most 5000 newlines.
 
-
-	roomSelectorGroupBox->setLayout(roomSelectorLayout);
-
-	//		gameStackedWidget = new QStackedWidget;
-	//	gameStackedWidget->addWidget(roomSelectorGroupBox);
-	//	gameStackedWidget->addWidget(gameBoardGroupBox);
-
-	//gameStackedWidget->setFixedWidth(850);
-
-
-	connect(newRoom, SIGNAL(clicked()), this, SLOT(createNewRoom()));
-
-	QGroupBox *chatGroupBox = new QGroupBox("Chat");
-
-
-	// chat related stuff
-	chatLE = new QLineEdit;
-	chatLE->setMaxLength(300);
-	chatText = new QTextBrowser;
-	chatText->setReadOnly(true);
-	chatText->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
-	chatText->setOpenExternalLinks(true);
-	QVBoxLayout *chatLayout = new QVBoxLayout();
-
-	chatLayout->addWidget(chatLE);
-	chatLayout->addSpacing(5);
-
-	QHBoxLayout *chatBoxLayout = new QHBoxLayout;
-	chatBoxLayout->addWidget(chatText);
-	chatText->setFrameShape(QFrame::Box);
-	peopleConnected = new QListWidget;
-	peopleConnected->setFrameShape(QFrame::Box);
-	peopleConnected->setFixedWidth(150);
-	chatBoxLayout->addWidget(peopleConnected);
-	chatLayout->addLayout(chatBoxLayout);
-	chatGroupBox->setLayout(chatLayout);
-	connect(peopleConnected, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
-
-	QVBoxLayout *overallGameBoardLayout = new QVBoxLayout;
-	//		overallGameBoardLayout->addWidget(gameStackedWidget);
-	//	overallGameBoardLayout->setAlignment(gameStackedWidget, Qt::AlignHCenter);
-	overallGameBoardLayout->addWidget(roomSelectorGroupBox);
-	overallGameBoardLayout->addStretch(1);
-	overallGameBoardLayout->addWidget(chatGroupBox);
-	centralWidget->setLayout(overallGameBoardLayout);
-
-
-	//gameBoardGroupBox->setFixedWidth(800);
-	chatText->setFocusPolicy(Qt::ClickFocus);
-	peopleConnected->setFocusPolicy(Qt::NoFocus);
-
-	//mainTabWidget->setTabEnabled(1, false);
-	chatText->document()->setMaximumBlockCount(5000);  // at most 5000 newlines.
-
-	connect(chatLE, SIGNAL(returnPressed()), this, SLOT(submitChatLEContents()));
+	connect(uiMainWindow.lineEditChat, SIGNAL(returnPressed()), this, SLOT(submitChatLEContents()));
 
 	// commsSocket
 
@@ -147,12 +73,9 @@ out(&block, QIODevice::WriteOnly)
 	connect(commsSocket, SIGNAL(connected()), this, SLOT(connectedToServer()));
 
 	connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
-	connect(gameBoardWidget, SIGNAL(exitThisTable()), this, SLOT(leaveThisTable()));
 
 	createTableDialog = new QDialog(this);
 	uiTable.setupUi(createTableDialog);
-
-
 
 	scoresDialog = new QDialog(this);
 	uiScores.setupUi(scoresDialog);
@@ -171,7 +94,7 @@ out(&block, QIODevice::WriteOnly)
 
 	scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
 	loginDialog->setAttribute(Qt::WA_QuitOnClose, false);   
-	gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
+	
 
 	gameStarted = false;
 	blockSize = 0; 
@@ -180,27 +103,31 @@ out(&block, QIODevice::WriteOnly)
 	uiLogin.stackedWidget->setCurrentIndex(0);
 
 
+	gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, wordDb);
+	gameBoardWidget->setWindowTitle("Table");
+	gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
+	gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
+	
+	connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
+	connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
+	connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
+	connect(gameBoardWidget, SIGNAL(guessSubmitted(QString)), this, SLOT(submitGuess(QString)));
+	connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
 
-	setCentralWidget(centralWidget);  
+	connect(gameBoardWidget, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
+	connect(gameBoardWidget, SIGNAL(exitThisTable()), this, SLOT(leaveThisTable()));
+
+
 	out.setVersion(QDataStream::Qt_4_2);  
 
 	QTime midnight(0, 0, 0);
 	qsrand(midnight.msecsTo(QTime::currentTime()));
 
-
-
-	QMenu* helpMenu = menuBar()->addMenu("Help");
-	QAction* helpAction = helpMenu->addAction("Aerolith Help");
-	QAction* acknowledgementsAction = helpMenu->addAction("Acknowledgements");
-	QAction* aboutQt = helpMenu->addAction("About Qt");
-	QMenu* loginMenu = menuBar()->addMenu("Connect");
-	QAction* connectAction = loginMenu->addAction("Connect to Aerolith");
-
-	connect(helpAction, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
-	connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(raise()));
-	connect(acknowledgementsAction, SIGNAL(triggered()), this, SLOT(aerolithAcknowledgementsDialog()));
-	connect(aboutQt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
-	connect(connectAction, SIGNAL(triggered()), loginDialog, SLOT(show()));
+	connect(uiMainWindow.actionAerolith_Help, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
+	connect(uiMainWindow.actionConnect_to_Aerolith, SIGNAL(triggered()), loginDialog, SLOT(raise()));
+	connect(uiMainWindow.actionConnect_to_Aerolith, SIGNAL(triggered()), loginDialog, SLOT(show()));	
+	connect(uiMainWindow.actionAcknowledgements, SIGNAL(triggered()), this, SLOT(aerolithAcknowledgementsDialog()));
+	connect(uiMainWindow.actionAbout_Qt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
 	
 
 	gameTimer = new QTimer();
@@ -208,22 +135,19 @@ out(&block, QIODevice::WriteOnly)
 	
 	readWindowSettings();
 
-
 	show();
 	loginDialog->show();
 	//  loginDialog->activateWindow();
 	loginDialog->raise();
 	uiLogin.usernameLE->setFocus(Qt::OtherFocusReason);
 	setWindowIcon(QIcon(":images/aerolith.png"));
-
-
 	
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-	 writeWindowSettings();
-	 event->accept();
+  writeWindowSettings();
+  event->accept();
 }
 
 void MainWindow::writeWindowSettings()
@@ -274,37 +198,7 @@ void MainWindow::fixHeaderLength()
 
 void MainWindow::submitChatLEContents()
 {
-	//  chatText->append(QString("From chat: ") + chatLE->text());
 
-	/*
-	if (chatLE->text().indexOf("/msg ") == 0)
-	{
-		QString restOfText = chatLE->text().mid(5);
-		QString username = restOfText.mid(0, restOfText.indexOf(" "));
-		QString message = restOfText.mid(username.length()+1);
-		if (message.simplified() == "" || message.simplified() == " ")
-		{
-			chatLE->clear();
-			return;
-		}
-		chatText->append("[You write to " + username + "] " + message);
-		writeHeaderData();
-		out << (quint8)'p';
-		out << username;
-		out << message;
-		fixHeaderLength();
-		commsSocket->write(block);
-		chatLE->clear();
-	}*/
-	/*  else if (chatLE->text().indexOf("/shout ") == 0)
-	{
-	writeHeaderData();
-	out << (quint8)'c';
-	out << chatLE->text().mid(7);
-	fixHeaderLength();
-	commsSocket->write(block);
-	chatLE->clear();
-	}*/
 	/* else if (chatLE->text().indexOf("/me ") == 0)
 	{
 	writeHeaderData();
@@ -314,42 +208,18 @@ void MainWindow::submitChatLEContents()
 	commsSocket->write(block);
 	chatLE->clear();
 	}*/
-
-		writeHeaderData();
-		out << (quint8)'c';
-		out << chatLE->text();
-		fixHeaderLength();
-		commsSocket->write(block);
-		chatLE->clear();
-	
-	/*  else
-	{
-
-	}*/
+  
+  writeHeaderData();
+  out << (quint8)'c';
+  out << uiMainWindow.lineEditChat->text();
+  fixHeaderLength();
+  commsSocket->write(block);
+  uiMainWindow.lineEditChat->clear();
 }
+
 
 void MainWindow::chatTable(QString textToSend)
 {
-	/*
-	if (textToSend.indexOf("/msg ") == 0)
-	{
-		QString restOfText = textToSend.mid(5);
-		QString username = restOfText.mid(0, restOfText.indexOf(" "));
-		QString message = restOfText.mid(username.length()+1);
-		if (message.simplified() == "" || message.simplified() == " ")
-		{
-
-			return;
-		}
-		gameBoardWidget->gotChat("[You write to " + username + "] " + message);
-		writeHeaderData();
-		out << (quint8)'p';
-		out << username;
-		out << message;
-		fixHeaderLength();
-		commsSocket->write(block);
-	}
-	else */
 	if (textToSend.indexOf("/me ") == 0)
 	{
 		writeHeaderData();
@@ -411,9 +281,9 @@ void MainWindow::readFromServer()
 			in >> packetlength;
 			if (header != (quint16)MAGIC_NUMBER) // magic number
 			{
-				chatText->append("Wrong magic number (you have the wrong version of the client)");
-				//				commsSocket->disconnectFromHost();	
-				//				return;
+			  uiMainWindow.chatText->append("You have the wrong version of the client. Please check http://www.aerolith.org");
+			  commsSocket->disconnectFromHost();	
+			  return;
 			}
 			blockSize = packetlength;
 
@@ -444,13 +314,15 @@ void MainWindow::readFromServer()
 			{
 				QString username;
 				in >> username;
-				QListWidgetItem *it = new QListWidgetItem(username, peopleConnected);
+				QListWidgetItem *it = new QListWidgetItem(username, uiMainWindow.listWidgetPeopleConnected);
 				if (username == currentUsername) 
 				{
+				  QSound::play("enter.wav");
+
 					uiLogin.connectStatusLabel->setText("You have connected!");
 					loginDialog->hide();
 					setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
-					sendClientVersion();   // not yet. add this for the actual version 0.1.2
+					sendClientVersion();  
 					gameBoardWidget->setMyUsername(username);
 					currentTablenum = 0;
 				}
@@ -465,10 +337,10 @@ void MainWindow::readFromServer()
 			{
 				QString username;
 				in >> username;
-				for (int i = 0; i < peopleConnected->count(); i++)
-					if (peopleConnected->item(i)->text() == username)
+				for (int i = 0; i < uiMainWindow.listWidgetPeopleConnected->count(); i++)
+					if (uiMainWindow.listWidgetPeopleConnected->item(i)->text() == username)
 					{
-						QListWidgetItem *it = peopleConnected->takeItem(i);
+						QListWidgetItem *it = uiMainWindow.listWidgetPeopleConnected->takeItem(i);
 						delete it;
 					}
 
@@ -489,7 +361,7 @@ void MainWindow::readFromServer()
 				in >> username;
 				QString text;
 				in >> text;
-				chatText->append(QString("[")+username+"] " + text);
+				uiMainWindow.chatText->append(QString("[")+username+"] " + text);
 			}
 			break;
 		case 'P':	// PM
@@ -526,7 +398,7 @@ void MainWindow::readFromServer()
 					currentTablenum = tablenum;
 
 					int row = findRoomTableRow(tablenum);
-					QString wList = roomTable->item(row, 1)->text();
+					QString wList = uiMainWindow.roomTableWidget->item(row, 1)->text();
 
 					gameBoardWidget->resetTable(tablenum, wList, playerName);
 					gameBoardWidget->show();
@@ -642,7 +514,7 @@ void MainWindow::readFromServer()
 				QString serverMessage;
 				in >> serverMessage;
 
-				chatText->append("<font color=red>" + serverMessage + "</font>");
+				uiMainWindow.chatText->append("<font color=red>" + serverMessage + "</font>");
 				gameBoardWidget->gotChat("<font color=red>" + serverMessage + "</font>");
 
 			}
@@ -693,17 +565,17 @@ void MainWindow::displayError(QAbstractSocket::SocketError socketError)
 	case QAbstractSocket::RemoteHostClosedError:
 		break;
 	case QAbstractSocket::HostNotFoundError:
-		chatText->append("<font color=red>The host was not found. Please check the "
+		uiMainWindow.chatText->append("<font color=red>The host was not found. Please check the "
 			"host name and port settings.</font>");
 		break;
 	case QAbstractSocket::ConnectionRefusedError:
-		chatText->append("<font color=red>The connection was refused by the peer. "
+		uiMainWindow.chatText->append("<font color=red>The connection was refused by the peer. "
 			"Make sure the Aerolith server is running, "
 			"and check that the host name and port "
 			"settings are correct.</font>");
 		break;
 	default:
-		chatText->append(QString("<font color=red>The following error occurred: %1.</font>")
+		uiMainWindow.chatText->append(QString("<font color=red>The following error occurred: %1.</font>")
 			.arg(commsSocket->errorString()));
 	}
 
@@ -723,8 +595,8 @@ void MainWindow::toggleConnectToServer()
 		uiLogin.loginPushButton->setText("Disconnect");
 
 
-		roomTable->clearContents();
-		roomTable->setRowCount(0);
+		uiMainWindow.roomTableWidget->clearContents();
+		uiMainWindow.roomTableWidget->setRowCount(0);
 	}
 	else
 	{	
@@ -744,14 +616,14 @@ void MainWindow::serverDisconnection()
 {
 
 	uiLogin.connectStatusLabel->setText("You are disconnected.");
-	peopleConnected->clear();
+	uiMainWindow.listWidgetPeopleConnected->clear();
 	//	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
 	uiLogin.loginPushButton->setText("Connect");
 	//centralWidget->hide();
 	loginDialog->show();
 	loginDialog->raise();
-	roomTable->clearContents();
-	roomTable->setRowCount(0);
+	uiMainWindow.roomTableWidget->clearContents();
+	uiMainWindow.roomTableWidget->setRowCount(0);
 	setWindowTitle("Aerolith - disconnected");
 	gameBoardWidget->hide();
 }
@@ -911,12 +783,12 @@ int MainWindow::findRoomTableRow(quint16 tablenum)
 	// straight linear search.
 	// i guess this is ok. i'm not gonna have that many clients :P
 	// and even if i do, it makes more sense to split across servers
-	for (int i = 0; i < roomTable->rowCount(); i++)
+	for (int i = 0; i < uiMainWindow.roomTableWidget->rowCount(); i++)
 	{
-		if (roomTable->item(i, 0)->text().toInt() == (int)tablenum)
+		if (uiMainWindow.roomTableWidget->item(i, 0)->text().toInt() == (int)tablenum)
 			return i;
 	}
-	return roomTable->rowCount();
+	return uiMainWindow.roomTableWidget->rowCount();
 }
 
 void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
@@ -1059,17 +931,17 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
 	QStringList playerList;
 	playersItem->setData(PLAYERLIST_ROLE, QVariant(playerList));
 
-	roomTable->insertRow(roomTable->rowCount());
-	roomTable->setItem(roomTable->rowCount()-1, 0, tableNumItem);
-	roomTable->setItem(roomTable->rowCount()-1, 1, descriptorItem);
-	roomTable->setItem(roomTable->rowCount()-1, 2, playersItem);
-	roomTable->setItem(roomTable->rowCount()-1, 3, numPlayersItem);
-	roomTable->setItem(roomTable->rowCount()-1, 4, maxPlayersItem);
-	roomTable->setCellWidget(roomTable->rowCount()-1, 5, buttonItem);
+	int rc = uiMainWindow.roomTableWidget->rowCount();
+
+	uiMainWindow.roomTableWidget->insertRow(rc);
+	uiMainWindow.roomTableWidget->setItem(rc, 0, tableNumItem);
+	uiMainWindow.roomTableWidget->setItem(rc, 1, descriptorItem);
+	uiMainWindow.roomTableWidget->setItem(rc, 2, playersItem);
+	uiMainWindow.roomTableWidget->setItem(rc, 3, numPlayersItem);
+	uiMainWindow.roomTableWidget->setItem(rc, 4, maxPlayersItem);
+	uiMainWindow.roomTableWidget->setCellWidget(rc, 5, buttonItem);
 
 
-
-	// tablenums.insert(tablenum, roomTable->rowCount()-1);
 }
 
 void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modification)
@@ -1078,7 +950,7 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 	// if player = currentusername
 
 	int row = findRoomTableRow(tablenum);
-	QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+	QVariant plistVar = uiMainWindow.roomTableWidget->item(row, 2)->data(PLAYERLIST_ROLE);
 	QStringList plist = plistVar.toStringList();
 
 	// plist contains all the players
@@ -1122,32 +994,32 @@ void MainWindow::handleDeleteTable(quint16 tablenum)
 {
 	int row = findRoomTableRow(tablenum);
 
-	roomTable->removeRow(row);
+	uiMainWindow.roomTableWidget->removeRow(row);
 }
 
 void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
 {
 	int row = findRoomTableRow(tablenum);
 
-	QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+	QVariant plistVar = uiMainWindow.roomTableWidget->item(row, 2)->data(PLAYERLIST_ROLE);
 	QStringList plist = plistVar.toStringList();
 	plist.removeAll(player);
 	QString textToSet="";
 	foreach(QString thisplayer, plist)
 		textToSet += thisplayer + " ";
 
-	roomTable->item(row, 2)->setText(textToSet);
-	roomTable->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
+	uiMainWindow.roomTableWidget->item(row, 2)->setText(textToSet);
+	uiMainWindow.roomTableWidget->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
 
 
-	quint8 curNumPlayers = roomTable->item(row,3)->text().toShort();
-	quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
+	quint8 curNumPlayers = uiMainWindow.roomTableWidget->item(row,3)->text().toShort();
+	quint8 maxNumPlayers = uiMainWindow.roomTableWidget->item(row,4)->text().toShort();
 	curNumPlayers--;
-	roomTable->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
+	uiMainWindow.roomTableWidget->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
 	if (curNumPlayers >= maxNumPlayers)
-		roomTable->cellWidget(row, 5)->setEnabled(false);
+		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(false);
 	else
-		roomTable->cellWidget(row, 5)->setEnabled(true);
+		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(true);
 }
 
 void MainWindow::handleAddToTable(quint16 tablenum, QString player)
@@ -1155,24 +1027,24 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 	// this will change button state as well
 	int row = findRoomTableRow(tablenum);
 
-	quint8 curNumPlayers = roomTable->item(row,3)->text().toShort();
-	quint8 maxNumPlayers = roomTable->item(row,4)->text().toShort();
+	quint8 curNumPlayers = uiMainWindow.roomTableWidget->item(row,3)->text().toShort();
+	quint8 maxNumPlayers = uiMainWindow.roomTableWidget->item(row,4)->text().toShort();
 	curNumPlayers++;
-	roomTable->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
+	uiMainWindow.roomTableWidget->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
 
-	QVariant plistVar = roomTable->item(row, 2)->data(PLAYERLIST_ROLE);
+	QVariant plistVar = uiMainWindow.roomTableWidget->item(row, 2)->data(PLAYERLIST_ROLE);
 	QStringList plist = plistVar.toStringList();
 	plist << player;
 	QString textToSet="";
 	foreach(QString thisplayer, plist)
 		textToSet += thisplayer + " ";
 
-	roomTable->item(row, 2)->setText(textToSet);
-	roomTable->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
+	uiMainWindow.roomTableWidget->item(row, 2)->setText(textToSet);
+	uiMainWindow.roomTableWidget->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
 	if (curNumPlayers >= maxNumPlayers)
-		roomTable->cellWidget(row, 5)->setEnabled(false);
+		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(false);
 	else
-		roomTable->cellWidget(row, 5)->setEnabled(true);
+		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(true);
 
 }
 
@@ -1209,7 +1081,7 @@ void MainWindow::aerolithAcknowledgementsDialog()
 {
 	QString infoText;
 	infoText += "Special thanks to the following people who have helped me in the development of Aerolith in some way, and to anyone else I may have forgotten:";
-	infoText += "<BR>Joseph Bihlmeyer, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Danny McMullan, David Wiegand, Gabriel Wong, Joanna Zhou, Aaron Bader, Maria Ho, Elana Lehrer, James Leong, Seth Lipkin, Kenji Matsumoto, Michael Thelen.<BR>";
+	infoText += "<BR>Joseph Bihlmeyer, Brian Bowman, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Danny McMullan, David Wiegand, Gabriel Wong, Joanna Zhou, Aaron Bader, Maria Ho, Elana Lehrer, James Leong, Seth Lipkin, Kenji Matsumoto, Michael Thelen.<BR>";
 	QMessageBox::information(this, "Acknowledgements", infoText);
 }
 
