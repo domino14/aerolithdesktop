@@ -58,8 +58,9 @@ out(&block, QIODevice::WriteOnly)
 
 	connect(uiMainWindow.pushButtonNewTable, SIGNAL(clicked()), this, SLOT(createNewRoom()));
 	uiMainWindow.chatText->setOpenExternalLinks(true);
-	connect(uiMainWindow.listWidgetPeopleConnected, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
-
+	connect(uiMainWindow.listWidgetPeopleConnected, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
+	connect(uiMainWindow.listWidgetPeopleConnected, SIGNAL(viewProfile(QString)), this, SLOT(viewProfile(QString)));
+	
 	uiMainWindow.chatText->document()->setMaximumBlockCount(5000);  // at most 5000 newlines.
 
 	connect(uiMainWindow.lineEditChat, SIGNAL(returnPressed()), this, SLOT(submitChatLEContents()));
@@ -114,6 +115,7 @@ out(&block, QIODevice::WriteOnly)
 	connect(gameBoardWidget, SIGNAL(guessSubmitted(QString)), this, SLOT(submitGuess(QString)));
 	connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
 
+	connect(gameBoardWidget, SIGNAL(viewProfile(QString)), this, SLOT(viewProfile(QString)));
 	connect(gameBoardWidget, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
 	connect(gameBoardWidget, SIGNAL(exitThisTable()), this, SLOT(leaveThisTable()));
 
@@ -141,7 +143,13 @@ out(&block, QIODevice::WriteOnly)
 	loginDialog->raise();
 	uiLogin.usernameLE->setFocus(Qt::OtherFocusReason);
 	setWindowIcon(QIcon(":images/aerolith.png"));
-	
+
+
+	setProfileWidget = new QWidget;
+	uiSetProfile.setupUi(setProfileWidget);
+
+	getProfileWidget = new QWidget;
+	uiGetProfile.setupUi(getProfileWidget);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -317,7 +325,7 @@ void MainWindow::readFromServer()
 				QListWidgetItem *it = new QListWidgetItem(username, uiMainWindow.listWidgetPeopleConnected);
 				if (username == currentUsername) 
 				{
-				  QSound::play("enter.wav");
+				  QSound::play("sounds/enter.wav");
 
 					uiLogin.connectStatusLabel->setText("You have connected!");
 					loginDialog->hide();
@@ -396,9 +404,11 @@ void MainWindow::readFromServer()
 				if (playerName == currentUsername)
 				{
 					currentTablenum = tablenum;
-
-					int row = findRoomTableRow(tablenum);
-					QString wList = uiMainWindow.roomTableWidget->item(row, 1)->text();
+					if (!tables.contains(tablenum))
+					  break;
+					tableRepresenter* t = tables.value(tablenum);
+			     	
+					QString wList = t->descriptorItem->text();
 
 					gameBoardWidget->resetTable(tablenum, wList, playerName);
 					gameBoardWidget->show();
@@ -597,6 +607,11 @@ void MainWindow::toggleConnectToServer()
 
 		uiMainWindow.roomTableWidget->clearContents();
 		uiMainWindow.roomTableWidget->setRowCount(0);
+
+		QList <tableRepresenter*> tableStructs = tables.values();
+		tables.clear();
+		foreach (tableRepresenter* t, tableStructs)
+		  delete t;
 	}
 	else
 	{	
@@ -624,6 +639,13 @@ void MainWindow::serverDisconnection()
 	loginDialog->raise();
 	uiMainWindow.roomTableWidget->clearContents();
 	uiMainWindow.roomTableWidget->setRowCount(0);
+
+	QList <tableRepresenter*> tableStructs = tables.values();
+	tables.clear();
+	foreach (tableRepresenter* t, tableStructs)
+	  delete t;
+	
+	
 	setWindowTitle("Aerolith - disconnected");
 	gameBoardWidget->hide();
 }
@@ -661,13 +683,6 @@ void MainWindow::connectedToServer()
 		fixHeaderLength();
 		commsSocket->write(block);
 	}
-}
-
-void MainWindow::sendPM(QListWidgetItem* item)
-{
-//chatLE->setText(QString("/msg ") + item->text() + " ");
-//	chatLE->setFocus(Qt::OtherFocusReason);
-	sendPM(item->text());
 }
 
 void MainWindow::sendPM(QString person)
@@ -725,6 +740,7 @@ void MainWindow::receivedPM(QString username, QString message)
 		w->show();
 		pmWindows.insert(hashString, w);
 	}
+	QSound::play("sounds/inbound.wav");
 
 }
 
@@ -778,18 +794,6 @@ void MainWindow::leaveThisTable()
 	commsSocket->write(block);
 }
 
-int MainWindow::findRoomTableRow(quint16 tablenum)
-{
-	// straight linear search.
-	// i guess this is ok. i'm not gonna have that many clients :P
-	// and even if i do, it makes more sense to split across servers
-	for (int i = 0; i < uiMainWindow.roomTableWidget->rowCount(); i++)
-	{
-		if (uiMainWindow.roomTableWidget->item(i, 0)->text().toInt() == (int)tablenum)
-			return i;
-	}
-	return uiMainWindow.roomTableWidget->rowCount();
-}
 
 void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 {
@@ -907,7 +911,8 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 			gameBoardWidget->answeredCorrectly(index, username, answer);
 			gameBoardWidget->addToPlayerList(username, answer);
-			
+			if (username==currentUsername)
+			  QSound::play("sounds/correct.wav");
 
 		}
 		break;
@@ -918,43 +923,44 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers)
 {
-	QTableWidgetItem *tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
-	QTableWidgetItem *descriptorItem = new QTableWidgetItem(wordListDescriptor);
-	QTableWidgetItem *maxPlayersItem = new QTableWidgetItem(QString("%1").arg(maxPlayers));
-	QTableWidgetItem *playersItem = new QTableWidgetItem("");
-	QTableWidgetItem *numPlayersItem = new QTableWidgetItem("0");
-	QPushButton* buttonItem = new QPushButton("Join");
-	buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));
-	connect(buttonItem, SIGNAL(clicked()), this, SLOT(joinTable()));
-	buttonItem->setEnabled(false);
+  tableRepresenter* t = new tableRepresenter;
+  t->tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
+  t->descriptorItem = new QTableWidgetItem(wordListDescriptor);
+  t->maxPlayersItem = new QTableWidgetItem(QString("%1").arg(maxPlayers));
+  t->playersItem = new QTableWidgetItem("");
+  t->numPlayersItem = new QTableWidgetItem("0");
+  t->buttonItem = new QPushButton("Join");
+	
+  //  t.buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));
+  connect(t->buttonItem, SIGNAL(clicked()), this, SLOT(joinTable()));
+  t->buttonItem->setEnabled(false);
+  
+  //  QStringList playerList;
+  //t->playersItem->setData(PLAYERLIST_ROLE, QVariant(playerList));
 
-	QStringList playerList;
-	playersItem->setData(PLAYERLIST_ROLE, QVariant(playerList));
+  int rc = uiMainWindow.roomTableWidget->rowCount();
+	
+  uiMainWindow.roomTableWidget->insertRow(rc);
+  uiMainWindow.roomTableWidget->setItem(rc, 0, t->tableNumItem);
+  uiMainWindow.roomTableWidget->setItem(rc, 1, t->descriptorItem);
+  uiMainWindow.roomTableWidget->setItem(rc, 2, t->playersItem);
+  uiMainWindow.roomTableWidget->setItem(rc, 3, t->numPlayersItem);
+  uiMainWindow.roomTableWidget->setItem(rc, 4, t->maxPlayersItem);
+  uiMainWindow.roomTableWidget->setCellWidget(rc, 5, t->buttonItem);
 
-	int rc = uiMainWindow.roomTableWidget->rowCount();
-
-	uiMainWindow.roomTableWidget->insertRow(rc);
-	uiMainWindow.roomTableWidget->setItem(rc, 0, tableNumItem);
-	uiMainWindow.roomTableWidget->setItem(rc, 1, descriptorItem);
-	uiMainWindow.roomTableWidget->setItem(rc, 2, playersItem);
-	uiMainWindow.roomTableWidget->setItem(rc, 3, numPlayersItem);
-	uiMainWindow.roomTableWidget->setItem(rc, 4, maxPlayersItem);
-	uiMainWindow.roomTableWidget->setCellWidget(rc, 5, buttonItem);
-
+  tables.insert(tablenum, t);
+  
+	
 
 }
 
 void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modification)
 {
 
-	// if player = currentusername
 
-	int row = findRoomTableRow(tablenum);
-	QVariant plistVar = uiMainWindow.roomTableWidget->item(row, 2)->data(PLAYERLIST_ROLE);
-	QStringList plist = plistVar.toStringList();
-
-	// plist contains all the players
-
+  if (!tables.contains(tablenum))
+    return;
+  tableRepresenter* t = tables.value(tablenum);
 	if (player == currentUsername)	// I joined. therefore, populate the list from the beginning
 	{
 		if (modification == -1) 
@@ -966,7 +972,7 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 		}
 		else 
 		{
-			gameBoardWidget->addPlayers(plist);
+			gameBoardWidget->addPlayers(t->playerList);
 			// add all players including self
 			return;
 		}
@@ -992,60 +998,68 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 
 void MainWindow::handleDeleteTable(quint16 tablenum)
 {
-	int row = findRoomTableRow(tablenum);
 
-	uiMainWindow.roomTableWidget->removeRow(row);
+  if (!tables.contains(tablenum))
+    return;
+
+  tableRepresenter* t = tables.value(tablenum);
+  uiMainWindow.roomTableWidget->removeRow(t->tableNumItem->row()); // delete the whole row (this function deletes the elements)
+  delete tables.take(tablenum); // delete the tableRepresenter object after removing it from the hash.
 }
 
 void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
 {
-	int row = findRoomTableRow(tablenum);
 
-	QVariant plistVar = uiMainWindow.roomTableWidget->item(row, 2)->data(PLAYERLIST_ROLE);
-	QStringList plist = plistVar.toStringList();
-	plist.removeAll(player);
+
+  if (!tables.contains(tablenum))
+    return;
+
+  tableRepresenter* t = tables.value(tablenum);
+  
+	t->playerList.removeAll(player);
 	QString textToSet="";
-	foreach(QString thisplayer, plist)
+	foreach(QString thisplayer, t->playerList)
 		textToSet += thisplayer + " ";
 
-	uiMainWindow.roomTableWidget->item(row, 2)->setText(textToSet);
-	uiMainWindow.roomTableWidget->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
-
-
-	quint8 curNumPlayers = uiMainWindow.roomTableWidget->item(row,3)->text().toShort();
-	quint8 maxNumPlayers = uiMainWindow.roomTableWidget->item(row,4)->text().toShort();
-	curNumPlayers--;
-	uiMainWindow.roomTableWidget->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
-	if (curNumPlayers >= maxNumPlayers)
-		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(false);
+	int numPlayers = t->playerList.size();
+	t->playersItem->setText(textToSet);
+	t->numPlayersItem->setText(QString("%1").arg(numPlayers));
+	
+	quint8 maxNumPlayers = t->maxPlayersItem->text().toShort();
+      	
+	if (numPlayers >= maxNumPlayers)
+		t->buttonItem->setEnabled(false);
 	else
-		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(true);
+	  t->buttonItem->setEnabled(true);
 }
 
 void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 {
 	// this will change button state as well
-	int row = findRoomTableRow(tablenum);
 
-	quint8 curNumPlayers = uiMainWindow.roomTableWidget->item(row,3)->text().toShort();
-	quint8 maxNumPlayers = uiMainWindow.roomTableWidget->item(row,4)->text().toShort();
-	curNumPlayers++;
-	uiMainWindow.roomTableWidget->item(row, 3)->setText(QString("%1").arg(curNumPlayers));
+  if (!tables.contains(tablenum))
+    return;
 
-	QVariant plistVar = uiMainWindow.roomTableWidget->item(row, 2)->data(PLAYERLIST_ROLE);
-	QStringList plist = plistVar.toStringList();
-	plist << player;
-	QString textToSet="";
-	foreach(QString thisplayer, plist)
-		textToSet += thisplayer + " ";
+  tableRepresenter* t = tables.value(tablenum);
+  t->playerList << player;
+  QString textToSet = "";
+  foreach(QString thisplayer, t->playerList)
+    textToSet += thisplayer + " ";
 
-	uiMainWindow.roomTableWidget->item(row, 2)->setText(textToSet);
-	uiMainWindow.roomTableWidget->item(row, 2)->setData(PLAYERLIST_ROLE, QVariant(plist));
-	if (curNumPlayers >= maxNumPlayers)
-		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(false);
-	else
-		uiMainWindow.roomTableWidget->cellWidget(row, 5)->setEnabled(true);
+  t->playersItem->setText(textToSet);
 
+  quint8 numPlayers = t->playerList.size();
+  quint8 maxPlayers = t->maxPlayersItem->text().toShort();
+  t->numPlayersItem->setText(QString("%1").arg(numPlayers));
+  
+  if (numPlayers >= maxPlayers)
+    {
+      t->buttonItem->setEnabled(false);
+    }
+  else
+    {
+      t->buttonItem->setEnabled(true);
+    }
 }
 
 
@@ -1225,6 +1239,14 @@ void MainWindow::showLoginPage()
 {
 	uiLogin.stackedWidget->setCurrentIndex(0);
 }
+
+void MainWindow::viewProfile(QString username)
+{
+  uiGetProfile.lineEditUsername->setText(username);
+  getProfileWidget->show();
+
+}
+
 /////////////////////////////////////////////////////
 
 PMWidget::PMWidget(QWidget* parent, QString senderUsername, QString receiverUsername) : 
@@ -1242,7 +1264,7 @@ void PMWidget::readAndSendLEContents()
 	uiPm.textEdit->append("[" + senderUsername + "] " + uiPm.lineEdit->text());
 
 	uiPm.lineEdit->clear();
-
+	QSound::play("sounds/outbound.wav");
 }
 
 void PMWidget::appendText(QString text)

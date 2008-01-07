@@ -9,7 +9,11 @@
 #include "ui_scoresForm.h"
 #include "ui_loginForm.h"
 #include "ui_pmForm.h"
-#include "ui_MainWindow.h"
+#include "ui_mainwindow.h"
+
+#include "ui_getProfileForm.h"
+#include "ui_setProfileForm.h"
+
 #include "UnscrambleGameTable.h"
 
 class PMWidget : public QWidget
@@ -52,9 +56,7 @@ private:
 	void handleAddToTable(quint16 tablenum, QString player);
 	void handleLeaveTable(quint16 tablenum, QString player);
 	void handleTableCommand(quint16 tablenum, quint8 commandByte);
-	int findRoomTableRow(quint16 tablenum);
-
-
+	
 	const int PLAYERLIST_ROLE;
 	void writeHeaderData();
 	void fixHeaderLength();
@@ -76,6 +78,12 @@ private:
 	Ui::scoresForm uiScores;
 	Ui::loginForm uiLogin;
 
+	QWidget *setProfileWidget;
+	QWidget *getProfileWidget;
+
+	Ui::setProfileForm uiSetProfile;
+	Ui::getProfileForm uiGetProfile;
+
 	void sendClientVersion();
 	void displayHighScores();
 
@@ -91,6 +99,22 @@ private:
 
 	QHash <QString, PMWidget*> pmWindows;
 
+	struct tableRepresenter
+	{
+	  QTableWidgetItem* tableNumItem;
+	  QTableWidgetItem* descriptorItem;
+	  QTableWidgetItem* maxPlayersItem;
+	  QTableWidgetItem* playersItem;
+	  QTableWidgetItem* numPlayersItem;
+	  QPushButton* buttonItem;
+	  quint16 tableNum;
+	  QStringList playerList;
+	  
+	};
+
+	QHash <quint16, tableRepresenter*> tables;
+
+
 	public slots:
 		void submitGuess(QString);
 		void chatTable(QString);
@@ -100,9 +124,10 @@ private:
 		void serverDisconnection();
 		void toggleConnectToServer();
 		void connectedToServer();
-		void sendPM(QListWidgetItem*);
+	
 		void sendPM(QString);
 		void sendPM(QString, QString);
+		void viewProfile(QString);
 		void receivedPM(QString, QString);
 
 		void createNewRoom();

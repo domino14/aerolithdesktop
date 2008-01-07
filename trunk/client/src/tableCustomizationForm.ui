@@ -302,11 +302,6 @@
      <string>No table</string>
     </property>
    </item>
-   <item>
-    <property name="text" >
-     <string>Rock</string>
-    </property>
-   </item>
   </widget>
   <widget class="QLabel" name="label" >
    <property name="geometry" >

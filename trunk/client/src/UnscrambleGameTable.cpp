@@ -214,7 +214,8 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
 	connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
 	connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
-	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(sendPM(QListWidgetItem* )));
+	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(sendPM(QString)), this, SIGNAL(sendPM(QString)));
+	connect(tableUi.listWidgetPeopleInRoom, SIGNAL(viewProfile(QString)), this, SIGNAL(viewProfile(QString)));
 
 	preferencesWidget = new QWidget(this);
 	uiPreferences.setupUi(preferencesWidget);
@@ -688,13 +689,6 @@ void UnscrambleGameTable::enteredChat()
 	emit chatTable(tableUi.lineEditChat->text());
 	tableUi.lineEditChat->clear();
 
-}
-
-void UnscrambleGameTable::sendPM(QListWidgetItem* item)
-{
-//	tableUi.lineEditChat->setText(QString("/msg ") + item->text() + " ");
-//	tableUi.lineEditChat->setFocus(Qt::OtherFocusReason);
-	emit sendPM(item->text());
 }
 
 
