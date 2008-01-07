@@ -77,7 +77,6 @@
 	<file>images/canvas.png</file>
 	<file>images/table.png</file>
 	<file>images/table2.png</file>
-	<file>images/table3.png</file>
 	<file>images/lava.png</file>
 	<file>images/stars.png</file>
 </qresource>

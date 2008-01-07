@@ -133,12 +133,11 @@ signals:
 	void chatTable(QString);
 	void sendPM(QString);
 	void exitThisTable();
-
+	void viewProfile(QString);
 	private slots:
 		void enteredGuess();
 		void enteredChat();
-		void sendPM(QListWidgetItem* item);
-
+		
 		void alphagrammizeWords();
 		void shuffleWords();
 		void tileWasClicked();

@@ -426,7 +426,7 @@ QPushButton:disabled{&#xd;
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QListWidget" name="listWidgetPeopleInRoom" >
+  <widget class="playerListWidget" name="listWidgetPeopleInRoom" >
    <property name="geometry" >
     <rect>
      <x>460</x>
@@ -581,6 +581,13 @@ QPushButton:disabled{
    </property>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>playerListWidget</class>
+   <extends>QListWidget</extends>
+   <header>playerlistwidget.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>lineEditChat</tabstop>
   <tabstop>lineEditSolution</tabstop>
