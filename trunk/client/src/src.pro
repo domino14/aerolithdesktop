@@ -3,7 +3,7 @@ TEMPLATE = app
 CONFIG += qt
 QT += network sql
 TARGET = aerolith
-QMAKE_MAC_SDK=/Developer/SDKs/MacOSX10.4u.sdk
+QMAKE_MAC_SDK=/Developer/SDKs/MacOSX10.5.sdk
 CONFIG+= x86 ppc
 ICON = macosxicns.icns
 
