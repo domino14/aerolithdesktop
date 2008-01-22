@@ -778,6 +778,7 @@ void MainWindow::joinTable()
 	QPushButton* buttonThatSent = static_cast<QPushButton*> (sender());
 	QVariant tn = buttonThatSent->property("tablenum");
 	quint16 tablenum = (quint16)tn.toInt();
+	
 	writeHeaderData();
 	out << (quint8)'j';
 	out << (quint16) tablenum;
@@ -930,8 +931,8 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
   t->playersItem = new QTableWidgetItem("");
   t->numPlayersItem = new QTableWidgetItem("0");
   t->buttonItem = new QPushButton("Join");
-	
-  //  t.buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));
+  t->buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));  
+  t->tableNum = tablenum;
   connect(t->buttonItem, SIGNAL(clicked()), this, SLOT(joinTable()));
   t->buttonItem->setEnabled(false);
   
