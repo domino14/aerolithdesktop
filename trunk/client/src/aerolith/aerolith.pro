@@ -15,7 +15,7 @@ DEPENDPATH += build/moc
 
 macx {
 TARGET = Aerolith
-ICON = macosxicns.icns
+ICON = $$ROOT/macosxicns.icns
 }
 
 unix {
