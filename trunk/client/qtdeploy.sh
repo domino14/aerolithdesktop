@@ -197,16 +197,5 @@ install_name_tool -change QtNetwork.framework/Versions/4/QtNetwork \
 
 find $BUNDLE/Contents | egrep "CVS" | xargs rm -rf
 
-### create disk image ###############################################
-
-echo "Creating disk image"
-imagedir="/tmp/$APPNAME.$$"
-mkdir $imagedir
-cp -R $BUNDLE $imagedir
-
-# TODO: copy over additional files, if any
-hdiutil create -ov -srcfolder $imagedir -format UDCO -volname "$APPNAME" "$APPNAME.dmg"
-hdiutil internet-enable -yes "$APPNAME.dmg"
-rm -rf $imagedir
 
 echo "Done"
