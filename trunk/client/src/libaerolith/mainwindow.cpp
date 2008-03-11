@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 
-const quint16 MAGIC_NUMBER = 25348;
+const quint16 MAGIC_NUMBER = 25349;
 const QString WindowTitle = "Aerolith 0.4.1";
 const QString thisVersion = "0.4.1";
 
@@ -289,7 +289,23 @@ void MainWindow::readFromServer()
 			in >> packetlength;
 			if (header != (quint16)MAGIC_NUMBER) // magic number
 			{
-			  uiMainWindow.chatText->append("You have the wrong version of the client. Please check http://www.aerolith.org");
+			  if (QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
+						"version of Aerolith. If you would like to update, please click OK"
+						    " below.", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
+			    {
+			      #ifdef Q_WS_MAC
+			      
+			      QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
+			      QCoreApplication::quit();
+			      #endif
+			      #ifdef Q_WS_WIN
+			      // call an updater program
+			      QCoreApplication::quit();
+			      #endif
+			    }
+			  
+
+			  //uiMainWindow.chatText->append("You have the wrong version of the client. Please check http://www.aerolith.org");
 			  commsSocket->disconnectFromHost();	
 			  return;
 			}
