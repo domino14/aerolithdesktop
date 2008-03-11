@@ -90,6 +90,17 @@ done
 # remove unwanted parts
 find $BUNDLE/Contents/Frameworks | egrep "debug|Headers" | xargs rm -rf
 
+### copy libaerolith to bundle ###
+echo "Changing link location for libaerolith in Aerolith executable..."
+install_name_tool -change \
+    libaerolith.1.dylib \
+    @executable_path/../Frameworks/libaerolith.1.dylib \
+    $BUNDLE/Contents/MacOS/Aerolith
+
+echo "Copying libaerolith into bundle..."
+cp libaerolith.1.dylib $BUNDLE/Contents/Frameworks
+
+
 ### set the identification names for frameworks #####################
 
 echo -n "Setting framework IDs..."
@@ -160,6 +171,26 @@ install_name_tool -change QtSql.framework/Versions/4/QtSql \
 install_name_tool -change QtCore.framework/Versions/4/QtCore \
     @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
     $BUNDLE/Contents/plugins/sqldrivers/libqsqlite.dylib
+
+#change reference to framework in libaerolith
+
+install_name_tool -change QtSql.framework/Versions/4/QtSql \
+    @executable_path/../Frameworks/QtSql.framework/Versions/4/QtSql \
+    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+
+install_name_tool -change QtCore.framework/Versions/4/QtCore \
+    @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+
+install_name_tool -change QtGui.framework/Versions/4/QtGui \
+    @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
+    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+
+install_name_tool -change QtNetwork.framework/Versions/4/QtNetwork \
+    @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
+    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+
+
 
 
 ### misc cleanup ###############################################
