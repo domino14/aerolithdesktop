@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 
-const quint16 MAGIC_NUMBER = 25349;
+const quint16 MAGIC_NUMBER = 25348;
 const QString WindowTitle = "Aerolith 0.4.1";
 const QString thisVersion = "0.4.1";
 
