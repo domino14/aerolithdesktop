@@ -136,6 +136,7 @@ void MainServer::pingEveryone()
 	    {
 	      
 	      qint64 retval = socket->write(block);
+	      socket->flush(); // do we really need this???
 	      qDebug() << "Pinged " << socket->connData.userName << "ret:" << retval;
 	      if (retval == -1) qDebug() << socket->errorString();
 	      socket->connData.isActive = false;
