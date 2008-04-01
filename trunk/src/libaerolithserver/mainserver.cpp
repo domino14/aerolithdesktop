@@ -74,7 +74,7 @@ void MainServer::loadWordLists()
 {
   wordLists.clear();
   orderedWordLists.clear();
-  QFile listFile("../listmaker/lists/LISTS");
+  QFile listFile("lists/LISTS");
   QTextStream thisIn;
   thisIn.setDevice(&listFile);
 
@@ -89,7 +89,7 @@ void MainServer::loadWordLists()
       QString line = thisIn.readLine();
       if (!line.contains("@")) break;
       QStringList tmp = line.split("@");
-      wordLists.insert(tmp.at(1), "../listmaker/lists/" + tmp.at(0)); // key is the DESCRIPTIVE name
+      wordLists.insert(tmp.at(1), "lists/" + tmp.at(0)); // key is the DESCRIPTIVE name
       // value is the FILENAME
       orderedWordLists << tmp.at(1);
     }

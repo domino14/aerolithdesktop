@@ -285,7 +285,7 @@ void UnscrambleGame::generateDailyChallenges()
 		QString challengeName = QString("Today's %1s").arg(i);
 		challenges.insert(challengeName, tmpChallenge);
 
-		QFile tempInFile(QString("../listmaker/lists/%1s").arg(i));
+		QFile tempInFile(QString("lists/%1s").arg(i));
 		QFile tempOutFile("dailylists/" + challengeName);
 		QTextStream inStream(&tempInFile);
 		QTextStream outStream(&tempOutFile);
