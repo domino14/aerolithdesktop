@@ -289,7 +289,11 @@ void UnscrambleGame::generateDailyChallenges()
 		QFile tempOutFile("dailylists/" + challengeName);
 		QTextStream inStream(&tempInFile);
 		QTextStream outStream(&tempOutFile);
-		tempInFile.open(QIODevice::ReadOnly | QIODevice::Text);
+		if (!tempInFile.open(QIODevice::ReadOnly | QIODevice::Text))
+		  {
+		    qDebug() << "Could not generate daily challenges for length " << i << "!";
+		    continue;
+		  }
 		tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);
 		QStringList fileContents;
 		while (!inStream.atEnd())
