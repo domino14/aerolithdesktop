@@ -1,12 +1,12 @@
 message (generating makefile from server/src.pro)
-TEMPLATE = app
+TEMPLATE = lib
 QT += network sql
 QT -= gui
 CONFIG += console debug
 CONFIG -= app_bundle
-TARGET = server
+TARGET = aerolithserver
 
-ROOT = ../
+ROOT = ../..
 DESTDIR = $$ROOT/
 MOC_DIR = build/moc
 OBJECTS_DIR = build/obj

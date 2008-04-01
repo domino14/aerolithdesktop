@@ -91,14 +91,23 @@ done
 find $BUNDLE/Contents/Frameworks | egrep "debug|Headers" | xargs rm -rf
 
 ### copy libaerolith to bundle ###
-echo "Changing link location for libaerolith in Aerolith executable..."
+echo "Changing link location for libaerolithclient in Aerolith executable..."
 install_name_tool -change \
-    libaerolith.1.dylib \
-    @executable_path/../Frameworks/libaerolith.1.dylib \
+    libaerolithclient.1.dylib \
+    @executable_path/../Frameworks/libaerolithclient.1.dylib \
     $BUNDLE/Contents/MacOS/Aerolith
 
 echo "Copying libaerolith into bundle..."
-cp libaerolith.1.dylib $BUNDLE/Contents/Frameworks
+cp libaerolithclient.1.dylib $BUNDLE/Contents/Frameworks
+
+echo "Changing link location for libaerolithserver in Aerolith executable..."
+install_name_tool -change \
+    libaerolithserver.1.dylib \
+    @executable_path/../Frameworks/libaerolithserver.1.dylib \
+    $BUNDLE/Contents/MacOS/Aerolith
+
+echo "Copying libaerolith into bundle..."
+cp libaerolithserver.1.dylib $BUNDLE/Contents/Frameworks
 
 
 ### set the identification names for frameworks #####################
@@ -176,19 +185,33 @@ install_name_tool -change QtCore.framework/Versions/4/QtCore \
 
 install_name_tool -change QtSql.framework/Versions/4/QtSql \
     @executable_path/../Frameworks/QtSql.framework/Versions/4/QtSql \
-    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+    $BUNDLE/Contents/Frameworks/libaerolithclient.1.dylib
 
 install_name_tool -change QtCore.framework/Versions/4/QtCore \
     @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
-    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+    $BUNDLE/Contents/Frameworks/libaerolithclient.1.dylib
 
 install_name_tool -change QtGui.framework/Versions/4/QtGui \
     @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
-    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+    $BUNDLE/Contents/Frameworks/libaerolithclient.1.dylib
 
 install_name_tool -change QtNetwork.framework/Versions/4/QtNetwork \
     @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
-    $BUNDLE/Contents/Frameworks/libaerolith.1.dylib
+    $BUNDLE/Contents/Frameworks/libaerolithclient.1.dylib
+
+
+install_name_tool -change QtSql.framework/Versions/4/QtSql \
+    @executable_path/../Frameworks/QtSql.framework/Versions/4/QtSql \
+    $BUNDLE/Contents/Frameworks/libaerolithserver.1.dylib
+
+install_name_tool -change QtCore.framework/Versions/4/QtCore \
+    @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+    $BUNDLE/Contents/Frameworks/libaerolithserver.1.dylib
+
+install_name_tool -change QtNetwork.framework/Versions/4/QtNetwork \
+    @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
+    $BUNDLE/Contents/Frameworks/libaerolithserver.1.dylib
+
 
 
 
