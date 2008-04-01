@@ -10,7 +10,7 @@ ROOT = ../..
 DESTDIR = $$ROOT/
 MOC_DIR = build/moc
 OBJECTS_DIR = build/obj
-INCLUDEPATH += build/moc $$ROOT/src/libaerolith
+INCLUDEPATH += build/moc $$ROOT/src/libaerolithclient $$ROOT/src/libaerolithserver
 DEPENDPATH += build/moc
 
 macx {
@@ -19,11 +19,11 @@ ICON = $$ROOT/macosxicns.icns
 }
 
 unix {
-LIBS = -laerolith -L$$ROOT
+LIBS = -laerolithclient -laerolithserver -L$$ROOT
 }
 
 win32 {
-LIBS = -laerolith -L$$ROOT
+LIBS = -laerolithclient -laerolithserver -L$$ROOT
 }
 
 SOURCES = main.cpp

@@ -1,7 +1,7 @@
 TEMPLATE = lib
 CONFIG += qt
 QT += network sql
-TARGET = aerolith
+TARGET = aerolithclient
 QMAKE_MAC_SDK=/Developer/SDKs/MacOSX10.5.sdk
 CONFIG+= x86 ppc
 
