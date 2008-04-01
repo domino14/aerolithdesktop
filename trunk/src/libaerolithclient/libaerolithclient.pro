@@ -1,3 +1,4 @@
+message (generating makefile from libaerolithclient.pro)
 TEMPLATE = lib
 CONFIG += qt
 QT += network sql

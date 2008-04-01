@@ -78,8 +78,12 @@ void MainServer::loadWordLists()
   QTextStream thisIn;
   thisIn.setDevice(&listFile);
 
-  listFile.open(QIODevice::ReadOnly | QIODevice::Text);
-
+  if (!listFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+      qDebug() << "Error opening lists! There are no lists!";
+      return;
+    }
+  
   while (!thisIn.atEnd())
     {
       QString line = thisIn.readLine();

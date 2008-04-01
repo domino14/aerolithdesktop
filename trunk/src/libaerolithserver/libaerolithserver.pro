@@ -1,9 +1,9 @@
-message (generating makefile from server/src.pro)
+message (generating makefile from libaerolithserver.pro)
 TEMPLATE = lib
+CONFIG += qt
 QT += network sql
 QT -= gui
-CONFIG += console debug
-CONFIG -= app_bundle
+CONFIG += console x86 ppc
 TARGET = aerolithserver
 
 ROOT = ../..
@@ -14,4 +14,4 @@ INCLUDEPATH += build/moc
 DEPENDPATH += build/moc
 
 HEADERS += mainserver.h table.h UnscrambleGame.h TableGame.h ClientSocket.h ClientWriter.h
-SOURCES += main.cpp mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp
+SOURCES += mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp
