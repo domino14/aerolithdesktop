@@ -1,12 +1,12 @@
 #include <QApplication>
 
 #include "mainwindow.h"
-#include "mainserver.h"
+#include "serverthread.h"
 QTextStream *outFile = 0;
 
 
 static const quint16 DEFAULT_PORT = 1988;
-
+const QString aerolithVersion = "0.4.1";
 void myMessageOutput(QtMsgType type, const char *msg)
 {
 	QString debugdate =
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
 	    }
 	  
-	  MainServer mainServer;
+	  MainServer mainServer(aerolithVersion);
 	  mainServer.listen(QHostAddress::Any, port);
 	  qDebug() << "listening on port " << port;
 	  return app.exec();
@@ -111,9 +111,14 @@ int main(int argc, char *argv[])
       qInstallMsgHandler(myMessageOutput);
     }
   else delete log;
+  
+  ServerThread serverThread(aerolithVersion);
+  MainWindow mainWin(aerolithVersion);
 
-
-  MainWindow mainWin;
+  //  QObject::connect(&mainWin, SIGNAL(startServerThread()), &serverThread, SLOT(startThread()));
+  //QObject::connect(&mainWin, SIGNAL(stopServerThread()), &serverThread, SLOT(stopThread()));
+  //QObject::connect(&serverThread, SIGNAL(started()), &mainWin, SLOT(serverThreadHasStarted()));
+  //QObject::connect(&serverThread, SIGNAL(finished()), &mainWin, SLOT(serverThreadHasFinished()));
   mainWin.show();      
   return app.exec();  
 

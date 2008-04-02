@@ -38,9 +38,11 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow();
+	MainWindow(QString);
 private:
+	QString aerolithVersion;
 
+	
 	QTcpSocket *commsSocket;
 
 	quint16 blockSize; // used for socket
@@ -113,8 +115,9 @@ private:
 	};
 
 	QHash <quint16, tableRepresenter*> tables;
-
-
+ signals:
+	void startServerThread();
+	void stopServerThread();
 	public slots:
 		void submitGuess(QString);
 		void chatTable(QString);
@@ -144,10 +147,15 @@ private:
 		
 		void showRegisterPage();
 		void showLoginPage();
-
+		void startOwnServer();
+		
 		void aerolithAcknowledgementsDialog();
 		void showAboutQt();
+
+		void serverThreadHasStarted();
+		void serverThreadHasFinished();
 };
+
 
 struct tempHighScoresStruct
 {

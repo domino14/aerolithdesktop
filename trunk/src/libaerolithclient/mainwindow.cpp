@@ -1,8 +1,9 @@
 #include "mainwindow.h"
 
+
 const quint16 MAGIC_NUMBER = 25348;
 const QString WindowTitle = "Aerolith 0.4.1";
-const QString thisVersion = "0.4.1";
+//const QString thisVersion = "0.4.1";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -10,8 +11,8 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
 	else return (a.numCorrect > b.numCorrect);
 }
 
-MainWindow::MainWindow() : PLAYERLIST_ROLE(Qt::UserRole), 
-out(&block, QIODevice::WriteOnly)
+MainWindow::MainWindow(QString aerolithVersion) : aerolithVersion(aerolithVersion), PLAYERLIST_ROLE(Qt::UserRole), 
+						  out(&block, QIODevice::WriteOnly)
 {
 	
 	QSqlDatabase wordDb;
@@ -92,6 +93,8 @@ out(&block, QIODevice::WriteOnly)
 	connect(uiLogin.cancelRegPushButton, SIGNAL(clicked()), this, SLOT(showLoginPage()));
 
 	connect(uiLogin.submitRegPushButton, SIGNAL(clicked()), this, SLOT(registerName()));
+	connect(uiLogin.pushButtonStartOwnServer, SIGNAL(clicked()), this, SLOT(startOwnServer()));
+
 
 	scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
 	loginDialog->setAttribute(Qt::WA_QuitOnClose, false);   
@@ -1164,7 +1167,7 @@ void MainWindow::sendClientVersion()
 {
 	writeHeaderData();
 	out << (quint8)'v';
-	out << thisVersion;
+	out << aerolithVersion;
 	fixHeaderLength();
 	commsSocket->write(block);
 }
@@ -1262,6 +1265,33 @@ void MainWindow::viewProfile(QString username)
   uiGetProfile.lineEditUsername->setText(username);
   getProfileWidget->show();
 
+}
+
+void MainWindow::startOwnServer()
+{
+  // start a server thread
+  if (uiLogin.pushButtonStartOwnServer->text() == "Start Own Server")
+    emit startServerThread();
+  else
+    emit stopServerThread();
+}
+
+void MainWindow::serverThreadHasStarted()
+{
+  uiLogin.connectStatusLabel->setText("Server thread has started! Log in now.");
+  uiLogin.pushButtonStartOwnServer->setText("Stop Server");
+  uiLogin.serverLE->setText("localhost");
+  uiLogin.portLE->setText("1988");
+}
+
+void MainWindow::serverThreadHasFinished()
+{
+  uiLogin.connectStatusLabel->setText("Server thread has stopped! Log in now.");
+  uiLogin.pushButtonStartOwnServer->setText("Start Own Server");
+
+  uiLogin.serverLE->setText("aerolith.org");
+  uiLogin.portLE->setText("1988");
+  
 }
 
 /////////////////////////////////////////////////////

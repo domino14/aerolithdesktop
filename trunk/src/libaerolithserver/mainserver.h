@@ -17,7 +17,7 @@ class MainServer : public QTcpServer
 Q_OBJECT
 
 public: 
- MainServer();
+ MainServer(QString);
   
 
 private slots:
@@ -46,7 +46,8 @@ private:
  // these two hashes are probably needed
  QHash <QString, ClientSocket*> usernamesHash;
  QHash <quint16, tableData*> tables;
-
+ 
+ QString aerolithVersion;
 
  QHash <QString, QString> wordLists;
  QStringList orderedWordLists;
