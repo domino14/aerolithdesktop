@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>406</width>
-    <height>310</height>
+    <height>333</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -15,22 +15,22 @@
   <widget class="QStackedWidget" name="stackedWidget" >
    <property name="geometry" >
     <rect>
-     <x>10</x>
-     <y>10</y>
+     <x>0</x>
+     <y>0</y>
      <width>382</width>
-     <height>260</height>
+     <height>300</height>
     </rect>
    </property>
    <property name="minimumSize" >
     <size>
      <width>382</width>
-     <height>260</height>
+     <height>300</height>
     </size>
    </property>
    <property name="maximumSize" >
     <size>
      <width>382</width>
-     <height>260</height>
+     <height>300</height>
     </size>
    </property>
    <property name="currentIndex" >
@@ -82,9 +82,9 @@
     <widget class="QGroupBox" name="groupBox" >
      <property name="geometry" >
       <rect>
-       <x>20</x>
-       <y>110</y>
-       <width>311</width>
+       <x>10</x>
+       <y>150</y>
+       <width>371</width>
        <height>101</height>
       </rect>
      </property>
@@ -182,8 +182,8 @@
     <widget class="QPushButton" name="registerPushButton" >
      <property name="geometry" >
       <rect>
-       <x>20</x>
-       <y>220</y>
+       <x>10</x>
+       <y>110</y>
        <width>160</width>
        <height>32</height>
       </rect>
@@ -206,6 +206,19 @@
      </property>
      <property name="checked" >
       <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButtonStartOwnServer" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>260</y>
+       <width>145</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text" >
+      <string>Start Own Server</string>
      </property>
     </widget>
    </widget>
@@ -325,10 +338,10 @@
   <widget class="QLabel" name="connectStatusLabel" >
    <property name="geometry" >
     <rect>
-     <x>30</x>
-     <y>280</y>
-     <width>351</width>
-     <height>20</height>
+     <x>10</x>
+     <y>300</y>
+     <width>361</width>
+     <height>21</height>
     </rect>
    </property>
    <property name="text" >

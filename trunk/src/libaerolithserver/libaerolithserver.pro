@@ -13,5 +13,5 @@ OBJECTS_DIR = build/obj
 INCLUDEPATH += build/moc
 DEPENDPATH += build/moc
 
-HEADERS += mainserver.h table.h UnscrambleGame.h TableGame.h ClientSocket.h ClientWriter.h
-SOURCES += mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp
+HEADERS += mainserver.h table.h UnscrambleGame.h TableGame.h ClientSocket.h ClientWriter.h serverthread.h
+SOURCES += mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp serverthread.cpp

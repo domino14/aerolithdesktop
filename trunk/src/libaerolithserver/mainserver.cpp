@@ -15,9 +15,9 @@ const QString incompatibleVersionString =
 Please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
-const QString thisVersion = "0.4.1";
+//const QString thisVersion = "0.4.1";
 
-MainServer::MainServer()
+MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersion)
 {
 
   // TODO:
@@ -414,7 +414,7 @@ void MainServer::processVersionNumber(ClientSocket* socket)
   QString version;
   socket->connData.in >> version;
 
-  if (version != thisVersion)
+  if (version != aerolithVersion)
       writeToClient(socket, compatibleButOutdatedVersionString , S_SERVERMESSAGE);
 }
 
