@@ -2,7 +2,7 @@
 #define _SERVERTHREAD_H_
 
 #include <QThread>
-#include "mainserver.cpp"
+#include "mainserver.h"
 
 class ServerThread : public QThread
 {
