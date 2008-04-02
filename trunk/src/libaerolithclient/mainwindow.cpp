@@ -1286,7 +1286,7 @@ void MainWindow::serverThreadHasStarted()
 
 void MainWindow::serverThreadHasFinished()
 {
-  uiLogin.connectStatusLabel->setText("Server thread has stopped! Log in now.");
+  uiLogin.connectStatusLabel->setText("Server thread has stopped!");
   uiLogin.pushButtonStartOwnServer->setText("Start Own Server");
 
   uiLogin.serverLE->setText("aerolith.org");

@@ -22,6 +22,7 @@ void ServerThread::stopThread()
 
 void ServerThread::run()
 {
+  shouldQuitThread = false;
   mainServer.listen(QHostAddress::Any, 1988);
   while (!shouldQuitThread);
 
