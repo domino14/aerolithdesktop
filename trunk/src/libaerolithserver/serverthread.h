@@ -14,9 +14,9 @@ Q_OBJECT
   void run();
   
  private:
-  MainServer mainServer;
+  MainServer* mainServer;
   volatile bool shouldQuitThread;
-
+  QString version;
   public slots:
   void stopThread();
   void startThread();
