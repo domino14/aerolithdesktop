@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
 	  bool ok = false;
 	  quint16 port;
-	  if (argc == 3)
+	  if (argc >= 3)
 	    {
 	      port = QString(argv[2]).toInt(&ok);
 	      if (!ok)
