@@ -206,7 +206,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 
 	this->wordDb = wordDb;
 	currentWordLength = 0;
-	this->setStyle(new QWindowsStyle);
+	//this->setStyle(new QWindowsStyle);
 	tableUi.setupUi(this);
 	
 
@@ -279,6 +279,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	
 	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), solutionsDialog, SLOT(show()));
 	
+	//uiSolutions.solutionsTableWidget->setItemDelegate(new QItemDelegate(uiSolutions.solutionsTableWidget));
 	// generate gfx items
 
 	for (int i = 0; i < 50; i++)
