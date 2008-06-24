@@ -278,8 +278,11 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSq
 	preferencesWidget->setAttribute(Qt::WA_QuitOnClose, false);
 	
 	connect(tableUi.pushButtonSolutions, SIGNAL(clicked()), solutionsDialog, SLOT(show()));
+	qDebug() << "Style sheet: " << uiSolutions.solutionsTableWidget->styleSheet();
+	uiSolutions.solutionsTableWidget->setItemDelegate(new QItemDelegate(uiSolutions.solutionsTableWidget));
+	// anyone wanna debug why i need to add the previous line?	
+	// the missed table items don't show up red if i don't add the line! (on qt 4.4.0+)
 	
-	//uiSolutions.solutionsTableWidget->setItemDelegate(new QItemDelegate(uiSolutions.solutionsTableWidget));
 	// generate gfx items
 
 	for (int i = 0; i < 50; i++)
