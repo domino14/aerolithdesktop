@@ -8,7 +8,7 @@ class ListMaker
 	public:
 		ListMaker();
 		static void createListDatabase();
-
+		static void testDatabaseTime();
 };
 
 #endif

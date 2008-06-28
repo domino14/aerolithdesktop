@@ -63,6 +63,7 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   "profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), points INTEGER)");
   
   ListMaker::createListDatabase();
+  ListMaker::testDatabaseTime();
 }
 
 void MainServer::newDailyChallenges()
