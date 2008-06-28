@@ -38,9 +38,6 @@ Q_OBJECT
  void startGame();
 
  static void generateDailyChallenges();
- //static QList <highScoreData> dailyHighScores[14];
- //static QHash <QString, QString> peopleWhoPlayed[14];
-
 
 
 	static QHash <QString, challengeInfo> challenges;

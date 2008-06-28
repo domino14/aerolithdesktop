@@ -262,6 +262,7 @@ void UnscrambleGame::updateGameTimer()
 		endGame();
 }
 
+
 void UnscrambleGame::generateDailyChallenges()
 {
 	midnightSwitchoverToggle = !midnightSwitchoverToggle;
