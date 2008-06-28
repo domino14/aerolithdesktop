@@ -4,6 +4,7 @@
 #include <QtSql>
 #include "ClientWriter.h"
 #include "UnscrambleGame.h"
+#include "listmaker.h"
 //QList <QVariant> dummyList;
 
 extern QByteArray block;
@@ -53,25 +54,33 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   UnscrambleGame::generateDailyChallenges();
   UnscrambleGame::midnightSwitchoverToggle = true;
 
-  userDb = QSqlDatabase::addDatabase("QSQLITE");
+  userDb = QSqlDatabase::addDatabase("QSQLITE", "usersDB");
   userDb.setDatabaseName("users.db");
   userDb.open();
   
-  QSqlQuery query;
-  query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), points INTEGER)");
-
+  QSqlQuery query(QSqlDatabase::database("usersDB"));
+  query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, "
+  "profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), points INTEGER)");
+  
+  ListMaker::createListDatabase();
 }
 
 void MainServer::newDailyChallenges()
 {
+	QTime midnight(0, 0, 0);
   midnightTimer->stop();
-  midnightTimer->start(86400000);
+  midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
   UnscrambleGame::generateDailyChallenges();
   
 }
 
 void MainServer::loadWordLists()
 {
+	QSqlDatabase wDb = QSqlDatabase::addDatabase("QSQLITE", "wordlistsDB");
+	wDb.setDatabaseName("wordlists.db");
+	wDb.open();
+
+/*
   wordLists.clear();
   orderedWordLists.clear();
   QFile listFile("lists/LISTS");
@@ -94,7 +103,7 @@ void MainServer::loadWordLists()
       orderedWordLists << tmp.at(1);
     }
 
-  listFile.close();
+  listFile.close();*/
 
 }
 
@@ -173,7 +182,7 @@ void MainServer::removeConnection()
 	
       usernamesHash.remove(username);
     
-      QSqlQuery query;
+      QSqlQuery query(QSqlDatabase::database("usersDB"));
       query.prepare("UPDATE users SET avatar = :avatar, lastIP = :lastIP, lastLoggedOut = :lastLoggedOut WHERE username = :username");
       query.bindValue(":avatar", socket->connData.avatarId);
       query.bindValue(":username", socket->connData.userName.toLower());
@@ -793,7 +802,7 @@ void MainServer::registerNewName(ClientSocket* socket)
       return;
     }
   
-  QSqlQuery query;
+  QSqlQuery query(QSqlDatabase::database("usersDB"));
   query.exec("SELECT * from users where username = '" + username.toLower() + "'");
   if (query.next())
     {
@@ -852,7 +861,7 @@ void MainServer::processLogin(ClientSocket* socket)
 
   // now check the database
   
-  QSqlQuery query;
+  QSqlQuery query(QSqlDatabase::database("usersDB"));
   query.exec("SELECT * from users where username = '" + username.toLower() + "'");
 
   if (!query.next())

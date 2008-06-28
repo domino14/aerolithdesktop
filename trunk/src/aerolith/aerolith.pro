@@ -26,5 +26,5 @@ HEADERS += mainwindow.h UnscrambleGameTable.h avatarLabel.h tile.h chip.h wordRe
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 
-HEADERS += mainserver.h table.h UnscrambleGame.h TableGame.h ClientSocket.h ClientWriter.h serverthread.h
-SOURCES += mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp serverthread.cpp
+HEADERS += mainserver.h table.h UnscrambleGame.h TableGame.h ClientSocket.h ClientWriter.h serverthread.h listmaker.h
+SOURCES += mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp serverthread.cpp listmaker.cpp
