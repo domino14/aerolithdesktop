@@ -17,6 +17,12 @@ Please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for
 const QString compatibleButOutdatedVersionString = 
 "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 //const QString thisVersion = "0.4.1";
+extern const QString WORD_DATABASE_NAME;
+extern const QString WORD_DATABASE_FILENAME;
+
+
+
+
 
 MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersion)
 {
@@ -62,8 +68,8 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, "
   "profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), points INTEGER)");
   
-  ListMaker::createListDatabase();
-  ListMaker::testDatabaseTime();
+ // ListMaker::createListDatabase();
+  //ListMaker::testDatabaseTime();
 }
 
 void MainServer::newDailyChallenges()
@@ -77,10 +83,29 @@ void MainServer::newDailyChallenges()
 
 void MainServer::loadWordLists()
 {
-	QSqlDatabase wDb = QSqlDatabase::addDatabase("QSQLITE", "wordlistsDB");
-	wDb.setDatabaseName("wordlists.db");
-	wDb.open();
 
+	ListMaker::createListDatabase();
+	QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME)); // the database is already open
+	
+	wordQuery.exec("SELECT listname from wordlists");
+	
+	orderedWordLists.clear();
+	while (wordQuery.next())
+	{
+		orderedWordLists << wordQuery.value(0).toString();
+	
+	}
+	
+		
+	/*QSqlDatabase wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB");
+	wordDb.setDatabaseName("words.db");
+	wordDb.open();
+
+	QSqlDatabase wordListDb = QSqlDatabase::addDatabase("QSQLITE", "wordListDB");
+	wordListDb.setDatabaseName("wordlists.db");
+	wordListDb.open();*/
+	
+	
 /*
   wordLists.clear();
   orderedWordLists.clear();
