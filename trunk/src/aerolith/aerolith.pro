@@ -10,8 +10,8 @@ ROOT = ../..
 DESTDIR = $$ROOT/
 MOC_DIR = build/moc
 OBJECTS_DIR = build/obj
-INCLUDEPATH += build/moc $$ROOT/src/aerolithclient $$ROOT/src/aerolithServer
-DEPENDPATH += build/moc $$ROOT/src/aerolithclient $$ROOT/src/aerolithServer
+INCLUDEPATH += build/moc $$ROOT/src/aerolithclient $$ROOT/src/aerolithServer $$ROOT/src/common
+DEPENDPATH += build/moc $$ROOT/src/aerolithclient $$ROOT/src/aerolithServer $$ROOT/src/common
 
 
 
@@ -28,3 +28,5 @@ RC_FILE = ../../client.rc
 
 HEADERS += mainserver.h table.h UnscrambleGame.h TableGame.h ClientSocket.h ClientWriter.h serverthread.h listmaker.h
 SOURCES += mainserver.cpp table.cpp TableGame.cpp UnscrambleGame.cpp ClientWriter.cpp serverthread.cpp listmaker.cpp
+
+HEADERS += commonDefs.h

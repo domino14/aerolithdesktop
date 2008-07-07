@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-
+#include "commonDefs.h"
 
 const quint16 MAGIC_NUMBER = 25348;
 const QString WindowTitle = "Aerolith 0.4.1";
@@ -221,7 +221,7 @@ void MainWindow::submitChatLEContents()
 	}*/
   
   writeHeaderData();
-  out << (quint8)'c';
+  out << (quint8)CLIENT_CHAT;
   out << uiMainWindow.lineEditChat->text();
   fixHeaderLength();
   commsSocket->write(block);
@@ -234,9 +234,9 @@ void MainWindow::chatTable(QString textToSend)
 	if (textToSend.indexOf("/me ") == 0)
 	{
 		writeHeaderData();
-		out << (quint8)'=';
+		out << (quint8)CLIENT_TABLE_COMMAND;
 		out << (quint16)currentTablenum;
-		out << (quint8)'a';
+		out << (quint8)CLIENT_TABLE_ACTION;
 		out << textToSend.mid(4);
 		fixHeaderLength();
 		commsSocket->write(block);
@@ -246,9 +246,9 @@ void MainWindow::chatTable(QString textToSend)
 
 
 		writeHeaderData();
-		out << (quint8)'=';
+		out << (quint8)CLIENT_TABLE_COMMAND;
 		out << (quint16)currentTablenum;
-		out << (quint8)'c';
+		out << (quint8)CLIENT_TABLE_CHAT;
 		out << textToSend;
 		fixHeaderLength();
 		commsSocket->write(block);
@@ -263,9 +263,9 @@ void MainWindow::submitGuess(QString guess)
 	if (guess.length() > 15) return;
 
 	writeHeaderData();
-	out << (quint8) '=';
+	out << (quint8) CLIENT_TABLE_COMMAND;
 	out << (quint16) currentTablenum;
-	out << (quint8) 's'; // from solution box
+	out << (quint8) CLIENT_TABLE_GUESS; // from solution box
 	out << guess;
 	fixHeaderLength();
 	commsSocket->write(block);
@@ -303,6 +303,7 @@ void MainWindow::readFromServer()
 			      #endif
 			      #ifdef Q_WS_WIN
 			      // call an updater program
+			      QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
 			      QCoreApplication::quit();
 			      #endif
 			    }
@@ -328,16 +329,16 @@ void MainWindow::readFromServer()
 		qDebug() << "Packet type " << (char)packetType << "block length" << blockSize;
 		switch(packetType)
 		{
-		case '?':
+		case SERVER_PING:
 
 			// keep alive
 			writeHeaderData();
-			out << (quint8)'?';
+			out << (quint8)CLIENT_PONG;
 			fixHeaderLength();
 			commsSocket->write(block);		  
 			break;
 
-		case 'E':	// logged in (entered)
+		case SERVER_LOGGED_IN:	// logged in (entered)
 			{
 				QString username;
 				in >> username;
@@ -360,7 +361,7 @@ void MainWindow::readFromServer()
 				}
 			}
 			break;
-		case 'X':	// logged out
+		case SERVER_LOGGED_OUT:	// logged out
 			{
 				QString username;
 				in >> username;
@@ -374,7 +375,7 @@ void MainWindow::readFromServer()
 			}
 			break;
 
-		case '!':	// error
+		case SERVER_ERROR:	// error
 			{
 				QString errorString;
 				in >> errorString;
@@ -382,7 +383,7 @@ void MainWindow::readFromServer()
 				//	chatText->append("<font color=red>" + errorString + "</font>");
 			}
 			break;
-		case 'C':	// chat
+		case SERVER_CHAT:	// chat
 			{
 				QString username;
 				in >> username;
@@ -391,14 +392,14 @@ void MainWindow::readFromServer()
 				uiMainWindow.chatText->append(QString("[")+username+"] " + text);
 			}
 			break;
-		case 'P':	// PM
+		case SERVER_PM:	// PM
 			{
 				QString username, message;
 				in >> username >> message;
 				receivedPM(username, message);
 			}
 			break;
-		case 'T':	// New table
+		case SERVER_NEW_TABLE:	// New table
 			{
 				// there is a new table
 
@@ -413,7 +414,7 @@ void MainWindow::readFromServer()
 				handleCreateTable(tablenum, wordListDescriptor, maxPlayers);
 			}
 			break;
-		case 'J':	// player joined table
+		case SERVER_JOIN_TABLE:	// player joined table
 			{
 				quint16 tablenum;
 				QString playerName;
@@ -440,7 +441,7 @@ void MainWindow::readFromServer()
 
 			}
 			break;
-		case 'L':
+		case SERVER_LEFT_TABLE:
 			{
 				// player left table
 				quint16 tablenum;
@@ -465,7 +466,7 @@ void MainWindow::readFromServer()
 			}
 
 			break;
-		case 'K':
+		case SERVER_KILL_TABLE:
 			{
 				// table has ceased to exist
 				quint16 tablenum;
@@ -474,7 +475,7 @@ void MainWindow::readFromServer()
 				handleDeleteTable(tablenum);
 			}	
 			break;
-		case 'W':
+		case SERVER_WORD_LISTS:
 			{
 				// word lists
 				quint8 listSubType;
@@ -518,7 +519,7 @@ void MainWindow::readFromServer()
 
 			}
 			break;
-		case '+':
+		case SERVER_TABLE_COMMAND:
 			// table command
 			// an additional byte is needed
 			{
@@ -537,7 +538,7 @@ void MainWindow::readFromServer()
 
 			}
 			break;
-		case 'S':
+		case SERVER_MESSAGE:
 			// server message
 			{
 				QString serverMessage;
@@ -548,7 +549,7 @@ void MainWindow::readFromServer()
 
 			}
 			break;
-		case 'H':
+		case SERVER_HIGH_SCORES:
 			// high scores!
 			{
 				displayHighScores();
@@ -557,7 +558,7 @@ void MainWindow::readFromServer()
 
 
 			break;
-		case 'I':
+		case SERVER_AVATAR_CHANGE:
 			// avatar id
 			{
 				QString username;
@@ -687,7 +688,7 @@ void MainWindow::connectedToServer()
 
 
 		writeHeaderData();
-		out << (quint8)'e';
+		out << (quint8)CLIENT_LOGIN;
 		out << currentUsername;
 		out << uiLogin.passwordLE->text();
 		fixHeaderLength();
@@ -696,7 +697,7 @@ void MainWindow::connectedToServer()
 	else if (connectionMode == MODE_REGISTER)
 	{
 		writeHeaderData();
-		out << (quint8)'r';
+		out << (quint8)CLIENT_REGISTER;
 		out << uiLogin.desiredUsernameLE->text();
 		out << uiLogin.desiredFirstPasswordLE->text();
 		fixHeaderLength();
@@ -733,7 +734,7 @@ void MainWindow::sendPM(QString username, QString message)
 	}
 
 	writeHeaderData();
-	out << (quint8)'p';
+	out << (quint8)CLIENT_PM;
 	out << username;
 	out << message;
 	fixHeaderLength();
@@ -777,13 +778,13 @@ void MainWindow::createNewRoom()
 	// else its not rejected
 
 	writeHeaderData();
-	out << (quint8)'t';
+	out << (quint8)CLIENT_NEW_TABLE;
 	out << uiTable.listWidgetTopLevelList->currentItem()->text();
 	out << (quint8)uiTable.playersSpinBox->value();
 
-	if (uiTable.cycleRbo->isChecked() == true) out << (quint8)1;
-	else if (uiTable.endlessRbo->isChecked() == true) out << (quint8)2;
-	else out << (quint8)0;
+	if (uiTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
+	else if (uiTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
+	else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
 
 	out << (quint8)uiTable.timerSpinBox->value();
 	fixHeaderLength();
@@ -799,7 +800,7 @@ void MainWindow::joinTable()
 	quint16 tablenum = (quint16)tn.toInt();
 	
 	writeHeaderData();
-	out << (quint8)'j';
+	out << (quint8)CLIENT_JOIN_TABLE;
 	out << (quint16) tablenum;
 	fixHeaderLength();
 	commsSocket->write(block);
@@ -808,7 +809,7 @@ void MainWindow::joinTable()
 void MainWindow::leaveThisTable()
 {
 	writeHeaderData();
-	out << (quint8)'l';
+	out << (quint8)CLIENT_LEAVE_TABLE;
 	out << (quint16)currentTablenum;
 	fixHeaderLength();
 	commsSocket->write(block);
@@ -819,7 +820,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 {
 	switch (commandByte)
 	{
-	case 'M':
+	case SERVER_TABLE_MESSAGE:
 		// a message
 		{
 			QString message;
@@ -829,7 +830,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
 		}
 		break;
-	case 'T':
+	case SERVER_TABLE_TIMER_VALUE:
 		// a timer byte
 		{
 			quint16 timerval;	
@@ -840,7 +841,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		}
 
 		break;
-	case 'B':
+	case SERVER_TABLE_READY_BEGIN:
 		// a request for beginning the game from a player
 		// refresh ready light for each player.
 		{
@@ -849,7 +850,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			gameBoardWidget->setReadyIndicator(username);
 		}
 		break;
-	case 'S':
+	case SERVER_TABLE_GAME_START:
 		// the game has started
 		{
 			gameBoardWidget->setupForGameStart();
@@ -860,7 +861,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		}
 
 		break;
-	case 'E':
+	case SERVER_TABLE_GAME_END:
 		// the game has ended
 
 		gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
@@ -871,7 +872,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		break;
 
 
-	case 'C':
+	case SERVER_TABLE_CHAT:
 		// chat
 		{
 			QString username, chat;
@@ -881,7 +882,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 		}
 		break;
 
-	case 'W':
+	case SERVER_TABLE_ALPHAGRAMS:
 		// alphagrams!!!
 	  {
 	    QTime t;
@@ -903,7 +904,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 	  }
 		break;
 
-	case 'N':
+	case SERVER_TABLE_NUM_QUESTIONS:
 		// word list info
 
 		{
@@ -914,7 +915,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			break;
 		}
 
-	case 'U':
+	case SERVER_TABLE_GIVEUP:
 		// someone cried uncle
 		{
 			QString username;
@@ -922,7 +923,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 			gameBoardWidget->gotChat("<font color=red>" + username + " gave up! </font>");
 		}
 		break;
-	case 'A':
+	case SERVER_TABLE_GUESS_RIGHT:
 		{
 			QString username, answer;
 			quint8 index;
@@ -1086,9 +1087,9 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 void MainWindow::giveUpOnThisGame()
 {
 	writeHeaderData();
-	out << (quint8)'=';
+	out << (quint8)CLIENT_TABLE_COMMAND;
 	out << (quint16)currentTablenum;
-	out << (quint8)'u';
+	out << (quint8)CLIENT_TABLE_GIVEUP;
 	fixHeaderLength();
 	commsSocket->write(block);
 }
@@ -1096,9 +1097,9 @@ void MainWindow::giveUpOnThisGame()
 void MainWindow::submitReady()
 {
 	writeHeaderData();
-	out << (quint8)'=';
+	out << (quint8)CLIENT_TABLE_COMMAND;
 	out << (quint16)currentTablenum;
-	out << (quint8)'b';
+	out << (quint8)CLIENT_TABLE_READY_BEGIN;
 	fixHeaderLength();
 	commsSocket->write(block);
 
@@ -1166,7 +1167,7 @@ void MainWindow::displayHighScores()
 void MainWindow::sendClientVersion()
 {
 	writeHeaderData();
-	out << (quint8)'v';
+	out << (quint8)CLIENT_VERSION;
 	out << aerolithVersion;
 	fixHeaderLength();
 	commsSocket->write(block);
@@ -1176,7 +1177,7 @@ void MainWindow::changeMyAvatar(quint8 avatarID)
 {
 
 	writeHeaderData();
-	out << (quint8) 'i' << avatarID;
+	out << (quint8) CLIENT_AVATAR << avatarID;
 	fixHeaderLength();
 	commsSocket->write(block);
 }
@@ -1200,10 +1201,10 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
 	else
 	{
 		writeHeaderData();
-		out << (quint8)'t';
+		out << (quint8)CLIENT_NEW_TABLE;
 		out << challengeAction->text(); // create a table 
 		out << (quint8)1; // 1 player
-		out << (quint8)3; // 3 is for daily challenges (TODO: HARDCODE BAD)
+		out << (quint8)TABLE_TYPE_DAILY_CHALLENGES; //  (TODO: HARDCODE BAD)
 		out << (quint8)0;	// server should decide time for daily challenge
 
 		fixHeaderLength();
@@ -1216,7 +1217,7 @@ void MainWindow::getScores()
 	uiScores.scoresTableWidget->clearContents();
 	uiScores.scoresTableWidget->setRowCount(0);
 	writeHeaderData();
-	out << (quint8)'h';
+	out << (quint8)CLIENT_HIGH_SCORE_REQUEST;
 	out << uiScores.comboBoxChallenges->currentText();
 	fixHeaderLength();
 	commsSocket->write(block);
