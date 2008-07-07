@@ -18,9 +18,9 @@ TableGame::TableGame(tableData* table)
 void TableGame::sendReadyBeginPacket(QString username)
 {
   writeHeaderData();
-  out << (quint8) '+';
+  out << (quint8) SERVER_TABLE_COMMAND;
   out << (quint16) table->tableNumber;
-  out << (quint8)'B';
+  out << (quint8)SERVER_TABLE_READY_BEGIN;
   out << username;
   fixHeaderLength();
   table->sendGenericPacket();
@@ -30,9 +30,9 @@ void TableGame::sendReadyBeginPacket(QString username)
 void TableGame::sendGameStartPacket()
 {
   writeHeaderData();
-  out << (quint8) '+';
+  out << (quint8) SERVER_TABLE_COMMAND;
   out << (quint16) table->tableNumber;
-  out << (quint8) 'S';
+  out << (quint8) SERVER_TABLE_GAME_START;
   fixHeaderLength();
   table->sendGenericPacket();
 }
@@ -40,9 +40,9 @@ void TableGame::sendGameStartPacket()
 void TableGame::sendGameEndPacket()
 {
   writeHeaderData();
-  out << (quint8) '+';
+  out << (quint8) SERVER_TABLE_COMMAND;
   out << (quint16) table->tableNumber;
-  out << (quint8) 'E';
+  out << (quint8) SERVER_TABLE_GAME_END;
   fixHeaderLength();
   table->sendGenericPacket();
 }

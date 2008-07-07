@@ -2,6 +2,7 @@
 #define _UNSCRAMBLE_GAME_H_
 
 #include <QtCore>
+#include <QtSql>
 #include <QObject>
 #include "TableGame.h"
 
@@ -16,35 +17,55 @@ struct highScoreData
 struct challengeInfo
 {
 	QHash <QString, highScoreData> *highScores;
+	quint8 wordLength;
+	QVector <quint16> dbIndices;
 };
+
+struct alphagramInfo
+{
+	QString alphagram;
+	QString solutions;
+	alphagramInfo()
+	{
+	}
+	alphagramInfo(QString a, QString s)
+	{
+		alphagram = a;
+		solutions = s;
+	}
+};
+
+void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums);
 
 class UnscrambleGame : public TableGame
 {
 
 Q_OBJECT
 
-  public:
+public:
 
- void initialize(quint8 cycleState, quint8 tableTimer, QString wordListFileName);
- UnscrambleGame(tableData*);
- ~UnscrambleGame();
- 
- void gameStartRequest(ClientSocket*);
- void guessSent(ClientSocket*, QString);
- void gameEndRequest(ClientSocket*);
- void playerJoined(ClientSocket*);
- 
- void endGame();
- void startGame();
-
- static void generateDailyChallenges();
-
-
+	void initialize(quint8 cycleState, quint8 tableTimer, QString wordList);
+	UnscrambleGame(tableData*);
+	~UnscrambleGame();
+	
+	void gameStartRequest(ClientSocket*);
+	void guessSent(ClientSocket*, QString);
+	void gameEndRequest(ClientSocket*);
+	void playerJoined(ClientSocket*);
+	
+	void endGame();
+	void startGame();
+	
+	static void generateDailyChallenges();
+	static void prepareWordDataStructure();
 	static QHash <QString, challengeInfo> challenges;
-
- static bool midnightSwitchoverToggle;
- private:
-
+	
+	static bool midnightSwitchoverToggle;
+ 
+private:
+ 
+  static QVector <QVector<alphagramInfo> > alphagramData;
+	
   void prepareTableAlphagrams();
   void sendUserCurrentAlphagrams(ClientSocket*);
   
@@ -58,7 +79,7 @@ Q_OBJECT
   };
 
   //  QHash <QString, playerData> playerDataHash;  
-  QString wordListFileName;
+  QString wordList;
   bool gameStarted;
   bool countingDown;
   bool startEnabled;

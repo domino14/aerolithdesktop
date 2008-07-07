@@ -5,6 +5,8 @@
 #include "ClientWriter.h"
 #include "UnscrambleGame.h"
 #include "listmaker.h"
+#include "commonDefs.h"
+
 //QList <QVariant> dummyList;
 
 extern QByteArray block;
@@ -47,9 +49,9 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
   //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
   //wordDb.open();
-  oneMinutePingTimer = new QTimer;
-  connect(oneMinutePingTimer, SIGNAL(timeout()), this, SLOT(pingEveryone()));
-  oneMinutePingTimer->start(180000);
+  pingTimer = new QTimer;
+  connect(pingTimer, SIGNAL(timeout()), this, SLOT(pingEveryone()));
+  pingTimer->start(1800000);
 
   midnightTimer = new QTimer;
   connect(midnightTimer, SIGNAL(timeout()), this, SLOT(newDailyChallenges()));
@@ -59,6 +61,7 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   // but still generate daily challenges right now.
   UnscrambleGame::generateDailyChallenges();
   UnscrambleGame::midnightSwitchoverToggle = true;
+  UnscrambleGame::prepareWordDataStructure();
 
   userDb = QSqlDatabase::addDatabase("QSQLITE", "usersDB");
   userDb.setDatabaseName("users.db");
@@ -96,41 +99,6 @@ void MainServer::loadWordLists()
 	
 	}
 	
-		
-	/*QSqlDatabase wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB");
-	wordDb.setDatabaseName("words.db");
-	wordDb.open();
-
-	QSqlDatabase wordListDb = QSqlDatabase::addDatabase("QSQLITE", "wordListDB");
-	wordListDb.setDatabaseName("wordlists.db");
-	wordListDb.open();*/
-	
-	
-/*
-  wordLists.clear();
-  orderedWordLists.clear();
-  QFile listFile("lists/LISTS");
-  QTextStream thisIn;
-  thisIn.setDevice(&listFile);
-
-  if (!listFile.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-      qDebug() << "Error opening lists! There are no lists!";
-      return;
-    }
-  
-  while (!thisIn.atEnd())
-    {
-      QString line = thisIn.readLine();
-      if (!line.contains("@")) break;
-      QStringList tmp = line.split("@");
-      wordLists.insert(tmp.at(1), "lists/" + tmp.at(0)); // key is the DESCRIPTIVE name
-      // value is the FILENAME
-      orderedWordLists << tmp.at(1);
-    }
-
-  listFile.close();*/
-
 }
 
 void MainServer::incomingConnection(int socketDescriptor)
@@ -160,7 +128,7 @@ void MainServer::pingEveryone()
   if (connections.size() > 0)
     {
       writeHeaderData();      
-      out << (quint8) '?'; // keep alive
+      out << (quint8) SERVER_PING; // keep alive
       fixHeaderLength();
 
       foreach (ClientSocket* socket, connections)
@@ -287,15 +255,15 @@ void MainServer::receiveMessage()
 	}
       switch(packetType)
 	{
-	case '?':
+	case CLIENT_PONG:
 	  //	  socket->connData.isActive = true;
 	  qDebug() << "PONG" << socket->connData.userName;
 	  break;
 	  
-	case 'a':
+	case CLIENT_CHAT_ACTION:
 	  processChatAction(socket);
 	  break;
-	case 'e':
+	case CLIENT_LOGIN:
 	  // entered
 	  processLogin(socket);
 	  break;
@@ -303,54 +271,40 @@ void MainServer::receiveMessage()
 	  // left
 	  processLogout(socket, connData);
 	  break;*/ // there is no 'left' packet because server writes it.
-	case 'c':
+	case CLIENT_CHAT:
 	  // chat
 	  processChat(socket);
 	  break;
-	case 'p':
+	case CLIENT_PM:
 	  // private message
 	  processPrivateMessage(socket);
 	  break;
-	case 't':
+	case CLIENT_NEW_TABLE:
 	  // created a new table
 	  processNewTable(socket);
 	  break;
-	case 'i':
+	case CLIENT_AVATAR:
 	  // avatar ID
 	  processAvatarID(socket);
 	  break;
-	  
-
-	  //	case 'i':
-	  //table information! 
-	  //this packet should contain the entire word list as calculated by the client
-	  // since this could be fairly large, put a limit of 5000 on it
-	  // 5000 quint16s is 10000 bytes, which is pretty fast
-	  // the quint16s will be indexes
-	  
-	  // will write this into a temporary file, named
-	  // #_qs.tmp
-	  // will write errors into a temporary file #_es.tmp    # is the table number.
-	  // these files will be deleted when the table is closed!!
-	  //break;
-	case 'v':
+	case CLIENT_VERSION:
 	  processVersionNumber(socket);
 	  break;
-	case 'j':
+	case CLIENT_JOIN_TABLE:
 	  // joined an existing table
 	  processJoinTable(socket);
 	  break;
-	case 'l':
+	case CLIENT_LEAVE_TABLE:
 	  processLeftTable(socket);
 	  break;
-	case '=':
+	case CLIENT_TABLE_COMMAND:
 	  processTableCommand(socket);	  
 	  break;
-	case 'h':
+	case CLIENT_HIGH_SCORE_REQUEST:
 	  sendHighScores(socket);
 	  break;
 
-	case 'r':
+	case CLIENT_REGISTER:
 	  registerNewName(socket);
 	  break;
 
@@ -382,7 +336,7 @@ void MainServer::sendHighScores(ClientSocket* socket)
       
 		if (tmpList.size() == 0) return;
       writeHeaderData();
-      out << (quint8) 'H'; // high scores
+      out << (quint8) SERVER_HIGH_SCORES; // high scores
       out << challengeName;
       out << tmpList.at(0).numSolutions;
       out << (quint16) tmpList.size();
@@ -471,11 +425,11 @@ void MainServer::processTableCommand(ClientSocket* socket)
   
   switch (subcommand)
     {
-    case 'b':
+    case CLIENT_TABLE_READY_BEGIN:
       table->tableGame->gameStartRequest(socket);
       
       break;
-    case 's':
+    case CLIENT_TABLE_GUESS:
       // guess from solution box
       {
 	QString guess;
@@ -483,7 +437,7 @@ void MainServer::processTableCommand(ClientSocket* socket)
 	table->tableGame->guessSent(socket, guess);
       }
       break;
-    case 'c':
+    case CLIENT_TABLE_CHAT:
       // chat
       {
 	QString chat;
@@ -506,14 +460,14 @@ void MainServer::processTableCommand(ClientSocket* socket)
 	table->sendChatSentPacket(socket->connData.userName, chat);
       }
       break;
-    case 'u':
+    case CLIENT_TABLE_GIVEUP:
       // uncle
       
       // user gave up.
       table->tableGame->gameEndRequest(socket);
       
       break;
-    case 'a':
+    case CLIENT_TABLE_ACTION:
       {
 	QString username, actionText;
 	// i.e. cesar knocks bbstenniz over the head
@@ -565,7 +519,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
 
         // write to all connections that username has left table  
       writeHeaderData();      
-      out << (quint8) 'L';
+      out << (quint8) SERVER_LEFT_TABLE;
       out << tablenum;
       out << username;
       fixHeaderLength();
@@ -582,7 +536,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
 	  
 	  // write to all clients that table has ceased to exist!
 	  writeHeaderData();
-	  out << (quint8) 'K'; // kill table
+	  out << (quint8) SERVER_KILL_TABLE; // kill table
 	  out << tablenum;
 	  fixHeaderLength();
 	  
@@ -660,7 +614,7 @@ void MainServer::processNewTable(ClientSocket* socket)
     }
 
   writeHeaderData();
-  out << (quint8) 'T';
+  out << (quint8) SERVER_NEW_TABLE;
   out << (quint16) tablenum;
   out << tableName;
   out << maxPlayers;
@@ -674,20 +628,13 @@ void MainServer::processNewTable(ClientSocket* socket)
   socket->playerData.gaveUp = false;
 
   tableData *tmp = new tableData;
-  if (cycleState != 3)
-    {
-      tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
-		      tableData::GAMEMODE_UNSCRAMBLE, wordLists.value(tableName));
-    }
-  else
-    {
-      tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
+  tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
 		      tableData::GAMEMODE_UNSCRAMBLE, tableName);
-    }
+     
   tables.insert(tablenum, tmp);
 
   writeHeaderData();
-  out << (quint8) 'J';
+  out << (quint8) SERVER_JOIN_TABLE;
   out << (quint16) tablenum;
   out << socket->connData.userName;
   fixHeaderLength();
@@ -746,7 +693,7 @@ void MainServer::processJoinTable(ClientSocket* socket)
   qDebug() << "players in table" << tablenum << tmp->playerList;
 
   writeHeaderData();
-  out << (quint8) 'J';
+  out << (quint8) SERVER_JOIN_TABLE;
   out << (quint16) tablenum;
   out << username;
   fixHeaderLength();
@@ -777,7 +724,7 @@ void MainServer::sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *
 {
   // this should not be a table command because there are other situations in which avatars can be changed, i.e. chatroom icons, etc. in the future
   writeHeaderData();      
-  out << (quint8) 'I';
+  out << (quint8) SERVER_AVATAR_CHANGE;
   out << fromSocket->connData.userName; // sender of message
   out << avatarID; 
   fixHeaderLength();
@@ -800,7 +747,7 @@ void MainServer::processPrivateMessage(ClientSocket* socket)
       // the username exists
       ClientSocket* connection = usernamesHash.value(username); // receiver
       writeHeaderData();      
-      out << (quint8) 'P';
+      out << (quint8) SERVER_PM;
       out << socket->connData.userName; // sender of message
       out << message; 
       fixHeaderLength();
@@ -959,7 +906,7 @@ void MainServer::processLogin(ClientSocket* socket)
     {
       // write new table for every existing table!
       writeHeaderData();      
-      out << (quint8) 'T';
+      out << (quint8) SERVER_NEW_TABLE;
       out << table->tableNumber;
       out << table->tableName;
       out << table->maxPlayers;
@@ -972,7 +919,7 @@ void MainServer::processLogin(ClientSocket* socket)
       foreach(ClientSocket* thisSocket, table->playerList)
 	{
 	  writeHeaderData();
-	  out << (quint8) 'J';
+	  out << (quint8) SERVER_JOIN_TABLE;
 	  out << (quint16) table->tableNumber;
 	  out << thisSocket->connData.userName;
 	  fixHeaderLength();	  
@@ -984,7 +931,7 @@ void MainServer::processLogin(ClientSocket* socket)
 
 
       writeHeaderData();
-	  out << (quint8) 'W';		// word lists
+	  out << (quint8) SERVER_WORD_LISTS;		// word lists
 	  out << (quint8) 'R';	// regular
 	  out << (quint16)orderedWordLists.size();
 	  foreach (QString listDescriptor, orderedWordLists)
@@ -995,7 +942,7 @@ void MainServer::processLogin(ClientSocket* socket)
 	  socket->write(block);
 
 	  writeHeaderData();
-	  out << (quint8) 'W';	// word lists
+	  out << (quint8) SERVER_WORD_LISTS;	// word lists
 	  out << (quint8) 'D';	// daily
 	  out << (quint8) 14;
 	  for (int i = 2; i <= 15; i++)
@@ -1020,7 +967,7 @@ void MainServer::processChat(ClientSocket* socket)
     }
   
   writeHeaderData();  
-  out << (quint8) 'C';
+  out << (quint8) SERVER_CHAT;
   out << username;
   out << chattext;
   fixHeaderLength();
@@ -1039,22 +986,22 @@ void MainServer::writeToClient(ClientSocket* socket, QString parameter, packetHe
     {
     case S_USERLOGGEDIN:
 
-      out << (quint8) 'E';
+      out << (quint8) SERVER_LOGGED_IN;
       out << parameter;
       debugstring = "logged in.";
       break;
     case S_ERROR:
-      out << (quint8) '!';
+      out << (quint8) SERVER_ERROR;
       out << parameter;
       debugstring = "error.";
       break;
     case S_USERLOGGEDOUT:
-      out << (quint8) 'X';
+      out << (quint8) SERVER_LOGGED_OUT;
       out << parameter;
       debugstring = "logged out.";
       break;
     case S_SERVERMESSAGE:
-      out << (quint8) 'S';
+      out << (quint8) SERVER_MESSAGE;
       out << parameter;
       break;
     }

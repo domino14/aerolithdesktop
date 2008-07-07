@@ -192,6 +192,9 @@
     </property>
    </widget>
    <widget class="QRadioButton" name="randomRbo" >
+    <property name="enabled" >
+     <bool>false</bool>
+    </property>
     <property name="geometry" >
      <rect>
       <x>10</x>

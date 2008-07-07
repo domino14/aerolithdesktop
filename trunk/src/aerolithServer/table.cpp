@@ -6,7 +6,9 @@
 extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
-void tableData::initialize(quint16 tableNumber, QString tableName, quint8 maxPlayers, ClientSocket* tableCreator, quint8 cycleState, quint8 tableTimer, gameModes gameMode, QString additionalDescriptor)
+void tableData::initialize(quint16 tableNumber, QString tableName, quint8 maxPlayers, 
+	ClientSocket* tableCreator, quint8 cycleState, quint8 tableTimer, gameModes gameMode, 
+	QString additionalDescriptor)
 {
 
   this->tableNumber = tableNumber;
@@ -44,9 +46,9 @@ void tableData::sendGenericPacket()
 void tableData::sendChatSentPacket(QString username, QString chat)
 {
   writeHeaderData();
-  out << (quint8) '+';
+  out << (quint8) SERVER_TABLE_COMMAND;
   out << (quint16) tableNumber;
-  out << (quint8) 'C';
+  out << (quint8) SERVER_TABLE_CHAT;
   out << username << chat;
   fixHeaderLength();
   sendGenericPacket();
@@ -55,9 +57,9 @@ void tableData::sendChatSentPacket(QString username, QString chat)
 void tableData::sendTableMessage(QString message)
 {
   writeHeaderData();
-  out << (quint8) '+';
+  out << (quint8) SERVER_TABLE_COMMAND;
   out << (quint16) tableNumber;
-  out << (quint8) 'M';
+  out << (quint8) SERVER_TABLE_MESSAGE;
   out << message;
   fixHeaderLength();
   sendGenericPacket();

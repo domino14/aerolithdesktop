@@ -29,7 +29,7 @@ private slots:
  // void updateCountdownTimer();
 
 private:
- QTimer* oneMinutePingTimer;
+ QTimer* pingTimer;
  QTimer* midnightTimer;
  void incomingConnection(int socketDescriptor); // inherited from QTcpServer
  QSqlDatabase userDb;
@@ -49,7 +49,7 @@ private:
  
  QString aerolithVersion;
 
- QHash <QString, QString> wordLists;
+// QHash <QString, QString> wordLists;
  QStringList orderedWordLists;
 
  void sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *toSocket, quint8 avatarID);

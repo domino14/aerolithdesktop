@@ -2,10 +2,8 @@
 #define _TABLE_H_
 
 #include <QtCore>
-//#include "TableGame.h"
-//#include "UnscrambleGame.h"
 #include "ClientSocket.h"
-
+#include "commonDefs.h"
 
 class TableGame;
 
