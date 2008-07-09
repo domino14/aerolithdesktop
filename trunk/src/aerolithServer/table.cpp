@@ -37,6 +37,15 @@ tableData::~tableData()
   qDebug() << "tableData destructor";
   delete tableGame;
 }
+
+void tableData::removePlayerFromTable(ClientSocket* socket)
+{
+	tableGame->playerLeftGame(socket);
+	playerList.removeAll(socket);
+	qDebug() << "players in table" << tableNumber << playerList;
+	
+}
+
 void tableData::sendGenericPacket()
 {
   foreach (ClientSocket* thisSocket, playerList)

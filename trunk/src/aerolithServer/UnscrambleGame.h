@@ -52,6 +52,7 @@ public:
 	void guessSent(ClientSocket*, QString);
 	void gameEndRequest(ClientSocket*);
 	void playerJoined(ClientSocket*);
+  void playerLeftGame(ClientSocket*);
 	
 	void endGame();
 	void startGame();

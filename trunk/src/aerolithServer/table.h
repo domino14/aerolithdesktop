@@ -36,6 +36,7 @@ class tableData
   // anagrams mode?
   gameModes gameMode; 
   QByteArray letters; // the letters that are showing on the board
+  void removePlayerFromTable(ClientSocket*);
 
 };
 

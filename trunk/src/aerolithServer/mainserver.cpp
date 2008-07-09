@@ -513,9 +513,10 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
   if (tables.contains(tablenum))
     {
       tableData *tmp = tables.value(tablenum);
-      tmp->playerList.removeAll(socket);
+      tmp->removePlayerFromTable(socket);
 
-      qDebug() << "players in table" << tablenum << tmp->playerList;
+
+      
 
         // write to all connections that username has left table  
       writeHeaderData();      

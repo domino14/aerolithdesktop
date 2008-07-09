@@ -67,6 +67,15 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
 	// possibly send scores, solved solutions, etc. in the future.
 }
 
+void UnscrambleGame::playerLeftGame(ClientSocket* socket)
+{
+	// if this is the ONLY player, stop game.
+	if (table->playerList.size() == 1)
+	{
+		endGame();
+	}
+}
+
 void UnscrambleGame::gameStartRequest(ClientSocket* client)
 {
 	if (startEnabled == true && gameStarted == false && countingDown == false)
@@ -396,6 +405,30 @@ void UnscrambleGame::generateTempFile()
 		if (type == 1)
 		{
 			// a list of indices
+			quint16 size;
+			stream >> size;
+			QVector <quint16> tempVector;
+			QVector <quint16> indexVector;
+			indexVector.resize(size);
+			quint16 index;
+			getUniqueRandomNumbers(tempVector, 0, size-1, size);
+			for (quint16 i = 0; i < size; i++)
+			{
+				stream >> index;
+				indexVector[tempVector.at(i)] = index;
+			}
+			const QVector <alphagramInfo> *alphaInfo = &(alphagramData.at(length-2));
+			
+			for (quint16 i = 0; i < size; i++)
+				outStream << alphaInfo->at(indexVector.at(i)-1).alphagram << " " 
+				<< alphaInfo->at(indexVector.at(i)-1).solutions << "\n";
+
+			numTotalRacks = size;
+			numMissedRacks = 0;
+			tempOutFile.close();
+			tempFileExists = true;
+			
+			
 		}
 	
 		
