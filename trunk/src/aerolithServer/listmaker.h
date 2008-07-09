@@ -7,6 +7,7 @@ class ListMaker
 {
 	public:
 		ListMaker();
+		static void sqlListMaker(QString queryString, QString listName, quint8 wordLength);
 		static void createListDatabase();
 		static void testDatabaseTime();
 };

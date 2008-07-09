@@ -33,6 +33,8 @@ Q_OBJECT
   void sendGameStartPacket();
   void sendGameEndPacket();
   
+  virtual void playerLeftGame(ClientSocket*) = 0;
+  
 
  protected:
   tableData* table;
