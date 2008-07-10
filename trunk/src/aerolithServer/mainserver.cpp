@@ -63,14 +63,27 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   UnscrambleGame::midnightSwitchoverToggle = true;
   UnscrambleGame::prepareWordDataStructure();
 
-  userDb = QSqlDatabase::addDatabase("QSQLITE", "usersDB");
-  userDb.setDatabaseName("users.db");
-  userDb.open();
-  
-  QSqlQuery query(QSqlDatabase::database("usersDB"));
-  query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, "
-  "profile VARCHAR(1000), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), points INTEGER)");
-  
+
+	if (QFile::exists("users.db"))
+	{
+  	userDb = QSqlDatabase::addDatabase("QSQLITE", "usersDB");
+  	userDb.setDatabaseName("users.db");
+  	userDb.open();
+  }
+  else
+  {
+  	userDb = QSqlDatabase::addDatabase("QSQLITE", "usersDB");
+  	userDb.setDatabaseName("users.db");
+  	userDb.open();
+  	QSqlQuery query(QSqlDatabase::database("usersDB"));
+		query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, "
+		"profile VARCHAR(1000), registeredIP VARCHAR(16), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), "
+		"points INTEGER, picture BLOB, playerID INTEGER, saveData BLOB)");
+		query.exec("CREATE UNIQUE INDEX IF NOT EXISTS usernameIndex on users(username)");
+		query.exec("CREATE TABLE IF NOT EXISTS playerID_table(playerID INTEGER)");
+		query.exec("INSERT INTO playerID_table(playerID) VALUES(1)");
+	}
+
  // ListMaker::createListDatabase();
   //ListMaker::testDatabaseTime();
 }
@@ -777,7 +790,7 @@ void MainServer::registerNewName(ClientSocket* socket)
     }
   
   QSqlQuery query(QSqlDatabase::database("usersDB"));
-  query.exec("SELECT * from users where username = '" + username.toLower() + "'");
+  query.exec("SELECT username from users where username = '" + username.toLower() + "'");
   if (query.next())
     {
       // username exists
@@ -789,18 +802,27 @@ void MainServer::registerNewName(ClientSocket* socket)
 
   else
     {
+    	int playerID;
+    	query.exec("SELECT playerID from playerID_table");
+    	while (query.next())
+    	{
+    		playerID = query.value(0).toInt();
+    	}
       QString toExecute;
-      toExecute = "INSERT INTO users(username, password, avatar, profile, lastIP, lastLoggedOut) VALUES(:username, :password, :avatar, :profile, :lastIP, :lastLoggedOut)";
+      toExecute = "INSERT INTO users(username, password, avatar, registeredIP, playerID) VALUES(:username, :password, :avatar, :registeredIP, :playerID)";
       query.prepare(toExecute);
       query.bindValue(":username", username.toLower());
       query.bindValue(":password", password);
       query.bindValue(":avatar", 1);
-      query.bindValue(":profile", "");
-      query.bindValue(":lastIP", "");
-      query.bindValue(":lastLoggedOut", "");
+     	query.bindValue(":registeredIP", socket->peerAddress().toString());
+     	query.bindValue(":playerID", playerID);
       query.exec();
-      writeToClient(socket, "The username " + username + " was successfully registered! Please connect using this username and password.", S_ERROR);
+      writeToClient(socket, "The username " + username + " was successfully registered! Please click ""Login Screen"" and connect using this username and password.", S_ERROR);
       socket->disconnectFromHost();
+      
+      // increase id by 1
+      playerID++;
+      query.exec(QString("UPDATE playerID_table SET playerID = %1").arg(playerID));
       return;
     }
   
@@ -840,7 +862,8 @@ void MainServer::processLogin(ClientSocket* socket)
 
   if (!query.next())
     {
-      writeToClient(socket, "Your username does not appear in the database. Please register a username and try again.", S_ERROR);
+      writeToClient(socket, "Your username does not appear in the database. Please click Register, and follow the instructions. "
+      "If you have been playing prior to July 8, 2008, please register again.", S_ERROR);
       socket->disconnectFromHost();
       return;
     }

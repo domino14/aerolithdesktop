@@ -81,11 +81,13 @@ private:
 
   //  QHash <QString, playerData> playerDataHash;  
   QString wordList;
+  bool listExhausted;
+  bool wroteToMissedFileThisRound;
   bool gameStarted;
   bool countingDown;
   bool startEnabled;
-  QTimer *gameTimer;
-  QTimer *countdownTimer;
+  QTimer gameTimer;
+  QTimer countdownTimer;
   quint16 currentTimerVal;
   quint16 tableTimerVal;
   quint8 countdownTimerVal;
@@ -111,6 +113,8 @@ private:
   void sendGiveUpPacket(QString);
   void sendGuessRightPacket(QString, QString, quint8);
   void sendNumQuestionsPacket();
+  
+  
   private slots:
     void updateGameTimer();
   void updateCountdownTimer();
