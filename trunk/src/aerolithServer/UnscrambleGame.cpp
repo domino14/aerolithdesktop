@@ -14,17 +14,15 @@ QVector <QVector<alphagramInfo> > UnscrambleGame::alphagramData;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList)
 {
-
+	wroteToMissedFileThisRound = false;
+	listExhausted = false;
 	this->wordList = wordList;
 
 	tempFileExists = false;
 	this->cycleState = cycleState;
 
-	gameTimer = new QTimer();
-	countdownTimer = new QTimer();
-
-	connect(gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
-	connect(countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
+	connect(&gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
+	connect(&countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
 
 	gameStarted = false;
 	countingDown = false;
@@ -55,8 +53,8 @@ UnscrambleGame::~UnscrambleGame()
 {
 	qDebug() << "UnscrambleGame destructor";
 //	endGame();
-	gameTimer->deleteLater();
-	countdownTimer->deleteLater();
+//	gameTimer->deleteLater();
+//	countdownTimer->deleteLater();
 }
 
 void UnscrambleGame::playerJoined(ClientSocket* client)
@@ -73,6 +71,41 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 	if (table->playerList.size() == 1)
 	{
 		endGame();
+		if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted)
+		{
+			// generate blob for contents of missed file, temp file
+			// missedFileWriter has written all the necessary words to missedFile, so read the entire file.
+			QTime timer;
+			timer.start();
+			outFile.close();	// this closes the MISSED file. (flushes too)
+			QByteArray ba;
+			QDataStream stream(&ba, QIODevice::WriteOnly);
+			
+			stream << wordList;
+			
+			outFile.open(QIODevice::ReadOnly);
+			QByteArray fileArray = outFile.readAll();// read the MISSED file into the byte array.
+			stream << fileArray;	
+			qDebug() << "Outfile size" << fileArray.size();
+			QString fileStr = alphagramReader.readAll();
+			// now, read all that's remaining from the temp file.
+			stream << fileStr;
+			qDebug() << "Infile size" << fileStr.size();
+			
+			// now write data to database
+			QSqlQuery query(QSqlDatabase::database("usersDB"));
+			query.prepare("UPDATE users SET saveData = :saveData where username = :username");
+			query.bindValue(":username", socket->connData.userName.toLower());
+			query.bindValue(":saveData", ba);
+			query.exec();
+			
+			qDebug() << "Saving lists took milliseconds: " << timer.elapsed();
+			
+		}
+		else
+		{
+			
+		}
 	}
 }
 
@@ -97,7 +130,7 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 			{
 				countingDown = true;
 				countdownTimerVal = 3;
-				countdownTimer->start(1000);
+				countdownTimer.start(1000);
 				sendTimerValuePacket(countdownTimerVal);
 				if (cycleState == TABLE_TYPE_DAILY_CHALLENGES)
 				{				
@@ -169,13 +202,14 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
 void UnscrambleGame::startGame()
 {
 	countingDown = false;
-	countdownTimer->stop();
+	countdownTimer.stop();
 	// code for starting the game
 	// steps:
 	//1. list should already be loaded when table was created
 	//2. send to everyone @ the table:  
 	//    - maxRacks alphagrams  
 	gameStarted = true;
+	wroteToMissedFileThisRound = false;
 	prepareTableAlphagrams();
 	foreach (ClientSocket* socket, table->playerList)
 		sendUserCurrentAlphagrams(socket);
@@ -184,7 +218,7 @@ void UnscrambleGame::startGame()
 	sendTimerValuePacket(tableTimerVal);
 	sendNumQuestionsPacket();
 	currentTimerVal = tableTimerVal;
-	gameTimer->start(1000);
+	gameTimer.start(1000);
 	thisTableSwitchoverToggle = midnightSwitchoverToggle;
 
 
@@ -192,7 +226,7 @@ void UnscrambleGame::startGame()
 
 void UnscrambleGame::endGame()
 {
-	gameTimer->stop();
+	gameTimer.stop();
 	gameStarted = false;
 	// TODO here is code for the game ending
 	// send game ended to everyone, etc.
@@ -207,19 +241,23 @@ void UnscrambleGame::endGame()
 	// if in cycle mode, update list  
 	if (cycleState == TABLE_TYPE_CYCLE_MODE)
 	{
-		for (int i = 0; i < maxRacks; i++)
-		{	
-			if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
-			{
-				// this one has not been solved!
-				missedFileWriter << unscrambleGameQuestions.at(i).alphagram;
-				for (int j = 0; j < unscrambleGameQuestions.at(i).solutions.size(); j++)
-					missedFileWriter << " " << unscrambleGameQuestions.at(i).solutions.at(j);
-				missedFileWriter << "\n";
-				//qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram << unscrambleGameQuestions.at(i).solutions << " to missed file.";
-				numMissedRacks++;
-			}
+		if (!wroteToMissedFileThisRound)
+		{
+			wroteToMissedFileThisRound = true;
+			for (int i = 0; i < maxRacks; i++)
+			{	
+				if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
+				{
+					// this one has not been solved!
+					missedFileWriter << unscrambleGameQuestions.at(i).alphagram;
+					for (int j = 0; j < unscrambleGameQuestions.at(i).solutions.size(); j++)
+						missedFileWriter << " " << unscrambleGameQuestions.at(i).solutions.at(j);
+					missedFileWriter << "\n";
+					//qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram << unscrambleGameQuestions.at(i).solutions << " to missed file.";
+					numMissedRacks++;
+				}
 
+			}
 		}
 		qDebug() << "Missed to date:" << numMissedRacks << "racks.";
 	}
@@ -520,6 +558,7 @@ void UnscrambleGame::prepareTableAlphagrams()
 			thisGameData.numNotYetSolved = 0;
 			if (i == 0)
 			{
+				listExhausted = true;
 				if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
 					table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
 				else
