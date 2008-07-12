@@ -24,11 +24,11 @@ struct challengeInfo
 struct alphagramInfo
 {
 	QString alphagram;
-	QString solutions;
+	QStringList solutions;
 	alphagramInfo()
 	{
 	}
-	alphagramInfo(QString a, QString s)
+	alphagramInfo(QString a, QStringList s)
 	{
 		alphagram = a;
 		solutions = s;
@@ -75,12 +75,14 @@ private:
   // holds data for each word
     QString alphagram;
     quint8 numNotYetSolved;
-    quint8 index;	// index
+//    quint8 index;	// index
     QStringList solutions;
+    quint16 indexInAlphagramData;
   };
 
   //  QHash <QString, playerData> playerDataHash;  
   QString wordList;
+  bool neverStarted;
   bool listExhausted;
   bool wroteToMissedFileThisRound;
   bool gameStarted;
@@ -97,18 +99,22 @@ private:
   QHash <QString, QString> gameSolutions;
   QHash <QString, quint8> alphagramIndices;
   QList <unscrambleGameData> unscrambleGameQuestions;
-  QTextStream alphagramReader;
+  /*QTextStream alphagramReader;
   QFile inFile;
   QFile outFile;
-  QTextStream missedFileWriter;
-  bool tempFileExists;
-  quint8 wordLengths; // the word length of this list (used only for daily challenges)
+  QTextStream missedFileWriter;*/
+  
+  QVector <quint16> missedArray;
+  QVector <quint16> quizArray;
+  quint16 quizIndex;
+  QVector <alphagramInfo> *alphaInfo;
+  
+  quint8 wordLength; // the word length of this list 
   bool thisTableSwitchoverToggle;
 
   quint16 numTotalRacks;
   quint16 numRacksSeen;
-  quint16 numMissedRacks;
-  void generateTempFile();
+  void generateQuizArray();
   void sendTimerValuePacket(quint16);
   void sendGiveUpPacket(QString);
   void sendGuessRightPacket(QString, QString, quint8);

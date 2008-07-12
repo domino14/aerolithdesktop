@@ -1272,13 +1272,24 @@ void MainWindow::startOwnServer()
 {
   // start a server thread
   if (uiLogin.pushButtonStartOwnServer->text() == "Start Own Server")
+  {
     emit startServerThread();
+    uiLogin.loginPushButton->setEnabled(false);
+    uiLogin.pushButtonStartOwnServer->setEnabled(false);
+    uiLogin.connectStatusLabel->setText("Please wait a few seconds while Aerolith Server loads.");
+  }
   else
+  {
+    
     emit stopServerThread();
+  }
+    
 }
 
 void MainWindow::serverThreadHasStarted()
 {
+	uiLogin.pushButtonStartOwnServer->setEnabled(true);
+	uiLogin.loginPushButton->setEnabled(true);
   uiLogin.connectStatusLabel->setText("Server thread has started! Log in now.");
   uiLogin.pushButtonStartOwnServer->setText("Stop Server");
   uiLogin.serverLE->setText("localhost");
@@ -1287,12 +1298,14 @@ void MainWindow::serverThreadHasStarted()
 
 void MainWindow::serverThreadHasFinished()
 {
+
   uiLogin.connectStatusLabel->setText("Server thread has stopped!");
   uiLogin.pushButtonStartOwnServer->setText("Start Own Server");
 
   uiLogin.serverLE->setText("aerolith.org");
   uiLogin.portLE->setText("1988");
-  
+  uiLogin.loginPushButton->setEnabled(true);
+	  
 }
 
 /////////////////////////////////////////////////////

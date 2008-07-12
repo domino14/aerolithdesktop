@@ -29,6 +29,7 @@ class tableData
   quint8 maxPlayers;
   bool canJoin; 
   TableGame* tableGame;
+  ClientSocket *host;
   
   void sendChatSentPacket(QString, QString);
   void sendGenericPacket();

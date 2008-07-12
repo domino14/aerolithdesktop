@@ -83,7 +83,6 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
 		query.exec("CREATE TABLE IF NOT EXISTS playerID_table(playerID INTEGER)");
 		query.exec("INSERT INTO playerID_table(playerID) VALUES(1)");
 	}
-
  // ListMaker::createListDatabase();
   //ListMaker::testDatabaseTime();
 }
@@ -627,19 +626,6 @@ void MainServer::processNewTable(ClientSocket* socket)
       return;
     }
 
-  writeHeaderData();
-  out << (quint8) SERVER_NEW_TABLE;
-  out << (quint16) tablenum;
-  out << tableName;
-  out << maxPlayers;
-  fixHeaderLength();
-
-  foreach (ClientSocket* connection, connections)
-    connection->write(block);  
-  
-  socket->connData.tableNum = tablenum;
-  socket->playerData.readyToPlay = false;
-  socket->playerData.gaveUp = false;
 
   tableData *tmp = new tableData;
   tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer, 
@@ -647,31 +633,30 @@ void MainServer::processNewTable(ClientSocket* socket)
      
   tables.insert(tablenum, tmp);
 
+
+
   writeHeaderData();
-  out << (quint8) SERVER_JOIN_TABLE;
+  out << (quint8) SERVER_NEW_TABLE;
   out << (quint16) tablenum;
-  out << socket->connData.userName;
-  fixHeaderLength();
-  
+  out << tableName;
+  out << maxPlayers;
+  fixHeaderLength();  
+
   foreach (ClientSocket* connection, connections)
     connection->write(block);  
   
-  // send avatar change packet to self
-  sendAvatarChangePacket(socket, socket, socket->connData.avatarId);
+  doJoinTable(socket, tablenum);
+
 
 }
 
-void MainServer::processJoinTable(ClientSocket* socket)
+void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
 {
-  
-  QString username = socket->connData.userName;
-
-  quint16 tablenum;
-  socket->connData.in >> tablenum;
-  
+	// this function actually JOINS the table, and not just processes a command from the client.
 
   // check if table exists, and if it does (which it should), if it's full
-  if (!tables.contains(tablenum))
+
+	if (!tables.contains(tablenum))
     {
       writeToClient(socket, "That table doesn't exist!", S_ERROR);
       return;
@@ -709,7 +694,7 @@ void MainServer::processJoinTable(ClientSocket* socket)
   writeHeaderData();
   out << (quint8) SERVER_JOIN_TABLE;
   out << (quint16) tablenum;
-  out << username;
+  out << socket->connData.userName;
   fixHeaderLength();
   foreach (ClientSocket* connection, connections)
     connection->write(block);
@@ -732,6 +717,17 @@ void MainServer::processJoinTable(ClientSocket* socket)
   }
   
   tmp->tableGame->playerJoined(socket);
+
+}
+
+void MainServer::processJoinTable(ClientSocket* socket)
+{
+ 	// processes a join table from the client 
+  quint16 tablenum;
+  socket->connData.in >> tablenum;
+  
+
+  doJoinTable(socket, tablenum);
 }
 
 void MainServer::sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *toSocket, quint8 avatarID)

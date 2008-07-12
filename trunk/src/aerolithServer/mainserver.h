@@ -62,6 +62,7 @@ private:
  void writeToClient(ClientSocket*, QString, packetHeaderStatesEnum);
  void processNewTable(ClientSocket*);
  void processJoinTable(ClientSocket*);
+ void doJoinTable(ClientSocket*, quint16);
  void processLeftTable(ClientSocket*);
  void removePlayerFromTable(ClientSocket* socket, quint16 tablenum);
  void processTableCommand(ClientSocket*);
@@ -71,6 +72,7 @@ private:
  void registerNewName(ClientSocket*);
  bool isValidUsername(QString);
  bool isValidPassword(QString);
+
 
 };
 
