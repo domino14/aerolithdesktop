@@ -18,7 +18,6 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 	listExhausted = false;
 	this->wordList = wordList;
 
-	tempFileExists = false;
 	this->cycleState = cycleState;
 
 	connect(&gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
@@ -34,14 +33,18 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 	if (cycleState == TABLE_TYPE_DAILY_CHALLENGES)
 	{
 
-		tableTimerVal = 270;	// 4.5 minutes for 50 words - server decides time for challenges!
+		tableTimerVal = 270;	// 4.5 minutes for 50 words - server decides time for challenges! 
 	}
 	/*
 
 	*/
 	numRacksSeen = 0;
 	numTotalRacks = 0;
-	numMissedRacks = 0;
+	
+	generateQuizArray();
+	
+
+	
 }
 
 UnscrambleGame::UnscrambleGame(tableData* table) : TableGame(table)
@@ -52,7 +55,7 @@ UnscrambleGame::UnscrambleGame(tableData* table) : TableGame(table)
 UnscrambleGame::~UnscrambleGame()
 {
 	qDebug() << "UnscrambleGame destructor";
-//	endGame();
+
 //	gameTimer->deleteLater();
 //	countdownTimer->deleteLater();
 }
@@ -63,35 +66,82 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
 		sendUserCurrentAlphagrams(client);
 
 	// possibly send scores, solved solutions, etc. in the future.
+	if (table->playerList.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
+	{
+		QSqlQuery query(QSqlDatabase::database("usersDB"));
+		query.prepare("SELECT saveData from users where username = :username");
+		query.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
+		query.exec();
+		while (query.next())
+		{
+			QByteArray ba = query.value(0).toByteArray();
+			QDataStream stream(ba);
+			if (ba.size() == 0)
+			{
+				qDebug() << "there was no save data";
+				/* do nothing. this is a new table, and there was no save data. */
+			}
+			else
+			{
+				QString savedWordList;
+				QVector <quint16> savedMissedArray;
+				QVector <quint16> savedQuizArray;
+				stream >> savedWordList >> savedMissedArray >> savedQuizArray;
+				if (savedQuizArray.size() == 0 && savedMissedArray.size() == 0)
+				{
+					qDebug() << "nothing needs to be loaded";
+					/* this data was saved when the user left the table, but after completely exhausting the quiz.
+						so do nothing, nothing needs to be loaded*/
+				}
+				else 
+				{
+					if (savedWordList != wordList)
+					{
+						table->sendTableMessage("You currently have save data for the following word list: " + savedWordList + ". Please "
+						"exit the table if you don't wish to lose your save data, and select the above list instead. If you click Start, "
+						"the saved data will be deleted!");
+					}
+					else
+					{
+						quizArray = savedQuizArray;
+						missedArray = savedMissedArray;
+						table->sendTableMessage("You had saved data for this word list, and it has been loaded!");
+						
+						numRacksSeen = 0;
+						numTotalRacks = savedQuizArray.size();
+						
+					}
+			
+				}
+			}
+		}	//while
+	
+	
+	
+	}
+	
+
 }
 
 void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 {
 	// if this is the ONLY player, stop game.
-	if (table->playerList.size() == 1)
+	if (table->playerList.size() == 1 && table->maxPlayers == 1)
 	{
-		endGame();
-		if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted)
+		gameEndRequest(socket);
+		if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted && !neverStarted)
 		{
 			// generate blob for contents of missed file, temp file
 			// missedFileWriter has written all the necessary words to missedFile, so read the entire file.
 			QTime timer;
 			timer.start();
-			outFile.close();	// this closes the MISSED file. (flushes too)
-			QByteArray ba;
-			QDataStream stream(&ba, QIODevice::WriteOnly);
+
+		 	QByteArray ba;
+ 			QDataStream stream(&ba, QIODevice::WriteOnly);
 			
 			stream << wordList;
-			
-			outFile.open(QIODevice::ReadOnly);
-			QByteArray fileArray = outFile.readAll();// read the MISSED file into the byte array.
-			stream << fileArray;	
-			qDebug() << "Outfile size" << fileArray.size();
-			QString fileStr = alphagramReader.readAll();
-			// now, read all that's remaining from the temp file.
-			stream << fileStr;
-			qDebug() << "Infile size" << fileStr.size();
-			
+			stream << missedArray;	
+			stream << quizArray.mid(quizIndex);
 			// now write data to database
 			QSqlQuery query(QSqlDatabase::database("usersDB"));
 			query.prepare("UPDATE users SET saveData = :saveData where username = :username");
@@ -142,6 +192,29 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 
 					}
 				}
+				
+				if (neverStarted)
+				{
+				// this will only be true the very FIRST time this function is called.
+				// overwrite the save array for this user.
+				
+					if (table->playerList.size() == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES && table->maxPlayers == 1)
+					{
+					
+						// only overwrite the list if this is a single player playing in a non-daily-challenge table.
+						QByteArray ba;
+						QSqlQuery query(QSqlDatabase::database("usersDB"));
+						query.prepare("UPDATE users SET saveData = :saveData where username = :username");
+						query.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
+						query.bindValue(":saveData", ba);
+						query.exec();
+						table->sendTableMessage("If you quit Aerolith or leave this table, "
+						"your progress on this word list -" + wordList + "- will automatically be saved.");
+					}	
+				}	
+
+				neverStarted = false;
+				
 			}
 	}
 
@@ -201,6 +274,7 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
 
 void UnscrambleGame::startGame()
 {
+
 	countingDown = false;
 	countdownTimer.stop();
 	// code for starting the game
@@ -248,18 +322,12 @@ void UnscrambleGame::endGame()
 			{	
 				if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
 				{
-					// this one has not been solved!
-					missedFileWriter << unscrambleGameQuestions.at(i).alphagram;
-					for (int j = 0; j < unscrambleGameQuestions.at(i).solutions.size(); j++)
-						missedFileWriter << " " << unscrambleGameQuestions.at(i).solutions.at(j);
-					missedFileWriter << "\n";
-					//qDebug() << "wrote" << unscrambleGameQuestions.at(i).alphagram << unscrambleGameQuestions.at(i).solutions << " to missed file.";
-					numMissedRacks++;
+					missedArray << unscrambleGameQuestions.at(i).indexInAlphagramData;
 				}
 
 			}
 		}
-		qDebug() << "Missed to date:" << numMissedRacks << "racks.";
+		qDebug() << "Missed to date:" << missedArray.size() << "racks.";
 	}
 	else if (cycleState == TABLE_TYPE_DAILY_CHALLENGES) // daily challenges
 	{
@@ -312,91 +380,8 @@ void UnscrambleGame::updateGameTimer()
 		endGame();
 }
 
-void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums)
-{
-	quint16 size = end - start + 1;
-	numbers.resize(numNums);
-	if (size < 1) size = start - end + 1;
-	if (numNums > size) return;
-	
-	QVector <quint16> pool;
-	pool.resize(size);
-	for (int i = 0; i < pool.size(); i++)
-	{
-		pool[i] = i + start;
-	}
-	int choose, temp;
-	for (int i = 0; i < numbers.size(); i++)
-	{
-		choose = qrand() % size;
-		numbers[i] = pool[choose];
-		size--;
-		temp = pool[choose];
-		pool[choose] = pool[size];
-		pool[size] = temp;
-	}
-}
 
-void UnscrambleGame::prepareWordDataStructure()
-{
-	// loads all the words from words.db into a data structure that's arranged by probability.
-	QTime timer;
-	timer.start();
-	
-	alphagramData.resize(14);	// for lengths 2 thru 15
-	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-	for (int i = 2; i <= 15; i++)
-	{
-		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
-		while (query.next())
-		{
-			alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString()));
-		}
-	
-	}
-	
-	qDebug() << "Created data structure, time=" << timer.elapsed();
-	
-	
-}
-
-
-void UnscrambleGame::generateDailyChallenges()
-{
-	midnightSwitchoverToggle = !midnightSwitchoverToggle;
-
-	QList <challengeInfo> vals = challenges.values();
-	foreach (challengeInfo ci, vals)
-		delete ci.highScores;
-
-	challenges.clear();
-	QTime timer;
-	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-	for (int i = 2; i <= 15; i++)
-	{
-		timer.start();
-		challengeInfo tmpChallenge;
-		tmpChallenge.highScores = new QHash <QString, highScoreData>;
-		QString challengeName = QString("Today's %1s").arg(i);
-		
-
-		query.exec(QString("SELECT numalphagrams from wordlists where listname = 'OWL2 %1s'").arg(i));
-		int wordCount = 0;
-		while (query.next())
-		{
-			wordCount = query.value(0).toInt();
-		}
-		getUniqueRandomNumbers(tmpChallenge.dbIndices, 1, wordCount, 50);
-		qDebug() << QString("generated today's %1s").arg(i);
-		qDebug() << tmpChallenge.dbIndices;
-		tmpChallenge.wordLength = i;
-		challenges.insert(challengeName, tmpChallenge);
-		qDebug() << "elapsed time" << timer.elapsed();
-	}
-	
-}
-
-void UnscrambleGame::generateTempFile()
+void UnscrambleGame::generateQuizArray()
 {
 	if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
 	{
@@ -404,17 +389,12 @@ void UnscrambleGame::generateTempFile()
 		QTime timer;
 		timer.start();
 		
-		QFile tempOutFile(QString("temp%1").arg(table->tableNumber));
-		QTextStream outStream(&tempOutFile);
-		tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);
-		
 		QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
 		query.exec(QString("SELECT wordlength, probindices from wordlists where listname = '" + wordList + "'"));
-		int wordlength;
 		QByteArray indices;
 		while (query.next())
 		{
-			wordlength = query.value(0).toInt();
+			wordLength = query.value(0).toInt();
 			indices = query.value(1).toByteArray();
 		}
 		
@@ -429,16 +409,12 @@ void UnscrambleGame::generateTempFile()
 			stream >> start >> end;
 			QVector <quint16> indexVector;
 			getUniqueRandomNumbers(indexVector, start, end, end-start+1);
-			const QVector <alphagramInfo> *alphaInfo = &(alphagramData.at(length-2));
+		
 			
 			for (quint16 i = start; i <= end; i++)
-				outStream << alphaInfo->at(indexVector.at(i-start)-1).alphagram << " " 
-				<< alphaInfo->at(indexVector.at(i-start)-1).solutions << "\n";
-
+				quizArray << indexVector.at(i-start);
+			
 			numTotalRacks = end-start+1;
-			numMissedRacks = 0;
-			tempOutFile.close();
-			tempFileExists = true;
 		}
 		if (type == 1)
 		{
@@ -455,94 +431,51 @@ void UnscrambleGame::generateTempFile()
 				stream >> index;
 				indexVector[tempVector.at(i)] = index;
 			}
-			const QVector <alphagramInfo> *alphaInfo = &(alphagramData.at(length-2));
 			
 			for (quint16 i = 0; i < size; i++)
-				outStream << alphaInfo->at(indexVector.at(i)-1).alphagram << " " 
-				<< alphaInfo->at(indexVector.at(i)-1).solutions << "\n";
+				quizArray << indexVector.at(i);
 
-			numTotalRacks = size;
-			numMissedRacks = 0;
-			tempOutFile.close();
-			tempFileExists = true;
-			
-			
+			numTotalRacks = size;		
 		}
 	
 		
-		qDebug() << "Generated temp file, time=" << timer.elapsed();
+		qDebug() << "Generated quiz array, time=" << timer.elapsed();
 
 	}
 	else
 	{
 		// daily challenges
-		// don't need to 'generate temp file'. just copy the daily challenge from the lists
-		
-		QFile tempOutFile(QString("temp%1").arg(table->tableNumber));
-		QTextStream outStream(&tempOutFile);
-		tempOutFile.open(QIODevice::WriteOnly | QIODevice::Text);
+		// just copy the daily challenge array	
 		
 		if (challenges.contains(wordList))
 		{
-			const QVector <quint16>* dbIndices = &(challenges.value(wordList).dbIndices);
-			int wordLength = challenges.value(wordList).wordLength;
-			const QVector <alphagramInfo> *alphaInfo = &(alphagramData.at(wordLength-2));
-			
-			for(quint16 i = 0; i < dbIndices->size(); i++)
-			{
-				outStream << alphaInfo->at(dbIndices->at(i)-1).alphagram << " " << 
-				alphaInfo->at(dbIndices->at(i)-1).solutions << "\n";
-			}
+			wordLength = challenges.value(wordList).wordLength;
+			quizArray = challenges.value(wordList).dbIndices;			
 		}
-		tempOutFile.close();
-		tempFileExists = true;
+
 		numTotalRacks = maxRacks;
 	}
+	
+	quizIndex = 0;
+	alphaInfo = (QVector<alphagramInfo>*)&(alphagramData.at(wordLength-2));
+	neverStarted = true;
 }
 void UnscrambleGame::prepareTableAlphagrams()
 {
 	// load alphagrams into the gamesolutions hash and the alphagrams list
-	if (cycleState == TABLE_TYPE_RANDOM_MODE) tempFileExists = false;
-	if (tempFileExists == false)
-	{
-		inFile.close();
-		outFile.close();
-		generateTempFile();
-		inFile.setFileName(QString("temp%1").arg(table->tableNumber));
-		alphagramReader.setDevice(&inFile);
-		inFile.open(QIODevice::ReadWrite | QIODevice::Text);
-		alphagramReader.seek(0);
-		// generate missed file
-		outFile.setFileName(QString("missed%1").arg(table->tableNumber));
-		outFile.open(QIODevice::WriteOnly | QIODevice::Text);
-		missedFileWriter.setDevice(&outFile);
-		missedFileWriter.seek(0);
-	}
+
 	gameSolutions.clear();
 	unscrambleGameQuestions.clear();
 	alphagramIndices.clear();
-	if (cycleState == TABLE_TYPE_CYCLE_MODE && alphagramReader.atEnd())
+	if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == quizArray.size())
 	{
-		inFile.close();
-		inFile.remove();				// delete temp file
-		outFile.close();
-		outFile.copy(QString("temp%1").arg(table->tableNumber));		// copy missed file to tmp file
-		outFile.remove();
-		inFile.setFileName(QString("temp%1").arg(table->tableNumber));	// reopen new tmp file
-		outFile.setFileName(QString("missed%1").arg(table->tableNumber));	// and generate a new missed file
-		alphagramReader.setDevice(&inFile);
-		missedFileWriter.setDevice(&outFile);
-		inFile.open(QIODevice::ReadOnly | QIODevice::Text);
-		outFile.open(QIODevice::WriteOnly | QIODevice::Text);
-		missedFileWriter.seek(0);
-		alphagramReader.seek(0);
+		quizArray = missedArray;		// copy missedArray to quizArray
+		quizIndex = 0;	// and set the index back at the beginning
+		missedArray.clear();	// also clear the missed array, cuz we're starting a new one.
 		table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
-		// CLOSE table->inFile
-		// COPY missed%1 to tmp%1
-		// repeat code above to load the file into memory, shuffle, etc
+		
 		numRacksSeen = 0;
-		numTotalRacks = numMissedRacks;
-		numMissedRacks = 0;
+		numTotalRacks = quizArray.size();
 		//      numTotalRacks = missedFileWriter
 	}
 	QStringList lineList;
@@ -551,8 +484,8 @@ void UnscrambleGame::prepareTableAlphagrams()
 	for (quint8 i = 0; i < maxRacks; i++)
 	{
 		unscrambleGameData thisGameData;
-		thisGameData.index = i;
-		if (alphagramReader.atEnd())
+		//thisGameData.index = i;
+		if (quizIndex == quizArray.size())
 		{
 			thisGameData.alphagram = "";
 			thisGameData.numNotYetSolved = 0;
@@ -560,7 +493,10 @@ void UnscrambleGame::prepareTableAlphagrams()
 			{
 				listExhausted = true;
 				if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
-					table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
+				{
+					table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");		
+					
+				}
 				else
 					table->sendTableMessage("This challenge is over. \
 											To view scores, please exit table and select 'Get today's scores' from the 'Challenges' button.");
@@ -569,16 +505,20 @@ void UnscrambleGame::prepareTableAlphagrams()
 		else
 		{
 			numRacksSeen++;
-			line = alphagramReader.readLine();
-			lineList = line.split(" ");
-			thisGameData.alphagram = lineList.at(0);
-			thisGameData.numNotYetSolved = (quint8)(lineList.size()-1);
-			for (int k = 1; k < lineList.size(); k++)
+			quint16 index = quizArray.at(quizIndex);
+	
+			thisGameData.alphagram = alphaInfo->at(index-1).alphagram;
+			thisGameData.numNotYetSolved = alphaInfo->at(index-1).solutions.size();
+			thisGameData.indexInAlphagramData = index;
+			for (int k = 0; k < thisGameData.numNotYetSolved; k++)
 			{
-				gameSolutions.insert(lineList.at(k), lineList.at(0));
-				thisGameData.solutions << lineList.at(k);
+				gameSolutions.insert(alphaInfo->at(index-1).solutions.at(k), thisGameData.alphagram);
+				thisGameData.solutions << alphaInfo->at(index-1).solutions.at(k);
 				numTotalSolutions++;
 			}
+			quizIndex++;
+			
+			
 		}
 		unscrambleGameQuestions.append(thisGameData);
 		alphagramIndices.insert(thisGameData.alphagram, i);
@@ -647,3 +587,91 @@ void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quin
 	fixHeaderLength();
 	table->sendGenericPacket();
 }
+
+/*************** static and utility functions ****************/
+
+void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums)
+{
+	quint16 size = end - start + 1;
+	numbers.resize(numNums);
+	if (size < 1) size = start - end + 1;
+	if (numNums > size) return;
+	
+	QVector <quint16> pool;
+	pool.resize(size);
+	for (int i = 0; i < pool.size(); i++)
+	{
+		pool[i] = i + start;
+	}
+	int choose, temp;
+	for (int i = 0; i < numbers.size(); i++)
+	{
+		choose = qrand() % size;
+		numbers[i] = pool[choose];
+		size--;
+		temp = pool[choose];
+		pool[choose] = pool[size];
+		pool[size] = temp;
+	}
+}
+
+void UnscrambleGame::prepareWordDataStructure()
+{
+	// loads all the words from words.db into a data structure that's arranged by probability.
+	QTime timer;
+	timer.start();
+	
+	alphagramData.resize(14);	// for lengths 2 thru 15
+	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+	for (int i = 2; i <= 15; i++)
+	{
+		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
+		while (query.next())
+		{
+			alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString().split(" ")));
+		}
+	
+	}
+	
+	qDebug() << "Created data structure, time=" << timer.elapsed();
+	
+	
+}
+
+
+void UnscrambleGame::generateDailyChallenges()
+{
+	midnightSwitchoverToggle = !midnightSwitchoverToggle;
+
+	QList <challengeInfo> vals = challenges.values();
+	foreach (challengeInfo ci, vals)
+		delete ci.highScores;
+
+	challenges.clear();
+	QTime timer;
+	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+	for (int i = 2; i <= 15; i++)
+	{
+		timer.start();
+		challengeInfo tmpChallenge;
+		tmpChallenge.highScores = new QHash <QString, highScoreData>;
+		QString challengeName = QString("Today's %1s").arg(i);
+		
+
+		query.exec(QString("SELECT numalphagrams from wordlists where listname = 'OWL2 %1s'").arg(i));
+		int wordCount = 0;
+		while (query.next())
+		{
+			wordCount = query.value(0).toInt();
+		}
+		getUniqueRandomNumbers(tmpChallenge.dbIndices, 1, wordCount, 50);
+		qDebug() << QString("generated today's %1s").arg(i);
+		qDebug() << tmpChallenge.dbIndices;
+		tmpChallenge.wordLength = i;
+		challenges.insert(challengeName, tmpChallenge);
+		qDebug() << "elapsed time" << timer.elapsed();
+	}
+	
+}
+
+

@@ -20,6 +20,8 @@ Q_OBJECT
   public slots:
   void stopThread();
   void startThread();
+ signals:
+  void readyToConnect();
 };
 
 #endif

@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
   QObject::connect(&mainWin, SIGNAL(startServerThread()), &serverThread, SLOT(startThread()));
   QObject::connect(&mainWin, SIGNAL(stopServerThread()), &serverThread, SLOT(stopThread()));
-  QObject::connect(&serverThread, SIGNAL(started()), &mainWin, SLOT(serverThreadHasStarted()));
+  QObject::connect(&serverThread, SIGNAL(readyToConnect()), &mainWin, SLOT(serverThreadHasStarted()));
   QObject::connect(&serverThread, SIGNAL(finished()), &mainWin, SLOT(serverThreadHasFinished()));
   mainWin.show();      
   return app.exec();  

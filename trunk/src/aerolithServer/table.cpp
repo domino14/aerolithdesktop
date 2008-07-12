@@ -10,14 +10,13 @@ void tableData::initialize(quint16 tableNumber, QString tableName, quint8 maxPla
 	ClientSocket* tableCreator, quint8 cycleState, quint8 tableTimer, gameModes gameMode, 
 	QString additionalDescriptor)
 {
-
+	qDebug() << "Creating a table.";
   this->tableNumber = tableNumber;
   this->tableName = tableName;
   this->maxPlayers = maxPlayers;
-  playerList << tableCreator;
-
-  if (maxPlayers == 1) canJoin = false;
-  else canJoin = true;
+  //playerList << tableCreator;
+	host = tableCreator;
+	canJoin = true;
   this->gameMode = gameMode;
 
  
