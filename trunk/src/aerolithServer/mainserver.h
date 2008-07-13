@@ -23,13 +23,13 @@ public:
 private slots:
  void removeConnection();
  void receiveMessage();
- void pingEveryone();
+ void checkEveryone();
  void newDailyChallenges();
  // void updateTimer();
  // void updateCountdownTimer();
 
 private:
- QTimer* pingTimer;
+ QTimer* oneMinuteTimer;
  QTimer* midnightTimer;
  void incomingConnection(int socketDescriptor); // inherited from QTcpServer
  QSqlDatabase userDb;

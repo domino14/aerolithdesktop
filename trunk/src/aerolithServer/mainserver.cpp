@@ -26,6 +26,7 @@ extern const QString WORD_DATABASE_FILENAME;
 
 
 
+
 MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersion)
 {
 
@@ -49,9 +50,9 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
   //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
   //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
   //wordDb.open();
-  pingTimer = new QTimer;
-  connect(pingTimer, SIGNAL(timeout()), this, SLOT(pingEveryone()));
-  pingTimer->start(1800000);
+  oneMinuteTimer = new QTimer;
+  connect(oneMinuteTimer, SIGNAL(timeout()), this, SLOT(checkEveryone()));
+  oneMinuteTimer->start(60000);
 
   midnightTimer = new QTimer;
   connect(midnightTimer, SIGNAL(timeout()), this, SLOT(newDailyChallenges()));
@@ -126,6 +127,7 @@ void MainServer::incomingConnection(int socketDescriptor)
       client->connData.tableNum = 0;
       client->connData.avatarId = 1;
       client->connData.isActive = true; // assume we responded to the last ping
+      client->connData.minutesInactive = 0;
       connect(client, SIGNAL(disconnected()), this, SLOT(removeConnection()));
       connect(client, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
 
@@ -134,10 +136,10 @@ void MainServer::incomingConnection(int socketDescriptor)
 
 }
 
-void MainServer::pingEveryone()
+void MainServer::checkEveryone()
 {
-  qDebug() << "Called pingEveryone";
-  if (connections.size() > 0)
+  qDebug() << "Called checkEveryone";
+  /* if (connections.size() > 0)
     {
       writeHeaderData();      
       out << (quint8) SERVER_PING; // keep alive
@@ -162,6 +164,19 @@ void MainServer::pingEveryone()
 	    }
 	}
     }
+  */
+  foreach (ClientSocket* socket, connections)
+    {
+      socket->connData.minutesInactive++;
+      if (socket->connData.minutesInactive >= 60)
+	{
+	  writeToClient(socket, "Kicked for inactivity!", S_ERROR);
+	  socket->disconnectFromHost();
+	}
+
+    }
+  
+
 }
 
 void MainServer::removeConnection()
@@ -259,7 +274,7 @@ void MainServer::receiveMessage()
       quint8 packetType;
       socket->connData.in >> packetType; // this is the case byte!
       qDebug() << "Received from sender " << socket->connData.userName << " packet " << (char)packetType;      
-      socket->connData.isActive = true; // this connection is active!
+      socket->connData.minutesInactive = 0;
       if (socket->connData.numBytesInPacket > 10000) 
 	{
 	  socket->disconnectFromHost();
