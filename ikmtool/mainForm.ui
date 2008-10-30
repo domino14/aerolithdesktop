@@ -1,0 +1,115 @@
+<ui version="4.0" >
+ <class>formMainWidget</class>
+ <widget class="QWidget" name="formMainWidget" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>588</width>
+    <height>402</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>The Insane Kenji Method Program</string>
+  </property>
+  <widget class="QPlainTextEdit" name="plainTextEdit" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>551</width>
+     <height>251</height>
+    </rect>
+   </property>
+   <property name="readOnly" >
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonNext" >
+   <property name="geometry" >
+    <rect>
+     <x>470</x>
+     <y>280</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>(N)EXT</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonPrevious" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>280</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>(P)REVIOUS</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonMark" >
+   <property name="geometry" >
+    <rect>
+     <x>150</x>
+     <y>280</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>(M)ARK</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonSave" >
+   <property name="geometry" >
+    <rect>
+     <x>450</x>
+     <y>350</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>(S)ave progress</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="labelInfo" >
+   <property name="geometry" >
+    <rect>
+     <x>20</x>
+     <y>360</y>
+     <width>271</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="frameShape" >
+    <enum>QFrame::Panel</enum>
+   </property>
+   <property name="frameShadow" >
+    <enum>QFrame::Sunken</enum>
+   </property>
+   <property name="text" >
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonLoad" >
+   <property name="geometry" >
+    <rect>
+     <x>320</x>
+     <y>350</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>(L)oad list</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
