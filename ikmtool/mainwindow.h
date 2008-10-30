@@ -24,6 +24,8 @@ class MainWindow : public QWidget
 	quint32 randomSeed;
 	quint32 currentQuestionNumber;
 	quint32 seenQuestions;
+	void displayQuestion();
+	QString curWordList;
   private slots:
 
   void on_pushButtonLoad_clicked();

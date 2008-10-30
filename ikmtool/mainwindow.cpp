@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent)
   this->show();
   currentQuestionNumber = 0;
   seenQuestions = 0;
+  
+  ui.plainTextEdit->document()->setMaximumBlockCount(1000);
 }
 
 void MainWindow::on_pushButtonLoad_clicked()
@@ -42,6 +44,7 @@ void MainWindow::on_pushButtonLoad_clicked()
 			d.mkdir("progress");
 		
 		}
+		curWordList = wordList;
 		
 		if (!QFile::exists("progress/" + wordList))
 		{
@@ -67,6 +70,8 @@ void MainWindow::on_pushButtonLoad_clicked()
 		wordListFile.open(QIODevice::ReadOnly | QIODevice::Text);
 		QTextStream textStream(&wordListFile);
 		
+		questions.clear();
+		
 		while (!textStream.atEnd())
 		{
 			QString line = textStream.readLine();
@@ -84,28 +89,103 @@ void MainWindow::on_pushButtonLoad_clicked()
 		wordListFile.close();
 		ui.labelInfo->setText("Loaded data.");
 		
+		/* randomize the list according to the random seed */
+		
+		qsrand(randomSeed);
+		for (int i = 0; i < questions.size(); i++)
+		{
+			Question temp;
+			int randomIndex = qrand() % questions.size();
+			temp = questions[i];
+			questions[i] = questions[randomIndex];
+			questions[randomIndex] = temp;
+		}
+		
+		
+		/* set the appropriate questions true or false for "correct"*/
 		for (quint32 i = 0; i < seenQuestions; i++)
 		{
-			
-		
+			bool correct;
+			stream >> correct;
+			questions[i].correct = correct;
 		
 		}
 		
+		file.close();
 
 
 	}
+	displayQuestion();
 }
+
+
 
 void MainWindow::on_pushButtonSave_clicked()
 {
+	QFile file("progress/" + curWordList);
+	file.open(QIODevice::WriteOnly);
+	QDataStream stream(&file);
+	stream << randomSeed; 
+	stream << seenQuestions;
+	stream << currentQuestionNumber;
+	
+	for (quint32 i = 0; i < seenQuestions; i++)
+	{
+		stream << questions.at(i).correct;
+	}
+	
+			
+	file.close();
+	ui.labelInfo->setText("Saved data.");
 }
 
 void MainWindow::on_pushButtonPrevious_clicked()
 {
+	if (questions.size() == 0) return;
+	if (currentQuestionNumber == 0) currentQuestionNumber = 0;
+	else currentQuestionNumber--;
+	displayQuestion();
 }
 
 void MainWindow::on_pushButtonNext_clicked()
 {
+	if (questions.size() == 0) return;
+	currentQuestionNumber++;
+	if (currentQuestionNumber > questions.size() - 1) currentQuestionNumber = questions.size() - 1;
+	displayQuestion();
+}
+
+void MainWindow::displayQuestion()
+{
+	// currentQuestionNumber 0 is the first question
+	// size - 1 is the last question
+	ui.labelInfo->setText("Question " + QString::number(currentQuestionNumber + 1) + 
+	" of " + QString::number(questions.size()));
+	
+	ui.plainTextEdit->clear();
+	
+	QTextCursor cursor(ui.plainTextEdit->document());
+	QTextCharFormat chFormat;
+
+	QString spaces;
+	for (int i = 0; i < 10; i++)
+		spaces += " ";	
+	
+	chFormat.setFont(QFont("Courier New", 24, 66));
+	cursor.insertText(spaces + questions.at(currentQuestionNumber).alphagram, chFormat);
+	
+	cursor.insertBlock();
+	chFormat.setFont(QFont("Arial", 14, 35));
+	for (int i = 0; i < questions.at(currentQuestionNumber).solutions.size(); i++)
+	{
+		cursor.insertText(questions.at(currentQuestionNumber).solutions.at(i), chFormat);
+		cursor.insertBlock();
+	}
+	
+	
+	ui.plainTextEdit->setTextCursor(cursor);
+
+	
 }
 
 void MainWindow::on_pushButtonMark_clicked()
