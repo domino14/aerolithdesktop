@@ -25,6 +25,39 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent)
   seenQuestions = 0;
   
   ui.plainTextEdit->document()->setMaximumBlockCount(1000);
+  currentlyAskingQuestion = false;
+  
+  questionTimer = new QTimer();
+  connect(questionTimer, SIGNAL(timeout()), SLOT(timerTimedOut()));
+  timeLimitSecs = 5;
+  currentTime = 0;
+	
+	
+	
+	#ifdef Q_WS_MAC
+	QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
+	#else
+	QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
+	#endif
+	ZyzzyvaSettings.beginGroup("Zyzzyva");
+	
+	QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
+	QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
+	
+	if (QFile::exists(zyzzyvaDataDir + "/lexicons/OWL2+LWL.db"))
+	{
+		wordDb = QSqlDatabase::addDatabase("QSQLITE");
+		wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
+		wordDb.open();
+	}
+	else
+	{
+		QMessageBox::warning(this, "Zyzzyva not found", "A suitable Zyzzyva installation was not found. You will not "
+		"be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool"
+		", by Michael Thelen, found at <a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
+	}
+
+  
 }
 
 void MainWindow::on_pushButtonLoad_clicked()
@@ -35,87 +68,104 @@ void MainWindow::on_pushButtonLoad_clicked()
   QStringList list = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
   bool ok;
   QString wordList = QInputDialog::getItem(this, "Select word list", "Select word list", list, 0, false, &ok);
-	if (ok)
+	if (!ok) return;
+	
+	// search if this word list is being worked on.
+	QDir d;
+	if (!d.exists("progress"))
 	{
-		// search if this word list is being worked on.
-		QDir d;
-		if (!d.exists("progress"))
+		d.mkdir("progress");
+	
+	}
+	curWordList = wordList;
+	
+	//if (!QFile::exists("progress/" + wordList))
+	//{
+	// 	QFile file("progress/" + wordList);
+// 			file.open(QIODevice::WriteOnly);
+// 			QDataStream stream(&file);
+// 			stream << (quint32)QDateTime::currentDateTime().toTime_t(); // random seed.
+// 			stream << (quint32)0;	// seen questions
+// 			stream << (quint32)0;	// current question number
+// 			
+// 			file.close();
+	//}
+	
+	
+
+	seenQuestions = 0;
+	currentQuestionNumber = 0;
+	ui.labelInfo->setText("Please wait... loading data");
+	/* populate data structure */
+	
+	QFile wordListFile("lists/" + wordList);
+	wordListFile.open(QIODevice::ReadOnly | QIODevice::Text);
+	QTextStream textStream(&wordListFile);
+		
+	questions.clear();
+		
+	while (!textStream.atEnd())
+	{
+		QString line = textStream.readLine();
+		if (line != "")
 		{
-			d.mkdir("progress");
-		
+			QStringList q = line.simplified().split(" ");
+			Question tmp;
+			tmp.alphagram = q.at(0);
+			tmp.solutions = q.mid(1);
+			tmp.correct = false;
+			questions << tmp;
 		}
-		curWordList = wordList;
+	}
 		
-		if (!QFile::exists("progress/" + wordList))
-		{
-			QFile file("progress/" + wordList);
-			file.open(QIODevice::WriteOnly);
-			QDataStream stream(&file);
-			stream << (quint32)QDateTime::currentDateTime().toTime_t(); // random seed.
-			stream << (quint32)0;	// seen questions
-			stream << (quint32)0;	// current question number
-			
-			file.close();
-		}
-		
-		QFile file("progress/" + wordList);
-		file.open(QIODevice::ReadOnly);
-		QDataStream stream(&file);
-		
+	wordListFile.close();
+	
+	ui.labelInfo->setText("Loaded data.");
+	
+	/* randomize the list according to the random seed */
+	
+	QFile file("progress/" + wordList);
+	QDataStream stream;
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		randomSeed = (quint32)QDateTime::currentDateTime().toTime_t();
+	
+	}
+	else
+	{
+		stream.setDevice(&file);
 		stream >> randomSeed >> seenQuestions >> currentQuestionNumber;
 		
-		ui.labelInfo->setText("Please wait... loading data");
-		/* populate data structure */
-		QFile wordListFile("lists/" + wordList);
-		wordListFile.open(QIODevice::ReadOnly | QIODevice::Text);
-		QTextStream textStream(&wordListFile);
-		
-		questions.clear();
-		
-		while (!textStream.atEnd())
-		{
-			QString line = textStream.readLine();
-			if (line != "")
-			{
-				QStringList q = line.split(" ");
-				Question tmp;
-				tmp.alphagram = q.at(0);
-				tmp.solutions = q.mid(1);
-				tmp.correct = false;
-				questions << tmp;
-			}
-		
-		}
-		wordListFile.close();
-		ui.labelInfo->setText("Loaded data.");
-		
-		/* randomize the list according to the random seed */
-		
-		qsrand(randomSeed);
-		for (int i = 0; i < questions.size(); i++)
-		{
-			Question temp;
-			int randomIndex = qrand() % questions.size();
-			temp = questions[i];
-			questions[i] = questions[randomIndex];
-			questions[randomIndex] = temp;
-		}
-		
-		
-		/* set the appropriate questions true or false for "correct"*/
-		for (quint32 i = 0; i < seenQuestions; i++)
-		{
-			bool correct;
-			stream >> correct;
-			questions[i].correct = correct;
-		
-		}
-		
-		file.close();
-
-
+	}	
+	
+	qsrand(randomSeed);
+	for (int i = 0; i < questions.size(); i++)
+	{
+		Question temp;
+		int randomIndex = qrand() % questions.size();
+		temp = questions[i];
+		questions[i] = questions[randomIndex];
+		questions[randomIndex] = temp;
 	}
+	
+	
+	/* set the appropriate questions true or false for "correct"*/
+	for (quint32 i = 0; i < seenQuestions; i++)
+	{
+		stream >> questions[i].correct;
+		questions[i].asked = true;
+	
+	}
+	
+	file.close();
+
+	currentlyAskingQuestion = false;
 	displayQuestion();
+	if (questions[currentQuestionNumber].asked == true)
+		displayAnswers(questions[currentQuestionNumber].correct);
+	else
+		askQuestion();
+	
 }
 
 
@@ -141,18 +191,54 @@ void MainWindow::on_pushButtonSave_clicked()
 
 void MainWindow::on_pushButtonPrevious_clicked()
 {
+	if (currentlyAskingQuestion) return;
 	if (questions.size() == 0) return;
+	
 	if (currentQuestionNumber == 0) currentQuestionNumber = 0;
 	else currentQuestionNumber--;
 	displayQuestion();
+	displayAnswers(questions.at(currentQuestionNumber).correct);
 }
 
 void MainWindow::on_pushButtonNext_clicked()
 {
-	if (questions.size() == 0) return;
-	currentQuestionNumber++;
-	if (currentQuestionNumber > questions.size() - 1) currentQuestionNumber = questions.size() - 1;
-	displayQuestion();
+	if (currentlyAskingQuestion)
+	{
+	
+		// answer correctly
+		questions[currentQuestionNumber].correct = true;
+		displayAnswers(true);
+		currentlyAskingQuestion = false;
+		questionTimer->stop();
+		currentTime = 0;
+	}
+	else	// go on to next question.
+	{
+	
+		if (questions.size() == 0) return;
+		currentQuestionNumber++;
+		if (currentQuestionNumber > questions.size() - 1) currentQuestionNumber = questions.size() - 1;
+		displayQuestion();	// ask question
+		if (questions.at(currentQuestionNumber).asked == true)
+		{	// but if it's been asked just display answers
+			displayAnswers(questions.at(currentQuestionNumber).correct);
+			currentlyAskingQuestion = false;
+		}
+		else
+		{	// really ask question
+			askQuestion();
+		}
+	}
+}
+
+void MainWindow::askQuestion()
+{
+	currentlyAskingQuestion = true;
+	questions[currentQuestionNumber].asked = true;
+	seenQuestions = currentQuestionNumber + 1;
+	/* start timer*/
+	questionTimer->start(1000);
+	ui.lcdNumberTimer->display(timeLimitSecs);
 }
 
 void MainWindow::displayQuestion()
@@ -160,7 +246,8 @@ void MainWindow::displayQuestion()
 	// currentQuestionNumber 0 is the first question
 	// size - 1 is the last question
 	ui.labelInfo->setText("Question " + QString::number(currentQuestionNumber + 1) + 
-	" of " + QString::number(questions.size()));
+	" of " + QString::number(questions.size()) + " (" + 
+	QString::number(questions.at(currentQuestionNumber).solutions.size()) + ")");
 	
 	ui.plainTextEdit->clear();
 	
@@ -168,26 +255,95 @@ void MainWindow::displayQuestion()
 	QTextCharFormat chFormat;
 
 	QString spaces;
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 7; i++)
 		spaces += " ";	
 	
-	chFormat.setFont(QFont("Courier New", 24, 66));
+	chFormat.setFont(QFont("Courier New", 40, 66));
 	cursor.insertText(spaces + questions.at(currentQuestionNumber).alphagram, chFormat);
-	
-	cursor.insertBlock();
-	chFormat.setFont(QFont("Arial", 14, 35));
-	for (int i = 0; i < questions.at(currentQuestionNumber).solutions.size(); i++)
-	{
-		cursor.insertText(questions.at(currentQuestionNumber).solutions.at(i), chFormat);
-		cursor.insertBlock();
-	}
 	
 	
 	ui.plainTextEdit->setTextCursor(cursor);
 
+}
+
+void MainWindow::displayAnswers(bool correct)
+{
+
+	QTextCursor cursor = ui.plainTextEdit->textCursor();
+	QTextCharFormat chFormat;
+	if (correct)
+		chFormat.setBackground(QBrush(QColor(150, 255, 150)));
+	else
+		chFormat.setBackground(QBrush(QColor(255, 150, 150)));
+	cursor.insertBlock();
+	chFormat.setFont(QFont("Arial", 14, 35));
 	
+	for (int i = 0; i < questions.at(currentQuestionNumber).solutions.size(); i++)
+	{
+		QString backHooks, frontHooks, definition, probability;
+		if (wordDb.isOpen())
+		{
+			
+			QSqlQuery query;
+	
+			query.exec("select front_hooks, back_hooks, definition, probability_order from words where word = '" 
+			+ questions.at(currentQuestionNumber).solutions.at(i) + "'");
+	
+			while (query.next())
+			{
+				frontHooks = query.value(0).toString();
+				backHooks = query.value(1).toString();
+				definition = query.value(2).toString();
+				probability = query.value(3).toString();
+			}
+		}
+	
+		cursor.insertText(frontHooks + "\t" + questions.at(currentQuestionNumber).solutions.at(i) 
+		+ "\t" + backHooks + "\t" + definition, chFormat);
+		cursor.insertBlock();
+	}
+	
+	ui.plainTextEdit->setTextCursor(cursor);
 }
 
 void MainWindow::on_pushButtonMark_clicked()
 {
+	if (currentlyAskingQuestion)
+	{
+	
+		// answer incorrectly
+		questions[currentQuestionNumber].correct = false;
+		displayAnswers(false);
+		currentlyAskingQuestion = false;
+		questionTimer->stop();
+		currentTime = 0;
+	}
+	else
+	{
+		// we're going forwards or backwards
+		questions[currentQuestionNumber].correct = !questions[currentQuestionNumber].correct;
+		
+		/* refresh question - answer */
+		displayQuestion();
+		displayAnswers(questions.at(currentQuestionNumber).correct);	
+	
+	}
+}
+
+void MainWindow::timerTimedOut()
+{
+	
+	currentTime++;
+	ui.lcdNumberTimer->display(timeLimitSecs - currentTime);
+	if (currentTime >= timeLimitSecs)
+	{
+		questionTimer->stop();
+		currentTime = 0;
+		
+		// mark missed -- answer incorrectly.
+		
+		questions[currentQuestionNumber].correct = false;
+		displayAnswers(false);
+		currentlyAskingQuestion = false;
+	}
 }

@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>642</width>
-    <height>590</height>
+    <width>731</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -65,6 +65,13 @@
     <widget class="QPushButton" name="pushButtonSave" >
      <property name="text" >
       <string>(S)ave progress</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" >
+    <widget class="QLCDNumber" name="lcdNumberTimer" >
+     <property name="segmentStyle" >
+      <enum>QLCDNumber::Flat</enum>
      </property>
     </widget>
    </item>

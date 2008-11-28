@@ -6,7 +6,7 @@ TEMPLATE = app
 TARGET = 
 DEPENDPATH += .
 INCLUDEPATH += .
-
+QT += sql
 # Input
 HEADERS += mainwindow.h
 FORMS += mainForm.ui
