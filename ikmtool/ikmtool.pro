@@ -3,10 +3,13 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = 
+TARGET = ikmtool 
 DEPENDPATH += .
 INCLUDEPATH += .
+
+CONFIG += qt
 QT += sql
+DESTDIR = ./
 # Input
 HEADERS += mainwindow.h
 FORMS += mainForm.ui
