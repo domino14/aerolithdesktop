@@ -1,4 +1,18 @@
 #include "mainwindow.h"
+//#undef RAND_MAX
+//#define RAND_MAX 0x1
+
+quint32 lastGeneratedNum;
+void csrand(quint32 seed)
+{
+	lastGeneratedNum = seed;
+}
+
+quint32 crand()
+{
+	lastGeneratedNum = (16807*lastGeneratedNum) % 2147483647;
+	return lastGeneratedNum;
+}
 
 MainWindow::MainWindow(QWidget* parent) : QWidget(parent)
 {
@@ -126,6 +140,7 @@ void MainWindow::on_pushButtonLoad_clicked()
 	
 	QFile file("progress/" + wordList);
 	QDataStream stream;
+	 stream.setVersion(QDataStream::Qt_4_4);
 	if (!file.open(QIODevice::ReadOnly))
 	{
 		randomSeed = (quint32)QDateTime::currentDateTime().toTime_t();
@@ -137,12 +152,13 @@ void MainWindow::on_pushButtonLoad_clicked()
 		stream >> randomSeed >> seenQuestions >> currentQuestionNumber;
 		
 	}	
+	ui.labelInfo->setText(QString::number(RAND_MAX));
 	
-	qsrand(randomSeed);
+	csrand(randomSeed);
 	for (int i = 0; i < questions.size(); i++)
 	{
 		Question temp;
-		int randomIndex = qrand() % questions.size();
+		int randomIndex = crand() % questions.size();
 		temp = questions[i];
 		questions[i] = questions[randomIndex];
 		questions[randomIndex] = temp;
@@ -158,7 +174,7 @@ void MainWindow::on_pushButtonLoad_clicked()
 	}
 	
 	file.close();
-
+	
 	currentlyAskingQuestion = false;
 	displayQuestion();
 	if (questions[currentQuestionNumber].asked == true)
