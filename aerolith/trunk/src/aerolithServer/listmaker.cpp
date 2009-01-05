@@ -1,5 +1,5 @@
 #include "listmaker.h"
-
+#include <QTime>
 
 extern const QString WORD_DATABASE_NAME = "wordDB";
 extern const QString WORD_DATABASE_FILENAME = "words.db";
@@ -38,16 +38,8 @@ void ListMaker::createListDatabase()
 {
 	// creates a word list database.
 	// requires the zyzzyva database to be in the user's install directory
-	
-  QSqlDatabase wordDb;
-  wordDb = QSqlDatabase::addDatabase("QSQLITE", WORD_DATABASE_NAME);
-
-// 	if (QFile::exists(WORD_DATABASE_FILENAME)) 
-// 	  {
-// 	    wordDb.setDatabaseName(WORD_DATABASE_FILENAME);
-// 	    wordDb.open();
-// 	    return;
-// 	  }
+	QSqlDatabase wordDb;
+	wordDb = QSqlDatabase::addDatabase("QSQLITE", WORD_DATABASE_NAME);
 
 	wordDb.setDatabaseName(WORD_DATABASE_FILENAME);
 	wordDb.open();
@@ -78,8 +70,8 @@ void ListMaker::createListDatabase()
 	}
 	
 	QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
-
-
+	QSqlQuery transactionQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
+	
 	bool alphagramsExists = false;
 	wordQuery.exec("select tbl_name from sqlite_master where name='alphagrams'");
 	while (wordQuery.next())
@@ -98,19 +90,22 @@ void ListMaker::createListDatabase()
 		wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability, length)");
 		
 		QSqlQuery zyzzyvaQuery(QSqlDatabase::database("zyzzyvaDB"));
-		
+		QTime time;
 		for (int i = 2; i <= 15; i++)
 		{
+			time.start();
 			qDebug() << "Length" << i;
+			
 			QString queryString = QString("SELECT word, alphagram, lexicon_symbols, num_vowels, num_anagrams, num_unique_letters "
 			"from words where length = %1 order by probability_order").arg(i);
 			zyzzyvaQuery.exec(queryString);
 			int probability = 1;
-			
 			zyzzyvaQuery.next();
 			bool nextSucceeded;
+			transactionQuery.exec("BEGIN TRANSACTION");
 			while (true)
 			{
+
 				int num_anagrams = zyzzyvaQuery.value(4).toInt();
 				QString alphagram;
 				QString wordString = "";
@@ -127,25 +122,27 @@ void ListMaker::createListDatabase()
 					numAnagrams = zyzzyvaQuery.value(4).toInt();
 					numUniqueLetters = zyzzyvaQuery.value(5).toInt();
 					nextSucceeded = zyzzyvaQuery.next();
+
 				}
-			
 				QString toExecute = "INSERT INTO alphagrams(alphagram, words, length, probability, num_vowels, lexiconstring, "
 						"num_anagrams, num_unique_letters) "
-						"VALUES(:alphagram, :words, :length, :probability, :num_vowels, :lexiconstring, :num_anagrams, :num_unique_letters)";
+						"VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
 				wordQuery.prepare(toExecute);
-				wordQuery.bindValue(":alphagram", alphagram);
-				wordQuery.bindValue(":words", wordString.trimmed());
-				wordQuery.bindValue(":length", alphagram.length());
-				wordQuery.bindValue(":probability", probability);
-				wordQuery.bindValue(":num_vowels", numVowels);
-				wordQuery.bindValue(":lexicon_symbols", lexiconString);
-				wordQuery.bindValue(":num_anagrams", numAnagrams);
-				wordQuery.bindValue(":num_unique_letters", numUniqueLetters);
+				wordQuery.bindValue(0, alphagram);
+				wordQuery.bindValue(1, wordString.trimmed());
+				wordQuery.bindValue(2, alphagram.length());
+				wordQuery.bindValue(3, probability);
+				wordQuery.bindValue(4, numVowels);
+				wordQuery.bindValue(5, lexiconString);
+				wordQuery.bindValue(6, numAnagrams);
+				wordQuery.bindValue(7, numUniqueLetters);
 				probability++;
+				
 				wordQuery.exec();
-	
+				
 				if (!nextSucceeded) break;
 			}
+			transactionQuery.exec("END TRANSACTION");
 		}
 // 	
 	}
@@ -204,12 +201,12 @@ void ListMaker::createListDatabase()
 				
 				
 				QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices) "
-				"VALUES(:listname, :wordlength, :numalphagrams, :probindices)";
+				"VALUES(?, ?, ?, ?)";
 				wordQuery.prepare(toExecute);
-				wordQuery.bindValue(":listname", QString("Useful %1s (%2 - %3)").arg(i).arg(probIndex).arg(probIndex + actualListLength-1));
-				wordQuery.bindValue(":wordlength", i);
-				wordQuery.bindValue(":numalphagrams", actualListLength);
-				wordQuery.bindValue(":probindices", ba);
+				wordQuery.bindValue(0, QString("Useful %1s (%2 - %3)").arg(i).arg(probIndex).arg(probIndex + actualListLength-1));
+				wordQuery.bindValue(1, i);
+				wordQuery.bindValue(2, actualListLength);
+				wordQuery.bindValue(3, ba);
 				wordQuery.exec();
 				
 				probIndex+= 500;
@@ -230,12 +227,12 @@ void ListMaker::createListDatabase()
 			
 			baWriter << (quint8)0 << (quint8)i << (quint16)1 << (quint16)numAlphagrams;
 			QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices) "
-				"VALUES(:listname, :wordlength, :numalphagrams, :probindices)";
+				"VALUES(?, ?, ?, ?)";
 			wordQuery.prepare(toExecute);
-			wordQuery.bindValue(":listname", QString("OWL2 %1s").arg(i));
-			wordQuery.bindValue(":wordlength", i);
-			wordQuery.bindValue(":numalphagrams", numAlphagrams);
-			wordQuery.bindValue(":probindices", ba);
+			wordQuery.bindValue(0, QString("OWL2 %1s").arg(i));
+			wordQuery.bindValue(1, i);
+			wordQuery.bindValue(2, numAlphagrams);
+			wordQuery.bindValue(3, ba);
 			wordQuery.exec();
 		}
 		
@@ -278,8 +275,8 @@ void ListMaker::createListDatabase()
 void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordLength)
 {
 	qDebug() << listName;
-  QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
-  wordQuery.exec(queryString);
+	QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
+	wordQuery.exec(queryString);
 	QVector <quint16> probIndices;
 	
 	while (wordQuery.next())
@@ -299,12 +296,12 @@ void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordL
 		baWriter << index;
 	
 	QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices) "
-	"VALUES(:listname, :wordlength, :numalphagrams, :probindices)";
+	"VALUES(?,?,?,?)";
 	wordQuery.prepare(toExecute);
-	wordQuery.bindValue(":listname", listName);
-	wordQuery.bindValue(":wordlength", wordLength);
-	wordQuery.bindValue(":numalphagrams", probIndices.size());
-	wordQuery.bindValue(":probindices", ba);
+	wordQuery.bindValue(0, listName);
+	wordQuery.bindValue(1, wordLength);
+	wordQuery.bindValue(2, probIndices.size());
+	wordQuery.bindValue(3, ba);
 	wordQuery.exec();
 	
 
