@@ -154,11 +154,11 @@ void MainWindow::on_pushButtonLoad_clicked()
 	}	
 	ui.labelInfo->setText(QString::number(RAND_MAX));
 	
-	csrand(randomSeed);
+	qsrand(randomSeed);
 	for (int i = 0; i < questions.size(); i++)
 	{
 		Question temp;
-		int randomIndex = crand() % questions.size();
+		int randomIndex = qrand() % questions.size();
 		temp = questions[i];
 		questions[i] = questions[randomIndex];
 		questions[randomIndex] = temp;
@@ -344,6 +344,34 @@ void MainWindow::on_pushButtonMark_clicked()
 		displayAnswers(questions.at(currentQuestionNumber).correct);	
 	
 	}
+}
+
+void MainWindow::on_pushButtonWriteMissed_clicked()
+{
+
+
+	QFile file("progress/" + curWordList + "missed.txt");
+	file.open(QIODevice::WriteOnly);
+	QTextStream stream(&file);
+	int numAlphagramsIncorrect = 0;
+	int numWordsIncorrect = 0;
+	for (quint32 i = 0; i < seenQuestions; i++)
+	{
+		if (!questions[i].correct)
+		{
+			numAlphagramsIncorrect++;
+			for (int j = 0; j < questions[i].solutions.size(); j++)
+			{
+				numWordsIncorrect++;
+				stream << questions[i].solutions[j] << endl;
+			}
+		}
+	
+	}
+	file.close();
+	ui.labelInfo->setText(QString("Wrote %1 words (%2 alphagrams out of %3)").arg(numWordsIncorrect).
+								arg(numAlphagramsIncorrect).arg(seenQuestions));
+
 }
 
 void MainWindow::timerTimedOut()
