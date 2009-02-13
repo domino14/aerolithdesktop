@@ -43,6 +43,7 @@ class MainWindow : public QWidget
   void on_pushButtonSave_clicked();
   void on_pushButtonNext_clicked();
   void on_pushButtonPrevious_clicked();
+  void on_pushButtonWriteMissed_clicked();
 	void timerTimedOut();
 	
 

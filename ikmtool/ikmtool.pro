@@ -6,10 +6,15 @@ TEMPLATE = app
 TARGET = ikmtool 
 DEPENDPATH += .
 INCLUDEPATH += .
+QMAKE_MAC_SDK=/Developer/SDKs/MacOSX10.5.sdk
+
 
 CONFIG += qt
 QT += sql
 DESTDIR = ./
+
+ICON = macosxicns.icns
+
 # Input
 HEADERS += mainwindow.h
 FORMS += mainForm.ui

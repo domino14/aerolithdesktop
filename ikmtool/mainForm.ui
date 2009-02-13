@@ -75,6 +75,13 @@
      </property>
     </widget>
    </item>
+   <item row="3" column="3" >
+    <widget class="QPushButton" name="pushButtonWriteMissed" >
+     <property name="text" >
+      <string>Write missed to file</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
