@@ -808,7 +808,7 @@ void UnscrambleGameTable::populateSolutionsTable()
 				if (wordDb.isOpen())
 				{
 					QString backHooks, frontHooks, definition, probability;
-					QSqlQuery query;
+                    QSqlQuery query(wordDb);
 					
 					query.exec("select front_hooks, back_hooks, definition, probability_order from words where word = '" + theseSols.at(i) + "'");
 

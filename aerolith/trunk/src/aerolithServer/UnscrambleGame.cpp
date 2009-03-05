@@ -398,6 +398,8 @@ void UnscrambleGame::generateQuizArray()
 			indices = query.value(1).toByteArray();
 		}
 		
+		qDebug() << "Query executed. time=" << timer.elapsed();
+		
 		QDataStream stream(indices);
 	
 		quint8 type, length;
@@ -457,9 +459,15 @@ void UnscrambleGame::generateQuizArray()
 	}
 	
 	quizIndex = 0;
+	/* point alphaInfo to the correct vector for this particular word length. this
+	assumes a table can only have one word length at the moment */
+	
 	alphaInfo = (QVector<alphagramInfo>*)&(alphagramData.at(wordLength-2));
 	neverStarted = true;
+	
+	
 }
+
 void UnscrambleGame::prepareTableAlphagrams()
 {
 	// load alphagrams into the gamesolutions hash and the alphagrams list
@@ -620,9 +628,10 @@ void UnscrambleGame::prepareWordDataStructure()
 	// loads all the words from words.db into a data structure that's arranged by probability.
 	QTime timer;
 	timer.start();
-	
+	alphagramData.clear();
 	alphagramData.resize(14);	// for lengths 2 thru 15
 	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+	query.exec("BEGIN TRANSACTION");
 	for (int i = 2; i <= 15; i++)
 	{
 		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
@@ -632,7 +641,7 @@ void UnscrambleGame::prepareWordDataStructure()
 		}
 	
 	}
-	
+	query.exec("END TRANSACTION");
 	qDebug() << "Created data structure, time=" << timer.elapsed();
 	
 	
