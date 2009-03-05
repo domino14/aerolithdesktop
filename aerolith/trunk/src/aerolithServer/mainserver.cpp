@@ -100,7 +100,7 @@ void MainServer::newDailyChallenges()
 void MainServer::loadWordLists()
 {
 
-	ListMaker::createListDatabase();
+	ListMaker::createListDatabase();	// also connects to the database.
 	QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME)); // the database is already open
 	
 	wordQuery.exec("SELECT listname from wordlists");
