@@ -323,7 +323,7 @@ void UnscrambleGame::endGame()
 			{	
 				if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
 				{
-					missedArray << unscrambleGameQuestions.at(i).indexInAlphagramData;
+                    missedArray << unscrambleGameQuestions.at(i).probability;
 				}
 
 			}
@@ -442,7 +442,7 @@ void UnscrambleGame::generateQuizArray()
 		}
 	
 		
-		qDebug() << "Generated quiz array, time=" << timer.elapsed();
+//        qDebug() << "Generated quiz array, time=" << timer.elapsed() << quizArray;
 
 	}
 	else
@@ -521,24 +521,23 @@ void UnscrambleGame::prepareTableAlphagrams()
 		{
 			numRacksSeen++;
 			quint16 index = quizArray.at(quizIndex);
-	
-            query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 and lexiconName = '%2' and "
-                               "probability = %3").arg(wordLength).arg(lexiconName).arg(index+1));
 
+            query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 and lexiconName = '%2' and "
+                               "probability = %3").arg(wordLength).arg(lexiconName).arg(index));
             while (query.next())
             {
                 thisQuestionData.alphagram = query.value(0).toString();
                 QStringList sols = query.value(1).toString().split(" ");
                 int size = sols.size();
                 thisQuestionData.numNotYetSolved = size;
-                thisQuestionData.indexInAlphagramData = index;
+                thisQuestionData.probability = index;
                 thisQuestionData.solutions = sols;
                 for (int k = 0; k < size; k++)
                 {
                     gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
                     numTotalSolutions++;
                 }
-
+               //qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
             }
 			quizIndex++;
 			
@@ -619,6 +618,7 @@ void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quin
 
 void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums)
 {
+    qDebug() << "gurn" << start << end << numNums;
 	quint16 size = end - start + 1;
 	numbers.resize(numNums);
 	if (size < 1) size = start - end + 1;
