@@ -65,12 +65,12 @@ public:
  
 private:
  
-  static QVector<QVector <QVector<alphagramInfo> > > alphagramData;
+//  static QVector<QVector <QVector<alphagramInfo> > > alphagramData;
 	
   void prepareTableAlphagrams();
   void sendUserCurrentAlphagrams(ClientSocket*);
-  
-  struct unscrambleGameData
+  QString lexiconName;
+  struct unscrambleGameQuestionData
   {
   // holds data for each word
     QString alphagram;
@@ -98,7 +98,7 @@ private:
   quint16 numTotalSolutions;
   QHash <QString, QString> gameSolutions;
   QHash <QString, quint8> alphagramIndices;
-  QList <unscrambleGameData> unscrambleGameQuestions;
+  QList <unscrambleGameQuestionData> unscrambleGameQuestions;
   /*QTextStream alphagramReader;
   QFile inFile;
   QFile outFile;

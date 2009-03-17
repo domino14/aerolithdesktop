@@ -10,10 +10,12 @@ QHash <QString, challengeInfo> UnscrambleGame::challenges;
 bool UnscrambleGame::midnightSwitchoverToggle;
 extern const QString WORD_DATABASE_NAME; 
 
-QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
+//QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList)
 {
+    lexiconName = "OWL2+LWL";   // TODO fix this, no hardcode.
+
 	wroteToMissedFileThisRound = false;
 	listExhausted = false;
 	this->wordList = wordList;
@@ -302,8 +304,7 @@ void UnscrambleGame::endGame()
 {
 	gameTimer.stop();
 	gameStarted = false;
-	// TODO here is code for the game ending
-	// send game ended to everyone, etc.
+
 	sendGameEndPacket();
 	sendTimerValuePacket((quint16)0);
 
@@ -462,7 +463,7 @@ void UnscrambleGame::generateQuizArray()
 	/* point alphaInfo to the correct vector for this particular word length. this
 	assumes a table can only have one word length at the moment */
 	
-	alphaInfo = (QVector<alphagramInfo>*)&(alphagramData.at(wordLength-2));
+    //alphaInfo = (QVector<alphagramInfo>*)&(alphagramData.at(wordLength-2));
 	neverStarted = true;
 	
 	
@@ -489,14 +490,20 @@ void UnscrambleGame::prepareTableAlphagrams()
 	QStringList lineList;
 	QString line;
 	numTotalSolutions = 0;
+    QTime timer;
+    timer.start();
+    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+    query.exec("BEGIN TRANSACTION");
+
+
 	for (quint8 i = 0; i < maxRacks; i++)
 	{
-		unscrambleGameData thisGameData;
-		//thisGameData.index = i;
+        unscrambleGameQuestionData thisQuestionData;
+
 		if (quizIndex == quizArray.size())
 		{
-			thisGameData.alphagram = "";
-			thisGameData.numNotYetSolved = 0;
+            thisQuestionData.alphagram = "";
+            thisQuestionData.numNotYetSolved = 0;
 			if (i == 0)
 			{
 				listExhausted = true;
@@ -515,22 +522,34 @@ void UnscrambleGame::prepareTableAlphagrams()
 			numRacksSeen++;
 			quint16 index = quizArray.at(quizIndex);
 	
-			thisGameData.alphagram = alphaInfo->at(index-1).alphagram;
-			thisGameData.numNotYetSolved = alphaInfo->at(index-1).solutions.size();
-			thisGameData.indexInAlphagramData = index;
-			for (int k = 0; k < thisGameData.numNotYetSolved; k++)
-			{
-				gameSolutions.insert(alphaInfo->at(index-1).solutions.at(k), thisGameData.alphagram);
-				thisGameData.solutions << alphaInfo->at(index-1).solutions.at(k);
-				numTotalSolutions++;
-			}
+            query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 and lexiconName = '%2' and "
+                               "probability = %3").arg(wordLength).arg(lexiconName).arg(index+1));
+
+            while (query.next())
+            {
+                thisQuestionData.alphagram = query.value(0).toString();
+                QStringList sols = query.value(1).toString().split(" ");
+                int size = sols.size();
+                thisQuestionData.numNotYetSolved = size;
+                thisQuestionData.indexInAlphagramData = index;
+                thisQuestionData.solutions = sols;
+                for (int k = 0; k < size; k++)
+                {
+                    gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
+                    numTotalSolutions++;
+                }
+
+            }
 			quizIndex++;
 			
 			
 		}
-		unscrambleGameQuestions.append(thisGameData);
-		alphagramIndices.insert(thisGameData.alphagram, i);
+        unscrambleGameQuestions.append(thisQuestionData);
+        alphagramIndices.insert(thisQuestionData.alphagram, i);
 	}
+    query.exec("END TRANSACTION");
+    qDebug() << "finished PrepareTableAlphagrams, time=" << timer.elapsed();
+
 }
 
 void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
@@ -626,24 +645,24 @@ void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end
 void UnscrambleGame::prepareWordDataStructure()
 {
 	// loads all the words from words.db into a data structure that's arranged by probability.
-	QTime timer;
-	timer.start();
-	alphagramData.clear();
-	alphagramData.resize(14);	// for lengths 2 thru 15
-	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-	query.exec("BEGIN TRANSACTION");
-	for (int i = 2; i <= 15; i++)
-	{
-		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
-		while (query.next())
-		{
-            alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString().split(" ")));
-		}
-	
-	}
-	query.exec("END TRANSACTION");
-	qDebug() << "Created data structure, time=" << timer.elapsed();
-	
+//	QTime timer;
+//	timer.start();
+//	alphagramData.clear();
+//	alphagramData.resize(14);	// for lengths 2 thru 15
+//	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+//	query.exec("BEGIN TRANSACTION");
+//	for (int i = 2; i <= 15; i++)
+//	{
+//		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
+//		while (query.next())
+//		{
+//            alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString().split(" ")));
+//		}
+//
+//	}
+//	query.exec("END TRANSACTION");
+//	qDebug() << "Created data structure, time=" << timer.elapsed();
+//
 	
 }
 
