@@ -493,6 +493,7 @@ void UnscrambleGame::prepareTableAlphagrams()
     QTime timer;
     timer.start();
     QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+    query.setForwardOnly(true);
     query.exec("BEGIN TRANSACTION");
 
 
