@@ -971,7 +971,7 @@ void MainServer::processLogin(ClientSocket* socket)
 	  out << (quint16)orderedWordLists.size();
 	  foreach (QString listDescriptor, orderedWordLists)
 	  {
-		  out << listDescriptor;
+          out << listDescriptor.toAscii();
 	  }
 	  fixHeaderLength();
 	  socket->write(block);
@@ -981,7 +981,7 @@ void MainServer::processLogin(ClientSocket* socket)
 	  out << (quint8) 'D';	// daily
 	  out << (quint8) 14;
 	  for (int i = 2; i <= 15; i++)
-		  out << QString("Today's %1s").arg(i);
+          out << QString("Today's %1s").arg(i).toAscii();
 	  fixHeaderLength();
 	  socket->write(block);
 

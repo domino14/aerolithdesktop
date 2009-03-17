@@ -490,7 +490,7 @@ void MainWindow::readFromServer()
 
 						for (int i = 0; i < numLists; i++)
 						{
-							QString listTitle;
+                            QByteArray listTitle;
 							in >> listTitle;
 							uiTable.listWidgetTopLevelList->addItem(listTitle);
 						}
@@ -507,7 +507,7 @@ void MainWindow::readFromServer()
 
 						for (int i = 0; i < numLists; i++)
 						{
-							QString listTitle;
+                            QByteArray listTitle;
 							in >> listTitle;
 							challengesMenu->addAction(listTitle);
 							uiScores.comboBoxChallenges->addItem(listTitle);

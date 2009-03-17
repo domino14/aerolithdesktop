@@ -77,7 +77,7 @@ private:
     quint8 numNotYetSolved;
 //    quint8 index;	// index
     QStringList solutions;
-    quint16 indexInAlphagramData;
+    quint16 probability;
   };
 
   //  QHash <QString, playerData> playerDataHash;  
