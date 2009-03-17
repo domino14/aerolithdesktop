@@ -65,7 +65,7 @@ public:
  
 private:
  
-  static QVector <QVector<alphagramInfo> > alphagramData;
+  static QVector<QVector <QVector<alphagramInfo> > > alphagramData;
 	
   void prepareTableAlphagrams();
   void sendUserCurrentAlphagrams(ClientSocket*);
