@@ -10,7 +10,7 @@ QHash <QString, challengeInfo> UnscrambleGame::challenges;
 bool UnscrambleGame::midnightSwitchoverToggle;
 extern const QString WORD_DATABASE_NAME; 
 
-QVector <QVector<alphagramInfo> > UnscrambleGame::alphagramData;
+QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList)
 {
@@ -506,8 +506,8 @@ void UnscrambleGame::prepareTableAlphagrams()
 					
 				}
 				else
-					table->sendTableMessage("This challenge is over. \
-											To view scores, please exit table and select 'Get today's scores' from the 'Challenges' button.");
+                    table->sendTableMessage("This challenge is over. To view scores, please exit table and "
+                                            "select 'Get today's scores' from the 'Challenges' button.");
 			}
 		}
 		else
@@ -637,7 +637,7 @@ void UnscrambleGame::prepareWordDataStructure()
 		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
 		while (query.next())
 		{
-			alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString().split(" ")));
+            alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString().split(" ")));
 		}
 	
 	}
