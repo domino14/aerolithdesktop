@@ -5,19 +5,19 @@
 
 class avatarLabel : public QLabel
 {
-Q_OBJECT
+    Q_OBJECT
 
 public:
-	avatarLabel(QWidget* parent = 0);
+    avatarLabel(QWidget* parent = 0);
 signals:
-	void leftMouseClicked();
-	void rightMouseClicked();
+    void leftMouseClicked();
+    void rightMouseClicked();
 
 protected:
-	void mousePressEvent(QMouseEvent *e);
-	void mouseReleaseEvent(QMouseEvent *e);
-	bool left_pressed, right_pressed;
-	bool inLabel(const QPoint &p);
+    void mousePressEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e);
+    bool left_pressed, right_pressed;
+    bool inLabel(const QPoint &p);
 };
 
 #endif

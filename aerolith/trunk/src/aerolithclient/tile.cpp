@@ -2,110 +2,110 @@
 
 Tile::Tile()
 {
-	QLinearGradient linearGrad(QPointF(0, 0), QPointF(18, 18));
-	linearGrad.setColorAt(0, QColor(7, 9, 184).lighter(200));			// 7 9 184
-	linearGrad.setColorAt(1, QColor(55, 75, 175).lighter(200));			// 55 75 175
-	
-	//linearGrad.setColorAt(0, QColor(255, 255, 255));
-	//linearGrad.setColorAt(1, QColor(255, 255, 255));
+    QLinearGradient linearGrad(QPointF(0, 0), QPointF(18, 18));
+    linearGrad.setColorAt(0, QColor(7, 9, 184).lighter(200));			// 7 9 184
+    linearGrad.setColorAt(1, QColor(55, 75, 175).lighter(200));			// 55 75 175
 
-	tileBrush = QBrush(linearGrad);
+    //linearGrad.setColorAt(0, QColor(255, 255, 255));
+    //linearGrad.setColorAt(1, QColor(255, 255, 255));
 
-	//foregroundPen = QPen(Qt::white);
-	foregroundPen = QPen(Qt::black);
+    tileBrush = QBrush(linearGrad);
 
-	edgePen = QPen(Qt::black, 1);
-	//edgePen = QPen(Qt::white, 2);
-	width = 17;
-	height = (double)width;
-	//setFlag(QGraphicsItem::ItemIsMovable);
+    //foregroundPen = QPen(Qt::white);
+    foregroundPen = QPen(Qt::black);
+
+    edgePen = QPen(Qt::black, 1);
+    //edgePen = QPen(Qt::white, 2);
+    width = 17;
+    height = (double)width;
+    //setFlag(QGraphicsItem::ItemIsMovable);
 }
 
 int Tile::getWidth()
 {
-	return width;
+    return width;
 }
 
 void Tile::setWidth(int w, double hscale)
 {
-	prepareGeometryChange();
-	width = w;
-	height = (double)width* hscale;
+    prepareGeometryChange();
+    width = w;
+    height = (double)width* hscale;
 
 }
 
 QRectF Tile::boundingRect() const
 {
-	return QRectF(0, 0, width, height);
+    return QRectF(0, 0, width, height);
 }
 
 void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(widget);
 
-	painter->setPen(QPen(tileBrush, 0));
-	painter->setBrush(tileBrush);
+    painter->setPen(QPen(tileBrush, 0));
+    painter->setBrush(tileBrush);
     painter->drawRect(0, 0, width-1, height-1);
 
-	// draw black shadow
-	painter->setPen(edgePen);
-	painter->drawLine(1, height-1, width-1, height-1);
-	painter->drawLine(width-1, height-1, width-1, 1);
+    // draw black shadow
+    painter->setPen(edgePen);
+    painter->drawLine(1, height-1, width-1, height-1);
+    painter->drawLine(width-1, height-1, width-1, 1);
     // Draw text
 
-	int baseFontSize;
-	if (width == height) baseFontSize = 0;
-	else baseFontSize = 2;
+    int baseFontSize;
+    if (width == height) baseFontSize = 0;
+    else baseFontSize = 2;
 #ifdef Q_WS_MAC
-	QFont font("Courier New", width + 4 + baseFontSize, 75);
+    QFont font("Courier New", width + 4 + baseFontSize, 75);
 #else
-	QFont font("Courier New", width + baseFontSize, 100);
+    QFont font("Courier New", width + baseFontSize, 100);
 #endif
-//	font.setStyleStrategy(QFont::PreferAntialias);
-	painter->setFont(font);
-	painter->setPen(foregroundPen);
+    //	font.setStyleStrategy(QFont::PreferAntialias);
+    painter->setFont(font);
+    painter->setPen(foregroundPen);
 #ifdef Q_WS_MAC
-	painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
+    painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
 #else
-	painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
+    painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
 #endif   
 }
 
 void Tile::setTileProperties(QBrush& b, QPen& p, QPen &e)
 {
-	tileBrush = b;
-	foregroundPen = p;
-	edgePen = e;
+    tileBrush = b;
+    foregroundPen = p;
+    edgePen = e;
 }
 
 void Tile::setTileBrush(QBrush& b)
 {
-	tileBrush = b;
+    tileBrush = b;
 }
 
 QBrush Tile::getTileBrush()
 {
-	return tileBrush;
+    return tileBrush;
 }
 
 void Tile::setForegroundPen(QPen& p)
 {
-	foregroundPen = p;
+    foregroundPen = p;
 }
 
 void Tile::setEdgePen(QPen &e)
 {
-	edgePen = e;
+    edgePen = e;
 }
 
 void Tile::setTileLetter(QString tileLetter)
 {
-	this->tileLetter = tileLetter;
+    this->tileLetter = tileLetter;
 
 }
 
 void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
 {
-	event->ignore();
-	emit mousePressed();
+    event->ignore();
+    emit mousePressed();
 }

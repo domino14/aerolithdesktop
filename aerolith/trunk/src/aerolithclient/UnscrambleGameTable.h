@@ -17,146 +17,146 @@
 class GameTable : public QWidget
 {
 
-	Q_OBJECT
+    Q_OBJECT
 public:
-	GameTable(QWidget* parent = 0, Qt::WindowFlags f = 0, int gamePlayers = 6);
-	virtual ~GameTable() = 0;
-	void setMyUsername(QString);
+    GameTable(QWidget* parent = 0, Qt::WindowFlags f = 0, int gamePlayers = 6);
+    virtual ~GameTable() = 0;
+    void setMyUsername(QString);
 
-	void setAvatar(QString, quint8);
-	virtual void setReadyIndicator(QString) = 0;
-	virtual void clearReadyIndicators() = 0;
-	virtual void setupForGameStart() = 0;
-	void addToPlayerList(QString, QString);
+    void setAvatar(QString, quint8);
+    virtual void setReadyIndicator(QString) = 0;
+    virtual void clearReadyIndicators() = 0;
+    virtual void setupForGameStart() = 0;
+    void addToPlayerList(QString, QString);
 
 signals:
-	void avatarChange(quint8);
+    void avatarChange(quint8);
 protected:
-	QString myUsername;
+    QString myUsername;
 
-	// most of these have to do with the player widgets.
-	QHash <QString, int> seats;
-	QList <Ui::playerInfoForm> playerUis;
-	QList <QWidget*> playerWidgets;
-	int numPlayers;
-	void clearAndHidePlayers(bool hide);
-	void playerLeaveTable();
+    // most of these have to do with the player widgets.
+    QHash <QString, int> seats;
+    QList <Ui::playerInfoForm> playerUis;
+    QList <QWidget*> playerWidgets;
+    int numPlayers;
+    void clearAndHidePlayers(bool hide);
+    void playerLeaveTable();
 
 
-	void addPlayersToWidgets(QStringList playerList);
-	void removePlayerFromWidgets(QString, bool);
-	void addPlayerToWidgets(QString, bool);
+    void addPlayersToWidgets(QStringList playerList);
+    void removePlayerFromWidgets(QString, bool);
+    void addPlayerToWidgets(QString, bool);
 
 private slots:
-		
-	void possibleAvatarChangeLeft();
-	void possibleAvatarChangeRight();
+
+    void possibleAvatarChangeLeft();
+    void possibleAvatarChangeRight();
 };
 
 
 class UnscrambleGameTable : public GameTable
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb);
-	~UnscrambleGameTable();
-	void resetTable(quint16, QString, QString);
-	void leaveTable();
-	void addPlayer(QString, bool);
-	void removePlayer(QString, bool);
-	void addPlayers(QStringList);
+    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb);
+    ~UnscrambleGameTable();
+    void resetTable(quint16, QString, QString);
+    void leaveTable();
+    void addPlayer(QString, bool);
+    void removePlayer(QString, bool);
+    void addPlayers(QStringList);
 
-	void setupForGameStart();
-	void gotChat(QString);
-	void gotTimerValue(quint16 timerval);
-	void gotWordListInfo(QString);
+    void setupForGameStart();
+    void gotChat(QString);
+    void gotTimerValue(quint16 timerval);
+    void gotWordListInfo(QString);
 
-	void clearSolutionsDialog();
-	void populateSolutionsTable();
+    void clearSolutionsDialog();
+    void populateSolutionsTable();
 
-	void addNewWord(int, QString, QStringList, quint8);
-	void clearAllWordTiles();
-	void answeredCorrectly(int index, QString username, QString answer);
+    void addNewWord(int, QString, QStringList, quint8);
+    void clearAllWordTiles();
+    void answeredCorrectly(int index, QString username, QString answer);
 
-	void setReadyIndicator(QString);
-	void clearReadyIndicators();
+    void setReadyIndicator(QString);
+    void clearReadyIndicators();
 
 private:
-	QGraphicsScene gfxScene;
-	Ui::tableForm tableUi;
-	int currentWordLength;
-	QSqlDatabase wordDb;
-	QList <Tile*> tiles;
-	QList <Chip*> chips;
-	QList <Chip*> readyChips;
-	QList <WordRectangle*> wordRectangles;
+    QGraphicsScene gfxScene;
+    Ui::tableForm tableUi;
+    int currentWordLength;
+    QSqlDatabase wordDb;
+    QList <Tile*> tiles;
+    QList <Chip*> chips;
+    QList <Chip*> readyChips;
+    QList <WordRectangle*> wordRectangles;
 
-	QGraphicsPixmapItem* tableItem;
-	QDialog* solutionsDialog;
-	Ui::solutionsForm uiSolutions;
+    QGraphicsPixmapItem* tableItem;
+    QDialog* solutionsDialog;
+    Ui::solutionsForm uiSolutions;
 
-	QWidget* preferencesWidget;
-	Ui::tableCustomizationForm uiPreferences;
+    QWidget* preferencesWidget;
+    Ui::tableCustomizationForm uiPreferences;
 
 
-	struct wordQuestion
-	{
-		wordQuestion(QString a, QStringList s, quint8 n)
-		{
-			alphagram = a;
-			solutions = s;
-			numNotYetSolved = n;
-		};
+    struct wordQuestion
+    {
+        wordQuestion(QString a, QStringList s, quint8 n)
+        {
+            alphagram = a;
+            solutions = s;
+            numNotYetSolved = n;
+        };
 
-		QString alphagram;
-		QStringList solutions;
-		quint8 numNotYetSolved;
-		Chip* chip;
-		QList <Tile*> tiles;
-	};
+        QString alphagram;
+        QStringList solutions;
+        quint8 numNotYetSolved;
+        Chip* chip;
+        QList <Tile*> tiles;
+    };
 
-	QList <wordQuestion> wordQuestions;
-	QSet <QString> rightAnswers;
-	double verticalVariation;
-	double heightScale;
-	void loadUserPreferences();
-	void swapXPos(Tile*, Tile*);
-	int getTileWidth(int wordLength);
-	void getBasePosition(int index, double& x, double& y, int tileWidth);
+    QList <wordQuestion> wordQuestions;
+    QSet <QString> rightAnswers;
+    double verticalVariation;
+    double heightScale;
+    void loadUserPreferences();
+    void swapXPos(Tile*, Tile*);
+    int getTileWidth(int wordLength);
+    void getBasePosition(int index, double& x, double& y, int tileWidth);
 protected:
-	virtual void closeEvent(QCloseEvent*);
+    virtual void closeEvent(QCloseEvent*);
 signals:
-	void giveUp();
-	void sendStartRequest();
-	void guessSubmitted(QString);
-	void chatTable(QString);
-	void sendPM(QString);
-	void exitThisTable();
-	void viewProfile(QString);
-	private slots:
-		void enteredGuess();
-		void enteredChat();
-		
-		void alphagrammizeWords();
-		void shuffleWords();
-		void tileWasClicked();
-		void rectangleWasClicked();
-		void setZoom(int);
-		void changeTileColors(int);
-		void changeFontColors(int);
-		void changeTableStyle(int);
-		void changeTileBorderStyle(bool);
-		void changeVerticalVariation(bool);
-		void changeBackground(int index);
-		void drawWordBorders(bool);
+    void giveUp();
+    void sendStartRequest();
+    void guessSubmitted(QString);
+    void chatTable(QString);
+    void sendPM(QString);
+    void exitThisTable();
+    void viewProfile(QString);
+        private slots:
+    void enteredGuess();
+    void enteredChat();
 
-		void changeTileAspectRatio(bool);
-		void changeUseTiles(bool);
-		void useFixedWidthFontForRectangles(bool);
-		void pushedFontToggleButton();
+    void alphagrammizeWords();
+    void shuffleWords();
+    void tileWasClicked();
+    void rectangleWasClicked();
+    void setZoom(int);
+    void changeTileColors(int);
+    void changeFontColors(int);
+    void changeTableStyle(int);
+    void changeTileBorderStyle(bool);
+    void changeVerticalVariation(bool);
+    void changeBackground(int index);
+    void drawWordBorders(bool);
 
-		void saveUserPreferences();
+    void changeTileAspectRatio(bool);
+    void changeUseTiles(bool);
+    void useFixedWidthFontForRectangles(bool);
+    void pushedFontToggleButton();
+
+    void saveUserPreferences();
 
 
 public:
