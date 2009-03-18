@@ -28,6 +28,7 @@ public:
     virtual void clearReadyIndicators() = 0;
     virtual void setupForGameStart() = 0;
     void addToPlayerList(QString, QString);
+    virtual void setDatabase(QString name) = 0;
 
 signals:
     void avatarChange(quint8);
@@ -59,7 +60,7 @@ class UnscrambleGameTable : public GameTable
     Q_OBJECT
 
 public:
-    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb);
+    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f);
     ~UnscrambleGameTable();
     void resetTable(quint16, QString, QString);
     void leaveTable();
@@ -81,12 +82,12 @@ public:
 
     void setReadyIndicator(QString);
     void clearReadyIndicators();
-
+    void setDatabase(QString name);
 private:
+    QSqlDatabase zyzzyvaDb;
     QGraphicsScene gfxScene;
     Ui::tableForm tableUi;
     int currentWordLength;
-    QSqlDatabase wordDb;
     QList <Tile*> tiles;
     QList <Chip*> chips;
     QList <Chip*> readyChips;
@@ -124,6 +125,7 @@ private:
     void swapXPos(Tile*, Tile*);
     int getTileWidth(int wordLength);
     void getBasePosition(int index, double& x, double& y, int tileWidth);
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 signals:

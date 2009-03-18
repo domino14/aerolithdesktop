@@ -3,6 +3,14 @@
 
 // this has definitions for client/server constants such as packet types
 
+#define GAME_TYPE_UNSCRAMBLE 0
+#define GAME_TYPE_WORDGRIDS 1
+#define GAME_TYPE_BONUS 2
+#define GAME_TYPE_BLANAGRAMS 3
+#define GAME_TYPE_TEXASHOLDME 4
+#define GAME_TYPE_ANAGRAMS 5
+
+
 /* table 'cycle' type (marathon, cycle, random, daily challenge, etc) */
 
 #define TABLE_TYPE_DAILY_CHALLENGES 3

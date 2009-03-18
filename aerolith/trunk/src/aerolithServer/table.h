@@ -21,7 +21,7 @@ class tableData
  
   ~tableData();
   void initialize(quint16 tableNumber, QString tableName, quint8 maxPlayers, 
-		  ClientSocket* tableCreator, quint8 cycleState, quint8 tableTimer, gameModes gameMode, QString additionalDescriptor);
+          ClientSocket* tableCreator, quint8 cycleState, quint8 tableTimer, gameModes gameMode, QString additionalDescriptor, quint8);
   quint16 tableNumber;
   //QString wordListDescriptor; // todo: change this to table name
   QString tableName;

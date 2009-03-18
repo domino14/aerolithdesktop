@@ -15,28 +15,6 @@ MainWindow::MainWindow(QString aerolithVersion) : aerolithVersion(aerolithVersio
 out(&block, QIODevice::WriteOnly)
 {
 
-    QSqlDatabase wordDb;
-
-#ifdef Q_WS_MAC
-    QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
-#else
-    QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
-#endif
-    ZyzzyvaSettings.beginGroup("Zyzzyva");
-
-    QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
-    QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
-
-    if (QFile::exists(zyzzyvaDataDir + "/lexicons/OWL2+LWL.db"))
-    {
-        wordDb = QSqlDatabase::addDatabase("QSQLITE");
-        wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
-        wordDb.open();
-    }
-    else
-    {
-        QMessageBox::warning(this, "Zyzzyva not found", "A suitable Zyzzyva installation was not found. You will not be able to see definitions and hooks for the words at the end of each round. Zyzzyva is a free word study tool, by Michael Thelen, found at <a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
-    }
 
 
 
@@ -107,7 +85,7 @@ out(&block, QIODevice::WriteOnly)
     uiLogin.stackedWidget->setCurrentIndex(0);
 
 
-    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, wordDb);
+    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window);
     gameBoardWidget->setWindowTitle("Table");
     gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
     gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
@@ -749,6 +727,7 @@ void MainWindow::createNewRoom()
     out << (quint8)CLIENT_NEW_TABLE;
     out << uiTable.listWidgetTopLevelList->currentItem()->text();
     out << (quint8)uiTable.playersSpinBox->value();
+    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
 
     if (uiTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
     else if (uiTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
@@ -918,14 +897,18 @@ void MainWindow::handleWordlistsMessage()
     disconnect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(int)), 0, 0);
     uiMainWindow.comboBoxLexicon->clear();
     lexiconLists.clear();
+    qDebug() << "Got" << numLexica << "lexica.";
     for (int i = 0; i < numLexica; i++)
     {
         QByteArray lexicon;
         in >> lexicon;
         uiMainWindow.comboBoxLexicon->addItem(lexicon);
         LexiconLists dummyLists;
+        dummyLists.lexicon = lexicon;
         lexiconLists << dummyLists;
+        qDebug() << dummyLists.lexicon;
     }
+
 
     quint8 numTypes;
     in >> numTypes;
@@ -941,7 +924,7 @@ void MainWindow::handleWordlistsMessage()
                 quint16 numLists;
                 in >> numLists;
 
-
+                qDebug() << numLists << "regular lists.";
                 for (int i = 0; i < numLists; i++)
                 {
                     quint8 lexiconIndex;
@@ -955,18 +938,19 @@ void MainWindow::handleWordlistsMessage()
 
 
         case 'D':
-            quint16 numLists;
-            in >> numLists;
-
-
-            for (int i = 0; i < numLists; i++)
             {
-                quint8 lexiconIndex;
-                QByteArray listTitle;
-                in >> lexiconIndex >> listTitle;
-                lexiconLists[lexiconIndex].dailyWordLists << listTitle;
-            }
+                quint16 numLists;
+                in >> numLists;
+                qDebug() << numLists << "daily lists.";
 
+                for (int i = 0; i < numLists; i++)
+                {
+                    quint8 lexiconIndex;
+                    QByteArray listTitle;
+                    in >> lexiconIndex >> listTitle;
+                    lexiconLists[lexiconIndex].dailyWordLists << listTitle;
+                }
+            }
             break;
 
         }
@@ -975,6 +959,7 @@ void MainWindow::handleWordlistsMessage()
     lexiconComboBoxIndexChanged(0);
     connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(int)),
             SLOT(lexiconComboBoxIndexChanged(int)));
+
 }
 
 void MainWindow::lexiconComboBoxIndexChanged(int index)
@@ -996,6 +981,10 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
         challengesMenu->addAction(lexiconLists.at(index).dailyWordLists.at(i));
     }
     challengesMenu->addAction("Get today's scores");
+    gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
+    currentLexicon = lexiconLists.at(index).lexicon;
+    uiTable.labelLexiconName->setText(currentLexicon);
+
 }
 
 
@@ -1034,7 +1023,7 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
 
 void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modification)
 {
-
+    // modifies the player lists INSIDE a table
 
     if (!tables.contains(tablenum))
         return;

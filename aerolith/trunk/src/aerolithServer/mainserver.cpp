@@ -589,9 +589,10 @@ void MainServer::processNewTable(ClientSocket* socket)
 
     QString tableName;
     quint8 maxPlayers;
+    quint8 lexiconIndex;
     socket->connData.in >> tableName;
     socket->connData.in >> maxPlayers;
-
+    socket->connData.in >> lexiconIndex;
     quint8 cycleState;
     socket->connData.in >> cycleState;
     quint8 tableTimer;
@@ -625,7 +626,7 @@ void MainServer::processNewTable(ClientSocket* socket)
 
     tableData *tmp = new tableData;
     tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer,
-                    tableData::GAMEMODE_UNSCRAMBLE, tableName);
+                    tableData::GAMEMODE_UNSCRAMBLE, tableName, lexiconIndex);
 
     tables.insert(tablenum, tmp);
 

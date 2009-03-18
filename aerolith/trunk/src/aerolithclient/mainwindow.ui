@@ -96,7 +96,7 @@ QPushButton:disabled{
       </column>
       <column>
        <property name="text">
-        <string>Word List</string>
+        <string>Table Name</string>
        </property>
       </column>
       <column>

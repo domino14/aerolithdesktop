@@ -199,13 +199,16 @@ void GameTable::setMyUsername(QString username)
 }
 
 
+
 ///////////////////////////
-UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, QSqlDatabase wordDb) :
+UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
         GameTable(parent, f, 8)
 {
 
 
-    this->wordDb = wordDb;
+
+
+
     currentWordLength = 0;
     //this->setStyle(new QWindowsStyle);
     tableUi.setupUi(this);
@@ -373,6 +376,35 @@ UnscrambleGameTable::~UnscrambleGameTable()
     while (!tiles.isEmpty())
         delete tiles.takeFirst();
 
+}
+
+void UnscrambleGameTable::setDatabase(QString name)
+{
+    zyzzyvaDb.close();
+    QSqlDatabase::removeDatabase("zyzzyvaDB");
+    #ifdef Q_WS_MAC
+    QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
+#else
+    QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
+#endif
+    ZyzzyvaSettings.beginGroup("Zyzzyva");
+
+    QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
+    QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
+
+    if (QFile::exists(zyzzyvaDataDir + "/lexicons/" + name + ".db"))
+    {
+        zyzzyvaDb = QSqlDatabase::addDatabase("QSQLITE", "zyzzyvaDB");
+        zyzzyvaDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/" + name + ".db");
+        zyzzyvaDb.open();
+    }
+    else
+    {
+        QMessageBox::warning(this, "Database not found", "A word database was not found. "
+                             "You will not be able to see definitions and hooks for the words at the end of each round. Please generate the "
+                             "database for this lexicon with Zyzzyva, a free word study tool, by Michael Thelen, found at "
+                             "<a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
+    }
 }
 
 void UnscrambleGameTable::changeTileColors(int option)
@@ -800,18 +832,19 @@ void UnscrambleGameTable::populateSolutionsTable()
             QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
             tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
             int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-
+            if (zyzzyvaDb.isOpen()) QSqlQuery("BEGIN TRANSACTION", zyzzyvaDb);
             for (int i = 0; i < theseSols.size(); i++)
             {
                 numTotalSols++;
                 uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
-                QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i));
-                if (wordDb.isOpen())
+
+                QString lexicon_symbols;
+                if (zyzzyvaDb.isOpen())
                 {
                     QString backHooks, frontHooks, definition, probability;
-                    QSqlQuery query(wordDb);
+                    QSqlQuery query(zyzzyvaDb);
 
-                    query.exec("select front_hooks, back_hooks, definition, probability_order from words where word = '" + theseSols.at(i) + "'");
+                    query.exec("select front_hooks, back_hooks, definition, probability_order, lexicon_symbols from words where word = '" + theseSols.at(i) + "'");
 
                     while (query.next())
                     {
@@ -819,6 +852,7 @@ void UnscrambleGameTable::populateSolutionsTable()
                         backHooks = query.value(1).toString();
                         definition = query.value(2).toString();
                         probability = query.value(3).toString();
+                        lexicon_symbols = query.value(4).toString();
                     }
 
                     QTableWidgetItem *probabilityItem = new QTableWidgetItem(probability);
@@ -831,7 +865,7 @@ void UnscrambleGameTable::populateSolutionsTable()
                     QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
                     uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 5, definitionItem);
                 }
-
+                QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i) + lexicon_symbols);
                 if (!rightAnswers.contains(theseSols.at(i)))
                 {
                     numWrong++;
@@ -844,6 +878,7 @@ void UnscrambleGameTable::populateSolutionsTable()
                 uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 3, wordItem);
 
             }
+            if (zyzzyvaDb.isOpen()) QSqlQuery("END TRANSACTION", zyzzyvaDb);
             uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
 
         }
