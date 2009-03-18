@@ -12,10 +12,13 @@ extern const QString WORD_DATABASE_NAME;
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
-void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList)
+void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, quint8 lexiconIndex)
 {
-    lexiconName = "OWL2+LWL";   // TODO fix this, no hardcode.
-
+    if (lexiconIndex >= 0 && lexiconIndex < ListMaker::lexiconList.size())
+        lexiconName = ListMaker::lexiconList.at(lexiconIndex);
+    else
+        lexiconName = ListMaker::lexiconList.at(0); // assuming there's at least one lexicon. this is a bad message to receive from client anyway but
+                                                    // for robustness sake.
     wroteToMissedFileThisRound = false;
     listExhausted = false;
     this->wordList = wordList;
@@ -667,7 +670,7 @@ void UnscrambleGame::loadWordLists()
         out << (quint8)ListMaker::lexiconList.indexOf(wl.lexiconName) << wl.name.toAscii();
     }
     out << (quint8) 'D';
-    out << (quint8) 14*ListMaker::lexiconList.size(); // 14 per lexicon
+    out << (quint16) (14*ListMaker::lexiconList.size()); // 14 per lexicon
     for (int i = 0; i < ListMaker::lexiconList.size(); i++)
     {
 

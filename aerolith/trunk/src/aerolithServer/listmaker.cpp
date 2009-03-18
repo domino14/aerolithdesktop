@@ -287,7 +287,7 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
 
     wordQuery.exec("END TRANSACTION");
     zyzzyvaDb.close();
-    QSqlDatabase::removeDatabase("zyzzyvaDb");
+    QSqlDatabase::removeDatabase("zyzzyvaDB");
 }
 
 void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName)

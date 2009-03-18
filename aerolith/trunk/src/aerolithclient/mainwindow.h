@@ -44,7 +44,7 @@ public:
 private:
     QString aerolithVersion;
 
-
+    QString currentLexicon;
     QTcpSocket *commsSocket;
 
     quint16 blockSize; // used for socket
@@ -128,9 +128,11 @@ private:
         QTableWidgetItem* maxPlayersItem;
         QTableWidgetItem* playersItem;
         QTableWidgetItem* numPlayersItem;
+        QTableWidgetItem* typeIcon;
         QPushButton* buttonItem;
         quint16 tableNum;
         QStringList playerList;
+        quint8 gameType;    // see commonDefs.h for game types.
 
     };
 
