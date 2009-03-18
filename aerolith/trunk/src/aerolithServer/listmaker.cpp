@@ -7,44 +7,35 @@ extern const QString WORD_DATABASE_FILENAME = "words.db";
 /*http://bytes.com/forum/thread138180.html for discussion on having to declare extern explicitly
 with const */
 
-#define NUM_LEXICONS 3
-
-char lexiconList[NUM_LEXICONS][10] =  {"OWL2+LWL", "CSW", "Volost"};
-//#define NUM_LEXICONS 1
-//char lexiconList[NUM_LEXICONS][10] = {"Volost"};
-
-ListMaker::ListMaker()
-{
-
-}
+QStringList ListMaker::lexiconList;
 void ListMaker::testDatabaseTime()
 {
-  QTime timer;
-  QString strings[10000];
-  QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));  
-  timer.start();
-  int strIndex;
-  wordQuery.exec("SELECT alphagram, words from alphagrams where length = 8 and probability between 5000 and 6000");
-  qDebug() << "1: " << timer.elapsed();
-  strIndex = 0;
-  while (wordQuery.next())
+    QTime timer;
+    QString strings[10000];
+    QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
+    timer.start();
+    int strIndex;
+    wordQuery.exec("SELECT alphagram, words from alphagrams where length = 8 and probability between 5000 and 6000");
+    qDebug() << "1: " << timer.elapsed();
+    strIndex = 0;
+    while (wordQuery.next())
     {
-      strings[strIndex] = wordQuery.value(0).toString() + "---" + wordQuery.value(1).toString();
-      strIndex++;
+        strings[strIndex] = wordQuery.value(0).toString() + "---" + wordQuery.value(1).toString();
+        strIndex++;
     }
 
-  qDebug() << "2: " << timer.elapsed();
+    qDebug() << "2: " << timer.elapsed();
 
-  for (int i = 0; i < strIndex; i++)
-    qDebug() << i << strings[i];
+    for (int i = 0; i < strIndex; i++)
+        qDebug() << i << strings[i];
 
 }
 
 void ListMaker::createListDatabase()
 {
-	// creates a word list database.
-	// requires the zyzzyva database to be in the user's install directory
-
+    // creates a word list database.
+    // requires the zyzzyva database to be in the user's install directory
+    lexiconList << "OWL2+LWL" << "CSW" << "Volost";
 
     QSqlDatabase wordDb;
     wordDb = QSqlDatabase::addDatabase("QSQLITE", WORD_DATABASE_NAME);
@@ -65,7 +56,7 @@ void ListMaker::createListDatabase()
     if (!alphagramsExists)
     {
 
-        for (int i = 0; i < NUM_LEXICONS; i++)
+        for (int i = 0; i < lexiconList.size(); i++)
         {
             createLexiconDatabase(i);
 
@@ -81,11 +72,11 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     QString lexiconName = lexiconList[lexiconIndex];
     QSqlDatabase zyzzyvaDb;
 
-    #ifdef Q_WS_MAC
+#ifdef Q_WS_MAC
     QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
-    #else
+#else
     QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
-    #endif
+#endif
     ZyzzyvaSettings.beginGroup("Zyzzyva");
 
     QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
@@ -165,7 +156,7 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
 
             wordQuery.exec();
 
-           // if (!nextSucceeded) break;
+            // if (!nextSucceeded) break;
         }
         wordQuery.exec("END TRANSACTION");
     }
@@ -294,43 +285,45 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     for (int i = 7; i <= 8; i++)
         sqlListMaker(uniqueLettersQueryString.arg(i).arg(i).arg(lexiconName), QString("Unique-letter %1s").arg(i), i, lexiconName);
 
-     wordQuery.exec("END TRANSACTION");
+    wordQuery.exec("END TRANSACTION");
+    zyzzyvaDb.close();
+    QSqlDatabase::removeDatabase("zyzzyvaDb");
 }
 
 void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName)
 {
-	qDebug() << listName;
-	QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
-	wordQuery.exec(queryString);
-	QVector <quint16> probIndices;
-	
-	while (wordQuery.next())
-	{
-		probIndices.append(wordQuery.value(0).toInt());
-	}
+    QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
+    wordQuery.exec(queryString);
+    QVector <quint16> probIndices;
+
+    while (wordQuery.next())
+    {
+        probIndices.append(wordQuery.value(0).toInt());
+    }
+    qDebug() << listName << "found" << probIndices.size();
     if (probIndices.size() == 0) return;
-	
-	QByteArray ba;
-	QDataStream baWriter(&ba, QIODevice::WriteOnly);
-	
-	baWriter << (quint8)1 << (quint8)wordLength << (quint16)probIndices.size();
-	
-	// (quint8)1 means this is a LIST of indices
-	// second param is word length.
-	// third param is number of indices
-	foreach(quint16 index, probIndices)
-		baWriter << index;
-	
+
+    QByteArray ba;
+    QDataStream baWriter(&ba, QIODevice::WriteOnly);
+
+    baWriter << (quint8)1 << (quint8)wordLength << (quint16)probIndices.size();
+
+    // (quint8)1 means this is a LIST of indices
+    // second param is word length.
+    // third param is number of indices
+    foreach(quint16 index, probIndices)
+        baWriter << index;
+
     QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices, lexiconName) "
-    "VALUES(?,?,?,?,?)";
-	wordQuery.prepare(toExecute);
-	wordQuery.bindValue(0, listName);
-	wordQuery.bindValue(1, wordLength);
-	wordQuery.bindValue(2, probIndices.size());
-	wordQuery.bindValue(3, ba);
+                        "VALUES(?,?,?,?,?)";
+    wordQuery.prepare(toExecute);
+    wordQuery.bindValue(0, listName);
+    wordQuery.bindValue(1, wordLength);
+    wordQuery.bindValue(2, probIndices.size());
+    wordQuery.bindValue(3, ba);
     wordQuery.bindValue(4, lexiconName);
-	wordQuery.exec();
-	
+    wordQuery.exec();
+
 
 }
 

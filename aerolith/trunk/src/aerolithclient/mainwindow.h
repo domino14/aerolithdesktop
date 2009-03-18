@@ -18,156 +18,178 @@
 
 class PMWidget : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	PMWidget (QWidget *parent, QString senderUsername, QString receiverUsername);
-	void appendText(QString);
+    PMWidget (QWidget *parent, QString senderUsername, QString receiverUsername);
+    void appendText(QString);
 
 private:
-	Ui::pmForm uiPm;
-	QString senderUsername;
-	QString receiverUsername;
+    Ui::pmForm uiPm;
+    QString senderUsername;
+    QString receiverUsername;
 signals:
-	void sendPM(QString user, QString text);
-	private slots:
-		void readAndSendLEContents();
+    void sendPM(QString user, QString text);
+        private slots:
+    void readAndSendLEContents();
 };
+
+
 
 class MainWindow : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	MainWindow(QString);
+    MainWindow(QString);
 private:
-	QString aerolithVersion;
+    QString aerolithVersion;
 
-	
-	QTcpSocket *commsSocket;
 
-	quint16 blockSize; // used for socket
+    QTcpSocket *commsSocket;
 
-	void processServerString(QString);
+    quint16 blockSize; // used for socket
 
-	QString currentUsername;
-	QDataStream in;
-	quint16 currentTablenum;
+    void processServerString(QString);
 
-	void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
-	void handleDeleteTable(quint16 tablenum);
-	void handleAddToTable(quint16 tablenum, QString player);
-	void handleLeaveTable(quint16 tablenum, QString player);
-	void handleTableCommand(quint16 tablenum, quint8 commandByte);
-	
-	const int PLAYERLIST_ROLE;
-	void writeHeaderData();
-	void fixHeaderLength();
-	QByteArray block;
-	QDataStream out;
-	void modifyPlayerLists(quint16 tablenum, QString player, int modification);
-	UnscrambleGameTable *gameBoardWidget;
+    QString currentUsername;
+    QDataStream in;
+    quint16 currentTablenum;
 
-	bool gameStarted;
-	QDialog *createTableDialog;
-	QDialog *helpDialog;
-	QDialog *scoresDialog;
-	QDialog *loginDialog;
+    struct LexiconLists
+    {
+        QString lexicon;
+        QStringList regularWordLists;
+        QStringList dailyWordLists;
+        LexiconLists()
+        {
+        }
+    };
 
-	QMenu *challengesMenu;
+    QList <LexiconLists> lexiconLists;
 
-	Ui::MainWindow uiMainWindow;
-	Ui::tableCreateForm uiTable;
-	Ui::scoresForm uiScores;
-	Ui::loginForm uiLogin;
 
-	QWidget *setProfileWidget;
-	QWidget *getProfileWidget;
+    void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
+    void handleDeleteTable(quint16 tablenum);
+    void handleAddToTable(quint16 tablenum, QString player);
+    void handleLeaveTable(quint16 tablenum, QString player);
+    void handleTableCommand(quint16 tablenum, quint8 commandByte);
+    void handleWordlistsMessage();
 
-	Ui::setProfileForm uiSetProfile;
-	Ui::getProfileForm uiGetProfile;
 
-	void sendClientVersion();
-	void displayHighScores();
 
-	QTimer* gameTimer;
 
-	enum connectionModes { MODE_LOGIN, MODE_REGISTER};
 
-	connectionModes connectionMode;
+    const int PLAYERLIST_ROLE;
+    void writeHeaderData();
+    void fixHeaderLength();
+    QByteArray block;
+    QDataStream out;
+    void modifyPlayerLists(quint16 tablenum, QString player, int modification);
+    UnscrambleGameTable *gameBoardWidget;
 
-	void closeEvent(QCloseEvent*);
-	void writeWindowSettings();
-	void readWindowSettings();
+    bool gameStarted;
+    QDialog *createTableDialog;
+    QDialog *helpDialog;
+    QDialog *scoresDialog;
+    QDialog *loginDialog;
 
-	QHash <QString, PMWidget*> pmWindows;
+    QMenu *challengesMenu;
 
-	struct tableRepresenter
-	{
-	  QTableWidgetItem* tableNumItem;
-	  QTableWidgetItem* descriptorItem;
-	  QTableWidgetItem* maxPlayersItem;
-	  QTableWidgetItem* playersItem;
-	  QTableWidgetItem* numPlayersItem;
-	  QPushButton* buttonItem;
-	  quint16 tableNum;
-	  QStringList playerList;
-	  
-	};
+    Ui::MainWindow uiMainWindow;
+    Ui::tableCreateForm uiTable;
+    Ui::scoresForm uiScores;
+    Ui::loginForm uiLogin;
 
-	QHash <quint16, tableRepresenter*> tables;
- signals:
-	void startServerThread();
-	void stopServerThread();
-	public slots:
-		void submitGuess(QString);
-		void chatTable(QString);
-		void submitChatLEContents();
-		void readFromServer();
-		void displayError(QAbstractSocket::SocketError);
-		void serverDisconnection();
-		void toggleConnectToServer();
-		void connectedToServer();
-	
-		void sendPM(QString);
-		void sendPM(QString, QString);
-		void viewProfile(QString);
-		void receivedPM(QString, QString);
+    QWidget *setProfileWidget;
+    QWidget *getProfileWidget;
 
-		void createNewRoom();
-		void leaveThisTable();
-		void joinTable();
-		void giveUpOnThisGame();
-		void submitReady();
-		void aerolithHelpDialog();
-		void updateGameTimer();
-		void changeMyAvatar(quint8);
-		void dailyChallengeSelected(QAction*);
-		void getScores();
-		void registerName();
-		
-		void showRegisterPage();
-		void showLoginPage();
-		void startOwnServer();
-		
-		void aerolithAcknowledgementsDialog();
-		void showAboutQt();
+    Ui::setProfileForm uiSetProfile;
+    Ui::getProfileForm uiGetProfile;
 
-		void serverThreadHasStarted();
-		void serverThreadHasFinished();
+    void sendClientVersion();
+    void displayHighScores();
+
+    QTimer* gameTimer;
+
+    enum connectionModes { MODE_LOGIN, MODE_REGISTER};
+
+    connectionModes connectionMode;
+
+    void closeEvent(QCloseEvent*);
+    void writeWindowSettings();
+    void readWindowSettings();
+
+    QHash <QString, PMWidget*> pmWindows;
+
+    struct tableRepresenter
+    {
+        QTableWidgetItem* tableNumItem;
+        QTableWidgetItem* descriptorItem;
+        QTableWidgetItem* maxPlayersItem;
+        QTableWidgetItem* playersItem;
+        QTableWidgetItem* numPlayersItem;
+        QPushButton* buttonItem;
+        quint16 tableNum;
+        QStringList playerList;
+
+    };
+
+    QHash <quint16, tableRepresenter*> tables;
+signals:
+    void startServerThread();
+    void stopServerThread();
+        public slots:
+    void submitGuess(QString);
+    void chatTable(QString);
+    void submitChatLEContents();
+    void readFromServer();
+    void displayError(QAbstractSocket::SocketError);
+    void serverDisconnection();
+    void toggleConnectToServer();
+    void connectedToServer();
+
+    void sendPM(QString);
+    void sendPM(QString, QString);
+    void viewProfile(QString);
+    void receivedPM(QString, QString);
+
+    void createNewRoom();
+    void leaveThisTable();
+    void joinTable();
+    void giveUpOnThisGame();
+    void submitReady();
+    void aerolithHelpDialog();
+    void updateGameTimer();
+    void changeMyAvatar(quint8);
+    void dailyChallengeSelected(QAction*);
+    void getScores();
+    void registerName();
+
+    void showRegisterPage();
+    void showLoginPage();
+    void startOwnServer();
+
+    void aerolithAcknowledgementsDialog();
+    void showAboutQt();
+
+    void serverThreadHasStarted();
+    void serverThreadHasFinished();
+ private slots:
+    void lexiconComboBoxIndexChanged(int);
 };
 
 
 struct tempHighScoresStruct
 {
-	QString username;
-	quint16 numCorrect;
-	quint16 timeRemaining;
-	tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
-	{
-		this->username = username;
-		this->numCorrect = numCorrect;
-		this->timeRemaining = timeRemaining;
-	}
+    QString username;
+    quint16 numCorrect;
+    quint16 timeRemaining;
+    tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
+    {
+        this->username = username;
+        this->numCorrect = numCorrect;
+        this->timeRemaining = timeRemaining;
+    }
 
 };
 
