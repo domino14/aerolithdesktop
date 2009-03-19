@@ -103,6 +103,7 @@ private:
     };
 
     //  QHash <QString, playerData> playerDataHash;
+    QSqlQuery query;
     QString wordList;
     bool neverStarted;
     bool listExhausted;

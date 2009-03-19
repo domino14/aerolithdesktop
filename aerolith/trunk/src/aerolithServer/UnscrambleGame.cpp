@@ -49,7 +49,6 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
     generateQuizArray();
 
 
-
 }
 
 UnscrambleGame::UnscrambleGame(tableData* table) : TableGame(table)
@@ -63,6 +62,7 @@ UnscrambleGame::~UnscrambleGame()
 
     //	gameTimer->deleteLater();
     //	countdownTimer->deleteLater();
+
 }
 
 void UnscrambleGame::playerJoined(ClientSocket* client)
@@ -73,13 +73,13 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
     // possibly send scores, solved solutions, etc. in the future.
     if (table->playerList.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
     {
-        QSqlQuery query(QSqlDatabase::database("usersDB"));
-        query.prepare("SELECT saveData from users where username = :username");
-        query.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
-        query.exec();
-        while (query.next())
+        QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
+        userQuery.prepare("SELECT saveData from users where username = :username");
+        userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
+        userQuery.exec();
+        while (userQuery.next())
         {
-            QByteArray ba = query.value(0).toByteArray();
+            QByteArray ba = userQuery.value(0).toByteArray();
             QDataStream stream(ba);
             if (ba.size() == 0)
             {
@@ -148,11 +148,11 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
             stream << missedArray;
             stream << quizArray.mid(quizIndex);
             // now write data to database
-            QSqlQuery query(QSqlDatabase::database("usersDB"));
-            query.prepare("UPDATE users SET saveData = :saveData where username = :username");
-            query.bindValue(":username", socket->connData.userName.toLower());
-            query.bindValue(":saveData", ba);
-            query.exec();
+            QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
+            userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
+            userQuery.bindValue(":username", socket->connData.userName.toLower());
+            userQuery.bindValue(":saveData", ba);
+            userQuery.exec();
 
             qDebug() << "Saving lists took milliseconds: " << timer.elapsed();
 
@@ -208,11 +208,11 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 
                     // only overwrite the list if this is a single player playing in a non-daily-challenge table.
                     QByteArray ba;
-                    QSqlQuery query(QSqlDatabase::database("usersDB"));
-                    query.prepare("UPDATE users SET saveData = :saveData where username = :username");
-                    query.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
-                    query.bindValue(":saveData", ba);
-                    query.exec();
+                    QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
+                    userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
+                    userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
+                    userQuery.bindValue(":saveData", ba);
+                    userQuery.exec();
                     table->sendTableMessage("If you quit Aerolith or leave this table, "
                                             "your progress on this word list -" + wordList + "- will automatically be saved.");
                 }
@@ -394,6 +394,7 @@ void UnscrambleGame::generateQuizArray()
         timer.start();
 
         QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+        query.setForwardOnly(true);
         query.exec(QString("SELECT wordlength, probindices from wordlists where listname = '" + wordList + "'"));
         QByteArray indices;
         while (query.next())
@@ -493,12 +494,15 @@ void UnscrambleGame::prepareTableAlphagrams()
     QStringList lineList;
     QString line;
     numTotalSolutions = 0;
-    QTime timer;
+    QTime timer, timer2;
     timer.start();
+
     QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
     query.setForwardOnly(true);
     query.exec("BEGIN TRANSACTION");
-
+    query.prepare(QString("SELECT alphagram, words from alphagrams where length = ? and lexiconName = ? and probability = ?"));
+    query.bindValue(0, wordLength);
+    query.bindValue(1, lexiconName);
 
     for (quint8 i = 0; i < maxRacks; i++)
     {
@@ -526,8 +530,10 @@ void UnscrambleGame::prepareTableAlphagrams()
             numRacksSeen++;
             quint16 index = quizArray.at(quizIndex);
 
-            query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 and lexiconName = '%2' and "
-                               "probability = %3").arg(wordLength).arg(lexiconName).arg(index));
+            query.bindValue(2, index);
+            timer2.start();
+            query.exec();
+            qDebug() << " singleAlpha" << timer2.restart();
             while (query.next())
             {
                 thisQuestionData.alphagram = query.value(0).toString();
@@ -544,6 +550,7 @@ void UnscrambleGame::prepareTableAlphagrams()
                 //qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
             }
             quizIndex++;
+
 
 
         }
@@ -649,13 +656,13 @@ void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end
 void UnscrambleGame::loadWordLists()
 {
     ListMaker::createListDatabase();	// also connects to the database.
-    QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME)); // the database is already open
 
-    wordQuery.exec("SELECT listname, lexiconName from wordlists");
+    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+    query.exec("SELECT listname, lexiconName from wordlists");
     QList <WordList> orderedWordLists;
     orderedWordLists.clear();
-    while (wordQuery.next())
-        orderedWordLists << WordList(wordQuery.value(0).toString(), LIST_TYPE_REGULAR, wordQuery.value(1).toString());
+    while (query.next())
+        orderedWordLists << WordList(query.value(0).toString(), LIST_TYPE_REGULAR, query.value(1).toString());
 
     writeHeaderData();
     out << (quint8) SERVER_WORD_LISTS;		// word lists
