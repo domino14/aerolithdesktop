@@ -21,11 +21,11 @@ out(&block, QIODevice::WriteOnly)
     uiMainWindow.setupUi(this);
     uiMainWindow.roomTableWidget->verticalHeader()->hide();
     uiMainWindow.roomTableWidget->setColumnWidth(0, 30);
-    uiMainWindow.roomTableWidget->setColumnWidth(1, 200);
-    uiMainWindow.roomTableWidget->setColumnWidth(2, 300);
-    uiMainWindow.roomTableWidget->setColumnWidth(3, 50);
-    uiMainWindow.roomTableWidget->setColumnWidth(4, 50);
-    uiMainWindow.roomTableWidget->setColumnWidth(5, 75);
+    uiMainWindow.roomTableWidget->setColumnWidth(1, 40);
+    uiMainWindow.roomTableWidget->setColumnWidth(2, 200);
+    uiMainWindow.roomTableWidget->setColumnWidth(3, 350);
+    uiMainWindow.roomTableWidget->setColumnWidth(4, 75);
+
     uiMainWindow.roomTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
 
     setWindowTitle(WindowTitle);
@@ -1029,8 +1029,9 @@ void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lex
     uiMainWindow.roomTableWidget->setItem(rc, 2, t->descriptorItem);
     uiMainWindow.roomTableWidget->setItem(rc, 3, t->playersItem);
     uiMainWindow.roomTableWidget->setCellWidget(rc, 4, t->buttonItem);
+    uiMainWindow.roomTableWidget->setRowHeight(rc, 40);
 
-    uiMainWindow.roomTableWidget->resizeColumnsToContents();
+ //   uiMainWindow.roomTableWidget->resizeColumnsToContents();
     tables.insert(tablenum, t);
 
 
