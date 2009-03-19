@@ -6,28 +6,49 @@
 extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
-void tableData::initialize(quint16 tableNumber, QString tableName, quint8 maxPlayers, 
-                           ClientSocket* tableCreator, quint8 cycleState, quint8 tableTimer, gameModes gameMode,
-                           QString additionalDescriptor, quint8 lexiconIndex)
+QByteArray tableData::initialize(ClientSocket* tableCreator, quint16 tableNumber, QByteArray tableDescription)
 {
-    qDebug() << "Creating a table.";
+
+
     this->tableNumber = tableNumber;
-    this->tableName = tableName;
-    this->maxPlayers = maxPlayers;
-    //playerList << tableCreator;
-    host = tableCreator;
-    canJoin = true;
-    this->gameMode = gameMode;
+    QDataStream in(&tableDescription, QIODevice::ReadOnly);
+    // TODO possible exploit, if there aren't enough bytes in tableDescription to read all the below.
+    // check for crash/instability.
 
-
-
-    // for NOW, default gameMode = unscramble
-
-    if (gameMode == GAMEMODE_UNSCRAMBLE)
+    in >> gameType >> tableName >> maxPlayers;
+    qDebug() << "Creating table" << tableNumber << tableName << gameType << maxPlayers << tableDescription.size();
+    switch (gameType)
     {
-        tableGame = new UnscrambleGame(this);
-        tableGame->initialize(cycleState, tableTimer, additionalDescriptor, lexiconIndex);
+        case GAME_TYPE_UNSCRAMBLE:
+        {
+            quint8 unscrambleType, tableTimer;
+            in >> lexiconIndex >> unscrambleType >> tableTimer;
+            host = tableCreator;
+            canJoin = true;
+            tableGame = new UnscrambleGame(this);
+            tableGame->initialize(unscrambleType, tableTimer, tableName, lexiconIndex);
+
+            // compute retarr
+            writeHeaderData();
+            out << (quint8) SERVER_NEW_TABLE;
+            out << (quint16) tableNumber;
+            out << (quint8) GAME_TYPE_UNSCRAMBLE;
+            out << (quint8) lexiconIndex;
+            out << tableName;
+            out << maxPlayers;
+            fixHeaderLength();
+
+            tableInformationArray = block;
+        }
+        break;
+
+
+
     }
+
+    ////
+    return tableInformationArray;
+
 
 }
 

@@ -68,7 +68,8 @@ private:
     QList <LexiconLists> lexiconLists;
 
 
-    void handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers);
+    void handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lexiconIndex, QString wordListDescriptor,
+                           quint8 maxPlayers);
     void handleDeleteTable(quint16 tablenum);
     void handleAddToTable(quint16 tablenum, QString player);
     void handleLeaveTable(quint16 tablenum, QString player);
@@ -120,19 +121,18 @@ private:
     void readWindowSettings();
 
     QHash <QString, PMWidget*> pmWindows;
-
+    QIcon unscrambleGameIcon;
     struct tableRepresenter
     {
         QTableWidgetItem* tableNumItem;
         QTableWidgetItem* descriptorItem;
-        QTableWidgetItem* maxPlayersItem;
         QTableWidgetItem* playersItem;
-        QTableWidgetItem* numPlayersItem;
         QTableWidgetItem* typeIcon;
         QPushButton* buttonItem;
         quint16 tableNum;
         QStringList playerList;
         quint8 gameType;    // see commonDefs.h for game types.
+        quint8 maxPlayers;
 
     };
 

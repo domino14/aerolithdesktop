@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 #include "commonDefs.h"
 
-const quint16 MAGIC_NUMBER = 25348;
-const QString WindowTitle = "Aerolith 0.4.1";
+const quint16 MAGIC_NUMBER = 25349;
+const QString WindowTitle = "Aerolith 1.0";
 //const QString thisVersion = "0.4.1";
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
@@ -133,6 +133,8 @@ out(&block, QIODevice::WriteOnly)
     uiGetProfile.setupUi(getProfileWidget);
 
     ///////
+    // set game icons
+    unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
 
 }
@@ -388,13 +390,17 @@ void MainWindow::readFromServer()
 
                         // static information
                         quint16 tablenum;
+                        quint8 gameType;
+                        quint8 lexiconIndex;
                         QString wordListDescriptor;
                         quint8 maxPlayers;
                         //		QStringList
 
-                        in >> tablenum >> wordListDescriptor >> maxPlayers;
+                        in >> tablenum >> gameType >> lexiconIndex >> wordListDescriptor >> maxPlayers;
                         // create table
-                        handleCreateTable(tablenum, wordListDescriptor, maxPlayers);
+                        handleCreateTable(tablenum, gameType, lexiconIndex, wordListDescriptor, maxPlayers);
+                        /* TODO genericize this as well (like in the server) to take in a table number and type,
+                           then read different amount of info for each type */
                     }
                     break;
                 case SERVER_JOIN_TABLE:	// player joined table
@@ -725,6 +731,7 @@ void MainWindow::createNewRoom()
 
     writeHeaderData();
     out << (quint8)CLIENT_NEW_TABLE;
+    out << (quint8)GAME_TYPE_UNSCRAMBLE;
     out << uiTable.listWidgetTopLevelList->currentItem()->text();
     out << (quint8)uiTable.playersSpinBox->value();
     out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
@@ -988,14 +995,23 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
 }
 
 
-void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor, quint8 maxPlayers)
+void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lexiconIndex,
+                                   QString wordListDescriptor, quint8 maxPlayers)
 {
     tableRepresenter* t = new tableRepresenter;
     t->tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
-    t->descriptorItem = new QTableWidgetItem(wordListDescriptor);
-    t->maxPlayersItem = new QTableWidgetItem(QString("%1").arg(maxPlayers));
+    t->descriptorItem = new QTableWidgetItem("(" + uiMainWindow.comboBoxLexicon->itemText(lexiconIndex) +
+                                             ") " + wordListDescriptor);
     t->playersItem = new QTableWidgetItem("");
-    t->numPlayersItem = new QTableWidgetItem("0");
+    t->maxPlayers = maxPlayers;
+    switch (gameType)
+    {
+        case GAME_TYPE_UNSCRAMBLE:
+
+            t->typeIcon = new QTableWidgetItem(unscrambleGameIcon, "");
+            t->typeIcon->setSizeHint(QSize(32, 32));
+        break;
+    }
     t->buttonItem = new QPushButton("Join");
     t->buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));
     t->tableNum = tablenum;
@@ -1009,12 +1025,12 @@ void MainWindow::handleCreateTable(quint16 tablenum, QString wordListDescriptor,
 
     uiMainWindow.roomTableWidget->insertRow(rc);
     uiMainWindow.roomTableWidget->setItem(rc, 0, t->tableNumItem);
-    uiMainWindow.roomTableWidget->setItem(rc, 1, t->descriptorItem);
-    uiMainWindow.roomTableWidget->setItem(rc, 2, t->playersItem);
-    uiMainWindow.roomTableWidget->setItem(rc, 3, t->numPlayersItem);
-    uiMainWindow.roomTableWidget->setItem(rc, 4, t->maxPlayersItem);
-    uiMainWindow.roomTableWidget->setCellWidget(rc, 5, t->buttonItem);
+    uiMainWindow.roomTableWidget->setItem(rc, 1, t->typeIcon);
+    uiMainWindow.roomTableWidget->setItem(rc, 2, t->descriptorItem);
+    uiMainWindow.roomTableWidget->setItem(rc, 3, t->playersItem);
+    uiMainWindow.roomTableWidget->setCellWidget(rc, 4, t->buttonItem);
 
+    uiMainWindow.roomTableWidget->resizeColumnsToContents();
     tables.insert(tablenum, t);
 
 
@@ -1089,12 +1105,10 @@ void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
         textToSet += thisplayer + " ";
 
     int numPlayers = t->playerList.size();
+    textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(t->maxPlayers) + ")";
     t->playersItem->setText(textToSet);
-    t->numPlayersItem->setText(QString("%1").arg(numPlayers));
 
-    quint8 maxNumPlayers = t->maxPlayersItem->text().toShort();
-
-    if (numPlayers >= maxNumPlayers)
+    if (numPlayers >= t->maxPlayers)
         t->buttonItem->setEnabled(false);
     else
         t->buttonItem->setEnabled(true);
@@ -1113,11 +1127,12 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
     foreach(QString thisplayer, t->playerList)
         textToSet += thisplayer + " ";
 
-    t->playersItem->setText(textToSet);
-
     quint8 numPlayers = t->playerList.size();
-    quint8 maxPlayers = t->maxPlayersItem->text().toShort();
-    t->numPlayersItem->setText(QString("%1").arg(numPlayers));
+    quint8 maxPlayers = t->maxPlayers;
+
+    textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(maxPlayers) + ")";
+
+    t->playersItem->setText(textToSet);
 
     if (numPlayers >= maxPlayers)
     {
@@ -1248,9 +1263,11 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
     {
         writeHeaderData();
         out << (quint8)CLIENT_NEW_TABLE;
+        out << (quint8)GAME_TYPE_UNSCRAMBLE;
         out << challengeAction->text(); // create a table
         out << (quint8)1; // 1 player
-        out << (quint8)TABLE_TYPE_DAILY_CHALLENGES; //  (TODO: HARDCODE BAD)
+        out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
+        out << (quint8)TABLE_TYPE_DAILY_CHALLENGES;
         out << (quint8)0;	// server should decide time for daily challenge
 
         fixHeaderLength();

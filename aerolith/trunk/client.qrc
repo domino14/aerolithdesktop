@@ -79,5 +79,6 @@
 	<file>images/table2.png</file>
 	<file>images/lava.png</file>
 	<file>images/stars.png</file>
+	<file>images/unscrambleGameSmall.png</file>
 </qresource>
 </RCC>
