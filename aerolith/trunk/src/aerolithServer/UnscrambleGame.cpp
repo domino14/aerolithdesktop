@@ -14,7 +14,7 @@ QByteArray UnscrambleGame::wordListDataToSend;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, quint8 lexiconIndex)
 {
-    if (lexiconIndex >= 0 && lexiconIndex < ListMaker::lexiconList.size())
+    if (lexiconIndex < ListMaker::lexiconList.size())
         lexiconName = ListMaker::lexiconList.at(lexiconIndex);
     else
         lexiconName = ListMaker::lexiconList.at(0); // assuming there's at least one lexicon. this is a bad message to receive from client anyway but

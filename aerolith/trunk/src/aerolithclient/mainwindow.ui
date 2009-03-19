@@ -96,22 +96,17 @@ QPushButton:disabled{
       </column>
       <column>
        <property name="text">
+        <string>Game</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
         <string>Table Name</string>
        </property>
       </column>
       <column>
        <property name="text">
         <string>Players</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>#</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Max #</string>
        </property>
       </column>
       <column>

@@ -21,7 +21,7 @@ const QString incompatibleVersionString =
 extern const QString WORD_DATABASE_NAME;
 extern const QString WORD_DATABASE_FILENAME;
 
-
+#define MAX_NUM_TABLES 1000
 
 
 
@@ -584,22 +584,17 @@ void MainServer::processNewTable(ClientSocket* socket)
     //
 
     quint16 tablenum = 0;
+    // read in all the data, and let the table class parse it. this is because the table create
+    // packet looks different for different games.
+    int tableDescriptionSize = socket->connData.numBytesInPacket-sizeof(quint8);
+    char* newTableBytes = new char[tableDescriptionSize];
+    socket->connData.in.readRawData(newTableBytes, tableDescriptionSize);
+
+    // check to see if we can actually create a new table.
     bool foundFreeNumber = false;
+    bool canCreateTable = true;
 
-
-    QString tableName;
-    quint8 maxPlayers;
-    quint8 lexiconIndex;
-    socket->connData.in >> tableName;
-    socket->connData.in >> maxPlayers;
-    socket->connData.in >> lexiconIndex;
-    quint8 cycleState;
-    socket->connData.in >> cycleState;
-    quint8 tableTimer;
-    socket->connData.in >> tableTimer;
-
-    // TODO: possibly more parameters such as game type, etc.
-    while (!foundFreeNumber && tablenum < 1000)
+    while (!foundFreeNumber && tablenum < MAX_NUM_TABLES)
     {
         tablenum++;
         foundFreeNumber = !tables.contains(tablenum);
@@ -608,41 +603,37 @@ void MainServer::processNewTable(ClientSocket* socket)
     if (!foundFreeNumber)
     {
         writeToClient(socket, "You cannot create any more tables!", S_ERROR);
-        return;
+        canCreateTable = false;
     }
 
-    if (socket->connData.loggedIn == false)
+    else if (socket->connData.loggedIn == false)
     {
         qDebug() << "new table? wait.. still logging in!";
-        return;
+        canCreateTable = false;
     }
 
-    if (socket->connData.tableNum != 0)
+    else if (socket->connData.tableNum != 0)
     {
+        writeToClient(socket, "Please leave the table you are in before creating another table.", S_ERROR);
         qDebug() << "new table when you are already in a table? must be lag. don't create!";
-        return;
+        canCreateTable = false;
     }
 
+    if (canCreateTable)
+    {
+        tableData *tmp = new tableData;
+        QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
+        // does not do a deep copy!
+        
+        QByteArray tableBlock = tmp->initialize(socket, tablenum, tableDescription);
+        tables.insert(tablenum, tmp);
 
-    tableData *tmp = new tableData;
-    tmp->initialize(tablenum, tableName, maxPlayers, socket, cycleState, tableTimer,
-                    tableData::GAMEMODE_UNSCRAMBLE, tableName, lexiconIndex);
+        foreach (ClientSocket* connection, connections)
+            connection->write(tableBlock);
+        doJoinTable(socket, tablenum);
+    }
+    delete [] newTableBytes;
 
-    tables.insert(tablenum, tmp);
-
-
-
-    writeHeaderData();
-    out << (quint8) SERVER_NEW_TABLE;
-    out << (quint16) tablenum;
-    out << tableName;
-    out << maxPlayers;
-    fixHeaderLength();
-
-    foreach (ClientSocket* connection, connections)
-        connection->write(block);
-
-    doJoinTable(socket, tablenum);
 
 
 }
@@ -921,17 +912,7 @@ void MainServer::processLogin(ClientSocket* socket)
 
     foreach(tableData* table, tableList)
     {
-        // write new table for every existing table!
-        writeHeaderData();
-        out << (quint8) SERVER_NEW_TABLE;
-        out << table->tableNumber;
-        out << table->tableName;
-        out << table->maxPlayers;
-
-        // TODO: write more -- time limit, game type?
-        fixHeaderLength();
-
-        socket->write(block);
+        socket->write(table->tableInformationArray);
 
         foreach(ClientSocket* thisSocket, table->playerList)
         {

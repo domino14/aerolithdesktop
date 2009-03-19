@@ -29,11 +29,7 @@
    <string/>
   </property>
   <property name="styleSheet">
-   <string notr="true">QDialog {
-    
-     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                       stop: 0 #FFOECE, stop: 1 #FFFFFF);
- }</string>
+   <string notr="true"/>
   </property>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
