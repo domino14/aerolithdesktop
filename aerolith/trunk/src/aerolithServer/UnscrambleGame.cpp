@@ -629,7 +629,7 @@ void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quin
 
 void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums)
 {
-    qDebug() << "gurn" << start << end << numNums;
+  //  qDebug() << "gurn" << start << end << numNums;
     quint16 size = end - start + 1;
     numbers.resize(numNums);
     if (size < 1) size = start - end + 1;
