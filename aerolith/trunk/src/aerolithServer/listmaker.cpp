@@ -33,6 +33,7 @@ void ListMaker::testDatabaseTime()
 
 void ListMaker::createListDatabase()
 {
+    lexiconList.clear();
     // creates a word list database.
     // requires the zyzzyva database to be in the user's install directory
     lexiconList << "OWL2+LWL" << "CSW" << "Volost";
