@@ -120,8 +120,8 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     wordQuery.exec("CREATE TABLE IF NOT EXISTS alphagrams(alphagram VARCHAR(15), words VARCHAR(255), "
                    "length INTEGER, probability INTEGER, num_vowels INTEGER, lexiconstring VARCHAR(5), "
                    "num_anagrams INTEGER, num_unique_letters INTEGER, lexiconName VARCHAR(10))");
-    wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram, lexiconName)");
-    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability, length, lexiconName)");
+    //wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram, lexiconName)");
+
 
     QSqlQuery zyzzyvaQuery(QSqlDatabase::database("zyzzyvaDB"));
     QTime time;
@@ -185,7 +185,7 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), wordlength INTEGER, numalphagrams INTEGER, "
                    "probindices BLOB, lexiconName VARCHAR(10))");
     wordQuery.exec("CREATE INDEX listname_index on wordlists(listname, lexiconName)");
-
+    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability, length, lexiconName)");
 
 
     QVector <int> pick;

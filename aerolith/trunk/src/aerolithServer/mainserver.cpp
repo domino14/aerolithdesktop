@@ -201,7 +201,8 @@ void MainServer::removeConnection()
         usernamesHash.remove(username);
 
         QSqlQuery query(QSqlDatabase::database("usersDB"));
-        query.prepare("UPDATE users SET avatar = :avatar, lastIP = :lastIP, lastLoggedOut = :lastLoggedOut WHERE username = :username");
+        query.prepare("UPDATE users SET avatar = :avatar, lastIP = :lastIP, lastLoggedOut = :lastLoggedOut "
+                      "WHERE username = :username");
         query.bindValue(":avatar", socket->connData.avatarId);
         query.bindValue(":username", socket->connData.userName.toLower());
         query.bindValue(":lastIP", socket->peerAddress().toString());
@@ -924,6 +925,12 @@ void MainServer::processLogin(ClientSocket* socket)
     socket->playerData.readyToPlay = false;
     socket->playerData.gaveUp = false;
     socket->playerData.score = 0;
+
+    // send game-specific data
+    UnscrambleGame::sendLists(socket);
+
+
+    // finally, send tables
     QList <tableData*> tableList= tables.values();
 
     foreach(tableData* table, tableList)
@@ -941,9 +948,9 @@ void MainServer::processLogin(ClientSocket* socket)
         }
 
     }
-    // send game-specific data
 
-    UnscrambleGame::sendLists(socket);
+
+
 
 }
 
