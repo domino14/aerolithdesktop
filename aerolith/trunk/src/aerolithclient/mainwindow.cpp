@@ -346,7 +346,7 @@ void MainWindow::readFromServer()
                         QListWidgetItem *it = new QListWidgetItem(username, uiMainWindow.listWidgetPeopleConnected);
                         if (username == currentUsername)
                         {
-                            QSound::play("sounds/enter.wav");
+                           // QSound::play("sounds/enter.wav");
 
                             uiLogin.connectStatusLabel->setText("You have connected!");
                             loginDialog->hide();
@@ -728,7 +728,7 @@ void MainWindow::receivedPM(QString username, QString message)
         w->show();
         pmWindows.insert(hashString, w);
     }
-    QSound::play("sounds/inbound.wav");
+    //QSound::play("sounds/inbound.wav");
 
 }
 
@@ -903,8 +903,9 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
             gameBoardWidget->answeredCorrectly(index, username, answer);
             gameBoardWidget->addToPlayerList(username, answer);
             if (username==currentUsername)
-                QSound::play("sounds/correct.wav");
-
+            {
+ //               QSound::play("sounds/correct.wav");
+            }
         }
         break;
     }
@@ -1002,6 +1003,7 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
     for (int i = 0; i < lexiconLists.at(index).dailyWordLists.size(); i++)
     {
         challengesMenu->addAction(lexiconLists.at(index).dailyWordLists.at(i));
+        uiScores.comboBoxChallenges->addItem(lexiconLists.at(index).dailyWordLists.at(i));
     }
     challengesMenu->addAction("Get today's scores");
     gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
@@ -1192,10 +1194,12 @@ void MainWindow::aerolithHelpDialog()
 }
 void MainWindow::aerolithAcknowledgementsDialog()
 {
-    QString infoText;
-    infoText += "Special thanks to the following people who have helped me in the development of Aerolith in some way, and to anyone else I may have forgotten:";
-    infoText += "<BR>Joseph Bihlmeyer, Brian Bowman, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Danny McMullan, David Wiegand, Gabriel Wong, Joanna Zhou, Aaron Bader, Maria Ho, Elana Lehrer, James Leong, Seth Lipkin, Kenji Matsumoto, Michael Thelen.<BR>";
+    QFile file(":acknowledgments.txt");
+     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+         return;
+    QString infoText = file.readAll();
     QMessageBox::information(this, "Acknowledgements", infoText);
+    file.close();
 }
 
 void MainWindow::showAboutQt()

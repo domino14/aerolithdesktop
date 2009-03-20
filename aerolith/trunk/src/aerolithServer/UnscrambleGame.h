@@ -74,7 +74,6 @@ public:
     void startGame();
 
     static void generateDailyChallenges();
-    static void prepareWordDataStructure();
     static void loadWordLists();
     static void sendLists(ClientSocket*);
     static QHash <QString, challengeInfo> challenges;

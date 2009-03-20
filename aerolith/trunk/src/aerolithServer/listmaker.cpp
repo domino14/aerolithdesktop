@@ -73,12 +73,25 @@ void ListMaker::createListDatabase()
 
     if (!alphagramsExists)
     {
+        QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
+        wordQuery.exec("CREATE TABLE IF NOT EXISTS lexica(name VARCHAR(15), index INTEGER");
+        for (int i = 0; i < lexiconList.size(); i++)
+            wordQuery.exec(QString("INSERT INTO lexica(name, index) VALUES('%1', %2)").arg(lexiconList.at(i)).arg(i));
+
+
+        wordQuery.exec("CREATE TABLE IF NOT EXISTS alphagrams(alphagram VARCHAR(15), words VARCHAR(255), "
+                       "length INTEGER, probability INTEGER, num_vowels INTEGER, lexiconstring VARCHAR(5), "
+                       "num_anagrams INTEGER, num_unique_letters INTEGER, lexiconName VARCHAR(10))");
+        wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), wordlength INTEGER, numalphagrams INTEGER, "
+                       "probindices BLOB, lexiconName VARCHAR(10))");
 
         for (int i = 0; i < lexiconList.size(); i++)
         {
             createLexiconDatabase(i);
 
         }
+        wordQuery.exec("CREATE INDEX listname_index on wordlists(listname, lexiconName)");
+        wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability, length, lexiconName)");
     }
     else
         qDebug() << "Don't need to create, just connect.";
@@ -115,14 +128,6 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     }
 
     QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
-
-
-    wordQuery.exec("CREATE TABLE IF NOT EXISTS alphagrams(alphagram VARCHAR(15), words VARCHAR(255), "
-                   "length INTEGER, probability INTEGER, num_vowels INTEGER, lexiconstring VARCHAR(5), "
-                   "num_anagrams INTEGER, num_unique_letters INTEGER, lexiconName VARCHAR(10))");
-    //wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram, lexiconName)");
-
-
     QSqlQuery zyzzyvaQuery(QSqlDatabase::database("zyzzyvaDB"));
     QTime time;
     time.start();
@@ -182,10 +187,7 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     qDebug() << "Created alphas in" << time.elapsed() << "for lexicon" << lexiconName;
 
 
-    wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), wordlength INTEGER, numalphagrams INTEGER, "
-                   "probindices BLOB, lexiconName VARCHAR(10))");
-    wordQuery.exec("CREATE INDEX listname_index on wordlists(listname, lexiconName)");
-    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability, length, lexiconName)");
+
 
 
     QVector <int> pick;
