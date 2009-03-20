@@ -78,7 +78,6 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
     UnscrambleGame::loadWordLists();
     UnscrambleGame::generateDailyChallenges();
     UnscrambleGame::midnightSwitchoverToggle = true;
- //   UnscrambleGame::prepareWordDataStructure();
 
 
     if (QFile::exists("users.db"))

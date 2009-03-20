@@ -34,7 +34,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
         lexiconName = ListMaker::lexiconList.at(lexiconIndex);
     else
         lexiconName = ListMaker::lexiconList.at(0); // assuming there's at least one lexicon. this is a bad message to receive from client anyway but
-                                                    // for robustness sake.
+    // for robustness sake.
     wroteToMissedFileThisRound = false;
     listExhausted = false;
     this->wordList = wordList;
@@ -51,11 +51,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
     currentTimerVal = tableTimerVal;
     countdownTimerVal = COUNTDOWN_TIMER_VAL;
 
-    if (cycleState == TABLE_TYPE_DAILY_CHALLENGES)
-    {
 
-        tableTimerVal = 270;	// 4.5 minutes for 50 words - server decides time for challenges!
-    }
     /*
 
         */
@@ -63,6 +59,16 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
     numTotalRacks = 0;
 
     generateQuizArray();
+
+    if (cycleState == TABLE_TYPE_DAILY_CHALLENGES)
+    {
+        if (wordLength <= 3) tableTimerVal = 60;
+        if (wordLength == 4) tableTimerVal = 120;
+        if (wordLength == 5) tableTimerVal = 200;
+        if (wordLength == 6) tableTimerVal = 240;
+        if (wordLength >= 7 && wordLength <= 8) tableTimerVal = 270;
+        if (wordLength > 8) tableTimerVal = 300;
+    }
 
 
 }
@@ -411,7 +417,12 @@ void UnscrambleGame::generateQuizArray()
 
         QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
         query.setForwardOnly(true);
-        query.exec(QString("SELECT wordlength, probindices from wordlists where listname = '" + wordList + "'"));
+
+        query.prepare("SELECT wordlength, probindices from wordlists where listname = ? and lexiconName = ?");
+        query.bindValue(0, wordList);
+        query.bindValue(1, lexiconName);
+        query.exec();
+
         QByteArray indices;
         while (query.next())
         {
@@ -469,14 +480,15 @@ void UnscrambleGame::generateQuizArray()
     {
         // daily challenges
         // just copy the daily challenge array
-
+        qDebug() << challenges.keys();
+        qDebug() << wordList;
         if (challenges.contains(wordList))
         {
             wordLength = challenges.value(wordList).wordLength;
             quizArray = challenges.value(wordList).dbIndices;
         }
 
-        numTotalRacks = maxRacks;
+        numTotalRacks = maxRacks;   // this line may be unnecessary, numTotalRacks is set in prepareTableAlphagrams before the start of the game
     }
 
     quizIndex = 0;
@@ -645,7 +657,10 @@ void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quin
 
 void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums)
 {
-  //  qDebug() << "gurn" << start << end << numNums;
+    // takes all the numbers between start and end, including start and end,
+    // randomly shuffles, and returns the first numNums numbers of the shuffled array.
+
+    //  qDebug() << "gurn" << start << end << numNums;
     quint16 size = end - start + 1;
     numbers.resize(numNums);
     if (size < 1) size = start - end + 1;
@@ -709,33 +724,31 @@ void UnscrambleGame::sendLists(ClientSocket* socket)
     socket->write(wordListDataToSend);
 }
 
-void UnscrambleGame::prepareWordDataStructure()
-{
-    // loads all the words from words.db into a data structure that's arranged by probability.
-    //	QTime timer;
-    //	timer.start();
-    //	alphagramData.clear();
-    //	alphagramData.resize(14);	// for lengths 2 thru 15
-    //	QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-    //	query.exec("BEGIN TRANSACTION");
-    //	for (int i = 2; i <= 15; i++)
-    //	{
-    //		query.exec(QString("SELECT alphagram, words from alphagrams where length = %1 order by probability").arg(i));
-    //		while (query.next())
-    //		{
-    //            alphagramData[i-2].append(alphagramInfo(query.value(0).toString(), query.value(1).toString().split(" ")));
-    //		}
-    //
-    //	}
-    //	query.exec("END TRANSACTION");
-    //	qDebug() << "Created data structure, time=" << timer.elapsed();
-    //
-
-}
 
 
 void UnscrambleGame::generateDailyChallenges()
 {
+    /* test randomness of algorithm */
+
+    /*
+    QVector <int> numFreq;
+    int low = 0, high = 499;
+    int poolSize = high-low+1;
+    int subsetSize = 50;
+    numFreq.resize(poolSize);
+    numFreq.fill(0, poolSize);
+
+    for (int i = 0; i < 1000000; i++)
+    {
+        QVector <quint16> nums;
+        getUniqueRandomNumbers(nums, low, high, subsetSize);
+        for (int j = 0; j < subsetSize; j++)
+            numFreq[nums[j]]++;
+    }
+    qDebug() << numFreq;
+    //
+    return;
+    */
     midnightSwitchoverToggle = !midnightSwitchoverToggle;
 
     QList <challengeInfo> vals = challenges.values();
@@ -744,28 +757,32 @@ void UnscrambleGame::generateDailyChallenges()
 
     challenges.clear();
     QTime timer;
+
     QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-    for (int i = 2; i <= 15; i++)
+    query.exec("BEGIN TRANSACTION");
+    for (int j = 0; j < ListMaker::lexiconList.size(); j++)
     {
-        timer.start();
-        challengeInfo tmpChallenge;
-        tmpChallenge.highScores = new QHash <QString, highScoreData>;
-        QString challengeName = QString("Today's %1s").arg(i);
-
-
-        query.exec(QString("SELECT numalphagrams from wordlists where listname = 'OWL2 %1s'").arg(i));
-        int wordCount = 0;
-        while (query.next())
+        for (int i = 2; i <= 15; i++)
         {
-            wordCount = query.value(0).toInt();
+            challengeInfo tmpChallenge;
+            tmpChallenge.highScores = new QHash <QString, highScoreData>;
+
+            QString challengeName = QString("Today's " + ListMaker::lexiconList[j] + " %1s").arg(i);
+
+            query.exec(QString("SELECT numalphagrams from wordlists where listname = '" + ListMaker::lexiconList[j] + " %1s'").arg(i));
+            int wordCount = 0;
+            while (query.next())
+            {
+                wordCount = query.value(0).toInt();
+            }
+            getUniqueRandomNumbers(tmpChallenge.dbIndices, 1, wordCount, qMin(wordCount, 50));
+            qDebug() << "generated" + challengeName;
+            qDebug() << tmpChallenge.dbIndices;
+            tmpChallenge.wordLength = i;
+            challenges.insert(challengeName, tmpChallenge);
         }
-        getUniqueRandomNumbers(tmpChallenge.dbIndices, 1, wordCount, 50);
-        qDebug() << QString("generated today's %1s").arg(i);
-        qDebug() << tmpChallenge.dbIndices;
-        tmpChallenge.wordLength = i;
-        challenges.insert(challengeName, tmpChallenge);
-        qDebug() << "elapsed time" << timer.elapsed();
     }
+    query.exec("END TRANSACTION");
 
 }
 
