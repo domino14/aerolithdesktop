@@ -44,7 +44,11 @@ public:
     virtual void clearReadyIndicators() = 0;
     virtual void setupForGameStart() = 0;
     void addToPlayerList(QString, QString);
-    virtual void setDatabase(QString name) = 0;
+    //virtual void setDatabase(QString name) = 0;
+    void setLexicon(QString name)
+    {
+        lexiconName = name;
+    }
 
 signals:
     void avatarChange(quint8);
@@ -63,6 +67,7 @@ protected:
     void addPlayersToWidgets(QStringList playerList);
     void removePlayerFromWidgets(QString, bool);
     void addPlayerToWidgets(QString, bool);
+    QString lexiconName;
 
 private slots:
 
@@ -98,9 +103,10 @@ public:
 
     void setReadyIndicator(QString);
     void clearReadyIndicators();
-    void setDatabase(QString name);
+   // void setDatabase(QString name);
 private:
-    QSqlDatabase zyzzyvaDb;
+//    QSqlDatabase zyzzyvaDb;
+    QSqlDatabase wordDb;
     QGraphicsScene gfxScene;
     Ui::tableForm tableUi;
     int currentWordLength;

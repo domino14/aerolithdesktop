@@ -78,10 +78,11 @@ void ListMaker::createListDatabase()
         for (int i = 0; i < lexiconList.size(); i++)
             wordQuery.exec(QString("INSERT INTO lexica(name, index) VALUES('%1', %2)").arg(lexiconList.at(i)).arg(i));
 
-
         wordQuery.exec("CREATE TABLE IF NOT EXISTS alphagrams(alphagram VARCHAR(15), words VARCHAR(255), "
-                       "length INTEGER, probability INTEGER, num_vowels INTEGER, lexiconstring VARCHAR(5), "
-                       "num_anagrams INTEGER, num_unique_letters INTEGER, lexiconName VARCHAR(10))");
+                       "length INTEGER, probability INTEGER, num_vowels INTEGER, lexiconstrings VARCHAR(50), "
+                       "num_anagrams INTEGER, num_unique_letters INTEGER, lexiconName VARCHAR(10), "
+                       "definitions VARCHAR(2560), front_hooks VARCHAR(256), back_hooks VARCHAR(256))");
+
         wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), wordlength INTEGER, numalphagrams INTEGER, "
                        "probindices BLOB, lexiconName VARCHAR(10))");
 
@@ -134,7 +135,8 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     for (int i = 2; i <= 15; i++)
     {
         qDebug() << lexiconName << i;
-        QString queryString = QString("SELECT word, alphagram, lexicon_symbols, num_vowels, num_anagrams, num_unique_letters "
+        QString queryString = QString("SELECT word, alphagram, lexicon_symbols, num_vowels, num_anagrams, num_unique_letters, "
+                                      "definition, front_hooks, back_hooks "
                                       "from words where length = %1 order by probability_order").arg(i);
         zyzzyvaQuery.exec(queryString);
         int probability = 1;
@@ -147,34 +149,42 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
             QString alphagram;
             QString wordString = "";
             QString lexiconString = "";
+            QString definitions, front_hooks, back_hooks;
             int numVowels;
             int numAnagrams;
             int numUniqueLetters;
+
             for (int n = 0; n < num_anagrams; n++)
             {
                 alphagram = zyzzyvaQuery.value(1).toString();
                 wordString += zyzzyvaQuery.value(0).toString() + " ";
-                if (zyzzyvaQuery.value(2).toString().contains("%")) lexiconString = "%";
-                else if (zyzzyvaQuery.value(2).toString().contains("#")) lexiconString = "#";
+                lexiconString += zyzzyvaQuery.value(2).toString() + "@";
                 numVowels = zyzzyvaQuery.value(3).toInt();
                 numAnagrams = zyzzyvaQuery.value(4).toInt();
                 numUniqueLetters = zyzzyvaQuery.value(5).toInt();
+                definitions += zyzzyvaQuery.value(6).toString() + "@";
+                front_hooks += zyzzyvaQuery.value(7).toString() + "@";
+                back_hooks += zyzzyvaQuery.value(8).toString() + "@";
                 nextSucceeded = zyzzyvaQuery.next();
 
             }
-            QString toExecute = "INSERT INTO alphagrams(alphagram, words, length, probability, num_vowels, lexiconstring, "
-                                "num_anagrams, num_unique_letters, lexiconName) "
-                                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            int wordlength = alphagram.length();
+            QString toExecute = "INSERT INTO alphagrams(alphagram, words, length, probability, num_vowels, lexiconstrings, "
+                                "num_anagrams, num_unique_letters, lexiconName, definitions, front_hooks, back_hooks) "
+                                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             wordQuery.prepare(toExecute);
             wordQuery.bindValue(0, alphagram);
             wordQuery.bindValue(1, wordString.trimmed());
-            wordQuery.bindValue(2, alphagram.length());
-            wordQuery.bindValue(3, probability);
+            wordQuery.bindValue(2, wordlength);
+            wordQuery.bindValue(3, probability + (wordlength << 24));
             wordQuery.bindValue(4, numVowels);
             wordQuery.bindValue(5, lexiconString);
             wordQuery.bindValue(6, numAnagrams);
             wordQuery.bindValue(7, numUniqueLetters);
             wordQuery.bindValue(8, lexiconName);
+            wordQuery.bindValue(9, definitions);
+            wordQuery.bindValue(10, front_hooks);
+            wordQuery.bindValue(11, back_hooks);
             probability++;
 
             wordQuery.exec();
@@ -200,6 +210,9 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     foreach (int i, pick)
     {
         int probIndex = 1;
+
+        int modifiedProbIndex = 1 + (i << 24); // i << 24 is basically encoding the length of the alphagram in this number
+                                        // this makes it easier to have different anagram lengths for a table.
         int numAlphagrams = 0;
         wordQuery.exec(QString("SELECT count(*) from alphagrams where length = %1 and lexiconName = '%2'").
                        arg(i).arg(lexiconName));
@@ -219,13 +232,14 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
 
             wordQuery.exec(QString("SELECT count(*) from alphagrams where length = %1 and probability between %2 and %3"
                                    " and lexiconName = '%4'").
-                           arg(i).arg(probIndex).arg(probIndex + listLength -1).arg(lexiconName));
+                           arg(i).arg(modifiedProbIndex).arg(modifiedProbIndex + listLength -1).arg(lexiconName));
 
             while (wordQuery.next())
                 actualListLength = wordQuery.value(0).toInt();
+        //    qDebug() << " .." << actualListLength;
 
             if (actualListLength == 0) continue;
-            baWriter << (quint8)0 << (quint8)i << (quint16)(probIndex) << (quint16)(probIndex+actualListLength-1);
+            baWriter << (quint8)0 << (quint8)i << (quint32)(modifiedProbIndex) << (quint32)(modifiedProbIndex+actualListLength-1);
             // (quint8)0 means this is a RANGE of indices, and not a list of indices
             // second param is word length.
 
@@ -241,6 +255,7 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
             wordQuery.exec();
 
             probIndex+= 500;
+            modifiedProbIndex += 500;
 
         } while (probIndex < numAlphagrams);
     }
@@ -256,7 +271,7 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
             numAlphagrams = wordQuery.value(0).toInt();
         }
         if (numAlphagrams == 0) continue;
-        baWriter << (quint8)0 << (quint8)i << (quint16)1 << (quint16)numAlphagrams;
+        baWriter << (quint8)0 << (quint8)i << (quint32)(1 + (i << 24)) << (quint32)(numAlphagrams + (i << 24));
         QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices, lexiconName) "
                             "VALUES(?, ?, ?, ?, ?)";
         wordQuery.prepare(toExecute);
@@ -280,14 +295,14 @@ void ListMaker::createLexiconDatabase(int lexiconIndex)
     if (lexiconName == "OWL2+LWL")
     {
         QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
-                                      "lexiconstring = '%'";
+                                      "lexiconstrings like '%*%%' ESCAPE '*'";
         for (int i = 7; i <= 8; i++)
             sqlListMaker(newWordsQueryString.arg(i).arg(lexiconName), QString("New (OWL2) %1s").arg(i), i, lexiconName);
     }
     else if (lexiconName == "CSW")
     {
         QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
-                                      "lexiconstring = '#'";
+                                      "lexiconstrings like '%#%'";
         for (int i = 7; i <= 8; i++)
             sqlListMaker(newWordsQueryString.arg(i).arg(lexiconName), QString("CSW-only %1s").arg(i), i, lexiconName);
     }
@@ -314,7 +329,7 @@ void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordL
 {
     QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
     wordQuery.exec(queryString);
-    QVector <quint16> probIndices;
+    QVector <quint32> probIndices;
 
     while (wordQuery.next())
     {
@@ -331,7 +346,7 @@ void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordL
     // (quint8)1 means this is a LIST of indices
     // second param is word length.
     // third param is number of indices
-    foreach(quint16 index, probIndices)
+    foreach(quint32 index, probIndices)
         baWriter << index;
 
     QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices, lexiconName) "
