@@ -382,6 +382,11 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
 
 
     loadUserPreferences();
+
+    /* connect to word database*/
+    wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB");
+    wordDb.setDatabaseName("words.db");
+    wordDb.open();
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -394,34 +399,34 @@ UnscrambleGameTable::~UnscrambleGameTable()
 
 }
 
-void UnscrambleGameTable::setDatabase(QString name)
-{
-    zyzzyvaDb.close();
-    QSqlDatabase::removeDatabase("zyzzyvaDB");
-    #ifdef Q_WS_MAC
-    QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
-#else
-    QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
-#endif
-    ZyzzyvaSettings.beginGroup("Zyzzyva");
-
-    QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
-    QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
-
-    if (QFile::exists(zyzzyvaDataDir + "/lexicons/" + name + ".db"))
-    {
-        zyzzyvaDb = QSqlDatabase::addDatabase("QSQLITE", "zyzzyvaDB");
-        zyzzyvaDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/" + name + ".db");
-        zyzzyvaDb.open();
-    }
-    else
-    {
-        QMessageBox::warning(this, "Database not found", "A word database was not found. "
-                             "You will not be able to see definitions and hooks for the words at the end of each round. Please generate the "
-                             "database for this lexicon with Zyzzyva, a free word study tool, by Michael Thelen, found at "
-                             "<a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
-    }
-}
+//void UnscrambleGameTable::setDatabase(QString name)
+//{
+//    zyzzyvaDb.close();
+//    QSqlDatabase::removeDatabase("zyzzyvaDB");
+//    #ifdef Q_WS_MAC
+//    QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
+//#else
+//    QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
+//#endif
+//    ZyzzyvaSettings.beginGroup("Zyzzyva");
+//
+//    QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
+//    QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
+//
+//    if (QFile::exists(zyzzyvaDataDir + "/lexicons/" + name + ".db"))
+//    {
+//        zyzzyvaDb = QSqlDatabase::addDatabase("QSQLITE", "zyzzyvaDB");
+//        zyzzyvaDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/" + name + ".db");
+//        zyzzyvaDb.open();
+//    }
+//    else
+//    {
+//        QMessageBox::warning(this, "Database not found", "A word database was not found. "
+//                             "You will not be able to see definitions and hooks for the words at the end of each round. Please generate the "
+//                             "database for this lexicon with Zyzzyva, a free word study tool, by Michael Thelen, found at "
+//                             "<a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
+//    }
+//}
 
 void UnscrambleGameTable::changeTileColors(int option)
 {
@@ -848,19 +853,20 @@ void UnscrambleGameTable::populateSolutionsTable()
             QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
             tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
             int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-            if (zyzzyvaDb.isOpen()) QSqlQuery("BEGIN TRANSACTION", zyzzyvaDb);
+            if (wordDb.isOpen()) QSqlQuery("BEGIN TRANSACTION", wordDb);
             for (int i = 0; i < theseSols.size(); i++)
             {
                 numTotalSols++;
                 uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
 
                 QString lexicon_symbols;
-                if (zyzzyvaDb.isOpen())
+                if (wordDb.isOpen())
                 {
                     QString backHooks, frontHooks, definition, probability;
-                    QSqlQuery query(zyzzyvaDb);
+                    QSqlQuery query(wordDb);
 
-                    query.exec("select front_hooks, back_hooks, definition, probability_order, lexicon_symbols from words where word = '" + theseSols.at(i) + "'");
+                    query.exec("select front_hooks, back_hooks, definitions, probability, lexiconstrings, words from alphagrams "
+                               "where alphagram = '" + alphagram + "'");
 
                     while (query.next())
                     {

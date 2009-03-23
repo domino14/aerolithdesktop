@@ -34,7 +34,7 @@ struct challengeInfo
 {
     QHash <QString, highScoreData> *highScores;
     quint8 wordLength;
-    QVector <quint16> dbIndices;
+    QVector <quint32> dbIndices;
 };
 
 struct alphagramInfo
@@ -51,7 +51,7 @@ struct alphagramInfo
     }
 };
 
-void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums);
+void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums);
 
 class UnscrambleGame : public TableGame
 {
@@ -114,7 +114,7 @@ private:
         quint8 numNotYetSolved;
         //    quint8 index;	// index
         QStringList solutions;
-        quint16 probability;
+        int probability;
     };
 
     //  QHash <QString, playerData> playerDataHash;
@@ -142,8 +142,8 @@ private:
   QFile outFile;
   QTextStream missedFileWriter;*/
 
-    QVector <quint16> missedArray;
-    QVector <quint16> quizArray;
+    QVector <quint32> missedArray;
+    QVector <quint32> quizArray;
     quint16 quizIndex;
     QVector <alphagramInfo> *alphaInfo;
 

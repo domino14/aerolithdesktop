@@ -111,8 +111,8 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
             else
             {
                 QString savedWordList;
-                QVector <quint16> savedMissedArray;
-                QVector <quint16> savedQuizArray;
+                QVector <quint32> savedMissedArray;
+                QVector <quint32> savedQuizArray;
                 stream >> savedWordList >> savedMissedArray >> savedQuizArray;
                 if (savedQuizArray.size() == 0 && savedMissedArray.size() == 0)
                 {
@@ -439,13 +439,13 @@ void UnscrambleGame::generateQuizArray()
         if (type == 0)
         {
             // a range of indices
-            quint16 start, end;
+            quint32 start, end;
             stream >> start >> end;
-            QVector <quint16> indexVector;
+            QVector <quint32> indexVector;
             getUniqueRandomNumbers(indexVector, start, end, end-start+1);
 
 
-            for (quint16 i = start; i <= end; i++)
+            for (quint32 i = start; i <= end; i++)
                 quizArray << indexVector.at(i-start);
 
             numTotalRacks = end-start+1;
@@ -455,10 +455,10 @@ void UnscrambleGame::generateQuizArray()
             // a list of indices
             quint16 size;
             stream >> size;
-            QVector <quint16> tempVector;
-            QVector <quint16> indexVector;
+            QVector <quint32> tempVector;
+            QVector <quint32> indexVector;
             indexVector.resize(size);
-            quint16 index;
+            quint32 index;
             getUniqueRandomNumbers(tempVector, 0, size-1, size);
             for (quint16 i = 0; i < size; i++)
             {
@@ -556,7 +556,7 @@ void UnscrambleGame::prepareTableAlphagrams()
         else
         {
             numRacksSeen++;
-            quint16 index = quizArray.at(quizIndex);
+            quint32 index = quizArray.at(quizIndex);
 
             query.bindValue(2, index);
             timer2.start();
@@ -655,18 +655,18 @@ void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quin
 
 /*************** static and utility functions ****************/
 
-void getUniqueRandomNumbers(QVector<quint16>&numbers, quint16 start, quint16 end, quint16 numNums)
+void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums)
 {
     // takes all the numbers between start and end, including start and end,
     // randomly shuffles, and returns the first numNums numbers of the shuffled array.
 
     //  qDebug() << "gurn" << start << end << numNums;
-    quint16 size = end - start + 1;
+    int size = end - start + 1;
     numbers.resize(numNums);
     if (size < 1) size = start - end + 1;
     if (numNums > size) return;
 
-    QVector <quint16> pool;
+    QVector <quint32> pool;
     pool.resize(size);
     for (int i = 0; i < pool.size(); i++)
     {
@@ -775,7 +775,7 @@ void UnscrambleGame::generateDailyChallenges()
             {
                 wordCount = query.value(0).toInt();
             }
-            getUniqueRandomNumbers(tmpChallenge.dbIndices, 1, wordCount, qMin(wordCount, 50));
+            getUniqueRandomNumbers(tmpChallenge.dbIndices, 1+(i<<24), wordCount+(i<<24), qMin(wordCount, 50));
             qDebug() << "generated" + challengeName;
             qDebug() << tmpChallenge.dbIndices;
             tmpChallenge.wordLength = i;

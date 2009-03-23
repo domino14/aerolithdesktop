@@ -1006,7 +1006,8 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
         uiScores.comboBoxChallenges->addItem(lexiconLists.at(index).dailyWordLists.at(i));
     }
     challengesMenu->addAction("Get today's scores");
-    gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
+   // gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
+    gameBoardWidget->setLexicon(lexiconLists.at(index).lexicon);
     currentLexicon = lexiconLists.at(index).lexicon;
     uiTable.labelLexiconName->setText(currentLexicon);
 
