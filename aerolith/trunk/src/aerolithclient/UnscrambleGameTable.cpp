@@ -386,7 +386,12 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
     /* connect to word database*/
     wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB");
     wordDb.setDatabaseName("words.db");
-    wordDb.open();
+    bool success = wordDb.open();
+    if (!success)
+    {
+        updateLog("words.db was not found in your directory. You will not be able to use many features of Aerolith.");
+
+    }
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -853,7 +858,35 @@ void UnscrambleGameTable::populateSolutionsTable()
             QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
             tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
             int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-            if (wordDb.isOpen()) QSqlQuery("BEGIN TRANSACTION", wordDb);
+            if (wordDb.isOpen())
+            {
+                QSqlQuery("BEGIN TRANSACTION", wordDb);
+
+                QSqlQuery query(wordDb);
+
+                query.exec("select front_hooks, back_hooks, definitions, probability, lexiconstrings, words from alphagrams "
+                           "where alphagram = '" + alphagram + "' and lexicon = '" + lexiconName + '");
+                QString backHooks, frontHooks, definitions, probability, lexiconstrings, words;
+
+                while (query.next())
+                {
+                    frontHooks = query.value(0).toString();
+                    backHooks = query.value(1).toString();
+                    definitions = query.value(2).toString();
+                    probability = query.value(3).toString();
+                    lexiconstrings = query.value(4).toString();
+                    words = query.value(5).toString();
+
+
+
+
+
+
+
+                }
+
+
+
             for (int i = 0; i < theseSols.size(); i++)
             {
                 numTotalSols++;
