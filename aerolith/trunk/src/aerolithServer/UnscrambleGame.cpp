@@ -62,9 +62,9 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 
     if (cycleState == TABLE_TYPE_DAILY_CHALLENGES)
     {
-        if (wordLength <= 3) tableTimerVal = 60;
-        if (wordLength == 4) tableTimerVal = 120;
-        if (wordLength == 5) tableTimerVal = 200;
+        if (wordLength <= 3) tableTimerVal = 100;
+        if (wordLength == 4) tableTimerVal = 150;
+        if (wordLength == 5) tableTimerVal = 220;
         if (wordLength == 6) tableTimerVal = 240;
         if (wordLength >= 7 && wordLength <= 8) tableTimerVal = 270;
         if (wordLength > 8) tableTimerVal = 300;
@@ -285,10 +285,12 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
         socket->playerData.gaveUp = true;
 
         foreach (ClientSocket* thisSocket, table->playerList)
+        {
             if (thisSocket->playerData.gaveUp == false)
             {
-            giveUp = false;
-            break;
+                giveUp = false;
+                break;
+            }
         }
         if (giveUp == true)
         {
@@ -775,11 +777,14 @@ void UnscrambleGame::generateDailyChallenges()
             {
                 wordCount = query.value(0).toInt();
             }
-            getUniqueRandomNumbers(tmpChallenge.dbIndices, 1+(i<<24), wordCount+(i<<24), qMin(wordCount, 50));
-            qDebug() << "generated" + challengeName;
-            qDebug() << tmpChallenge.dbIndices;
-            tmpChallenge.wordLength = i;
-            challenges.insert(challengeName, tmpChallenge);
+            if (wordCount != 0)
+            {
+                getUniqueRandomNumbers(tmpChallenge.dbIndices, 1+(i<<24), wordCount+(i<<24), qMin(wordCount, 50));
+                qDebug() << "generated" + challengeName;
+                qDebug() << tmpChallenge.dbIndices;
+                tmpChallenge.wordLength = i;
+                challenges.insert(challengeName, tmpChallenge);
+            }
         }
     }
     query.exec("END TRANSACTION");

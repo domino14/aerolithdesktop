@@ -19,6 +19,8 @@
 #include <QTime>
 
 extern const QString WORD_DATABASE_NAME = "wordDB";
+
+
 extern const QString WORD_DATABASE_FILENAME = "words.db";
 
 /*http://bytes.com/forum/thread138180.html for discussion on having to declare extern explicitly
@@ -58,7 +60,10 @@ void ListMaker::createListDatabase()
     QSqlDatabase wordDb;
     wordDb = QSqlDatabase::addDatabase("QSQLITE", WORD_DATABASE_NAME);
 
-    wordDb.setDatabaseName(WORD_DATABASE_FILENAME);
+    /* note. we must copy the words.db to the executable path inside the bundle for Mac OS in order
+       for the following to work */
+    QString dbFilename =  QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME;
+    wordDb.setDatabaseName(dbFilename);
     wordDb.open();
 
     QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
@@ -93,6 +98,7 @@ void ListMaker::createListDatabase()
         }
         wordQuery.exec("CREATE INDEX listname_index on wordlists(listname, lexiconName)");
         wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability, length, lexiconName)");
+        wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram, lexiconName)");
     }
     else
         qDebug() << "Don't need to create, just connect.";

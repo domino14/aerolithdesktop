@@ -17,6 +17,7 @@
 #include "table.h"
 
 #include "UnscrambleGame.h"
+#include "BonusGame.h"
 #include "ClientWriter.h"
 
 extern QByteArray block;
@@ -33,18 +34,20 @@ QByteArray tableData::initialize(ClientSocket* tableCreator, quint16 tableNumber
 
     in >> gameType >> tableName >> maxPlayers;
     qDebug() << "Creating table" << tableNumber << tableName << gameType << maxPlayers << tableDescription.size();
+    host = tableCreator;
+    canJoin = true;
     switch (gameType)
     {
         case GAME_TYPE_UNSCRAMBLE:
         {
             quint8 unscrambleType, tableTimer;
             in >> lexiconIndex >> unscrambleType >> tableTimer;
-            host = tableCreator;
-            canJoin = true;
+
             tableGame = new UnscrambleGame(this);
+            // TODO FIX. initialize should only take the parameter (in) possibly
             tableGame->initialize(unscrambleType, tableTimer, tableName, lexiconIndex);
 
-            // compute retarr
+            // compute array to be sent out as table information array
             writeHeaderData();
             out << (quint8) SERVER_NEW_TABLE;
             out << (quint16) tableNumber;
@@ -55,6 +58,24 @@ QByteArray tableData::initialize(ClientSocket* tableCreator, quint16 tableNumber
             fixHeaderLength();
 
             tableInformationArray = block;
+        }
+        case GAME_TYPE_BONUS:
+        {
+            in >> lexiconIndex;
+            tableGame = new BonusGame(this);
+            tableGame->initialize(0,0, tableName, lexiconIndex);
+
+            writeHeaderData();
+            out << (quint8) SERVER_NEW_TABLE;
+            out << (quint16) tableNumber;
+            out << (quint8) GAME_TYPE_BONUS;
+            out << (quint8) lexiconIndex;
+            out << tableName;
+            out << maxPlayers;
+            fixHeaderLength();
+
+            tableInformationArray = block;
+
         }
         break;
 

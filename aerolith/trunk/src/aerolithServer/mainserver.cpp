@@ -34,8 +34,6 @@ const QString incompatibleVersionString =
                              const QString compatibleButOutdatedVersionString =
                              "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 //const QString thisVersion = "0.4.1";
-extern const QString WORD_DATABASE_NAME;
-extern const QString WORD_DATABASE_FILENAME;
 
 #define MAX_NUM_TABLES 1000
 
@@ -456,7 +454,7 @@ void MainServer::processTableCommand(ClientSocket* socket)
     case CLIENT_TABLE_GUESS:
         // guess from solution box
         {
-            QString guess;
+            QByteArray guess;
             socket->connData.in >> guess;
             table->tableGame->guessSent(socket, guess);
         }

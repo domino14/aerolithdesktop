@@ -15,216 +15,11 @@
 //    along with Aerolith.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "UnscrambleGameTable.h"
+extern const QString WORD_DATABASE_FILENAME;
 
-GameTable::GameTable(QWidget *parent, Qt::WindowFlags f, int numPlayers) : QWidget(parent, f)
-{
-    qsrand(QDateTime::currentDateTime().toTime_t());
-    this->numPlayers = numPlayers;
-
-    for (int i = 0; i < numPlayers; i++)
-    {
-        QWidget* tmpWidget = new QWidget(this);
-        Ui::playerInfoForm tempUi;
-        tempUi.setupUi(tmpWidget);
-        playerUis.append(tempUi);
-        playerWidgets.append(tmpWidget);
-    }
-
-    connect(playerUis.at(0).labelAvatar, SIGNAL(leftMouseClicked()), this, SLOT(possibleAvatarChangeLeft()));
-    connect(playerUis.at(0).labelAvatar, SIGNAL(rightMouseClicked()), this, SLOT(possibleAvatarChangeRight()));
-
-}
-
-GameTable::~GameTable()
-{
-    qDebug() << "GameTable destructor";
-}
-
-void GameTable::clearAndHidePlayers(bool hide)
-{
-    // assumes setupUi has been called on all these Ui objects. (a widget exists for each)
-    for (int i = 0; i < numPlayers; i++)
-    {
-        playerUis.at(i).labelAvatar->clear();
-        playerUis.at(i).labelUsername->clear();
-        playerUis.at(i).labelAddInfo->clear();
-        playerUis.at(i).listWidgetAnswers->clear();
-        if (hide) playerWidgets.at(i)->hide();
-    }
-    clearReadyIndicators();
-
-}
-
-void GameTable::playerLeaveTable()
-{	
-    seats.clear();
-}	
-
-void GameTable::possibleAvatarChangeLeft()
-{
-    avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
-    if (clickedLabel->property("username").toString() == myUsername)
-    {
-        quint8 avatarID = clickedLabel->property("avatarID").toInt();
-        if (avatarID == NUM_AVATAR_IDS) avatarID = 1;
-        else avatarID++;
-
-        emit avatarChange(avatarID);
-        qDebug() << "emitted avatar change with id: " << avatarID;
-    }
-}
-
-void GameTable::possibleAvatarChangeRight()
-{
-    avatarLabel* clickedLabel = static_cast<avatarLabel*> (sender());
-    if (clickedLabel->property("username").toString() == myUsername)
-    {
-
-        quint8 avatarID = clickedLabel->property("avatarID").toInt();
-        if (avatarID == 1) avatarID = NUM_AVATAR_IDS;
-        else avatarID--;
-
-        emit avatarChange(avatarID);
-    }
-}
-
-void GameTable::setAvatar(QString username, quint8 avatarID)
-{
-    int seat;
-    if (seats.contains(username))
-        seat = seats.value(username);
-    else
-    {
-        QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10005)");
-        return;
-    }
-    playerUis.at(seat).labelAvatar->setPixmap(QString(":images/face%1.png").arg(avatarID));
-    playerUis.at(seat).labelAvatar->setProperty("avatarID", QVariant(avatarID));
-    playerUis.at(seat).labelAvatar->setProperty("username", QVariant(username));
-}
-
-
-void GameTable::addToPlayerList(QString username, QString stringToAdd)
-{
-    if (seats.contains(username))
-    {
-        int indexOfPlayer = seats.value(username);
-        playerUis.at(indexOfPlayer).listWidgetAnswers->insertItem(0, stringToAdd);
-        playerUis.at(indexOfPlayer).listWidgetAnswers->item(0)->setTextAlignment(Qt::AlignCenter);
-        playerUis.at(indexOfPlayer).labelAddInfo->setText(QString("%1").
-                                                          arg(playerUis.at(indexOfPlayer).listWidgetAnswers->count()));
-
-
-    }
-}
-
-void GameTable::addPlayersToWidgets(QStringList playerList)
-{
-    // adds players, including ourselves
-    if (!playerList.contains(myUsername))
-    {
-        QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 20001)");
-        return;
-    }
-    else
-    {
-        // put US at seat #0
-        playerList.removeAll(myUsername);
-        playerWidgets.at(0)->show();
-        playerUis.at(0).labelUsername->setText(myUsername);
-        seats.insert(myUsername, 0);
-    }
-
-    if (playerList.size() > numPlayers-1)
-    {
-        QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 20002)");
-        return;
-    }
-
-    for (int i = 0; i < playerList.size(); i++)
-    {
-        playerWidgets.at(i+1)->show();
-        playerUis.at(i+1).labelUsername->setText(playerList[i]);
-        seats.insert(playerList[i], i+1);
-    }
-}
-
-void GameTable::addPlayerToWidgets(QString username, bool gameStarted)
-{
-
-    // add a player that is NOT us
-    bool spotfound = false;
-    int spot;
-
-    for (int i = 1; i < numPlayers; i++)
-    {
-        if (playerUis.at(i).labelUsername->text() == "")
-        {
-            spotfound = true;
-            spot = i;
-            break;
-        }
-    }
-
-    if (spotfound == false)
-    {
-        QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10001)");
-        return;
-    }
-
-    playerWidgets.at(spot)->show();
-    playerUis.at(spot).labelUsername->setText(username);
-    seats.insert(username, spot);
-
-    if (gameStarted == false)
-        for (int i = 0; i < numPlayers; i++)
-            playerUis.at(i).labelAddInfo->setText("");
-    clearReadyIndicators();
-}
-
-void GameTable::removePlayerFromWidgets(QString username, bool gameStarted)
-{ 
-    // a player has left OUR table
-    int seat;
-    if (seats.contains(username))
-    {
-        seat = seats.value(username);
-    }
-    else
-    {
-        QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10002)");
-        return;
-    }
-
-    seats.remove(username);
-
-    playerWidgets.at(seat)->hide();
-    playerUis.at(seat).labelUsername->clear();
-    playerUis.at(seat).labelAddInfo->clear();
-    playerUis.at(seat).listWidgetAnswers->clear();
-    playerUis.at(seat).labelAvatar->clear();
-
-    // clear "Ready" for everyone if someone left.
-    if (gameStarted == false)
-        clearReadyIndicators();
-}
-
-void GameTable::setMyUsername(QString username)
-{
-    myUsername = username;
-}
-
-
-
-///////////////////////////
 UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
         GameTable(parent, f, 8)
 {
-
-
-
-
-
     currentWordLength = 0;
     //this->setStyle(new QWindowsStyle);
     tableUi.setupUi(this);
@@ -383,14 +178,27 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
 
     loadUserPreferences();
 
+
+     #ifdef Q_WS_MAC
+
+    #endif
+
     /* connect to word database*/
-    wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB");
-    wordDb.setDatabaseName("words.db");
+    wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
+    // note - database must be in path of executable (in mac os, inside the bundle!)
+    wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);
     bool success = wordDb.open();
     if (!success)
     {
-        updateLog("words.db was not found in your directory. You will not be able to use many features of Aerolith.");
+        qDebug() << "could not open!";
+        QMessageBox::critical(this, "Error",
+                              "Word database was not found in your directory. You will not be able to use many features of Aerolith.");
 
+    }
+    else
+    {
+        qDebug() << "Connected to word database successfully";
+        qDebug() << wordDb.isOpen();
     }
 }
 
@@ -848,102 +656,96 @@ void UnscrambleGameTable::populateSolutionsTable()
     QBrush missedColorBrush;
     missedColorBrush.setColor(Qt::red);
     int numTotalSols = 0, numWrong = 0;
-    for (int i = 0; i < wordQuestions.size(); i++)
+    if (wordDb.isOpen())
     {
-        QStringList theseSols = wordQuestions.at(i).solutions;
-        QString alphagram = wordQuestions.at(i).alphagram;
 
-        if (alphagram != "") // if alphagram exists.
+        QSqlQuery transactionQuery(wordDb);
+        QSqlQuery query(wordDb);
+        transactionQuery.exec("BEGIN TRANSACTION");
+        query.prepare("select front_hooks, back_hooks, definitions, probability, lexiconstrings, words from alphagrams "
+                      "where lexiconName = ? and alphagram = ?");
+        query.bindValue(0, lexiconName);
+        for (int i = 0; i < wordQuestions.size(); i++)
         {
-            QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
-            tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
-            int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-            if (wordDb.isOpen())
+
+            QStringList theseSols = wordQuestions.at(i).solutions;
+            QString alphagram = wordQuestions.at(i).alphagram;
+            if (alphagram != "") // if alphagram exists.
             {
-                QSqlQuery("BEGIN TRANSACTION", wordDb);
 
-                QSqlQuery query(wordDb);
+                QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+                tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+                int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
+                query.bindValue(1, alphagram);
+                query.exec();
 
-                query.exec("select front_hooks, back_hooks, definitions, probability, lexiconstrings, words from alphagrams "
-                           "where alphagram = '" + alphagram + "' and lexicon = '" + lexiconName + '");
-                QString backHooks, frontHooks, definitions, probability, lexiconstrings, words;
-
+                QString backHooks, frontHooks, definitions, lexiconstrings, words;
+                int probability;
                 while (query.next())
                 {
                     frontHooks = query.value(0).toString();
                     backHooks = query.value(1).toString();
                     definitions = query.value(2).toString();
-                    probability = query.value(3).toString();
+                    probability = query.value(3).toInt() & 0xFFFFFF;
                     lexiconstrings = query.value(4).toString();
                     words = query.value(5).toString();
+                    QStringList defs = definitions.split("@");
+                    QStringList fh = frontHooks.split("@");
+                    QStringList bh = backHooks.split("@");
+                    QStringList ls = lexiconstrings.split("@");
 
-
-
-
-
-
-
-                }
-
-
-
-            for (int i = 0; i < theseSols.size(); i++)
-            {
-                numTotalSols++;
-                uiSolutions.solutionsTableWidget->insertRow(uiSolutions.solutionsTableWidget->rowCount());
-
-                QString lexicon_symbols;
-                if (wordDb.isOpen())
-                {
-                    QString backHooks, frontHooks, definition, probability;
-                    QSqlQuery query(wordDb);
-
-                    query.exec("select front_hooks, back_hooks, definitions, probability, lexiconstrings, words from alphagrams "
-                               "where alphagram = '" + alphagram + "'");
-
-                    while (query.next())
+                    //if (words.split(" ").size() != theseSols.size())
+                    //{
+                    // should not allow to even select incorrect lexicon.
+                    //  updateLog("Sizes do not match. Please select correct lexicon.");
+                    // return;
+                    // }
+                    for (int j = 0; j < theseSols.size(); j++)
                     {
-                        frontHooks = query.value(0).toString();
-                        backHooks = query.value(1).toString();
-                        definition = query.value(2).toString();
-                        probability = query.value(3).toString();
-                        lexicon_symbols = query.value(4).toString();
+
+                        numTotalSols++;
+
+                        uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
+
+
+                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4, new QTableWidgetItem(bh.at(j)));
+                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2, new QTableWidgetItem(fh.at(j)));
+                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5, new QTableWidgetItem(defs.at(j)));
+
+                        QTableWidgetItem* wordItem = new QTableWidgetItem(theseSols.at(j) + ls.at(j));
+                        if (!rightAnswers.contains(theseSols.at(j)))
+                        {
+                            numWrong++;
+                            wordItem->setForeground(missedColorBrush);
+                            QFont wordItemFont = wordItem->font();
+                            wordItemFont.setBold(true);
+                            wordItem->setFont(wordItemFont);
+
+                        }
+
+                        wordItem->setTextAlignment(Qt::AlignCenter);
+                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 3, wordItem); // word
+
                     }
-
-                    QTableWidgetItem *probabilityItem = new QTableWidgetItem(probability);
-                    uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 0, probabilityItem);
-
-                    QTableWidgetItem *backHookItem = new QTableWidgetItem(backHooks);
-                    uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 4, backHookItem);
-                    QTableWidgetItem *frontHookItem = new QTableWidgetItem(frontHooks);
-                    uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 2, frontHookItem);
-                    QTableWidgetItem *definitionItem = new QTableWidgetItem(definition);
-                    uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount()-1, 5, definitionItem);
                 }
-                QTableWidgetItem *wordItem = new QTableWidgetItem(theseSols.at(i) + lexicon_symbols);
-                if (!rightAnswers.contains(theseSols.at(i)))
-                {
-                    numWrong++;
-                    wordItem->setForeground(missedColorBrush);
-                    QFont wordItemFont = wordItem->font();
-                    wordItemFont.setBold(true);
-                    wordItem->setFont(wordItemFont);
-                }
-                wordItem->setTextAlignment(Qt::AlignCenter);
-                uiSolutions.solutionsTableWidget->setItem(uiSolutions.solutionsTableWidget->rowCount() - 1, 3, wordItem);
+
+
+                uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
+                uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
+                                                                  new QTableWidgetItem(QString::number(probability)));
 
             }
-            if (zyzzyvaDb.isOpen()) QSqlQuery("END TRANSACTION", zyzzyvaDb);
-            uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
-
         }
+        transactionQuery.exec("END TRANSACTION");
+        uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+        double percCorrect;
+        if (numTotalSols == 0) percCorrect = 0.0;
+        else
+            percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
+        uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
     }
-    uiSolutions.solutionsTableWidget->resizeColumnsToContents();
-    double percCorrect;
-    if (numTotalSols == 0) percCorrect = 0.0;
     else
-        percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
-    uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
+        qDebug() << "Database is not open.";
 }
 
 void UnscrambleGameTable::alphagrammizeWords()
@@ -1145,7 +947,7 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
 }
 
 void UnscrambleGameTable::clearAllWordTiles()
-{ 
+{
 
     wordQuestions.clear();
     foreach (Tile* tile, tiles)
