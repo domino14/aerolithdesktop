@@ -193,6 +193,8 @@ signals:
     void serverThreadHasStarted();
     void serverThreadHasFinished();
  private slots:
+    void createUnscrambleGameTable();
+    void createBonusGameTable();
     void lexiconComboBoxIndexChanged(int);
 };
 

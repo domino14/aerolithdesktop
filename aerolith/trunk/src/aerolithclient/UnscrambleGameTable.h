@@ -21,59 +21,13 @@
 #include <QtGui>
 #include <QtSql>
 #include "ui_tableForm.h"
-#include "ui_playerInfoForm.h"
+
 #include "ui_solutionsForm.h"
 #include "ui_tableCustomizationForm.h"
 #include "tile.h"
 #include "chip.h"
 #include "wordRectangle.h"
-
-#define NUM_AVATAR_IDS 73 
-
-class GameTable : public QWidget
-{
-
-    Q_OBJECT
-public:
-    GameTable(QWidget* parent = 0, Qt::WindowFlags f = 0, int gamePlayers = 6);
-    virtual ~GameTable() = 0;
-    void setMyUsername(QString);
-
-    void setAvatar(QString, quint8);
-    virtual void setReadyIndicator(QString) = 0;
-    virtual void clearReadyIndicators() = 0;
-    virtual void setupForGameStart() = 0;
-    void addToPlayerList(QString, QString);
-    //virtual void setDatabase(QString name) = 0;
-    void setLexicon(QString name)
-    {
-        lexiconName = name;
-    }
-
-signals:
-    void avatarChange(quint8);
-protected:
-    QString myUsername;
-
-    // most of these have to do with the player widgets.
-    QHash <QString, int> seats;
-    QList <Ui::playerInfoForm> playerUis;
-    QList <QWidget*> playerWidgets;
-    int numPlayers;
-    void clearAndHidePlayers(bool hide);
-    void playerLeaveTable();
-
-
-    void addPlayersToWidgets(QStringList playerList);
-    void removePlayerFromWidgets(QString, bool);
-    void addPlayerToWidgets(QString, bool);
-    QString lexiconName;
-
-private slots:
-
-    void possibleAvatarChangeLeft();
-    void possibleAvatarChangeRight();
-};
+#include "GameTable.h"
 
 
 class UnscrambleGameTable : public GameTable

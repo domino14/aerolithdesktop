@@ -19,7 +19,9 @@ DEPENDPATH += build/moc \
     $$ROOT/src/aerolithServer \
     $$ROOT/src/common
 ICON = $$ROOT/macosxicns.icns
-SOURCES = main.cpp
+SOURCES = main.cpp \
+    ../aerolithclient/GameTable.cpp \
+    ../aerolithServer/BonusGame.cpp
 FORMS = tableCreateForm.ui \
     solutionsForm.ui \
     scoresForm.ui \
@@ -43,7 +45,9 @@ HEADERS += mainwindow.h \
     tile.h \
     chip.h \
     wordRectangle.h \
-    playerlistwidget.h
+    playerlistwidget.h \
+    ../aerolithclient/GameTable.h \
+    ../aerolithServer/BonusGame.h
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 HEADERS += mainserver.h \

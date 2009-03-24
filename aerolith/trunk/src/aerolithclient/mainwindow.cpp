@@ -18,8 +18,8 @@
 #include "commonDefs.h"
 
 const quint16 MAGIC_NUMBER = 25349;
-const QString WindowTitle = "Aerolith 1.0";
-//const QString thisVersion = "0.4.1";
+const QString WindowTitle = "Aerolith 0.5";
+
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -27,7 +27,7 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
     else return (a.numCorrect > b.numCorrect);
 }
 
-MainWindow::MainWindow(QString aerolithVersion) : aerolithVersion(aerolithVersion), PLAYERLIST_ROLE(Qt::UserRole), 
+MainWindow::MainWindow(QString aerolithVersion) : aerolithVersion(aerolithVersion), PLAYERLIST_ROLE(Qt::UserRole),
 out(&block, QIODevice::WriteOnly)
 {
 
@@ -72,6 +72,11 @@ out(&block, QIODevice::WriteOnly)
 
     createTableDialog = new QDialog(this);
     uiTable.setupUi(createTableDialog);
+
+    connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
+    connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
+    connect(uiTable.pushButtonBonuses, SIGNAL(clicked()), SLOT(createBonusGameTable()));
+
 
     scoresDialog = new QDialog(this);
     uiScores.setupUi(scoresDialog);
@@ -266,7 +271,7 @@ void MainWindow::submitGuess(QString guess)
     out << (quint8) CLIENT_TABLE_COMMAND;
     out << (quint16) currentTablenum;
     out << (quint8) CLIENT_TABLE_GUESS; // from solution box
-    out << guess;
+    out << guess.toAscii();
     fixHeaderLength();
     commsSocket->write(block);
 }
@@ -292,21 +297,17 @@ void MainWindow::readFromServer()
             in >> packetlength;
             if (header != (quint16)MAGIC_NUMBER) // magic number
             {
-                if (QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
-                                          "version of Aerolith. If you would like to update, please click OK"
-                                          " below.", QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok)
-                {
 #ifdef Q_WS_MAC
-
-                    QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
-                    QCoreApplication::quit();
+                QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
+                                      "version of Aerolith. Please go to www.aerolith.org and download the newest "
+                                      " update.");
 #endif
 #ifdef Q_WS_WIN
-                    // call an updater program
-                    QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
-                    QCoreApplication::quit();
+                // call an updater program
+                // QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
+                // QCoreApplication::quit();
 #endif
-                }
+
 
 
                 //uiMainWindow.chatText->append("You have the wrong version of the client. Please check http://www.aerolith.org");
@@ -339,217 +340,219 @@ void MainWindow::readFromServer()
             }
             break;
 
-                case SERVER_LOGGED_IN:	// logged in (entered)
-                    {
-                        QString username;
-                        in >> username;
-                        QListWidgetItem *it = new QListWidgetItem(username, uiMainWindow.listWidgetPeopleConnected);
-                        if (username == currentUsername)
-                        {
-                           // QSound::play("sounds/enter.wav");
+        case SERVER_LOGGED_IN:	// logged in (entered)
+            {
+                QString username;
+                in >> username;
+                QListWidgetItem *it = new QListWidgetItem(username, uiMainWindow.listWidgetPeopleConnected);
+                if (username == currentUsername)
+                {
+                    // QSound::play("sounds/enter.wav");
 
-                            uiLogin.connectStatusLabel->setText("You have connected!");
-                            loginDialog->hide();
-                            setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
-                            sendClientVersion();
-                            gameBoardWidget->setMyUsername(username);
-                            currentTablenum = 0;
-                        }
-                        if (username.toLower() == "cesar")
-                        {
-                            it->setForeground(QBrush(Qt::blue));
-
-                        }
-                    }
-                    break;
-                case SERVER_LOGGED_OUT:	// logged out
-                    {
-                        QString username;
-                        in >> username;
-                        for (int i = 0; i < uiMainWindow.listWidgetPeopleConnected->count(); i++)
-                            if (uiMainWindow.listWidgetPeopleConnected->item(i)->text() == username)
-                            {
-                            QListWidgetItem *it = uiMainWindow.listWidgetPeopleConnected->takeItem(i);
-                            delete it;
-                        }
-
-                    }
-                    break;
-
-                case SERVER_ERROR:	// error
-                    {
-                        QString errorString;
-                        in >> errorString;
-                        QMessageBox::information(loginDialog, "Aerolith client", errorString);
-                        //	chatText->append("<font color=red>" + errorString + "</font>");
-                    }
-                    break;
-                case SERVER_CHAT:	// chat
-                    {
-                        QString username;
-                        in >> username;
-                        QString text;
-                        in >> text;
-                        uiMainWindow.chatText->append(QString("[")+username+"] " + text);
-                    }
-                    break;
-                case SERVER_PM:	// PM
-                    {
-                        QString username, message;
-                        in >> username >> message;
-                        receivedPM(username, message);
-                    }
-                    break;
-                case SERVER_NEW_TABLE:	// New table
-                    {
-                        // there is a new table
-
-                        // static information
-                        quint16 tablenum;
-                        quint8 gameType;
-                        quint8 lexiconIndex;
-                        QString wordListDescriptor;
-                        quint8 maxPlayers;
-                        //		QStringList
-
-                        in >> tablenum >> gameType >> lexiconIndex >> wordListDescriptor >> maxPlayers;
-                        // create table
-                        handleCreateTable(tablenum, gameType, lexiconIndex, wordListDescriptor, maxPlayers);
-                        /* TODO genericize this as well (like in the server) to take in a table number and type,
-                           then read different amount of info for each type */
-                    }
-                    break;
-                case SERVER_JOIN_TABLE:	// player joined table
-                    {
-                        quint16 tablenum;
-                        QString playerName;
-
-                        in >> tablenum >> playerName; // this will also black out the corresponding button for can join
-                        handleAddToTable(tablenum, playerName);
-                        if (playerName == currentUsername)
-                        {
-                            currentTablenum = tablenum;
-                            if (!tables.contains(tablenum))
-                                break;
-                            tableRepresenter* t = tables.value(tablenum);
-
-                            QString wList = t->descriptorItem->text();
-
-                            gameBoardWidget->resetTable(tablenum, wList, playerName);
-                            gameBoardWidget->show();
-
-                        }
-                        if (currentTablenum == tablenum)
-                            modifyPlayerLists(tablenum, playerName, 1);
-                        //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
-
-
-                    }
-                    break;
-                case SERVER_LEFT_TABLE:
-                    {
-                        // player left table
-                        quint16 tablenum;
-                        QString playerName;
-                        in >> tablenum >> playerName;
-
-                        if (currentTablenum == tablenum)
-                        {//i love shoe
-                            modifyPlayerLists(tablenum, playerName, -1);
-                        }
-
-                        if (playerName == currentUsername)
-                        {
-                            currentTablenum = 0;
-                            //gameStackedWidget->setCurrentIndex(0);
-                            gameBoardWidget->hide();
-                        }
-
-                        // chatText->append(QString("%1 has left %2").arg(playerName).arg(tablenum));
-                        handleLeaveTable(tablenum, playerName);
-
-                    }
-
-                    break;
-                case SERVER_KILL_TABLE:
-                    {
-                        // table has ceased to exist
-                        quint16 tablenum;
-                        in >> tablenum;
-                        //	    chatText->append(QString("%1 has ceasd to exist").arg(tablenum));
-                        handleDeleteTable(tablenum);
-                    }
-                    break;
-                case SERVER_WORD_LISTS:
-
-                    // word lists
-                    handleWordlistsMessage();
-
-
-                    break;
-                case SERVER_TABLE_COMMAND:
-                    // table command
-                    // an additional byte is needed
-                    {
-                        quint16 tablenum;
-                        in >> tablenum;
-                        if (tablenum != currentTablenum)
-                        {
-                            qDebug() << "HORRIBLE ERROR" << tablenum << currentTablenum;
-                            QMessageBox::critical(this, "Aerolith client", "Critical error 10003");
-                            exit(0);
-                        }
-                        quint8 addByte;
-                        in >> addByte;
-
-                        handleTableCommand(tablenum, addByte);
-
-                    }
-                    break;
-                case SERVER_MESSAGE:
-                    // server message
-                    {
-                        QString serverMessage;
-                        in >> serverMessage;
-
-                        uiMainWindow.chatText->append("<font color=red>" + serverMessage + "</font>");
-                        gameBoardWidget->gotChat("<font color=red>" + serverMessage + "</font>");
-
-                    }
-                    break;
-                case SERVER_HIGH_SCORES:
-                    // high scores!
-                    {
-                        displayHighScores();
-
-                    }
-
-
-                    break;
-                case SERVER_AVATAR_CHANGE:
-                    // avatar id
-                    {
-                        QString username;
-                        quint8 avatarID;
-                        in >> username >> avatarID;
-                        // username changed his avatar to avatarID. if we want to display this avatar, display it
-                        // i.e. if we are in a table. in the future consider changing this to just a table packet but do the check now
-                        // just in case.
-                        if (currentTablenum != 0)
-                        {
-                            // we are in a table
-                            gameBoardWidget->setAvatar(username, avatarID);
-
-                        }
-                        // then here we can do something like chatwidget->setavatar( etc). but this requires the server
-                        // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
-                        // this way we can just send everyone's avatar on login. consider changing this!
-                    }
-                    break;
-                default:
-                    QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
-                    commsSocket->disconnectFromHost();
+                    uiLogin.connectStatusLabel->setText("You have connected!");
+                    loginDialog->hide();
+                    setWindowTitle(QString(WindowTitle + " - logged in as ") + username);
+                    sendClientVersion();
+                    gameBoardWidget->setMyUsername(username);
+                    currentTablenum = 0;
                 }
+                if (username.toLower() == "cesar")
+                {
+                    it->setForeground(QBrush(Qt::blue));
+
+                }
+            }
+            break;
+        case SERVER_LOGGED_OUT:	// logged out
+            {
+                QString username;
+                in >> username;
+                for (int i = 0; i < uiMainWindow.listWidgetPeopleConnected->count(); i++)
+                    if (uiMainWindow.listWidgetPeopleConnected->item(i)->text() == username)
+                    {
+                    QListWidgetItem *it = uiMainWindow.listWidgetPeopleConnected->takeItem(i);
+                    delete it;
+                }
+
+            }
+            break;
+
+        case SERVER_ERROR:	// error
+            {
+                QString errorString;
+                in >> errorString;
+                QMessageBox::information(loginDialog, "Aerolith client", errorString);
+                //	chatText->append("<font color=red>" + errorString + "</font>");
+            }
+            break;
+        case SERVER_CHAT:	// chat
+            {
+                QString username;
+                in >> username;
+                QString text;
+                in >> text;
+                uiMainWindow.chatText->append(QString("[")+username+"] " + text);
+            }
+            break;
+        case SERVER_PM:	// PM
+            {
+                QString username, message;
+                in >> username >> message;
+                receivedPM(username, message);
+            }
+            break;
+        case SERVER_NEW_TABLE:	// New table
+            {
+                // there is a new table
+
+                // static information
+                quint16 tablenum;
+                quint8 gameType;
+                quint8 lexiconIndex;
+                QString tableName;
+                quint8 maxPlayers;
+                //		QStringList
+
+                in >> tablenum >> gameType >> lexiconIndex >> tableName >> maxPlayers;
+                // create table
+                handleCreateTable(tablenum, gameType, lexiconIndex, tableName, maxPlayers);
+                /* TODO genericize this as well (like in the server) to take in a table number and type,
+                           then read different amount of info for each type */
+            }
+            break;
+        case SERVER_JOIN_TABLE:	// player joined table
+            {
+                quint16 tablenum;
+                QString playerName;
+
+                in >> tablenum >> playerName; // this will also black out the corresponding button for can join
+                handleAddToTable(tablenum, playerName);
+                if (playerName == currentUsername)
+                {
+                    currentTablenum = tablenum;
+                    if (!tables.contains(tablenum))
+                        break;
+                    tableRepresenter* t = tables.value(tablenum);
+
+                    QString wList = t->descriptorItem->text();
+
+                    gameBoardWidget->resetTable(tablenum, wList, playerName);
+                    gameBoardWidget->show();
+                    uiMainWindow.comboBoxLexicon->setEnabled(false);
+
+                }
+                if (currentTablenum == tablenum)
+                    modifyPlayerLists(tablenum, playerName, 1);
+                //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
+
+
+            }
+            break;
+        case SERVER_LEFT_TABLE:
+            {
+                // player left table
+                quint16 tablenum;
+                QString playerName;
+                in >> tablenum >> playerName;
+
+                if (currentTablenum == tablenum)
+                {//i love shoe
+                    modifyPlayerLists(tablenum, playerName, -1);
+                }
+
+                if (playerName == currentUsername)
+                {
+                    currentTablenum = 0;
+                    //gameStackedWidget->setCurrentIndex(0);
+                    gameBoardWidget->hide();
+                    uiMainWindow.comboBoxLexicon->setEnabled(true);
+                }
+
+                // chatText->append(QString("%1 has left %2").arg(playerName).arg(tablenum));
+                handleLeaveTable(tablenum, playerName);
+
+            }
+
+            break;
+        case SERVER_KILL_TABLE:
+            {
+                // table has ceased to exist
+                quint16 tablenum;
+                in >> tablenum;
+                //	    chatText->append(QString("%1 has ceasd to exist").arg(tablenum));
+                handleDeleteTable(tablenum);
+            }
+            break;
+        case SERVER_WORD_LISTS:
+
+            // word lists
+            handleWordlistsMessage();
+
+
+            break;
+        case SERVER_TABLE_COMMAND:
+            // table command
+            // an additional byte is needed
+            {
+                quint16 tablenum;
+                in >> tablenum;
+                if (tablenum != currentTablenum)
+                {
+                    qDebug() << "HORRIBLE ERROR" << tablenum << currentTablenum;
+                    QMessageBox::critical(this, "Aerolith client", "Critical error 10003");
+                    exit(0);
+                }
+                quint8 addByte;
+                in >> addByte;
+
+                handleTableCommand(tablenum, addByte);
+
+            }
+            break;
+        case SERVER_MESSAGE:
+            // server message
+            {
+                QString serverMessage;
+                in >> serverMessage;
+
+                uiMainWindow.chatText->append("<font color=red>" + serverMessage + "</font>");
+                gameBoardWidget->gotChat("<font color=red>" + serverMessage + "</font>");
+
+            }
+            break;
+        case SERVER_HIGH_SCORES:
+            // high scores!
+            {
+                displayHighScores();
+
+            }
+
+
+            break;
+        case SERVER_AVATAR_CHANGE:
+            // avatar id
+            {
+                QString username;
+                quint8 avatarID;
+                in >> username >> avatarID;
+                // username changed his avatar to avatarID. if we want to display this avatar, display it
+                // i.e. if we are in a table. in the future consider changing this to just a table packet but do the check now
+                // just in case.
+                if (currentTablenum != 0)
+                {
+                    // we are in a table
+                    gameBoardWidget->setAvatar(username, avatarID);
+
+                }
+                // then here we can do something like chatwidget->setavatar( etc). but this requires the server
+                // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
+                // this way we can just send everyone's avatar on login. consider changing this!
+            }
+            break;
+        default:
+            QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
+            commsSocket->disconnectFromHost();
+        }
 
         blockSize = 0;
     }
@@ -636,6 +639,7 @@ void MainWindow::serverDisconnection()
 
     setWindowTitle("Aerolith - disconnected");
     gameBoardWidget->hide();
+    uiMainWindow.comboBoxLexicon->setEnabled(true);
 }
 
 void MainWindow::connectedToServer()
@@ -732,19 +736,8 @@ void MainWindow::receivedPM(QString username, QString message)
 
 }
 
-void MainWindow::createNewRoom()
+void MainWindow::createUnscrambleGameTable()
 {
-
-    // reset dialog to defaults first.
-    uiTable.cycleRbo->setChecked(true);
-
-    uiTable.playersSpinBox->setValue(1);
-    uiTable.timerSpinBox->setValue(4);
-    int retval = createTableDialog->exec();
-    if (retval == QDialog::Rejected || uiTable.listWidgetTopLevelList->currentItem() == NULL) return;
-
-    // else its not rejected
-
     writeHeaderData();
     out << (quint8)CLIENT_NEW_TABLE;
     out << (quint8)GAME_TYPE_UNSCRAMBLE;
@@ -754,13 +747,39 @@ void MainWindow::createNewRoom()
 
     if (uiTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
     else if (uiTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
-    else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
+    //else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
 
     out << (quint8)uiTable.timerSpinBox->value();
     fixHeaderLength();
     commsSocket->write(block);
 
+}
 
+void MainWindow::createBonusGameTable()
+{
+    writeHeaderData();
+    out << (quint8)CLIENT_NEW_TABLE;
+
+    out << (quint8)GAME_TYPE_BONUS;
+    out << QString("Bonus squares.");
+    out << (quint8)uiTable.playersSpinBox->value();
+
+    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
+    fixHeaderLength();
+    commsSocket->write(block);
+
+}
+
+void MainWindow::createNewRoom()
+{
+
+    // reset dialog to defaults first.
+    uiTable.cycleRbo->setChecked(true);
+
+    uiTable.playersSpinBox->setValue(1);
+    uiTable.timerSpinBox->setValue(4);
+
+    createTableDialog->show();
 }
 
 void MainWindow::joinTable()
@@ -904,7 +923,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
             gameBoardWidget->addToPlayerList(username, answer);
             if (username==currentUsername)
             {
- //               QSound::play("sounds/correct.wav");
+                //               QSound::play("sounds/correct.wav");
             }
         }
         break;
@@ -1006,7 +1025,7 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
         uiScores.comboBoxChallenges->addItem(lexiconLists.at(index).dailyWordLists.at(i));
     }
     challengesMenu->addAction("Get today's scores");
-   // gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
+    // gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
     gameBoardWidget->setLexicon(lexiconLists.at(index).lexicon);
     currentLexicon = lexiconLists.at(index).lexicon;
     uiTable.labelLexiconName->setText(currentLexicon);
@@ -1015,20 +1034,24 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
 
 
 void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lexiconIndex,
-                                   QString wordListDescriptor, quint8 maxPlayers)
+                                   QString tableName, quint8 maxPlayers)
 {
     tableRepresenter* t = new tableRepresenter;
     t->tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
     t->descriptorItem = new QTableWidgetItem("(" + uiMainWindow.comboBoxLexicon->itemText(lexiconIndex) +
-                                             ") " + wordListDescriptor);
+                                             ") " + tableName);
     t->playersItem = new QTableWidgetItem("");
     t->maxPlayers = maxPlayers;
     switch (gameType)
     {
-        case GAME_TYPE_UNSCRAMBLE:
+    case GAME_TYPE_UNSCRAMBLE:
 
-            t->typeIcon = new QTableWidgetItem(unscrambleGameIcon, "");
-            t->typeIcon->setSizeHint(QSize(32, 32));
+        t->typeIcon = new QTableWidgetItem(unscrambleGameIcon, "");
+        t->typeIcon->setSizeHint(QSize(32, 32));
+        break;
+    case GAME_TYPE_BONUS:
+        t->typeIcon = new QTableWidgetItem(QIcon(":/images/BonusGameSmall.png"), "");
+        t->typeIcon->setSizeHint(QSize(32, 32));
         break;
     }
     t->buttonItem = new QPushButton("Join");
@@ -1050,7 +1073,7 @@ void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lex
     uiMainWindow.roomTableWidget->setCellWidget(rc, 4, t->buttonItem);
     uiMainWindow.roomTableWidget->setRowHeight(rc, 40);
 
- //   uiMainWindow.roomTableWidget->resizeColumnsToContents();
+    //   uiMainWindow.roomTableWidget->resizeColumnsToContents();
     tables.insert(tablenum, t);
 
 
@@ -1196,8 +1219,8 @@ void MainWindow::aerolithHelpDialog()
 void MainWindow::aerolithAcknowledgementsDialog()
 {
     QFile file(":acknowledgments.txt");
-     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-         return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
     QString infoText = file.readAll();
     QMessageBox::information(this, "Acknowledgements", infoText);
     file.close();
@@ -1368,7 +1391,7 @@ void MainWindow::startOwnServer()
 
         emit stopServerThread();
     }
-    
+
 }
 
 void MainWindow::serverThreadHasStarted()
@@ -1395,7 +1418,7 @@ void MainWindow::serverThreadHasFinished()
 
 /////////////////////////////////////////////////////
 
-PMWidget::PMWidget(QWidget* parent, QString senderUsername, QString receiverUsername) : 
+PMWidget::PMWidget(QWidget* parent, QString senderUsername, QString receiverUsername) :
         QWidget(parent), senderUsername(senderUsername), receiverUsername(receiverUsername)
 {
 

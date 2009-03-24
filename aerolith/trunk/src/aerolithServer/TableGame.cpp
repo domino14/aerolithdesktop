@@ -14,6 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with Aerolith.  If not, see <http://www.gnu.org/licenses/>.
 
+/* this is a table game, on the server side. it is a game that takes place in a table.
+   not to be confused with GameTable, which is a graphical table for a generic game*/
+
 #include "TableGame.h"
 
 extern QByteArray block;

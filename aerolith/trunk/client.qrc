@@ -81,5 +81,6 @@
         <file>images/stars.png</file>
         <file>images/unscrambleGameSmall.png</file>
         <file>acknowledgments.txt</file>
+        <file>images/BonusGameSmall.png</file>
     </qresource>
 </RCC>
