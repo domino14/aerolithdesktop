@@ -30,11 +30,12 @@ QByteArray UnscrambleGame::wordListDataToSend;
 
 void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, quint8 lexiconIndex)
 {
-    if (lexiconIndex < ListMaker::lexiconList.size())
+    //TODO fix
+  /*  if (lexiconIndex < ListMaker::lexiconList.size())
         lexiconName = ListMaker::lexiconList.at(lexiconIndex);
     else
         lexiconName = ListMaker::lexiconList.at(0); // assuming there's at least one lexicon. this is a bad message to receive from client anyway but
-    // for robustness sake.
+    // for robustness sake.*/
     wroteToMissedFileThisRound = false;
     listExhausted = false;
     this->wordList = wordList;
@@ -699,24 +700,25 @@ void UnscrambleGame::loadWordLists()
 
     writeHeaderData();
     out << (quint8) SERVER_WORD_LISTS;		// word lists
-    out << (quint8) ListMaker::lexiconList.size();
+    /*out << (quint8) ListMaker::lexiconList.size();
     foreach (QString lexicon, ListMaker::lexiconList)
-        out << lexicon.toAscii();
+        out << lexicon.toAscii();*/ // TODO fix
     out << (quint8) 2;           // two types right now, regular, and challenge.
     out << (quint8) 'R';	// regular
     out << (quint16)orderedWordLists.size();
     foreach (WordList wl, orderedWordLists)
     {
-        out << (quint8)ListMaker::lexiconList.indexOf(wl.lexiconName) << wl.name.toAscii();
+        // TODO fix
+        /*out << (quint8)ListMaker::lexiconList.indexOf(wl.lexiconName) << wl.name.toAscii();*/
     }
-    out << (quint8) 'D';
+    out << (quint8) 'D';/* //TODO FIX
     out << (quint16) (14*ListMaker::lexiconList.size()); // 14 per lexicon
     for (int i = 0; i < ListMaker::lexiconList.size(); i++)
     {
 
         for (int j = 2; j <= 15; j++)
             out << (quint8)i << QString("Today's " + ListMaker::lexiconList[i] + " %1s").arg(j).toAscii();
-    }
+    }*/
     fixHeaderLength();
     wordListDataToSend = block; // copy to a block so that we don't have to recompute this everytime someone logs in
 }
