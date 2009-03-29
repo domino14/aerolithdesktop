@@ -57,13 +57,15 @@ HEADERS += mainserver.h \
     ClientSocket.h \
     ClientWriter.h \
     serverthread.h \
-    listmaker.h
+    listmaker.h \
+    dawg.h
 SOURCES += mainserver.cpp \
     table.cpp \
     TableGame.cpp \
     UnscrambleGame.cpp \
     ClientWriter.cpp \
     serverthread.cpp \
-    listmaker.cpp
+    listmaker.cpp \
+    dawg.cpp
 HEADERS += commonDefs.h
 OTHER_FILES += acknowledgments.txt
