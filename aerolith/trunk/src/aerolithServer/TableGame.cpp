@@ -28,7 +28,7 @@ TableGame::~TableGame()
   qDebug() << "TableGame destructor";
 }
 
-TableGame::TableGame(tableData* table)
+TableGame::TableGame(Table* table)
 {
   this->table = table;
   qDebug() << "tablegame constructor";

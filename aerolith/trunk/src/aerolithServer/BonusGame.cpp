@@ -21,11 +21,10 @@ const quint8 COUNTDOWN_TIMER_VAL = 3;
 
 void BonusGame::initialize(quint8, quint8, QString tableName, quint8 lexiconIndex)
 {
-    // TODO fix
-    /*if (lexiconIndex < ListMaker::lexiconList.size())
+    if (lexiconIndex < ListMaker::lexiconList.size())
         lexiconName = ListMaker::lexiconList.at(lexiconIndex);
     else
-        lexiconName = ListMaker::lexiconList.at(0);*/
+        lexiconName = ListMaker::lexiconList.at(0);
     // assuming there's at least one lexicon. this is a bad message to receive from client anyway but
     // for robustness sake.
 
@@ -42,7 +41,7 @@ void BonusGame::initialize(quint8, quint8, QString tableName, quint8 lexiconInde
 
 }
 
-BonusGame::BonusGame(tableData* table) : TableGame(table)
+BonusGame::BonusGame(Table* table) : TableGame(table)
 {
     qDebug() << "BonusGame constructor";
 }

@@ -394,7 +394,7 @@ void MainServer::processAvatarID(ClientSocket* socket)
 
     if (socket->connData.tableNum != 0)
     {
-        tableData* table = tables.value(socket->connData.tableNum);
+        Table* table = tables.value(socket->connData.tableNum);
         //      table->sendAvatarChangePacket(username, avatarID);
 
         foreach (ClientSocket *thisConn, table->playerList)
@@ -443,7 +443,7 @@ void MainServer::processTableCommand(ClientSocket* socket)
         return;
 
     }
-    tableData* table = tables.value(tablenum);
+    Table* table = tables.value(tablenum);
 
     switch (subcommand)
     {
@@ -534,7 +534,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
     // additionally, if the table is then empty as a result, it deletes the table!
     if (tables.contains(tablenum))
     {
-        tableData *tmp = tables.value(tablenum);
+        Table *tmp = tables.value(tablenum);
         tmp->removePlayerFromTable(socket);
 
 
@@ -635,7 +635,7 @@ void MainServer::processNewTable(ClientSocket* socket)
 
     if (canCreateTable)
     {
-        tableData *tmp = new tableData;
+        Table *tmp = new Table;
         QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
         // does not do a deep copy!
         
@@ -664,7 +664,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
         return;
     }
 
-    tableData *tmp = tables.value(tablenum);
+    Table *tmp = tables.value(tablenum);
 
     if (!tmp->canJoin)
     {
@@ -928,9 +928,9 @@ void MainServer::processLogin(ClientSocket* socket)
 
 
     // finally, send tables
-    QList <tableData*> tableList= tables.values();
+    QList <Table*> tableList= tables.values();
 
-    foreach(tableData* table, tableList)
+    foreach(Table* table, tableList)
     {
         socket->write(table->tableInformationArray);
 
