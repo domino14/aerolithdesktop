@@ -42,16 +42,6 @@ const QString incompatibleVersionString =
 
 MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersion)
 {
-
-    // TODO:
-    // the connectionData struct thing is probably slower than reimplementing
-    // incomingConnection (int socketDescriptor)
-    // get rid of this signal, and just reimplement incomingConnection
-    // in incomingConnection, create a client* (which subclasses ClientSocket)
-    // and has the connData structure WITHIN it
-    // then sets the descriptor
-    // this will avoid a hash table lookup everytime any client sends a message!!
-    //  connect(this, SIGNAL(newConnection()), this, SLOT(addConnection()));
     qDebug("mainserver constructor");
 
     // load lists
@@ -568,8 +558,6 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
                 connection->write(block);
                 qDebug() << "wrote that we Killed table " << tablenum << " to " << connection->connData.userName;
             }
-            // now we must delete the temporary files!
-            // TODO temp file system
 
         }
         else

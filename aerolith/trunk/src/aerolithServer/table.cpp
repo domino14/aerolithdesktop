@@ -45,7 +45,8 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber, QB
 
             tableGame = new UnscrambleGame(this);
             // TODO FIX. initialize should only take the parameter (in) possibly
-            tableGame->initialize(unscrambleType, tableTimer, tableName, lexiconIndex);
+            // TODO fix lexicon below.
+            tableGame->initialize(unscrambleType, tableTimer, tableName, "");
 
             // compute array to be sent out as table information array
             writeHeaderData();
@@ -62,8 +63,8 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber, QB
         case GAME_TYPE_BONUS:
         {
             in >> lexiconIndex;
-            tableGame = new BonusGame(this);
-            tableGame->initialize(0,0, tableName, lexiconIndex);
+            tableGame = new BonusGame(this);    // TODO FIX lexiconname!
+            tableGame->initialize(0,0, tableName, "");
 
             writeHeaderData();
             out << (quint8) SERVER_NEW_TABLE;

@@ -15,7 +15,6 @@
 //    along with Aerolith.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "UnscrambleGameTable.h"
-extern const QString WORD_DATABASE_FILENAME;
 
 UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
         GameTable(parent, f, 8)
@@ -186,7 +185,8 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
     /* connect to word database*/
     wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
     // note - database must be in path of executable (in mac os, inside the bundle!)
-    wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);
+   /* TODO FIX (connect to appropriate lexicon database)
+    wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);*/
     bool success = wordDb.open();
     if (!success)
     {

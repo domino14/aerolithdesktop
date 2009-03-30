@@ -24,7 +24,7 @@ const quint8 COUNTDOWN_TIMER_VAL = 3;
 const quint8 maxRacks = 50;
 QHash <QString, challengeInfo> UnscrambleGame::challenges;
 bool UnscrambleGame::midnightSwitchoverToggle;
-extern const QString WORD_DATABASE_NAME; 
+const QString WORD_DATABASE_NAME;  /* TODO FIX. there are many databases */
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
@@ -33,7 +33,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
     wroteToMissedFileThisRound = false;
     listExhausted = false;
     this->wordList = wordList;
-
+    this->lexiconName = lexiconName;
     this->cycleState = cycleState;
 
     connect(&gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
@@ -683,8 +683,8 @@ void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end
 
 void UnscrambleGame::loadWordLists()
 {
-    ListMaker::createListDatabase();	// also connects to the database.
-
+    ListMaker::createListDatabase();	// also connects to the databases.
+// TODO this function must be rewritten, we are connecting to many databases.
     QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
     query.exec("SELECT listname, lexiconName from wordlists");
     QList <WordList> orderedWordLists;
@@ -758,7 +758,7 @@ void UnscrambleGame::generateDailyChallenges()
 
     QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
     query.exec("BEGIN TRANSACTION");
-    for (int j = 0; j < ListMaker::lexiconList.size(); j++)
+    /*for (int j = 0; j < ListMaker::lexiconList.size(); j++)
     {
         for (int i = 2; i <= 15; i++)
         {
@@ -784,7 +784,7 @@ void UnscrambleGame::generateDailyChallenges()
         }
     }
     query.exec("END TRANSACTION");
-
+*/ // TODO FIX
 }
 
 

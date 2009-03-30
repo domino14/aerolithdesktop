@@ -95,7 +95,7 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
             QStringList split = line.split(" ");
             QString word = split[0];
             QByteArray backHooks = lexInfo->dawg.findHooks(word.toAscii());
-            QByteArray frontHooks = lexInfo->reverseDawg.findHooks(reverse(word).toAscii());  // TODO word should be reversed here
+            QByteArray frontHooks = lexInfo->reverseDawg.findHooks(reverse(word).toAscii());
 
             qDebug() << frontHooks << word << backHooks;
         }
