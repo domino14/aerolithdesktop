@@ -60,7 +60,7 @@ class UnscrambleGame : public TableGame
 
 public:
 
-    void initialize(quint8 cycleState, quint8 tableTimer, QString wordList, quint8 lexiconIndex);
+    void initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName);
     UnscrambleGame(Table*);
     ~UnscrambleGame();
 
