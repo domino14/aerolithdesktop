@@ -23,7 +23,7 @@
 // this class should not be instantiated!
 #include "ClientSocket.h"
 
-class tableData;
+class Table;
 
 class TableGame : public QObject
 {
@@ -33,11 +33,11 @@ Q_OBJECT
  public:
 
   // change to initialize (QList <QVariant>)
-  TableGame(tableData*);
+  TableGame(Table*);
   virtual ~TableGame();
   
 
-  virtual void initialize(quint8, quint8, QString, quint8) = 0;
+  virtual void initialize(quint8, quint8, QString, QString) = 0;
   virtual void gameStartRequest(ClientSocket*) = 0;
   virtual void guessSent(ClientSocket*, QString) = 0;
   virtual void gameEndRequest(ClientSocket*) = 0;
@@ -53,7 +53,7 @@ Q_OBJECT
   
 
  protected:
-  tableData* table;
+  Table* table;
 
 };
 

@@ -28,14 +28,8 @@ extern const QString WORD_DATABASE_NAME;
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
-void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, quint8 lexiconIndex)
+void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName)
 {
-    //TODO fix
-  /*  if (lexiconIndex < ListMaker::lexiconList.size())
-        lexiconName = ListMaker::lexiconList.at(lexiconIndex);
-    else
-        lexiconName = ListMaker::lexiconList.at(0); // assuming there's at least one lexicon. this is a bad message to receive from client anyway but
-    // for robustness sake.*/
     wroteToMissedFileThisRound = false;
     listExhausted = false;
     this->wordList = wordList;
@@ -74,7 +68,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
 
 }
 
-UnscrambleGame::UnscrambleGame(tableData* table) : TableGame(table)
+UnscrambleGame::UnscrambleGame(Table* table) : TableGame(table)
 {
     qDebug() << "UnscrambleGame constructor";
 }
@@ -700,9 +694,9 @@ void UnscrambleGame::loadWordLists()
 
     writeHeaderData();
     out << (quint8) SERVER_WORD_LISTS;		// word lists
-    /*out << (quint8) ListMaker::lexiconList.size();
-    foreach (QString lexicon, ListMaker::lexiconList)
-        out << lexicon.toAscii();*/ // TODO fix
+    out << (quint8) ListMaker::lexiconMap.size();
+    foreach(QString lexiconName, ListMaker::lexiconMap.keys())
+        out << lexiconName.toAscii(); // TODO fix
     out << (quint8) 2;           // two types right now, regular, and challenge.
     out << (quint8) 'R';	// regular
     out << (quint16)orderedWordLists.size();

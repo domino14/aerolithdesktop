@@ -60,7 +60,7 @@ private:
 
     // these two hashes are probably needed
     QHash <QString, ClientSocket*> usernamesHash;
-    QHash <quint16, tableData*> tables;
+    QHash <quint16, Table*> tables;
 
     QString aerolithVersion;
 

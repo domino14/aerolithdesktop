@@ -26,8 +26,8 @@ Q_OBJECT
 
 public:
 
-    void initialize(quint8, quint8, QString tableName, quint8 lexiconIndex);
-    BonusGame(tableData*);
+    void initialize(quint8, quint8, QString tableName, QString lexiconName);
+    BonusGame(Table*);
     ~BonusGame();
 
 private:

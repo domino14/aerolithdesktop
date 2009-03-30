@@ -23,7 +23,7 @@
 extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
-QByteArray tableData::initialize(ClientSocket* tableCreator, quint16 tableNumber, QByteArray tableDescription)
+QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber, QByteArray tableDescription)
 {
 
 
@@ -89,13 +89,13 @@ QByteArray tableData::initialize(ClientSocket* tableCreator, quint16 tableNumber
 
 }
 
-tableData::~tableData()
+Table::~Table()
 {
-    qDebug() << "tableData destructor";
+    qDebug() << "Table destructor";
     delete tableGame;
 }
 
-void tableData::removePlayerFromTable(ClientSocket* socket)
+void Table::removePlayerFromTable(ClientSocket* socket)
 {
     tableGame->playerLeftGame(socket);
     playerList.removeAll(socket);
@@ -103,13 +103,13 @@ void tableData::removePlayerFromTable(ClientSocket* socket)
 
 }
 
-void tableData::sendGenericPacket()
+void Table::sendGenericPacket()
 {
     foreach (ClientSocket* thisSocket, playerList)
         thisSocket->write(block);
 }
 
-void tableData::sendChatSentPacket(QString username, QString chat)
+void Table::sendChatSentPacket(QString username, QString chat)
 {
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
@@ -120,7 +120,7 @@ void tableData::sendChatSentPacket(QString username, QString chat)
     sendGenericPacket();
 }
 
-void tableData::sendTableMessage(QString message)
+void Table::sendTableMessage(QString message)
 {
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
