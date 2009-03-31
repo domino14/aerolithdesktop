@@ -40,6 +40,7 @@ struct LexiconInfo
     QMap<unsigned char, int> letterDist;
     QString dawgFilename, dawgRFilename;
     Dawg dawg, reverseDawg;
+    QSqlDatabase db;
     LexiconInfo(QString name, QString filename, QMap <unsigned char, int> d, QString df, QString drf)
     {
         lexiconName = name;
@@ -52,15 +53,23 @@ struct LexiconInfo
     }
 };
 
+
+enum LessThans
+{
+  SPANISH_LESS_THAN, ENGLISH_LESS_THAN
+};
+
 class ListMaker
 {
         public:
+    static QList<unsigned char> letterList;
     static QMap<QString, LexiconInfo> lexiconMap;
 
     static void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName);
     static void createListDatabase();
     static void createLexiconDatabase(QString lexiconName);
     static QString reverse(QString);
+    static QString alphagrammize(QString, LessThans lessThan);
     static int fact(int n);
     static int nCr(int n, int r);
     static int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
