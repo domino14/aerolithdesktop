@@ -20,7 +20,7 @@
 
 
 QMap<QString, LexiconInfo> ListMaker::lexiconMap;
-
+QList <unsigned char>ListMaker::letterList;
 void ListMaker::createListDatabase()
 {
 
@@ -30,11 +30,11 @@ void ListMaker::createListDatabase()
     QMap <unsigned char, int> spanishLetterDist = getSpanishDist();
 
     lexiconMap.insert("OWL2+LWL", LexiconInfo("OWL2+LWL", "owl2-lwl.txt", englishLetterDist,
-                                              "owl2-lwl.dwg", "owl2-lwl-r.dwg"));
-/*    lexiconMap.insert("CSW", LexiconInfo("CSW", "csw.txt", englishLetterDist, "csw.dwg", "csw-r.dwg"));
+                                              "owl2-lwl.dwg", "owl2-lwl-r.dwg"));/*
+    lexiconMap.insert("CSW", LexiconInfo("CSW", "csw.txt", englishLetterDist, "csw.dwg", "csw-r.dwg"));
     lexiconMap.insert("Volost", LexiconInfo("Volost", "volost.txt", englishLetterDist, "volost.dwg", "volost-r.dwg"));
-    lexiconMap.insert("FISE", LexiconInfo("FISE", "fise.txt", spanishLetterDist, "fise.dwg", "fise-r.dwg"));
-    lexiconMap.insert("OWL+LWL", LexiconInfo("OWL+LWL", "owl-lwl.txt", englishLetterDist, "owl-lwl.dwg", "owl-lwl-r.dwg"));*/
+    lexiconMap.insert("FISE", LexiconInfo("FISE", "fise.txt", spanishLetterDist, "fise.dwg", "fise-r.dwg"));*/
+
     foreach (QString key, lexiconMap.keys())
         createLexiconDatabase(key);
 
@@ -86,31 +86,9 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     QFile file("words/" + lexInfo->wordsFilename);
     if (!file.open(QIODevice::ReadOnly)) return;
 
-    QTextStream in(&file);
-    while (!in.atEnd())
-    {
-        QString line = in.readLine();
-        if (line.length() > 0)
-        {
-            QStringList split = line.split(" ");
-            QString word = split[0];
-            QByteArray backHooks = lexInfo->dawg.findHooks(word.toAscii());
-            QByteArray frontHooks = lexInfo->reverseDawg.findHooks(reverse(word).toAscii());
-
-            qDebug() << frontHooks << word << backHooks;
-        }
-    }
-
-    return;
-
-    QSqlDatabase wordDb;
-    wordDb = QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
-
-    //QString dbFilename = "words/" + lexiconFilename;
-    // wordDb.setDatabaseName(dbFilename);
-    wordDb.open();
-
-    QSqlQuery wordQuery(QSqlDatabase::database(lexiconName + "DB"));
+    lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
+    lexInfo->db.open();
+    QSqlQuery wordQuery(lexInfo->db);
     wordQuery.exec("CREATE TABLE IF NOT EXISTS words(alphagram VARCHAR(15), word VARCHAR(15), "
                    "definition VARCHAR(256), lexiconstrings VARCHAR(5), front_hooks VARCHAR(26), "
                    "back_hooks VARCHAR(26))");
@@ -119,9 +97,35 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
 
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), numalphagrams INTEGER, probindices BLOB)");
 
+    LessThans lessThan;
+    if (lexInfo->lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
+    else lessThan = ENGLISH_LESS_THAN;
 
-    QTime time;
-    time.start();
+    QTextStream in(&file);
+    while (!in.atEnd())
+    {
+        QString line = in.readLine();
+        line = line.simplified();
+        if (line.length() > 0)
+        {
+            QString word = line.section(' ', 0, 0).toUpper();
+            QString definition = line.section(' ', 1);
+
+            QString alphagram = alphagrammize(word, lessThan);
+
+            //if (listHash.contains
+
+
+            QByteArray backHooks = lexInfo->dawg.findHooks(word.toAscii());
+            QByteArray frontHooks = lexInfo->reverseDawg.findHooks(reverse(word).toAscii());
+
+            qDebug() << word << alphagram << definition << backHooks << frontHooks;
+
+        }
+    }
+    return;
+
+QTime time;
     for (int i = 2; i <= 15; i++)
     {
         qDebug() << lexiconName << i;
@@ -368,6 +372,45 @@ int ListMaker::nCr(int n, int r)
     return (fact(n) / (fact(n-r) * fact(r)));
 
 
+}
+
+bool spanishLessThan(const unsigned char i, const unsigned char j)
+ {
+    // anyone have a less horrible way of doing this?
+    float x, y;
+    x = (float)tolower(i);
+    y = (float)tolower(j);
+
+
+    if (x == '1') x = (float)'c' + 0.5; // 'ch' is in between c and d
+    else if (x == '2') x = (float)'l' + 0.5; // 'll' is in between l and m
+    else if (x == '3') x = (float)'r' + 0.5; // 'rr' is in between r and s
+    else if (x == '4') x = (float)'n' + 0.5; // n-tilde is in between n and o
+
+    if (y == '1') y = (float)'c' + 0.5; // 'ch' is in between c and d
+    else if (y == '2') y = (float)'l' + 0.5; // 'll' is in between l and m
+    else if (y == '3') y = (float)'r' + 0.5; // 'rr' is in between r and s
+    else if (y == '4') y = (float)'n' + 0.5; // n-tilde is in between n and o
+
+    return x < y;
+
+ }
+
+QString ListMaker::alphagrammize(QString word, LessThans lessThan)
+{
+    QString ret;
+    letterList.clear();
+    for (int i = 0; i < word.size(); i++)
+        letterList << word[i].toLatin1();
+    if (lessThan == ENGLISH_LESS_THAN)
+        qSort(letterList);
+    else if (lessThan == SPANISH_LESS_THAN)
+        qSort(letterList.begin(), letterList.end(), spanishLessThan);
+
+    for (int i = 0; i < letterList.size(); i++)
+        ret[i] = letterList[i];
+
+    return ret;
 }
 
 int ListMaker::combinations(QString alphagram, QMap <unsigned char, int> letterDist)
