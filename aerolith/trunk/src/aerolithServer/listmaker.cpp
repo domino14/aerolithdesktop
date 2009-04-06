@@ -81,12 +81,12 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
 
 
 
-    QHash <QString, Alph> listHash;
+    QHash <QString, Alph> alphagramsHash;
 
     QFile file("words/" + lexInfo->wordsFilename);
     if (!file.open(QIODevice::ReadOnly)) return;
-
     lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
+    lexInfo->db.setDatabaseName(lexiconName + ".db");
     lexInfo->db.open();
     QSqlQuery wordQuery(lexInfo->db);
     wordQuery.exec("CREATE TABLE IF NOT EXISTS words(alphagram VARCHAR(15), word VARCHAR(15), "
@@ -102,6 +102,12 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     else lessThan = ENGLISH_LESS_THAN;
 
     QTextStream in(&file);
+    QString queryText = "INSERT INTO words(alphagram, word, definition, lexiconstrings, front_hooks, back_hooks) "
+                        "VALUES(?, ?, ?, ?, ?, ?) ";
+    wordQuery.exec("BEGIN TRANSACTION");
+    wordQuery.prepare(queryText);
+    QHash definitionsHash <QString, QString>;
+     QStringList dummy;
     while (!in.atEnd())
     {
         QString line = in.readLine();
@@ -110,8 +116,15 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
         {
             QString word = line.section(' ', 0, 0).toUpper();
             QString definition = line.section(' ', 1);
+            definitionsHash.insert(word, definition);
+
 
             QString alphagram = alphagrammize(word, lessThan);
+            if (!alphagramsHash.contains(alphagram))
+                alphagramsHash.insert(alphagram, Alph(dummy, combinations(alphagram, lexInfo->letterDist)));
+
+            alphagramsHash[alphagram].words << word;
+
 
             //if (listHash.contains
 
@@ -119,10 +132,26 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
             QByteArray backHooks = lexInfo->dawg.findHooks(word.toAscii());
             QByteArray frontHooks = lexInfo->reverseDawg.findHooks(reverse(word).toAscii());
 
-            qDebug() << word << alphagram << definition << backHooks << frontHooks;
-
+            //qDebug() << word << alphagram << definition << backHooks << frontHooks;
+            wordQuery.bindValue(0, alphagram);
+            wordQuery.bindValue(1, word);
+            wordQuery.bindValue(2, definition);
+            wordQuery.bindValue(3, "");
+            wordQuery.bindValue(4, QString(backHooks));
+            wordQuery.bindValue(5, QString(frontHooks));
+            wordQuery.exec();
         }
     }
+    wordQuery.exec("END TRANSACTION");
+    file.close();
+
+    /* now sort alphagramsHash by probability/length */
+
+
+    queryText = "INSERT INTO alphagrams(alphagram, words, probability, length)";
+
+
+
     return;
 
 QTime time;
