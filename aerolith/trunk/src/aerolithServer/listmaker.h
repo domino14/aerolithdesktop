@@ -26,9 +26,13 @@ struct Alph
 {
     QStringList words;
     int combinations;
-    Alph(QStringList w, int c)
+    QString alphagram;
+    Alph(QStringList w, int c, QString alph)
     {
-        words = w; combinations = c;
+        alphagram = alph; words = w; combinations = c;
+    }
+    Alph()
+    {
     }
 
 };

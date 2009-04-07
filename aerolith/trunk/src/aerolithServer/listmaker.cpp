@@ -21,6 +21,12 @@
 
 QMap<QString, LexiconInfo> ListMaker::lexiconMap;
 QList <unsigned char>ListMaker::letterList;
+
+bool probLessThan(const Alph &a1, const Alph &a2)
+ {
+     return a1.combinations < a2.combinations;
+ }
+
 void ListMaker::createListDatabase()
 {
 
@@ -106,7 +112,7 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
                         "VALUES(?, ?, ?, ?, ?, ?) ";
     wordQuery.exec("BEGIN TRANSACTION");
     wordQuery.prepare(queryText);
-    QHash definitionsHash <QString, QString>;
+    QHash <QString, QString> definitionsHash;
      QStringList dummy;
     while (!in.atEnd())
     {
@@ -121,7 +127,7 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
 
             QString alphagram = alphagrammize(word, lessThan);
             if (!alphagramsHash.contains(alphagram))
-                alphagramsHash.insert(alphagram, Alph(dummy, combinations(alphagram, lexInfo->letterDist)));
+                alphagramsHash.insert(alphagram, Alph(dummy, combinations(alphagram, lexInfo->letterDist), alphagram));
 
             alphagramsHash[alphagram].words << word;
 
@@ -146,12 +152,31 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     file.close();
 
     /* now sort alphagramsHash by probability/length */
+    QList <Alph> alphs = alphagramsHash.values();
+    qSort(alphs.begin(), alphs.end(), probLessThan);
 
+    queryText = "INSERT INTO alphagrams(alphagram, words, probability, length) VALUES(?, ?, ?, ?)";
+    wordQuery.exec("BEGIN TRANSACTION");
+    wordQuery.prepare(queryText);
+    int probs[15];
+    for (int i = 0; i < 15; i++) probs[i] = 0;
+    for (int i = 0; i < alphs.size(); i++)
+    {
+        wordQuery.bindValue(0, alphs[i].alphagram);
+        int wordLength = alphs[i].alphagram.length();
+        wordQuery.bindValue(1, alphs[i].words.join(" "));
 
-    queryText = "INSERT INTO alphagrams(alphagram, words, probability, length)";
+        if (wordLength <= 15)
+        {
+            probs[wordLength]++;
+        }
 
+        wordQuery.bindValue(2, probs[wordLength] + (wordLength << 24));
+        wordQuery.bindValue(3, wordLength);
+        wordQuery.exec();
+    }
 
-
+    wordQuery.exec("END TRANSACTION");
     return;
 
 QTime time;
