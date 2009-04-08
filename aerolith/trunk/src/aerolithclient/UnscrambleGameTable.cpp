@@ -184,22 +184,21 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
 
     /* connect to word database*/
     wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
-    // note - database must be in path of executable (in mac os, inside the bundle!)
    /* TODO FIX (connect to appropriate lexicon database)
     wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);*/
-    bool success = wordDb.open();
-    if (!success)
-    {
-        qDebug() << "could not open!";
-        QMessageBox::critical(this, "Error",
-                              "Word database was not found in your directory. You will not be able to use many features of Aerolith.");
-
-    }
-    else
-    {
-        qDebug() << "Connected to word database successfully";
-        qDebug() << wordDb.isOpen();
-    }
+//    bool success = wordDb.open();
+//    if (!success)
+//    {
+//        qDebug() << "could not open!";
+//        QMessageBox::critical(this, "Error",
+//                              "Word database was not found in your directory. You will not be able to use many features of Aerolith.");
+//
+//    }
+//    else
+//    {
+//        qDebug() << "Connected to word database successfully";
+//        qDebug() << wordDb.isOpen();
+//    }
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
