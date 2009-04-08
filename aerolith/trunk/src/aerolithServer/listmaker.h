@@ -60,18 +60,26 @@ struct LexiconInfo
 
 enum LessThans
 {
-  SPANISH_LESS_THAN, ENGLISH_LESS_THAN
-};
+    SPANISH_LESS_THAN, ENGLISH_LESS_THAN
+        };
 
 class ListMaker
 {
-        public:
-    static QList<unsigned char> letterList;
+public:
+
+    static void createLexiconMap();
+    static void createListDatabase();
+    static void connectToAvailableDatabases(bool clientCall);
     static QMap<QString, LexiconInfo> lexiconMap;
+private:
+
+    static QList<unsigned char> letterList;
+
 
     static void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName);
-    static void createListDatabase();
+
     static void createLexiconDatabase(QString lexiconName);
+
     static QString reverse(QString);
     static QString alphagrammize(QString, LessThans lessThan);
     static int fact(int n);
@@ -79,6 +87,9 @@ class ListMaker
     static int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
     static QMap <unsigned char, int> getEnglishDist();
     static QMap <unsigned char, int> getSpanishDist();
+    static void updateDefinitions(QString, QHash<QString, QString>&);
+    static QString followDefinitionLinks(QString, QHash<QString, QString>&, bool useFollow, int maxDepth);
+    static QString getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString> &defHash);
 
 };
 

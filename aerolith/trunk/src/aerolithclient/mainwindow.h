@@ -192,6 +192,7 @@ signals:
 
     void serverThreadHasStarted();
     void serverThreadHasFinished();
+    void checkForDatabases();
  private slots:
     void createUnscrambleGameTable();
     void createBonusGameTable();

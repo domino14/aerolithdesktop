@@ -16,7 +16,7 @@
 
 #include "mainwindow.h"
 #include "commonDefs.h"
-
+#include "Listmaker.h"
 const quint16 MAGIC_NUMBER = 25349;
 const QString WindowTitle = "Aerolith 0.5";
 
@@ -30,9 +30,6 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
 MainWindow::MainWindow(QString aerolithVersion) : aerolithVersion(aerolithVersion), PLAYERLIST_ROLE(Qt::UserRole),
 out(&block, QIODevice::WriteOnly)
 {
-
-
-
 
     uiMainWindow.setupUi(this);
     uiMainWindow.roomTableWidget->verticalHeader()->hide();
@@ -157,7 +154,24 @@ out(&block, QIODevice::WriteOnly)
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
+    checkForDatabases();
+    ListMaker::connectToAvailableDatabases(true);
 
+}
+
+void MainWindow::checkForDatabases()
+{
+
+    QDir dir = QDir::home();
+    if (!dir.exists(".aerolith"))
+    {
+        /* prompt to make database */
+
+        dir.mkdir(".aerolith");
+        dir.cd(".aerolith");
+
+
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
