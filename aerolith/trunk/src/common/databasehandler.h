@@ -1,4 +1,3 @@
-
 //    Copyright 2007, 2008, 2009, Cesar Del Solar  <delsolar@gmail.com>
 //    This file is part of Aerolith.
 //
@@ -15,9 +14,11 @@
 //    You should have received a copy of the GNU General Public License
 //    along with Aerolith.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _LISTMAKER_H_
-#define _LISTMAKER_H_
 
+#ifndef DATABASEHANDLER_H
+#define DATABASEHANDLER_H
+
+#include <QThread>
 #include <QtSql>
 #include "dawg.h"
 
@@ -61,37 +62,47 @@ struct LexiconInfo
 enum LessThans
 {
     SPANISH_LESS_THAN, ENGLISH_LESS_THAN
-        };
+};
 
-class ListMaker
+class DatabaseHandler : public QThread
 {
+    Q_OBJECT
 public:
 
+    DatabaseHandler(QObject* parent) : QThread(parent)
+    {
+    }
     static void createLexiconMap();
-    static void createListDatabase();
     static void connectToAvailableDatabases(bool clientCall);
+    void createLexiconDatabases(QStringList);
     static QMap<QString, LexiconInfo> lexiconMap;
 private:
 
-    static QList<unsigned char> letterList;
+    QList<unsigned char> letterList;
+    QStringList dbsToCreate;
+    void run();
 
+    void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName);
 
-    static void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName);
+    void createLexiconDatabase(QString lexiconName);
 
-    static void createLexiconDatabase(QString lexiconName);
-
-    static QString reverse(QString);
-    static QString alphagrammize(QString, LessThans lessThan);
-    static int fact(int n);
-    static int nCr(int n, int r);
-    static int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
+    QString reverse(QString);
+    QString alphagrammize(QString, LessThans lessThan);
+    int fact(int n);
+    int nCr(int n, int r);
+    int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
     static QMap <unsigned char, int> getEnglishDist();
     static QMap <unsigned char, int> getSpanishDist();
-    static void updateDefinitions(QString, QHash<QString, QString>&);
-    static QString followDefinitionLinks(QString, QHash<QString, QString>&, bool useFollow, int maxDepth);
-    static QString getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString> &defHash);
+    void updateDefinitions(QString, QHash<QString, QString>&, int);
+    QString followDefinitionLinks(QString, QHash<QString, QString>&, bool useFollow, int maxDepth);
+    QString getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString> &defHash);
 
+signals:
+    void setProgressMessage(QString);
+    void setProgressValue(int);
+    void setProgressRange(int, int);
 };
 
-#endif
 
+
+#endif // DATABASEHANDLER_H

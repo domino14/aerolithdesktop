@@ -16,7 +16,7 @@
 
 #include "UnscrambleGame.h"
 #include "commonDefs.h"
-#include "listmaker.h"
+#include "DatabaseHandler.h"
 extern QByteArray block;
 extern QDataStream out;
 
@@ -694,8 +694,8 @@ void UnscrambleGame::loadWordLists()
 
     writeHeaderData();
     out << (quint8) SERVER_WORD_LISTS;		// word lists
-    out << (quint8) ListMaker::lexiconMap.size();
-    foreach(QString lexiconName, ListMaker::lexiconMap.keys())
+    out << (quint8) DatabaseHandler::lexiconMap.size();
+    foreach(QString lexiconName, DatabaseHandler::lexiconMap.keys())
         out << lexiconName.toAscii(); // TODO fix
     out << (quint8) 2;           // two types right now, regular, and challenge.
     out << (quint8) 'R';	// regular

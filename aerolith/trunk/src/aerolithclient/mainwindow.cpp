@@ -16,7 +16,7 @@
 
 #include "mainwindow.h"
 #include "commonDefs.h"
-#include "Listmaker.h"
+#include "DatabaseHandler.h"
 const quint16 MAGIC_NUMBER = 25349;
 const QString WindowTitle = "Aerolith 0.5";
 
@@ -144,18 +144,30 @@ out(&block, QIODevice::WriteOnly)
     setWindowIcon(QIcon(":images/aerolith.png"));
 
 
-    setProfileWidget = new QWidget;
+    setProfileWidget = new QWidget(this, Qt::Window);
     uiSetProfile.setupUi(setProfileWidget);
 
-    getProfileWidget = new QWidget;
+    getProfileWidget = new QWidget(this, Qt::Window);
     uiGetProfile.setupUi(getProfileWidget);
+
+    databaseDialog = new QDialog(this);
+    uiDatabase.setupUi(databaseDialog);
+
+    connect(databaseDialog, SIGNAL(accepted()), SLOT(createDatabasesOKClicked()));
+
+    dbHandler = new DatabaseHandler(this);
+    connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
+    connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
+    connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
+
 
     ///////
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
     checkForDatabases();
-    ListMaker::connectToAvailableDatabases(true);
+    DatabaseHandler::connectToAvailableDatabases(true);
+
 
 }
 
@@ -163,15 +175,81 @@ void MainWindow::checkForDatabases()
 {
 
     QDir dir = QDir::home();
+    bool databasesExist = true;
     if (!dir.exists(".aerolith"))
     {
-        /* prompt to make database */
-
-        dir.mkdir(".aerolith");
+        databasesExist = false;
+    }
+    else
+    {
         dir.cd(".aerolith");
+        if (dir.exists("lexica.db"))
+        {
+            QSqlDatabase lexicaDb = QSqlDatabase::addDatabase("QSQLITE", "lexicaDB");
+            lexicaDb.setDatabaseName("lexica.db");
+            lexicaDb.open();
+            QSqlQuery lexicaQuery(lexicaDb);
+            lexicaQuery.exec("SELECT lexiconName, dbFilename from lexica");
+            int numLexica = 0;
+            while (lexicaQuery.next())
+            {
+                numLexica++;
+                QString lexiconName = lexicaQuery.value(0).toString();
+                QString dbFilename = lexicaQuery.value(1).toString();
 
+                if (lexiconName == "OWL2+LWL")
+                {
+                    uiDatabase.checkBoxOWL2->setChecked(true);
+                    uiDatabase.checkBoxOWL2->setEnabled(false);
+                }
+                else if (lexiconName == "CSW")
+                {
+                    uiDatabase.checkBoxCSW->setChecked(true);
+                    uiDatabase.checkBoxCSW->setEnabled(false);
+                }
+                else if (lexiconName == "FISE")
+                {
+                    uiDatabase.checkBoxFISE->setChecked(true);
+                    uiDatabase.checkBoxFISE->setEnabled(false);
+                }
+                else if (lexiconName == "Volost")
+                {
+                    uiDatabase.checkBoxVolost->setChecked(true);
+                    uiDatabase.checkBoxVolost->setEnabled(false);
+                }
+            }
+
+            if (numLexica == 0) databasesExist = false;
+        }
+        else databasesExist = false;
+    }
+
+    if (!databasesExist)
+    {
+        if (QMessageBox::question(this, "Create databases?", "You do not seem to have any lexicon databases created. "
+                                  "Creating a lexicon database allows you to see definitions, hooks, and create your own "
+                                  "lists for quizzing. If you would like to create a lexicon database, please click Yes.",
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
+            databaseDialog->show();
 
     }
+
+}
+
+void MainWindow::createDatabasesOKClicked()
+{
+    QStringList databasesToCreate;
+    if (uiDatabase.checkBoxVolost->isEnabled() && uiDatabase.checkBoxVolost->isChecked())
+        databasesToCreate << "Volost";
+    if (uiDatabase.checkBoxFISE->isEnabled() && uiDatabase.checkBoxFISE->isChecked())
+        databasesToCreate << "FISE";
+    if (uiDatabase.checkBoxOWL2->isEnabled() && uiDatabase.checkBoxOWL2->isChecked())
+        databasesToCreate << "OWL2+LWL";
+    if (uiDatabase.checkBoxCSW->isEnabled() && uiDatabase.checkBoxCSW->isChecked())
+        databasesToCreate << "CSW";
+
+    dbHandler->createLexiconDatabases(databasesToCreate);
+
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)

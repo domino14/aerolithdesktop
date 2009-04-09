@@ -21,7 +21,7 @@
 #include "ClientWriter.h"
 #include "UnscrambleGame.h"
 #include "commonDefs.h"
-#include "ListMaker.h"
+#include "DatabaseHandler.h"
 
 //QList <QVariant> dummyList;
 
@@ -47,7 +47,7 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
 
     // connect to existing databases
 
-    ListMaker::connectToAvailableDatabases(false);
+    DatabaseHandler::connectToAvailableDatabases(false);
     
 
     QTime midnight(0, 0, 0);
