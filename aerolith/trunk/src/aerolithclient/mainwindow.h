@@ -26,10 +26,12 @@
 #include "ui_loginForm.h"
 #include "ui_pmForm.h"
 #include "ui_mainwindow.h"
+#include "ui_databaseDialog.h"
 
 #include "ui_getProfileForm.h"
 #include "ui_setProfileForm.h"
 
+#include "DatabaseHandler.h"
 #include "UnscrambleGameTable.h"
 
 class PMWidget : public QWidget
@@ -70,6 +72,7 @@ private:
     QString currentUsername;
     QDataStream in;
     quint16 currentTablenum;
+    DatabaseHandler *dbHandler;
 
     struct LexiconLists
     {
@@ -93,6 +96,7 @@ private:
     void handleWordlistsMessage();
 
 
+    void createDatabasesOKClicked();
 
 
 
@@ -109,6 +113,7 @@ private:
     QDialog *helpDialog;
     QDialog *scoresDialog;
     QDialog *loginDialog;
+    QDialog *databaseDialog;
 
     QMenu *challengesMenu;
 
@@ -116,6 +121,9 @@ private:
     Ui::tableCreateForm uiTable;
     Ui::scoresForm uiScores;
     Ui::loginForm uiLogin;
+    Ui::dialogCreateDatabases uiDatabase;
+
+
 
     QWidget *setProfileWidget;
     QWidget *getProfileWidget;

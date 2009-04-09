@@ -20,8 +20,9 @@ DEPENDPATH += build/moc \
     $$ROOT/src/common
 ICON = $$ROOT/macosxicns.icns
 SOURCES = main.cpp \
-    ../aerolithclient/GameTable.cpp \
-    ../aerolithServer/BonusGame.cpp
+    GameTable.cpp \
+    BonusGame.cpp \
+    ../common/databasehandler.cpp
 FORMS = tableCreateForm.ui \
     solutionsForm.ui \
     scoresForm.ui \
@@ -32,7 +33,8 @@ FORMS = tableCreateForm.ui \
     pmForm.ui \
     getProfileForm.ui \
     setProfileForm.ui \
-    mainwindow.ui
+    mainwindow.ui \
+    databaseDialog.ui
 SOURCES += mainwindow.cpp \
     UnscrambleGameTable.cpp \
     avatarLabel.cpp \
@@ -46,8 +48,9 @@ HEADERS += mainwindow.h \
     chip.h \
     wordRectangle.h \
     playerlistwidget.h \
-    ../aerolithclient/GameTable.h \
-    ../aerolithServer/BonusGame.h
+    GameTable.h \
+    BonusGame.h \
+    ../common/databasehandler.h
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 HEADERS += mainserver.h \
@@ -57,7 +60,6 @@ HEADERS += mainserver.h \
     ClientSocket.h \
     ClientWriter.h \
     serverthread.h \
-    listmaker.h \
     dawg.h
 SOURCES += mainserver.cpp \
     table.cpp \
@@ -65,7 +67,6 @@ SOURCES += mainserver.cpp \
     UnscrambleGame.cpp \
     ClientWriter.cpp \
     serverthread.cpp \
-    listmaker.cpp \
     dawg.cpp
 HEADERS += commonDefs.h
 OTHER_FILES += acknowledgments.txt

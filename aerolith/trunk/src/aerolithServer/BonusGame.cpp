@@ -15,7 +15,7 @@
 //    along with Aerolith.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "BonusGame.h"
-#include "listmaker.h"
+#include "DatabaseHandler.h"
 
 const quint8 COUNTDOWN_TIMER_VAL = 3;
 

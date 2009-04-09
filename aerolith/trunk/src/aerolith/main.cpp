@@ -17,7 +17,7 @@
 #include <QApplication>
 
 #include "mainwindow.h"
-#include "ListMaker.h"
+#include "DatabaseHandler.h"
 #include "serverthread.h"
 QTextStream *outFile = 0;
 
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
             }
 
-            ListMaker::createLexiconMap();
+            DatabaseHandler::createLexiconMap();
             MainServer mainServer(aerolithVersion);
             mainServer.listen(QHostAddress::Any, port);
             qDebug() << "listening on port " << port;
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     }
     else delete log;
 
-    ListMaker::createLexiconMap();  // always create the lexicon map first thing.
+    DatabaseHandler::createLexiconMap();  // always create the lexicon map first thing.
 
     ServerThread serverThread(aerolithVersion);
     MainWindow mainWin(aerolithVersion);

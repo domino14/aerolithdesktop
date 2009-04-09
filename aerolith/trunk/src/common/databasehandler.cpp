@@ -15,19 +15,18 @@
 //    along with Aerolith.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "listMaker.h"
+#include "databasehandler.h"
 #include <QTime>
 
 
-QMap<QString, LexiconInfo> ListMaker::lexiconMap;
-QList <unsigned char>ListMaker::letterList;
+QMap<QString, LexiconInfo> DatabaseHandler::lexiconMap;
 
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
     return a1.combinations > a2.combinations;
 }
 
-void ListMaker::createLexiconMap()
+void DatabaseHandler::createLexiconMap()
 {
     /* this function is called right when the Aerolith program starts executing, either in stand-alone server mode
        or in server-client mode*/
@@ -45,7 +44,7 @@ void ListMaker::createLexiconMap()
 
 }
 
-void ListMaker::connectToAvailableDatabases(bool clientCall)
+void DatabaseHandler::connectToAvailableDatabases(bool clientCall)
 {
     foreach (QString key, lexiconMap.keys())
     {
@@ -58,41 +57,32 @@ void ListMaker::connectToAvailableDatabases(bool clientCall)
 }
 
 
-void ListMaker::createListDatabase()
+void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
 {
-    /* have the client actually make the database. the server should just connect to
-       whatever databases exist. */
 
-
-    foreach (QString key, lexiconMap.keys())
+    if (!isRunning())
     {
-        createLexiconDatabase(key);        
+        dbsToCreate = lexiconNames;
+        start();
+
+
+    }
+}
+
+void DatabaseHandler::run()
+{
+    foreach (QString key, dbsToCreate)
+    {
+        if (!lexiconMap.contains(key)) continue;
+        emit setProgressMessage("Creating database for " + key);
+        createLexiconDatabase(key);
         lexiconMap[key].db.close();
         QSqlDatabase::removeDatabase(key + "DB");
     }
-    //    QSqlQuery query(QSqlDatabase::database("fiseDB"));
-    //    query.exec("create table if not exists words(word varchar(15))");
-    //    query.exec("begin transaction");
-    //    query.prepare("insert into words(word) values(?)");
-    //    QFile file("fise.txt");
-    //    if (!file.open(QIODevice::ReadOnly)) return;
-    //    while (!file.atEnd())
-    //    {
-    //        QByteArray line = file.readLine();
-    //        line = line.trimmed();
-    //        QString l = QString::fromLatin1(line.constData(), line.size());
-    //
-    //        query.bindValue(0, l);
-    //        query.exec();
-    //    }
-    //    qDebug() << "done mit list";
-    //    query.exec("end transaction");
-    //    wordDb.close();
-
 
 }
 
-QString ListMaker::reverse(QString word)
+QString DatabaseHandler::reverse(QString word)
 {
     /* reverses a word */
     QString ret;
@@ -102,9 +92,20 @@ QString ListMaker::reverse(QString word)
     return ret;
 }
 
-void ListMaker::createLexiconDatabase(QString lexiconName)
+void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 {
 
+    QDir dir = QDir::home();
+    if (!dir.exists(".aerolith"))
+        dir.mkdir(".aerolith");
+    dir.cd(".aerolith");
+    if (!dir.exists("lexica"))
+        dir.mkdir("lexica");
+    dir.cd("lexica");
+
+
+
+    emit setProgressMessage("Loading word graphs...");
     QTime time;
     time.start();
     qDebug() << "Create" << lexiconName;
@@ -114,12 +115,13 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
 
 
 
+
     QHash <QString, Alph> alphagramsHash;
 
     QFile file("words/" + lexInfo->wordsFilename);
     if (!file.open(QIODevice::ReadOnly)) return;
     lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
-    lexInfo->db.setDatabaseName(lexiconName + ".db");
+    lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + lexiconName + ".db");
     lexInfo->db.open();
     QSqlQuery wordQuery(lexInfo->db);
     wordQuery.exec("CREATE TABLE IF NOT EXISTS words(alphagram VARCHAR(15), word VARCHAR(15), "
@@ -141,12 +143,26 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     wordQuery.prepare(queryText);
     QHash <QString, QString> definitionsHash;
     QStringList dummy;
+
+    int wordCount = 0;
+    while (!in.atEnd())
+    {
+        in.readLine();
+        wordCount++;
+    }
+    in.seek(0);
+    emit setProgressRange(0, wordCount*3);   // 1 accounts for reading the words, 2 accounts for alph, 3 for fixing defs
+    emit setProgressValue(0);
+    int progress = 0;
     while (!in.atEnd())
     {
         QString line = in.readLine();
         line = line.simplified();
         if (line.length() > 0)
         {
+            progress++;
+            if (progress%1000 == 0)
+                emit setProgressValue(progress);
             QString word = line.section(' ', 0, 0).toUpper();
             QString definition = line.section(' ', 1);
             definitionsHash.insert(word, definition);
@@ -179,8 +195,11 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     file.close();
 
     /* now sort alphagramsHash by probability/length */
+    emit setProgressMessage("Read words. Sorting by probability...");
     QList <Alph> alphs = alphagramsHash.values();
     qSort(alphs.begin(), alphs.end(), probLessThan);
+
+    emit setProgressMessage("Creating alphagrams...");
 
     queryText = "INSERT INTO alphagrams(alphagram, words, probability, length) VALUES(?, ?, ?, ?)";
     wordQuery.exec("BEGIN TRANSACTION");
@@ -194,6 +213,10 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
         int wordLength = alphs[i].alphagram.length();
         wordQuery.bindValue(1, alphs[i].words.join(" "));
 
+        progress++;
+        if (progress%1000 == 0)
+            emit setProgressValue(progress); // this is gonna be a little behind because of alphagrams.. it's ok
+
         if (wordLength <= 15)
             probs[wordLength]++;
 
@@ -206,11 +229,12 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
 
     qDebug() << "Created alphas in" << time.elapsed() << "for lexicon" << lexiconName;
 
+    emit setProgressMessage("Updating definitions...");
     wordQuery.exec("CREATE UNIQUE INDEX word_index on words(word)");
     /* update definitions */
 
 
-    updateDefinitions(lexiconName, definitionsHash);
+    updateDefinitions(lexiconName, definitionsHash, progress);
 
     /* update lexicon symbols if this is CSW (compare to OWL2)*/
 
@@ -312,27 +336,27 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     //    }
     //
     //    QString vowelQueryString = "SELECT probability from alphagrams where length = %1 and num_vowels = %2 and lexiconName = '%3'";
-    //    sqlListMaker(vowelQueryString.arg(8).arg(5).arg(lexiconName), "Five-vowel-8s", 8, lexiconName);
-    //    sqlListMaker(vowelQueryString.arg(7).arg(4).arg(lexiconName), "Four-vowel-7s", 7, lexiconName);
+    //    sqlDatabaseHandler(vowelQueryString.arg(8).arg(5).arg(lexiconName), "Five-vowel-8s", 8, lexiconName);
+    //    sqlDatabaseHandler(vowelQueryString.arg(7).arg(4).arg(lexiconName), "Four-vowel-7s", 7, lexiconName);
     //    QString jqxzQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
     //                              "(alphagram like '%Q%' or alphagram like '%J%' or alphagram like '%X%' or alphagram like '%Z%')";
     //
     //    for (int i = 4; i <= 8; i++)
-    //        sqlListMaker(jqxzQueryString.arg(i).arg(lexiconName), QString("JQXZ %1s").arg(i), i, lexiconName);
+    //        sqlDatabaseHandler(jqxzQueryString.arg(i).arg(lexiconName), QString("JQXZ %1s").arg(i), i, lexiconName);
     //
     //    if (lexiconName == "OWL2+LWL")
     //    {
     //        QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
     //                                      "lexiconstrings like '%*%%' ESCAPE '*'";
     //        for (int i = 7; i <= 8; i++)
-    //            sqlListMaker(newWordsQueryString.arg(i).arg(lexiconName), QString("New (OWL2) %1s").arg(i), i, lexiconName);
+    //            sqlDatabaseHandler(newWordsQueryString.arg(i).arg(lexiconName), QString("New (OWL2) %1s").arg(i), i, lexiconName);
     //    }
     //    else if (lexiconName == "CSW")
     //    {
     //        QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
     //                                      "lexiconstrings like '%#%'";
     //        for (int i = 7; i <= 8; i++)
-    //            sqlListMaker(newWordsQueryString.arg(i).arg(lexiconName), QString("CSW-only %1s").arg(i), i, lexiconName);
+    //            sqlDatabaseHandler(newWordsQueryString.arg(i).arg(lexiconName), QString("CSW-only %1s").arg(i), i, lexiconName);
     //    }
     //
     //    QString singleAnagramsQueryString = "SELECT probability from alphagrams where length = %1 and num_anagrams = 1 and lexiconName = '%2'";
@@ -340,20 +364,20 @@ void ListMaker::createLexiconDatabase(QString lexiconName)
     //
     //    for (int i = 7; i <= 8; i++)
     //    {
-    //        sqlListMaker(singleAnagramsQueryString.arg(i).arg(lexiconName), QString("One-anagram %1s").arg(i), i, lexiconName);
-    //        sqlListMaker(moreThanOneQueryString.arg(i).arg(lexiconName), QString("Multi-anagram %1s").arg(i), i, lexiconName);
+    //        sqlDatabaseHandler(singleAnagramsQueryString.arg(i).arg(lexiconName), QString("One-anagram %1s").arg(i), i, lexiconName);
+    //        sqlDatabaseHandler(moreThanOneQueryString.arg(i).arg(lexiconName), QString("Multi-anagram %1s").arg(i), i, lexiconName);
     //    }
     //
     //    QString uniqueLettersQueryString = "SELECT probability from alphagrams where num_unique_letters = %1 and length = %2 and lexiconName = '%3'";
     //    for (int i = 7; i <= 8; i++)
-    //        sqlListMaker(uniqueLettersQueryString.arg(i).arg(i).arg(lexiconName), QString("Unique-letter %1s").arg(i), i, lexiconName);
+    //        sqlDatabaseHandler(uniqueLettersQueryString.arg(i).arg(i).arg(lexiconName), QString("Unique-letter %1s").arg(i), i, lexiconName);
     //
     //    wordQuery.exec("END TRANSACTION");
     //    zyzzyvaDb.close();
     //    QSqlDatabase::removeDatabase("zyzzyvaDB");
 }
 
-void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName)
+void DatabaseHandler::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName)
 {
     //    QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
     //    wordQuery.exec(queryString);
@@ -390,7 +414,7 @@ void ListMaker::sqlListMaker(QString queryString, QString listName, quint8 wordL
 
 }
 
-void ListMaker::updateDefinitions(QString lexiconName, QHash<QString, QString>& defHash)
+void DatabaseHandler::updateDefinitions(QString lexiconName, QHash<QString, QString>& defHash, int progress)
 {
     LexiconInfo* lexInfo = &(lexiconMap[lexiconName]);
     QSqlQuery wordQuery(lexInfo->db);
@@ -400,6 +424,10 @@ void ListMaker::updateDefinitions(QString lexiconName, QHash<QString, QString>& 
     QHashIterator<QString, QString> hashIterator(defHash);
     while (hashIterator.hasNext())
     {
+        progress++;
+        if (progress%1000 == 0)
+            emit setProgressValue(progress);
+
         hashIterator.next();
         QString word = hashIterator.key();
         QString definition = hashIterator.value();
@@ -424,7 +452,7 @@ void ListMaker::updateDefinitions(QString lexiconName, QHash<QString, QString>& 
 
 }
 
-QString ListMaker::followDefinitionLinks(QString definition, QHash<QString, QString>& defHash, bool useFollow, int maxDepth)
+QString DatabaseHandler::followDefinitionLinks(QString definition, QHash<QString, QString>& defHash, bool useFollow, int maxDepth)
 {
     /* this code is basically taken from Michael Thelen's CreateDatabaseThread.cpp, part of Zyzzyva, which is
        GPLed software, source code available at http://www.zyzzyva.net, copyright Michael Thelen. */
@@ -486,7 +514,7 @@ QString ListMaker::followDefinitionLinks(QString definition, QHash<QString, QStr
     return newDefinition;
 }
 
-QString ListMaker::getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString>& defHash)
+QString DatabaseHandler::getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString>& defHash)
 {
     if (!defHash.contains(word))
         return QString();
@@ -512,14 +540,14 @@ QString ListMaker::getSubDefinition(const QString& word, const QString& pos, QHa
 
 
 
-int ListMaker::fact(int n)
+int DatabaseHandler::fact(int n)
 {
     if (n == 0)
         return 1;
     return fact(n-1)*n;
 }
 
-int ListMaker::nCr(int n, int r)
+int DatabaseHandler::nCr(int n, int r)
 {
     if (n < r)
         return 0;
@@ -552,7 +580,7 @@ bool spanishLessThan(const unsigned char i, const unsigned char j)
 
 }
 
-QString ListMaker::alphagrammize(QString word, LessThans lessThan)
+QString DatabaseHandler::alphagrammize(QString word, LessThans lessThan)
 {
     QString ret;
     letterList.clear();
@@ -569,7 +597,7 @@ QString ListMaker::alphagrammize(QString word, LessThans lessThan)
     return ret;
 }
 
-int ListMaker::combinations(QString alphagram, QMap <unsigned char, int> letterDist)
+int DatabaseHandler::combinations(QString alphagram, QMap <unsigned char, int> letterDist)
 {
     int temp = 1;
     QMapIterator<unsigned char, int> i(letterDist);
@@ -584,7 +612,7 @@ int ListMaker::combinations(QString alphagram, QMap <unsigned char, int> letterD
     return temp;
 }
 
-QMap <unsigned char, int> ListMaker::getEnglishDist()
+QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
 {
     QMap <unsigned char, int> dist;
 
@@ -601,7 +629,7 @@ QMap <unsigned char, int> ListMaker::getEnglishDist()
     return dist;
 }
 
-QMap <unsigned char, int> ListMaker::getSpanishDist()
+QMap <unsigned char, int> DatabaseHandler::getSpanishDist()
 {
     QMap <unsigned char, int> dist;
     dist.insert('1', 1); dist.insert('2', 1); dist.insert('3', 1);
@@ -620,9 +648,9 @@ QMap <unsigned char, int> ListMaker::getSpanishDist()
 int main(int argc, char**argv)
 {
     QCoreApplication app(argc, argv);
-    ListMaker::createListDatabase();
+    DatabaseHandler::createListDatabase();
 
-    
+
     Dawg dawg;
     dawg.readDawg("words/owl2-lwl.dwg");
     qDebug() << dawg.findHooks("easting");
