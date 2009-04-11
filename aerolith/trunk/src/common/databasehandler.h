@@ -45,7 +45,8 @@ struct LexiconInfo
     QMap<unsigned char, int> letterDist;
     QString dawgFilename, dawgRFilename;
     Dawg dawg, reverseDawg;
-    QSqlDatabase db;
+    QSqlDatabase clientSideDb;
+    QSqlDatabase serverSideDb;
     LexiconInfo(QString name, QString filename, QMap <unsigned char, int> d, QString df, QString drf)
     {
         lexiconName = name;
@@ -54,6 +55,9 @@ struct LexiconInfo
         dawgRFilename = drf;
     }
     LexiconInfo()
+    {
+    }
+    ~LexiconInfo()
     {
     }
 };
@@ -76,6 +80,7 @@ public:
     static void connectToAvailableDatabases(bool clientCall);
     void createLexiconDatabases(QStringList);
     static QMap<QString, LexiconInfo> lexiconMap;
+    static QVector<double> testVector;
 private:
 
     QList<unsigned char> letterList;
@@ -93,7 +98,7 @@ private:
     int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
     static QMap <unsigned char, int> getEnglishDist();
     static QMap <unsigned char, int> getSpanishDist();
-    void updateDefinitions(QString, QHash<QString, QString>&, int);
+    void updateDefinitions(QHash<QString, QString>&, int, QSqlDatabase& db);
     QString followDefinitionLinks(QString, QHash<QString, QString>&, bool useFollow, int maxDepth);
     QString getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString> &defHash);
 

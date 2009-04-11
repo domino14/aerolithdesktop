@@ -18,8 +18,9 @@
 #include "databasehandler.h"
 #include <QTime>
 
-
+QVector<double> DatabaseHandler::testVector;
 QMap<QString, LexiconInfo> DatabaseHandler::lexiconMap;
+
 
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
@@ -49,16 +50,29 @@ void DatabaseHandler::connectToAvailableDatabases(bool clientCall)
     foreach (QString key, lexiconMap.keys())
     {
         LexiconInfo* lexInfo = &(lexiconMap[key]);
-        lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", key + "DB" + (clientCall ? "_client" : "_server"));
-        lexInfo->db.setDatabaseName(key + ".db");
-        lexInfo->db.open();
-
+        qDebug() << "Name:" << lexInfo->lexiconName;
+        if (clientCall)
+        {
+            qDebug() <<QThread::currentThread();
+            qDebug() << QCoreApplication::instance()->thread();
+            lexInfo->clientSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
+       //     lexInfo->clientSideDb.setDatabaseName(key + ".db");
+       //     lexInfo->clientSideDb.open();
+        }
+        else
+        {
+              lexInfo->serverSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
+            lexInfo->serverSideDb.setDatabaseName(key + ".db");
+            lexInfo->serverSideDb.open();
+        }
     }
 }
 
 
 void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
 {
+    setProgressMessage("Creating lexicon databases...");
+    qDebug() << "In here";
 
     if (!isRunning())
     {
@@ -76,7 +90,6 @@ void DatabaseHandler::run()
         if (!lexiconMap.contains(key)) continue;
         emit setProgressMessage("Creating database for " + key);
         createLexiconDatabase(key);
-        lexiconMap[key].db.close();
         QSqlDatabase::removeDatabase(key + "DB");
     }
 
@@ -120,10 +133,10 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     QFile file("words/" + lexInfo->wordsFilename);
     if (!file.open(QIODevice::ReadOnly)) return;
-    lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
-    lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + lexiconName + ".db");
-    lexInfo->db.open();
-    QSqlQuery wordQuery(lexInfo->db);
+    QSqlDatabase db =  QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
+    db.setDatabaseName(dir.absolutePath() + "/" + lexiconName + ".db");
+    db.open();
+    QSqlQuery wordQuery(db);
     wordQuery.exec("CREATE TABLE IF NOT EXISTS words(alphagram VARCHAR(15), word VARCHAR(15), "
                    "definition VARCHAR(256), lexiconstrings VARCHAR(5), front_hooks VARCHAR(26), "
                    "back_hooks VARCHAR(26))");
@@ -234,7 +247,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     /* update definitions */
 
 
-    updateDefinitions(lexiconName, definitionsHash, progress);
+    updateDefinitions(definitionsHash, progress, db);
 
     /* update lexicon symbols if this is CSW (compare to OWL2)*/
 
@@ -414,10 +427,9 @@ void DatabaseHandler::sqlListMaker(QString queryString, QString listName, quint8
 
 }
 
-void DatabaseHandler::updateDefinitions(QString lexiconName, QHash<QString, QString>& defHash, int progress)
+void DatabaseHandler::updateDefinitions(QHash<QString, QString>& defHash, int progress, QSqlDatabase &db)
 {
-    LexiconInfo* lexInfo = &(lexiconMap[lexiconName]);
-    QSqlQuery wordQuery(lexInfo->db);
+    QSqlQuery wordQuery(db);
     wordQuery.exec("BEGIN TRANSACTION");
     wordQuery.prepare("UPDATE words SET definition = ? WHERE word = ?");
 

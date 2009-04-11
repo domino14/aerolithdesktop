@@ -22,7 +22,7 @@ ICON = $$ROOT/macosxicns.icns
 SOURCES = main.cpp \
     GameTable.cpp \
     BonusGame.cpp \
-    ../common/databasehandler.cpp
+    databasehandler.cpp
 FORMS = tableCreateForm.ui \
     solutionsForm.ui \
     scoresForm.ui \
@@ -50,7 +50,7 @@ HEADERS += mainwindow.h \
     playerlistwidget.h \
     GameTable.h \
     BonusGame.h \
-    ../common/databasehandler.h
+    databasehandler.h
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 HEADERS += mainserver.h \
