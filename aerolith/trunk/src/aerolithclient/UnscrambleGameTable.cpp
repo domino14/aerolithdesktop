@@ -183,7 +183,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
     #endif
 
     /* connect to word database*/
-    wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
+    //wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
    /* TODO FIX (connect to appropriate lexicon database)
     wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);*/
 //    bool success = wordDb.open();

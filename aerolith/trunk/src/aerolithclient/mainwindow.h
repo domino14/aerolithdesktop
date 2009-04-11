@@ -96,8 +96,6 @@ private:
     void handleWordlistsMessage();
 
 
-    void createDatabasesOKClicked();
-
 
 
     const int PLAYERLIST_ROLE;
@@ -202,6 +200,7 @@ signals:
     void serverThreadHasFinished();
     void checkForDatabases();
  private slots:
+    void createDatabasesOKClicked();
     void createUnscrambleGameTable();
     void createBonusGameTable();
     void lexiconComboBoxIndexChanged(int);
