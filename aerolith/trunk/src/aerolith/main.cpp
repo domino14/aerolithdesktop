@@ -17,7 +17,7 @@
 #include <QApplication>
 
 #include "mainwindow.h"
-#include "DatabaseHandler.h"
+#include "databasehandler.h"
 #include "serverthread.h"
 QTextStream *outFile = 0;
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     }
     else delete log;
 
-    DatabaseHandler::createLexiconMap();  // always create the lexicon map first thing.
+
 
     ServerThread serverThread(aerolithVersion);
     MainWindow mainWin(aerolithVersion);

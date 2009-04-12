@@ -16,7 +16,7 @@
 
 #include "UnscrambleGame.h"
 #include "commonDefs.h"
-#include "DatabaseHandler.h"
+#include "databasehandler.h"
 extern QByteArray block;
 extern QDataStream out;
 

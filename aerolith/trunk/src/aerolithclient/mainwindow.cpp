@@ -16,7 +16,7 @@
 
 #include "mainwindow.h"
 #include "commonDefs.h"
-#include "DatabaseHandler.h"
+#include "databasehandler.h"
 const quint16 MAGIC_NUMBER = 25349;
 const QString WindowTitle = "Aerolith 0.5";
 
@@ -153,18 +153,21 @@ out(&block, QIODevice::WriteOnly)
     databaseDialog = new QDialog(this);
     uiDatabase.setupUi(databaseDialog);
 
-    connect(databaseDialog, SIGNAL(accepted()), SLOT(createDatabasesOKClicked()));
+     connect(uiMainWindow.actionCreate_databases, SIGNAL(triggered()), databaseDialog, SLOT(show()));
+
+    connect(uiDatabase.pushButtonCreateDatabases, SIGNAL(clicked()), SLOT(createDatabasesOKClicked()));
 
     dbHandler = new DatabaseHandler(this);
     connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
     connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
     connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
-
+    connect(dbHandler, SIGNAL(enableClose(bool)), databaseDialog, SLOT(setEnabled(bool)));
 
     ///////
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
+    DatabaseHandler::createLexiconMap();  // always create the lexicon map first thing.
     checkForDatabases();
     DatabaseHandler::connectToAvailableDatabases(true);
 

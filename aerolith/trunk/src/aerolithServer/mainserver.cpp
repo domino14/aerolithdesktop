@@ -21,7 +21,7 @@
 #include "ClientWriter.h"
 #include "UnscrambleGame.h"
 #include "commonDefs.h"
-#include "DatabaseHandler.h"
+#include "databasehandler.h"
 
 //QList <QVariant> dummyList;
 

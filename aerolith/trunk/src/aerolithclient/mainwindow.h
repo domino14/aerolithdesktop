@@ -31,7 +31,7 @@
 #include "ui_getProfileForm.h"
 #include "ui_setProfileForm.h"
 
-#include "DatabaseHandler.h"
+#include "databasehandler.h"
 #include "UnscrambleGameTable.h"
 
 class PMWidget : public QWidget

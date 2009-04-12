@@ -59,9 +59,13 @@ struct LexiconInfo
     }
     ~LexiconInfo()
     {
+        clientSideDb.close();
+        QSqlDatabase::removeDatabase(lexiconName + "DB_client");
     }
 };
 
+
+//Q_DECLARE_TYPEINFO(LexiconInfo, Q_MOVABLE_TYPE);
 
 enum LessThans
 {
@@ -106,6 +110,7 @@ signals:
     void setProgressMessage(QString);
     void setProgressValue(int);
     void setProgressRange(int, int);
+    void enableClose(bool);
 };
 
 
