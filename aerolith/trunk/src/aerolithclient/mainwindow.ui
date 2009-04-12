@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>845</width>
+    <width>858</width>
     <height>528</height>
    </rect>
   </property>
@@ -239,8 +239,8 @@ QPushButton:disabled{
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>845</width>
-     <height>21</height>
+     <width>858</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHelp">
@@ -257,8 +257,15 @@ QPushButton:disabled{
     </property>
     <addaction name="actionConnect_to_Aerolith"/>
    </widget>
+   <widget class="QMenu" name="menuLexica">
+    <property name="title">
+     <string>Lexica</string>
+    </property>
+    <addaction name="actionCreate_databases"/>
+   </widget>
    <addaction name="menuHelp"/>
    <addaction name="menuConnect"/>
+   <addaction name="menuLexica"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionAerolith_Help">
@@ -279,6 +286,11 @@ QPushButton:disabled{
   <action name="actionConnect_to_Aerolith">
    <property name="text">
     <string>Connect to Aerolith</string>
+   </property>
+  </action>
+  <action name="actionCreate_databases">
+   <property name="text">
+    <string>Create databases</string>
    </property>
   </action>
  </widget>

@@ -53,15 +53,15 @@ void DatabaseHandler::connectToAvailableDatabases(bool clientCall)
         qDebug() << "Name:" << lexInfo->lexiconName;
         if (clientCall)
         {
-            qDebug() <<QThread::currentThread();
-            qDebug() << QCoreApplication::instance()->thread();
+
             lexInfo->clientSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
-       //     lexInfo->clientSideDb.setDatabaseName(key + ".db");
-       //     lexInfo->clientSideDb.open();
+            lexInfo->clientSideDb.setDatabaseName(key + ".db");
+            lexInfo->clientSideDb.open();
+            /* there is a bug that causes program to crash on exit if hte lines above are called. it doesn't happen under windows!? */
         }
         else
         {
-              lexInfo->serverSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
+            lexInfo->serverSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
             lexInfo->serverSideDb.setDatabaseName(key + ".db");
             lexInfo->serverSideDb.open();
         }
@@ -85,14 +85,15 @@ void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
 
 void DatabaseHandler::run()
 {
+    emit enableClose(false);
     foreach (QString key, dbsToCreate)
     {
         if (!lexiconMap.contains(key)) continue;
-        emit setProgressMessage("Creating database for " + key);
         createLexiconDatabase(key);
         QSqlDatabase::removeDatabase(key + "DB");
     }
-
+    emit setProgressMessage("All databases created. Please close this window.");
+    emit enableClose(true);
 }
 
 QString DatabaseHandler::reverse(QString word)
@@ -116,9 +117,10 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
         dir.mkdir("lexica");
     dir.cd("lexica");
 
+    if (dir.exists(lexiconName + ".db"))
+        dir.remove(lexiconName + ".db");
 
-
-    emit setProgressMessage("Loading word graphs...");
+    emit setProgressMessage(lexiconName + ": Loading word graphs...");
     QTime time;
     time.start();
     qDebug() << "Create" << lexiconName;
@@ -127,7 +129,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     lexInfo->reverseDawg.readDawg("words/" + lexInfo->dawgRFilename);
 
 
-
+    emit setProgressMessage(lexiconName + ": Reading in dictionary.");
 
     QHash <QString, Alph> alphagramsHash;
 
@@ -208,11 +210,11 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     file.close();
 
     /* now sort alphagramsHash by probability/length */
-    emit setProgressMessage("Read words. Sorting by probability...");
+    emit setProgressMessage(lexiconName + ": Sorting by probability...");
     QList <Alph> alphs = alphagramsHash.values();
     qSort(alphs.begin(), alphs.end(), probLessThan);
 
-    emit setProgressMessage("Creating alphagrams...");
+    emit setProgressMessage(lexiconName + ": Creating alphagrams...");
 
     queryText = "INSERT INTO alphagrams(alphagram, words, probability, length) VALUES(?, ?, ?, ?)";
     wordQuery.exec("BEGIN TRANSACTION");
@@ -242,7 +244,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     qDebug() << "Created alphas in" << time.elapsed() << "for lexicon" << lexiconName;
 
-    emit setProgressMessage("Updating definitions...");
+    emit setProgressMessage(lexiconName + ": updating definitions...");
     wordQuery.exec("CREATE UNIQUE INDEX word_index on words(word)");
     /* update definitions */
 
@@ -255,12 +257,13 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
 
 
-
+    emit setProgressMessage(lexiconName + ": Indexing database...");
 
 
     // do this indexing at the end.
     wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
-
+    emit setProgressMessage(lexiconName + ": Database created!");
+    emit setProgressValue(0);
 
 
     //
@@ -649,7 +652,7 @@ QMap <unsigned char, int> DatabaseHandler::getSpanishDist()
     dist.insert('D', 5); dist.insert('E', 12); dist.insert('F', 1);
     dist.insert('G', 2); dist.insert('H', 2); dist.insert('I', 6);
     dist.insert('J', 1); dist.insert('L', 4); dist.insert('M', 2);
-    dist.insert('N', 5); dist.insert(0xF1, 1); dist.insert('O', 9);
+    dist.insert('N', 5); dist.insert('4', 1); dist.insert('O', 9);  // 4 is enye
     dist.insert('P', 2); dist.insert('Q', 1); dist.insert('R', 5);
     dist.insert('S', 6); dist.insert('T', 4); dist.insert('U', 5);
     dist.insert('V', 1); dist.insert('X', 1); dist.insert('Y', 1);
