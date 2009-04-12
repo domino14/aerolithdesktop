@@ -57,11 +57,11 @@ struct LexiconInfo
     LexiconInfo()
     {
     }
-    ~LexiconInfo()
+    /*~LexiconInfo()
     {
         clientSideDb.close();
         QSqlDatabase::removeDatabase(lexiconName + "DB_client");
-    }
+    }*/
 };
 
 

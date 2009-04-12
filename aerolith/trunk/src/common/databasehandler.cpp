@@ -55,8 +55,8 @@ void DatabaseHandler::connectToAvailableDatabases(bool clientCall)
         {
 
             lexInfo->clientSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
-            lexInfo->clientSideDb.setDatabaseName(key + ".db");
-            lexInfo->clientSideDb.open();
+//            lexInfo->clientSideDb.setDatabaseName(key + ".db");
+//            lexInfo->clientSideDb.open();
             /* there is a bug that causes program to crash on exit if hte lines above are called. it doesn't happen under windows!? */
         }
         else
