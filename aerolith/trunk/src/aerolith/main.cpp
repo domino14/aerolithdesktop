@@ -70,11 +70,14 @@ void setupApplicationParams()
 int main(int argc, char *argv[])
 {
     // /.programname server 1988 logfilename
+    qDebug() << "Args: ";
+    for (int i = 0; i < argc; i++)
+        qDebug() << QString(argv[i]);
+
     if (argc > 1)
     {
-        qDebug() << "Args: ";
-        for (int i = 0; i < argc; i++)
-            qDebug() << QString(argv[i]);
+
+
         if (QString(argv[1]) == "server")
         {
 
