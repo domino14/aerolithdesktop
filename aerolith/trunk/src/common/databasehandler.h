@@ -57,11 +57,7 @@ struct LexiconInfo
     LexiconInfo()
     {
     }
-    /*~LexiconInfo()
-    {
-        clientSideDb.close();
-        QSqlDatabase::removeDatabase(lexiconName + "DB_client");
-    }*/
+
 };
 
 
@@ -80,11 +76,10 @@ public:
     DatabaseHandler(QObject* parent) : QThread(parent)
     {
     }
-    static void createLexiconMap();
-    static void connectToAvailableDatabases(bool clientCall);
+    void createLexiconMap();
+    void connectToAvailableDatabases(bool clientCall);
     void createLexiconDatabases(QStringList);
-    static QMap<QString, LexiconInfo> lexiconMap;
-    static QVector<double> testVector;
+    QMap<QString, LexiconInfo> lexiconMap;
 private:
 
     QList<unsigned char> letterList;

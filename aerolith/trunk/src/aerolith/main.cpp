@@ -115,7 +115,6 @@ int main(int argc, char *argv[])
 
             }
 
-            DatabaseHandler::createLexiconMap();
             MainServer mainServer(aerolithVersion);
             mainServer.listen(QHostAddress::Any, port);
             qDebug() << "listening on port " << port;
@@ -132,8 +131,6 @@ int main(int argc, char *argv[])
         qInstallMsgHandler(myMessageOutput);
     }
     else delete log;
-
-
 
     ServerThread serverThread(aerolithVersion);
     MainWindow mainWin(aerolithVersion);

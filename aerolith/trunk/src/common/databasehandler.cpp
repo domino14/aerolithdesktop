@@ -18,10 +18,6 @@
 #include "databasehandler.h"
 #include <QTime>
 
-QVector<double> DatabaseHandler::testVector;
-QMap<QString, LexiconInfo> DatabaseHandler::lexiconMap;
-
-
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
     return a1.combinations > a2.combinations;
