@@ -45,8 +45,7 @@ struct LexiconInfo
     QMap<unsigned char, int> letterDist;
     QString dawgFilename, dawgRFilename;
     Dawg dawg, reverseDawg;
-    QSqlDatabase clientSideDb;
-    QSqlDatabase serverSideDb;
+    QSqlDatabase db;
     LexiconInfo(QString name, QString filename, QMap <unsigned char, int> d, QString df, QString drf)
     {
         lexiconName = name;
@@ -66,19 +65,20 @@ struct LexiconInfo
 enum LessThans
 {
     SPANISH_LESS_THAN, ENGLISH_LESS_THAN
-};
+        };
 
 class DatabaseHandler : public QThread
 {
     Q_OBJECT
 public:
 
-    DatabaseHandler(QObject* parent) : QThread(parent)
+    DatabaseHandler()
     {
     }
-    void createLexiconMap();
-    void connectToAvailableDatabases(bool clientCall);
+    void createLexiconMap(bool);
+    void connectToDatabases(bool clientCall, QStringList dbList);
     void createLexiconDatabases(QStringList);
+    QStringList checkForDatabases();
     QMap<QString, LexiconInfo> lexiconMap;
 private:
 
@@ -86,7 +86,7 @@ private:
     QStringList dbsToCreate;
     void run();
 
-    void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName);
+    void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QSqlDatabase& db);
 
     void createLexiconDatabase(QString lexiconName);
 
@@ -95,8 +95,8 @@ private:
     int fact(int n);
     int nCr(int n, int r);
     int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
-    static QMap <unsigned char, int> getEnglishDist();
-    static QMap <unsigned char, int> getSpanishDist();
+    QMap <unsigned char, int> getEnglishDist();
+    QMap <unsigned char, int> getSpanishDist();
     void updateDefinitions(QHash<QString, QString>&, int, QSqlDatabase& db);
     QString followDefinitionLinks(QString, QHash<QString, QString>&, bool useFollow, int maxDepth);
     QString getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString> &defHash);
@@ -106,6 +106,7 @@ signals:
     void setProgressValue(int);
     void setProgressRange(int, int);
     void enableClose(bool);
+    void createdDatabase(QString);
 };
 
 

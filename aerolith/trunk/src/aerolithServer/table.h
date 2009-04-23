@@ -20,7 +20,7 @@
 #include <QtCore>
 #include "ClientSocket.h"
 #include "commonDefs.h"
-
+#include "databasehandler.h"
 class TableGame;
 
 
@@ -34,7 +34,8 @@ public:
             };
 
     ~Table();
-    QByteArray initialize(ClientSocket* tableCreator, quint16 tableNumber, QByteArray tableDescription);
+    QByteArray initialize(ClientSocket* tableCreator, quint16 tableNumber,
+                          QByteArray tableDescription, DatabaseHandler* dbHandler);
     quint16 tableNumber;
     quint8 lexiconIndex;
     QByteArray tableInformationArray;

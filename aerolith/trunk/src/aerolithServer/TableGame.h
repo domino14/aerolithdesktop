@@ -37,7 +37,7 @@ Q_OBJECT
   virtual ~TableGame();
   
 
-  virtual void initialize(quint8, quint8, QString, QString) = 0;
+  virtual void initialize(quint8, quint8, QString, QString, DatabaseHandler*) = 0;
   virtual void gameStartRequest(ClientSocket*) = 0;
   virtual void guessSent(ClientSocket*, QString) = 0;
   virtual void gameEndRequest(ClientSocket*) = 0;

@@ -23,7 +23,8 @@
 extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
-QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber, QByteArray tableDescription)
+QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
+                             QByteArray tableDescription, DatabaseHandler* dbHandler)
 {
 
 
@@ -46,7 +47,7 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber, QB
             tableGame = new UnscrambleGame(this);
             // TODO FIX. initialize should only take the parameter (in) possibly
             // TODO fix lexicon below.
-            tableGame->initialize(unscrambleType, tableTimer, tableName, "");
+            tableGame->initialize(unscrambleType, tableTimer, tableName, "", dbHandler);
 
             // compute array to be sent out as table information array
             writeHeaderData();
@@ -64,7 +65,7 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber, QB
         {
             in >> lexiconIndex;
             tableGame = new BonusGame(this);    // TODO FIX lexiconname!
-            tableGame->initialize(0,0, tableName, "");
+            tableGame->initialize(0,0, tableName, "", dbHandler);
 
             writeHeaderData();
             out << (quint8) SERVER_NEW_TABLE;

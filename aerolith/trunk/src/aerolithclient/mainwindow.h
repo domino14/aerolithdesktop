@@ -58,7 +58,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QString);
+    MainWindow(QString, DatabaseHandler*);
 private:
     QString aerolithVersion;
 
@@ -198,12 +198,14 @@ signals:
 
     void serverThreadHasStarted();
     void serverThreadHasFinished();
-    void checkForDatabases();
+    void databaseCreated(QString);
+    void setCheckbox(QString);
  private slots:
     void createDatabasesOKClicked();
     void createUnscrambleGameTable();
     void createBonusGameTable();
     void lexiconComboBoxIndexChanged(int);
+    void dbDialogEnableClose(bool);
 };
 
 

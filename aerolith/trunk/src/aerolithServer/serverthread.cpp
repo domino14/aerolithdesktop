@@ -16,10 +16,11 @@
 
 #include "serverthread.h"
 
-ServerThread::ServerThread(QString version)
+ServerThread::ServerThread(QString version, DatabaseHandler* databaseHandler)
 {
   //  shouldQuitThread = false;
   this->version = version;
+  this->dbHandler = databaseHandler;
   
 }
 
@@ -42,7 +43,7 @@ void ServerThread::stopThread()
 
 void ServerThread::run()
 {
-  mainServer = new MainServer(version);
+  mainServer = new MainServer(version, dbHandler);
   
   shouldQuitThread = false;
   mainServer->listen(QHostAddress::Any, 1988);

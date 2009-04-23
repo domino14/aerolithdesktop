@@ -27,8 +27,9 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
     else return (a.numCorrect > b.numCorrect);
 }
 
-MainWindow::MainWindow(QString aerolithVersion) : aerolithVersion(aerolithVersion), PLAYERLIST_ROLE(Qt::UserRole),
-out(&block, QIODevice::WriteOnly)
+MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler) :
+        aerolithVersion(aerolithVersion), dbHandler(databaseHandler), PLAYERLIST_ROLE(Qt::UserRole),
+        out(&block, QIODevice::WriteOnly)
 {
 
     uiMainWindow.setupUi(this);
@@ -72,7 +73,7 @@ out(&block, QIODevice::WriteOnly)
 
     connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
     connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
-    connect(uiTable.pushButtonBonuses, SIGNAL(clicked()), SLOT(createBonusGameTable()));
+    //connect(uiTable.pushButtonBonuses, SIGNAL(clicked()), SLOT(createBonusGameTable()));
 
 
     scoresDialog = new QDialog(this);
@@ -153,106 +154,92 @@ out(&block, QIODevice::WriteOnly)
     databaseDialog = new QDialog(this);
     uiDatabase.setupUi(databaseDialog);
 
-     connect(uiMainWindow.actionCreate_databases, SIGNAL(triggered()), databaseDialog, SLOT(show()));
+    connect(uiMainWindow.actionCreate_databases, SIGNAL(triggered()), databaseDialog, SLOT(show()));
 
     connect(uiDatabase.pushButtonCreateDatabases, SIGNAL(clicked()), SLOT(createDatabasesOKClicked()));
 
-    dbHandler = new DatabaseHandler(this);
     connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
     connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
     connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
-    connect(dbHandler, SIGNAL(enableClose(bool)), databaseDialog, SLOT(setEnabled(bool)));
+    connect(dbHandler, SIGNAL(enableClose(bool)), SLOT(dbDialogEnableClose(bool)));
+    connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
 
     ///////
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
-    DatabaseHandler::createLexiconMap();  // always create the lexicon map first thing.
-    checkForDatabases();
-    DatabaseHandler::connectToAvailableDatabases(true);
+    QStringList dbList = dbHandler->checkForDatabases();    // move this to the database handler.. duh
 
-
-}
-
-void MainWindow::checkForDatabases()
-{
-
-    QDir dir = QDir::home();
-    bool databasesExist = true;
-    if (!dir.exists(".aerolith"))
+    if (dbList.size() == 0)
     {
-        databasesExist = false;
-    }
-    else
-    {
-        dir.cd(".aerolith");
-        if (dir.exists("lexica.db"))
-        {
-            QSqlDatabase lexicaDb = QSqlDatabase::addDatabase("QSQLITE", "lexicaDB");
-            lexicaDb.setDatabaseName("lexica.db");
-            lexicaDb.open();
-            QSqlQuery lexicaQuery(lexicaDb);
-            lexicaQuery.exec("SELECT lexiconName, dbFilename from lexica");
-            int numLexica = 0;
-            while (lexicaQuery.next())
-            {
-                numLexica++;
-                QString lexiconName = lexicaQuery.value(0).toString();
-                QString dbFilename = lexicaQuery.value(1).toString();
 
-                if (lexiconName == "OWL2+LWL")
-                {
-                    uiDatabase.checkBoxOWL2->setChecked(true);
-                    uiDatabase.checkBoxOWL2->setEnabled(false);
-                }
-                else if (lexiconName == "CSW")
-                {
-                    uiDatabase.checkBoxCSW->setChecked(true);
-                    uiDatabase.checkBoxCSW->setEnabled(false);
-                }
-                else if (lexiconName == "FISE")
-                {
-                    uiDatabase.checkBoxFISE->setChecked(true);
-                    uiDatabase.checkBoxFISE->setEnabled(false);
-                }
-                else if (lexiconName == "Volost")
-                {
-                    uiDatabase.checkBoxVolost->setChecked(true);
-                    uiDatabase.checkBoxVolost->setEnabled(false);
-                }
-            }
-
-            if (numLexica == 0) databasesExist = false;
-        }
-        else databasesExist = false;
-    }
-
-    if (!databasesExist)
-    {
         if (QMessageBox::question(this, "Create databases?", "You do not seem to have any lexicon databases created. "
                                   "Creating a lexicon database allows you to see definitions, hooks, and create your own "
                                   "lists for quizzing. If you would like to create a lexicon database, please click Yes.",
                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             databaseDialog->show();
-
     }
+    else
+    {
+        foreach (QString str, dbList)
+            setCheckbox(str);
 
+        dbHandler->connectToDatabases(true, dbList);
+    }
+}
+
+void MainWindow::dbDialogEnableClose(bool e)
+{
+    if (!e)
+        uiMainWindow.chatText->append("<font color=red>Databases are being created.</font>");
+    if (e)
+        uiMainWindow.chatText->append("<font color=red>Lexicon databases were successfully created!</font>");
+}
+
+void MainWindow::databaseCreated(QString lexiconName)
+{
+    setCheckbox(lexiconName);
+}
+
+
+void MainWindow::setCheckbox(QString lexiconName)
+{
+    if (lexiconName == "OWL2+LWL")
+    {
+        uiDatabase.checkBoxOWL2->setChecked(true);
+        uiDatabase.checkBoxOWL2->setEnabled(false);
+    }
+    else if (lexiconName == "CSW")
+    {
+        uiDatabase.checkBoxCSW->setChecked(true);
+        uiDatabase.checkBoxCSW->setEnabled(false);
+    }
+    else if (lexiconName == "FISE")
+    {
+        uiDatabase.checkBoxFISE->setChecked(true);
+        uiDatabase.checkBoxFISE->setEnabled(false);
+    }
+    else if (lexiconName == "Volost")
+    {
+        uiDatabase.checkBoxVolost->setChecked(true);
+        uiDatabase.checkBoxVolost->setEnabled(false);
+    }
 }
 
 void MainWindow::createDatabasesOKClicked()
 {
     QStringList databasesToCreate;
-    if (uiDatabase.checkBoxVolost->isEnabled() && uiDatabase.checkBoxVolost->isChecked())
-        databasesToCreate << "Volost";
-    if (uiDatabase.checkBoxFISE->isEnabled() && uiDatabase.checkBoxFISE->isChecked())
-        databasesToCreate << "FISE";
+
+
     if (uiDatabase.checkBoxOWL2->isEnabled() && uiDatabase.checkBoxOWL2->isChecked())
         databasesToCreate << "OWL2+LWL";
     if (uiDatabase.checkBoxCSW->isEnabled() && uiDatabase.checkBoxCSW->isChecked())
         databasesToCreate << "CSW";
-
+    if (uiDatabase.checkBoxFISE->isEnabled() && uiDatabase.checkBoxFISE->isChecked())
+        databasesToCreate << "FISE";
+    if (uiDatabase.checkBoxVolost->isEnabled() && uiDatabase.checkBoxVolost->isChecked())
+        databasesToCreate << "Volost";
     dbHandler->createLexiconDatabases(databasesToCreate);
-
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -486,7 +473,9 @@ void MainWindow::readFromServer()
                 in >> username;
                 QString text;
                 in >> text;
-                uiMainWindow.chatText->append(QString("[")+username+"] " + text);
+                uiMainWindow.chatText->moveCursor(QTextCursor::End);
+                uiMainWindow.chatText->insertHtml(QString("[")+username+"] " + text);
+                uiMainWindow.chatText->append("");
             }
             break;
         case SERVER_PM:	// PM
