@@ -26,13 +26,14 @@
 #include "ClientSocket.h"
 #include "ClientWriter.h"
 #include "TableGame.h"
+#include "databasehandler.h"
 
 class MainServer : public QTcpServer
 {
     Q_OBJECT
 
 public: 
-    MainServer(QString);
+    MainServer(QString, DatabaseHandler*);
 
 
 private slots:
@@ -48,8 +49,8 @@ private:
     QTimer* midnightTimer;
     void incomingConnection(int socketDescriptor); // inherited from QTcpServer
     QSqlDatabase userDb;
-
-
+    QString aerolithVersion;
+    DatabaseHandler* dbHandler;
     enum packetHeaderStatesEnum
     {
         S_USERLOGGEDIN, S_ERROR, S_USERLOGGEDOUT, S_SERVERMESSAGE
@@ -62,7 +63,7 @@ private:
     QHash <QString, ClientSocket*> usernamesHash;
     QHash <quint16, Table*> tables;
 
-    QString aerolithVersion;
+
 
     // QHash <QString, QString> wordLists;
 

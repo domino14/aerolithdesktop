@@ -21,6 +21,7 @@
 #include <QtSql>
 #include <QObject>
 #include "TableGame.h"
+#include "databasehandler.h"
 
 struct highScoreData
 {
@@ -60,7 +61,7 @@ class UnscrambleGame : public TableGame
 
 public:
 
-    void initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName);
+    void initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName, DatabaseHandler* dbHandler);
     UnscrambleGame(Table*);
     ~UnscrambleGame();
 
@@ -73,8 +74,8 @@ public:
     void endGame();
     void startGame();
 
-    static void generateDailyChallenges();
-    static void loadWordLists();
+    static void generateDailyChallenges(DatabaseHandler* dbHandler);
+    static void loadWordLists(DatabaseHandler* dbHandler);
     static void sendLists(ClientSocket*);
     static QHash <QString, challengeInfo> challenges;
 
@@ -107,6 +108,7 @@ private:
     void prepareTableAlphagrams();
     void sendUserCurrentAlphagrams(ClientSocket*);
     QString lexiconName;
+    DatabaseHandler* dbHandler;
     struct unscrambleGameQuestionData
     {
         // holds data for each word

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>467</width>
-    <height>472</height>
+    <width>461</width>
+    <height>427</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -79,8 +79,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>300</x>
-     <y>430</y>
+     <x>240</x>
+     <y>380</y>
      <width>162</width>
      <height>32</height>
     </rect>
@@ -158,132 +158,48 @@
     <string/>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBoxWordUnscramble">
+  <widget class="QGroupBox" name="groupBox_2">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>130</x>
      <y>70</y>
-     <width>441</width>
-     <height>251</height>
+     <width>321</width>
+     <height>111</height>
     </rect>
    </property>
    <property name="title">
-    <string>Word Unscramble</string>
+    <string>Search by probability</string>
    </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <widget class="QPushButton" name="pushButtonLoadSavedList">
+   <widget class="QSpinBox" name="spinBoxProb2">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>90</y>
-      <width>131</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Load saved list</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButtonUseOwnList">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>120</y>
-      <width>131</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::NoFocus</enum>
-    </property>
-    <property name="text">
-     <string>Use my own list</string>
-    </property>
-   </widget>
-   <widget class="QGroupBox" name="groupBox">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>101</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true"/>
-    </property>
-    <property name="title">
-     <string>Play mode</string>
-    </property>
-    <widget class="QRadioButton" name="cycleRbo">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>83</width>
-       <height>18</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Cycle</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QRadioButton" name="endlessRbo">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>40</y>
-       <width>101</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Marathon</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QLabel" name="Recen">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>140</y>
-      <width>191</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Recent search specifications:</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="Recen_2">
-    <property name="geometry">
-     <rect>
-      <x>130</x>
+      <x>230</x>
       <y>30</y>
-      <width>291</width>
-      <height>20</height>
+      <width>71</width>
+      <height>21</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Select one or more search specs:</string>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>99999</number>
+    </property>
+    <property name="singleStep">
+     <number>500</number>
+    </property>
+    <property name="value">
+     <number>500</number>
     </property>
    </widget>
    <widget class="QSpinBox" name="spinBoxWL">
     <property name="geometry">
      <rect>
-      <x>240</x>
-      <y>50</y>
+      <x>150</x>
+      <y>60</y>
       <width>63</width>
       <height>21</height>
      </rect>
@@ -298,75 +214,11 @@
      <number>7</number>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBoxWL">
+   <widget class="QSpinBox" name="spinBoxProb2_2">
     <property name="geometry">
      <rect>
-      <x>130</x>
-      <y>50</y>
-      <width>101</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Word Length</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBoxProb">
-    <property name="geometry">
-     <rect>
-      <x>130</x>
-      <y>70</y>
-      <width>151</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Probability between</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinBoxProb1">
-    <property name="geometry">
-     <rect>
-      <x>280</x>
-      <y>70</y>
-      <width>71</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>1</number>
-    </property>
-    <property name="maximum">
-     <number>99999</number>
-    </property>
-    <property name="singleStep">
-     <number>500</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>350</x>
-      <y>70</y>
-      <width>21</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>&amp;</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinBoxProb2">
-    <property name="geometry">
-     <rect>
-      <x>360</x>
-      <y>70</y>
+      <x>150</x>
+      <y>30</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -381,132 +233,164 @@
      <number>500</number>
     </property>
     <property name="value">
-     <number>500</number>
+     <number>1</number>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBoxNumv">
+   <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>130</x>
-      <y>90</y>
-      <width>111</width>
+      <x>50</x>
+      <y>60</y>
+      <width>91</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Word Length:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>30</y>
+      <width>21</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>131</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Probability between</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBox">
+    <property name="geometry">
+     <rect>
+      <x>230</x>
+      <y>60</y>
+      <width>87</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Num. vowels</string>
+     <string>All</string>
     </property>
    </widget>
-   <widget class="QSpinBox" name="spinBoxNumVowels">
+  </widget>
+  <widget class="QPushButton" name="pushButtonUseOwnList">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>290</y>
+     <width>131</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="focusPolicy">
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="text">
+    <string>Use my own list</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonLoadSavedList">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>260</y>
+     <width>131</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Load saved list</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>70</y>
+     <width>101</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="title">
+    <string>Play mode</string>
+   </property>
+   <widget class="QRadioButton" name="cycleRbo">
     <property name="geometry">
      <rect>
-      <x>240</x>
-      <y>90</y>
-      <width>63</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>2</number>
-    </property>
-    <property name="maximum">
-     <number>15</number>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBoxContains">
-    <property name="geometry">
-     <rect>
-      <x>130</x>
-      <y>110</y>
-      <width>121</width>
-      <height>21</height>
+      <x>10</x>
+      <y>20</y>
+      <width>83</width>
+      <height>18</height>
      </rect>
     </property>
     <property name="text">
-     <string>Contains letters </string>
+     <string>Cycle</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEditContainsLetters">
+   <widget class="QRadioButton" name="endlessRbo">
     <property name="enabled">
      <bool>false</bool>
     </property>
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>110</y>
-      <width>91</width>
+      <x>10</x>
+      <y>40</y>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
-   </widget>
-   <widget class="QListWidget" name="listWidgetTopLevelList">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>160</y>
-      <width>241</width>
-      <height>81</height>
-     </rect>
+    <property name="text">
+     <string>Marathon</string>
+    </property>
+    <property name="checkable">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
-  <widget class="QGroupBox" name="groupBoxOtherGames">
+  <widget class="QCheckBox" name="checkBoxSpecialLists">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>320</y>
-     <width>441</width>
-     <height>91</height>
+     <x>130</x>
+     <y>190</y>
+     <width>131</width>
+     <height>21</height>
     </rect>
    </property>
-   <property name="title">
-    <string>Other games</string>
+   <property name="text">
+    <string>Special lists:</string>
    </property>
-   <property name="checkable">
-    <bool>true</bool>
+  </widget>
+  <widget class="QListWidget" name="listWidgetTopLevelList">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>220</y>
+     <width>321</width>
+     <height>141</height>
+    </rect>
    </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <widget class="QPushButton" name="pushButtonWordgrids">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>141</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Edley's WordGrids</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButtonBonuses">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>60</y>
-      <width>141</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Edley's Bonuses</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButtonPetersChallenges">
-    <property name="geometry">
-     <rect>
-      <x>180</x>
-      <y>30</y>
-      <width>151</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Peter's Challenges</string>
-    </property>
-   </widget>
   </widget>
  </widget>
  <resources/>
@@ -519,11 +403,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>308</x>
-     <y>404</y>
+     <y>390</y>
     </hint>
     <hint type="destinationlabel">
      <x>96</x>
-     <y>380</y>
+     <y>368</y>
     </hint>
    </hints>
   </connection>
@@ -535,91 +419,43 @@
    <hints>
     <hint type="sourcelabel">
      <x>376</x>
-     <y>410</y>
+     <y>390</y>
     </hint>
     <hint type="destinationlabel">
      <x>375</x>
-     <y>375</y>
+     <y>368</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>checkBoxWL</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>spinBoxWL</receiver>
-   <slot>setEnabled(bool)</slot>
+   <sender>groupBox_2</sender>
+   <signal>clicked()</signal>
+   <receiver>checkBoxSpecialLists</receiver>
+   <slot>toggle()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>152</x>
-     <y>129</y>
+     <x>268</x>
+     <y>79</y>
     </hint>
     <hint type="destinationlabel">
-     <x>264</x>
-     <y>127</y>
+     <x>230</x>
+     <y>204</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>checkBoxProb</sender>
+   <sender>checkBoxSpecialLists</sender>
    <signal>clicked(bool)</signal>
-   <receiver>spinBoxProb1</receiver>
-   <slot>setEnabled(bool)</slot>
+   <receiver>groupBox_2</receiver>
+   <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>171</x>
-     <y>151</y>
+     <x>272</x>
+     <y>208</y>
     </hint>
     <hint type="destinationlabel">
-     <x>321</x>
-     <y>153</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBoxProb</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>spinBoxProb2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>183</x>
-     <y>149</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>394</x>
-     <y>145</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBoxNumv</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>spinBoxNumVowels</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>172</x>
-     <y>175</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>260</x>
-     <y>172</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBoxContains</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>lineEditContainsLetters</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>212</x>
-     <y>188</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>292</x>
-     <y>189</y>
+     <x>384</x>
+     <y>173</y>
     </hint>
    </hints>
   </connection>

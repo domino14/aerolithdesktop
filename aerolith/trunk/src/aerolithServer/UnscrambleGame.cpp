@@ -28,8 +28,10 @@ const QString WORD_DATABASE_NAME;  /* TODO FIX. there are many databases */
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
-void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName)
+void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName,
+                                DatabaseHandler* dbHandler)
 {
+    this->dbHandler = dbHandler;
     wroteToMissedFileThisRound = false;
     listExhausted = false;
     this->wordList = wordList;
@@ -681,7 +683,7 @@ void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end
     }
 }
 
-void UnscrambleGame::loadWordLists()
+void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
 {
 
     return;
@@ -695,8 +697,8 @@ void UnscrambleGame::loadWordLists()
 
     writeHeaderData();
     out << (quint8) SERVER_WORD_LISTS;		// word lists
-    out << (quint8) DatabaseHandler::lexiconMap.size();
-    foreach(QString lexiconName, DatabaseHandler::lexiconMap.keys())
+    out << (quint8) dbHandler->lexiconMap.size();
+    foreach(QString lexiconName, dbHandler->lexiconMap.keys())
         out << lexiconName.toAscii(); // TODO fix
     out << (quint8) 2;           // two types right now, regular, and challenge.
     out << (quint8) 'R';	// regular
@@ -725,7 +727,7 @@ void UnscrambleGame::sendLists(ClientSocket* socket)
 
 
 
-void UnscrambleGame::generateDailyChallenges()
+void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
 {
     /* test randomness of algorithm */
 

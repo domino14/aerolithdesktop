@@ -23,7 +23,7 @@ bool probLessThan(const Alph &a1, const Alph &a2)
     return a1.combinations > a2.combinations;
 }
 
-void DatabaseHandler::createLexiconMap()
+void DatabaseHandler::createLexiconMap(bool createDawgs)
 {
     /* this function is called right when the Aerolith program starts executing, either in stand-alone server mode
        or in server-client mode*/
@@ -38,28 +38,78 @@ void DatabaseHandler::createLexiconMap()
     lexiconMap.insert("Volost", LexiconInfo("Volost", "volost.txt", englishLetterDist, "volost.dwg", "volost-r.dwg"));
     lexiconMap.insert("FISE", LexiconInfo("FISE", "fise.txt", spanishLetterDist, "fise.dwg", "fise-r.dwg"));
 
+    if (createDawgs)
+    {
+        foreach (QString key, lexiconMap.keys())
+        {
+            lexiconMap[key].dawg.readDawg("words/" + lexiconMap[key].dawgFilename);
+            lexiconMap[key].reverseDawg.readDawg("words/" + lexiconMap[key].dawgRFilename);
+        }
+    }
 
 }
 
-void DatabaseHandler::connectToAvailableDatabases(bool clientCall)
+QStringList DatabaseHandler::checkForDatabases()
 {
-    foreach (QString key, lexiconMap.keys())
+    QStringList dbList;
+    QDir dir = QDir::home();
+    bool databasesExist = true;
+    if (dir.exists(".aerolith"))
     {
-        LexiconInfo* lexInfo = &(lexiconMap[key]);
-        qDebug() << "Name:" << lexInfo->lexiconName;
-        if (clientCall)
+        dir.cd(".aerolith");
+        if (dir.exists("lexica"))
         {
-
-            lexInfo->clientSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
-//            lexInfo->clientSideDb.setDatabaseName(key + ".db");
-//            lexInfo->clientSideDb.open();
-            /* there is a bug that causes program to crash on exit if hte lines above are called. it doesn't happen under windows!? */
+            dir.cd("lexica");
+            QSqlDatabase lexicaDb = QSqlDatabase::addDatabase("QSQLITE", "lexicaDB");
+            lexicaDb.setDatabaseName(dir.absolutePath() + "/lexica.db");
+            lexicaDb.open();
+            QSqlQuery lexicaQuery(lexicaDb);
+            lexicaQuery.exec("SELECT lexiconName from lexica");
+            int numLexica = 0;
+            while (lexicaQuery.next())
+            {
+                numLexica++;
+                QString lexiconName = lexicaQuery.value(0).toString();
+                dbList << lexiconName;
+            }
         }
-        else
+
+    }
+    return dbList;
+
+
+}
+
+void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
+{
+    QDir dir = QDir::home();
+    if (!dir.exists(".aerolith"))
+        return;
+    dir.cd(".aerolith");
+    if (!dir.exists("lexica"))
+        return;
+    dir.cd("lexica");
+
+
+    foreach (QString key, dbList)
+    {
+        if (lexiconMap.contains(key))
         {
-            lexInfo->serverSideDb =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
-            lexInfo->serverSideDb.setDatabaseName(key + ".db");
-            lexInfo->serverSideDb.open();
+            LexiconInfo* lexInfo = &(lexiconMap[key]);
+            qDebug() << "Name:" << lexInfo->lexiconName;
+            if (clientCall)
+            {
+
+                lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
+                lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
+                lexInfo->db.open();
+            }
+            else
+            {
+                lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
+                lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
+                lexInfo->db.open();
+            }
         }
     }
 }
@@ -67,6 +117,7 @@ void DatabaseHandler::connectToAvailableDatabases(bool clientCall)
 
 void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
 {
+    if (lexiconNames.size() == 0) return;
     setProgressMessage("Creating lexicon databases...");
     qDebug() << "In here";
 
@@ -82,12 +133,37 @@ void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
 void DatabaseHandler::run()
 {
     emit enableClose(false);
+    // TODO above signal is misnamed
+
+    QDir dir = QDir::home();
+    if (!dir.exists(".aerolith"))
+        dir.mkdir(".aerolith");
+    dir.cd(".aerolith");
+    if (!dir.exists("lexica"))
+        dir.mkdir("lexica");
+    dir.cd("lexica");
+
+    QSqlDatabase lexiconNamesDB = QSqlDatabase::addDatabase("QSQLITE", "lexicaDB");
+    lexiconNamesDB.setDatabaseName(dir.absolutePath() + "/lexica.db");
+    lexiconNamesDB.open();
+
+    QSqlQuery lexiconQuery(lexiconNamesDB);
+    lexiconQuery.exec("CREATE TABLE IF NOT EXISTS lexica(lexiconName VARCHAR(15))");
+    lexiconQuery.prepare("INSERT INTO lexica(lexiconName) VALUES(?)");
+
     foreach (QString key, dbsToCreate)
     {
+
+
         if (!lexiconMap.contains(key)) continue;
         createLexiconDatabase(key);
+        emit createdDatabase(key);
+        lexiconQuery.bindValue(0, key);
+        lexiconQuery.exec();
         QSqlDatabase::removeDatabase(key + "DB");
     }
+    lexiconNamesDB.close();
+    QSqlDatabase::removeDatabase("lexicaDB");
     emit setProgressMessage("All databases created. Please close this window.");
     emit enableClose(true);
 }
@@ -135,17 +211,28 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     db.setDatabaseName(dir.absolutePath() + "/" + lexiconName + ".db");
     db.open();
     QSqlQuery wordQuery(db);
+    wordQuery.exec("CREATE TABLE IF NOT EXISTS dbVersion(version INTEGER)");
+    wordQuery.exec("INSERT INTO dbVersion(version) VALUES(1)"); // version 1
     wordQuery.exec("CREATE TABLE IF NOT EXISTS words(alphagram VARCHAR(15), word VARCHAR(15), "
                    "definition VARCHAR(256), lexiconstrings VARCHAR(5), front_hooks VARCHAR(26), "
                    "back_hooks VARCHAR(26))");
     wordQuery.exec("CREATE TABLE IF NOT EXISTS alphagrams(alphagram VARCHAR(15), words VARCHAR(255), "
-                   "probability INTEGER, length INTEGER)");
+                   "probability INTEGER, length INTEGER, num_vowels INTEGER)");
 
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), numalphagrams INTEGER, probindices BLOB)");
 
     LessThans lessThan;
     if (lexInfo->lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
     else lessThan = ENGLISH_LESS_THAN;
+
+    bool updateCSWPoundSigns = false;
+    /* update lexicon symbols if this is CSW (compare to OWL2)*/
+    LexiconInfo* lexInfoAmerica = NULL;
+    if (lexiconName == "CSW" && dbsToCreate.contains("OWL2+LWL"))
+    {
+        updateCSWPoundSigns = true;
+        lexInfoAmerica = &(lexiconMap["OWL2+LWL"]);
+    }
 
     QTextStream in(&file);
     QString queryText = "INSERT INTO words(alphagram, word, definition, lexiconstrings, front_hooks, back_hooks) "
@@ -185,18 +272,17 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
             alphagramsHash[alphagram].words << word;
 
-
-            //if (listHash.contains
-
-
             QByteArray backHooks = lexInfo->dawg.findHooks(word.toAscii());
             QByteArray frontHooks = lexInfo->reverseDawg.findHooks(reverse(word).toAscii());
+            QString lexSymbols = "";
+            if (updateCSWPoundSigns && lexInfoAmerica && !lexInfoAmerica->dawg.findWord(word.toAscii()))
+                lexSymbols = "#";
 
             //qDebug() << word << alphagram << definition << backHooks << frontHooks;
             wordQuery.bindValue(0, alphagram);
             wordQuery.bindValue(1, word);
             wordQuery.bindValue(2, definition);
-            wordQuery.bindValue(3, "");
+            wordQuery.bindValue(3, lexSymbols);
             wordQuery.bindValue(4, QString(backHooks));
             wordQuery.bindValue(5, QString(frontHooks));
             wordQuery.exec();
@@ -212,7 +298,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     emit setProgressMessage(lexiconName + ": Creating alphagrams...");
 
-    queryText = "INSERT INTO alphagrams(alphagram, words, probability, length) VALUES(?, ?, ?, ?)";
+    queryText = "INSERT INTO alphagrams(alphagram, words, probability, length, num_vowels) VALUES(?, ?, ?, ?, ?)";
     wordQuery.exec("BEGIN TRANSACTION");
     wordQuery.prepare(queryText);
     int probs[16];
@@ -233,6 +319,9 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
         wordQuery.bindValue(2, probs[wordLength] + (wordLength << 24));
         wordQuery.bindValue(3, wordLength);
+        wordQuery.bindValue(4, alphs[i].alphagram.count(QChar('A')) +  alphs[i].alphagram.count(QChar('E')) +
+                            alphs[i].alphagram.count(QChar('I')) +  alphs[i].alphagram.count(QChar('O')) +
+                            alphs[i].alphagram.count(QChar('U')));
         wordQuery.exec();
     }
 
@@ -247,10 +336,6 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     updateDefinitions(definitionsHash, progress, db);
 
-    /* update lexicon symbols if this is CSW (compare to OWL2)*/
-
-
-
 
 
     emit setProgressMessage(lexiconName + ": Indexing database...");
@@ -258,170 +343,69 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     // do this indexing at the end.
     wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
+
+
+
+    emit setProgressMessage(lexiconName + ": Creating special lists...");
+
+    wordQuery.exec("BEGIN TRANSACTION");
+
+    QString vowelQueryString = "SELECT probability from alphagrams where length = %1 and num_vowels = %2";
+    sqlListMaker(vowelQueryString.arg(8).arg(5), "Five-vowel-8s", 8, db);
+    sqlListMaker(vowelQueryString.arg(7).arg(4), "Four-vowel-7s", 7, db);
+    QString jqxzQueryString = "SELECT probability from alphagrams where length = %1 and "
+                              "(alphagram like '%Q%' or alphagram like '%J%' or alphagram like '%X%' or alphagram like '%Z%')";
+
+    for (int i = 4; i <= 8; i++)
+        sqlListMaker(jqxzQueryString.arg(i), QString("JQXZ %1s").arg(i), i, db);
+
+    if (lexiconName == "CSW")
+    {
+        QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and "
+                                      "lexiconstrings like '%#%'";
+        for (int i = 7; i <= 8; i++)
+            sqlListMaker(newWordsQueryString.arg(i), QString("CSW-only %1s").arg(i), i, db);
+    }
+
+    wordQuery.exec("END TRANSACTION");
+
+
     emit setProgressMessage(lexiconName + ": Database created!");
     emit setProgressValue(0);
 
-
-    //
-    //
-    //    QVector <int> pick;
-    //    /* top 500 by prob 6s - 9s */
-    //    pick.append(7);
-    //    pick.append(8);
-    //    pick.append(6);
-    //    pick.append(9);
-    //    wordQuery.exec("BEGIN TRANSACTION");
-    //    foreach (int i, pick)
-    //    {
-    //        int probIndex = 1;
-    //
-    //        int modifiedProbIndex = 1 + (i << 24); // i << 24 is basically encoding the length of the alphagram in this number
-    //        // this makes it easier to have different anagram lengths for a table.
-    //        int numAlphagrams = 0;
-    //        wordQuery.exec(QString("SELECT count(*) from alphagrams where length = %1 and lexiconName = '%2'").
-    //                       arg(i).arg(lexiconName));
-    //
-    //        while (wordQuery.next())
-    //        {
-    //            numAlphagrams = wordQuery.value(0).toInt();
-    //        }
-    //        qDebug() << "Count:" << i << numAlphagrams;
-    //
-    //        int listLength = 500;
-    //        int actualListLength;
-    //        do
-    //        {
-    //            QByteArray ba;
-    //            QDataStream baWriter(&ba, QIODevice::WriteOnly);
-    //
-    //            wordQuery.exec(QString("SELECT count(*) from alphagrams where length = %1 and probability between %2 and %3"
-    //                                   " and lexiconName = '%4'").
-    //                           arg(i).arg(modifiedProbIndex).arg(modifiedProbIndex + listLength -1).arg(lexiconName));
-    //
-    //            while (wordQuery.next())
-    //                actualListLength = wordQuery.value(0).toInt();
-    //            //    qDebug() << " .." << actualListLength;
-    //
-    //            if (actualListLength == 0) continue;
-    //            baWriter << (quint8)0 << (quint8)i << (quint32)(modifiedProbIndex) << (quint32)(modifiedProbIndex+actualListLength-1);
-    //            // (quint8)0 means this is a RANGE of indices, and not a list of indices
-    //            // second param is word length.
-    //
-    //
-    //            QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices, lexiconName) "
-    //                                "VALUES(?, ?, ?, ?, ?)";
-    //            wordQuery.prepare(toExecute);
-    //            wordQuery.bindValue(0, QString("Useful %1s (%2 - %3)").arg(i).arg(probIndex).arg(probIndex + actualListLength-1));
-    //            wordQuery.bindValue(1, i);
-    //            wordQuery.bindValue(2, actualListLength);
-    //            wordQuery.bindValue(3, ba);
-    //            wordQuery.bindValue(4, lexiconName);
-    //            wordQuery.exec();
-    //
-    //            probIndex+= 500;
-    //            modifiedProbIndex += 500;
-    //
-    //        } while (probIndex < numAlphagrams);
-    //    }
-    //
-    //    for (int i = 2; i <= 15; i++)
-    //    {
-    //        int numAlphagrams;
-    //        QByteArray ba;
-    //        QDataStream baWriter(&ba, QIODevice::WriteOnly);
-    //        wordQuery.exec(QString("SELECT count(*) from alphagrams where length = %1 and lexiconName = '%2'").arg(i).arg(lexiconName));
-    //        while (wordQuery.next())
-    //        {
-    //            numAlphagrams = wordQuery.value(0).toInt();
-    //        }
-    //        if (numAlphagrams == 0) continue;
-    //        baWriter << (quint8)0 << (quint8)i << (quint32)(1 + (i << 24)) << (quint32)(numAlphagrams + (i << 24));
-    //        QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices, lexiconName) "
-    //                            "VALUES(?, ?, ?, ?, ?)";
-    //        wordQuery.prepare(toExecute);
-    //        wordQuery.bindValue(0, QString(lexiconName+ " %1s").arg(i));
-    //        wordQuery.bindValue(1, i);
-    //        wordQuery.bindValue(2, numAlphagrams);
-    //        wordQuery.bindValue(3, ba);
-    //        wordQuery.bindValue(4, lexiconName);
-    //        wordQuery.exec();
-    //    }
-    //
-    //    QString vowelQueryString = "SELECT probability from alphagrams where length = %1 and num_vowels = %2 and lexiconName = '%3'";
-    //    sqlDatabaseHandler(vowelQueryString.arg(8).arg(5).arg(lexiconName), "Five-vowel-8s", 8, lexiconName);
-    //    sqlDatabaseHandler(vowelQueryString.arg(7).arg(4).arg(lexiconName), "Four-vowel-7s", 7, lexiconName);
-    //    QString jqxzQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
-    //                              "(alphagram like '%Q%' or alphagram like '%J%' or alphagram like '%X%' or alphagram like '%Z%')";
-    //
-    //    for (int i = 4; i <= 8; i++)
-    //        sqlDatabaseHandler(jqxzQueryString.arg(i).arg(lexiconName), QString("JQXZ %1s").arg(i), i, lexiconName);
-    //
-    //    if (lexiconName == "OWL2+LWL")
-    //    {
-    //        QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
-    //                                      "lexiconstrings like '%*%%' ESCAPE '*'";
-    //        for (int i = 7; i <= 8; i++)
-    //            sqlDatabaseHandler(newWordsQueryString.arg(i).arg(lexiconName), QString("New (OWL2) %1s").arg(i), i, lexiconName);
-    //    }
-    //    else if (lexiconName == "CSW")
-    //    {
-    //        QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and lexiconName = '%2' and "
-    //                                      "lexiconstrings like '%#%'";
-    //        for (int i = 7; i <= 8; i++)
-    //            sqlDatabaseHandler(newWordsQueryString.arg(i).arg(lexiconName), QString("CSW-only %1s").arg(i), i, lexiconName);
-    //    }
-    //
-    //    QString singleAnagramsQueryString = "SELECT probability from alphagrams where length = %1 and num_anagrams = 1 and lexiconName = '%2'";
-    //    QString moreThanOneQueryString = "SELECT probability from alphagrams where length = %1 and num_anagrams > 1 and lexiconName = '%2'";
-    //
-    //    for (int i = 7; i <= 8; i++)
-    //    {
-    //        sqlDatabaseHandler(singleAnagramsQueryString.arg(i).arg(lexiconName), QString("One-anagram %1s").arg(i), i, lexiconName);
-    //        sqlDatabaseHandler(moreThanOneQueryString.arg(i).arg(lexiconName), QString("Multi-anagram %1s").arg(i), i, lexiconName);
-    //    }
-    //
-    //    QString uniqueLettersQueryString = "SELECT probability from alphagrams where num_unique_letters = %1 and length = %2 and lexiconName = '%3'";
-    //    for (int i = 7; i <= 8; i++)
-    //        sqlDatabaseHandler(uniqueLettersQueryString.arg(i).arg(i).arg(lexiconName), QString("Unique-letter %1s").arg(i), i, lexiconName);
-    //
-    //    wordQuery.exec("END TRANSACTION");
-    //    zyzzyvaDb.close();
-    //    QSqlDatabase::removeDatabase("zyzzyvaDB");
 }
 
-void DatabaseHandler::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QString lexiconName)
+void DatabaseHandler::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QSqlDatabase& db)
 {
-    //    QSqlQuery wordQuery(QSqlDatabase::database(WORD_DATABASE_NAME));
-    //    wordQuery.exec(queryString);
-    //    QVector <quint32> probIndices;
-    //
-    //    while (wordQuery.next())
-    //    {
-    //        probIndices.append(wordQuery.value(0).toInt());
-    //    }
-    //    qDebug() << listName << "found" << probIndices.size();
-    //    if (probIndices.size() == 0) return;
-    //
-    //    QByteArray ba;
-    //    QDataStream baWriter(&ba, QIODevice::WriteOnly);
-    //
-    //    baWriter << (quint8)1 << (quint8)wordLength << (quint16)probIndices.size();
-    //
-    //    // (quint8)1 means this is a LIST of indices
-    //    // second param is word length.
-    //    // third param is number of indices
-    //    foreach(quint32 index, probIndices)
-    //        baWriter << index;
-    //
-    //    QString toExecute = "INSERT INTO wordlists(listname, wordlength, numalphagrams, probindices, lexiconName) "
-    //                        "VALUES(?,?,?,?,?)";
-    //    wordQuery.prepare(toExecute);
-    //    wordQuery.bindValue(0, listName);
-    //    wordQuery.bindValue(1, wordLength);
-    //    wordQuery.bindValue(2, probIndices.size());
-    //    wordQuery.bindValue(3, ba);
-    //    wordQuery.bindValue(4, lexiconName);
-    //    wordQuery.exec();
+    QSqlQuery wordQuery(db);
+    wordQuery.exec(queryString);
+    QVector <quint32> probIndices;
+
+    while (wordQuery.next())
+    {
+        probIndices.append(wordQuery.value(0).toInt());
+    }
+    qDebug() << listName << "found" << probIndices.size();
+    if (probIndices.size() == 0) return;
+
+    QByteArray ba;
+    QDataStream baWriter(&ba, QIODevice::WriteOnly);
+
+    baWriter << (quint8)1 << (quint8)wordLength << (quint32)probIndices.size();
+
+    // (quint8)1 means this is a LIST of indices
+    // second param is word length.
+    // third param is number of indices
+    foreach(quint32 index, probIndices)
+        baWriter << index;
+
+    QString toExecute = "INSERT INTO wordlists(listname, numalphagrams, probindices) "
+                        "VALUES(?,?,?)";
+    wordQuery.prepare(toExecute);
+    wordQuery.bindValue(0, listName);
+    wordQuery.bindValue(1, probIndices.size());
+    wordQuery.bindValue(2, ba);
+    wordQuery.exec();
 
 
 }

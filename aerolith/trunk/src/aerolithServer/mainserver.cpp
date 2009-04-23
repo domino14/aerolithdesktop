@@ -38,16 +38,15 @@ const QString incompatibleVersionString =
 
 #define MAX_NUM_TABLES 1000
 
-
-
-
-MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersion)
+MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler) :
+        aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
 {
     qDebug("mainserver constructor");
 
     // connect to existing databases
 
-    DatabaseHandler::connectToAvailableDatabases(false);
+    QStringList dbList = dbHandler->checkForDatabases();
+    dbHandler->connectToDatabases(false, dbList);
     
 
     QTime midnight(0, 0, 0);
@@ -66,8 +65,8 @@ MainServer::MainServer(QString aerolithVersion) : aerolithVersion(aerolithVersio
     midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
     qDebug() << "there are" << 86400000 + QTime::currentTime().msecsTo(midnight) << "msecs to midnight.";
     // but still generate daily challenges right now.
-    UnscrambleGame::loadWordLists();
-    UnscrambleGame::generateDailyChallenges();
+    UnscrambleGame::loadWordLists(dbHandler);
+    UnscrambleGame::generateDailyChallenges(dbHandler);
     UnscrambleGame::midnightSwitchoverToggle = true;
 
 
@@ -97,7 +96,7 @@ void MainServer::newDailyChallenges()
     QTime midnight(0, 0, 0);
     midnightTimer->stop();
     midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
-    UnscrambleGame::generateDailyChallenges();
+    UnscrambleGame::generateDailyChallenges(dbHandler);
 
 }
 
@@ -458,7 +457,7 @@ void MainServer::processTableCommand(ClientSocket* socket)
             QString chat;
             socket->connData.in >> chat;
             if (chat == "/reload" && socket->connData.userName == "cesar")
-                UnscrambleGame::loadWordLists();
+                UnscrambleGame::loadWordLists(dbHandler);
             if (chat == "/goingdown" && socket->connData.userName == "cesar")
             {
                 foreach (ClientSocket* connection, connections)
@@ -630,7 +629,7 @@ void MainServer::processNewTable(ClientSocket* socket)
         QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
         // does not do a deep copy!
         
-        QByteArray tableBlock = tmp->initialize(socket, tablenum, tableDescription);
+        QByteArray tableBlock = tmp->initialize(socket, tablenum, tableDescription, dbHandler);
         tables.insert(tablenum, tmp);
 
         foreach (ClientSocket* connection, connections)
