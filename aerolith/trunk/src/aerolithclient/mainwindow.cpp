@@ -193,7 +193,11 @@ void MainWindow::dbDialogEnableClose(bool e)
     if (!e)
         uiMainWindow.chatText->append("<font color=red>Databases are being created.</font>");
     if (e)
+    {
         uiMainWindow.chatText->append("<font color=red>Lexicon databases were successfully created!</font>");
+        QStringList dbList = dbHandler->checkForDatabases();
+        dbHandler->connectToDatabases(true, dbList);
+    }
 }
 
 void MainWindow::databaseCreated(QString lexiconName)
