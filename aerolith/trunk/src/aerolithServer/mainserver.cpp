@@ -590,9 +590,9 @@ void MainServer::processNewTable(ClientSocket* socket)
     quint16 tablenum = 0;
     // read in all the data, and let the table class parse it. this is because the table create
     // packet looks different for different games.
-    int tableDescriptionSize = socket->connData.numBytesInPacket-sizeof(quint8);
-    char* newTableBytes = new char[tableDescriptionSize];
-    socket->connData.in.readRawData(newTableBytes, tableDescriptionSize);
+ //   int tableDescriptionSize = socket->connData.numBytesInPacket-sizeof(quint8);
+//    char* newTableBytes = new char[tableDescriptionSize];
+//    socket->connData.in.readRawData(newTableBytes, tableDescriptionSize);
 
     // check to see if we can actually create a new table.
     bool foundFreeNumber = false;
@@ -626,17 +626,17 @@ void MainServer::processNewTable(ClientSocket* socket)
     if (canCreateTable)
     {
         Table *tmp = new Table;
-        QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
+     //   QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
         // does not do a deep copy!
         
-        QByteArray tableBlock = tmp->initialize(socket, tablenum, tableDescription, dbHandler);
+        QByteArray tableBlock = tmp->initialize(socket, tablenum, dbHandler);
         tables.insert(tablenum, tmp);
 
         foreach (ClientSocket* connection, connections)
             connection->write(tableBlock);
         doJoinTable(socket, tablenum);
     }
-    delete [] newTableBytes;
+ //   delete [] newTableBytes;
 
 
 

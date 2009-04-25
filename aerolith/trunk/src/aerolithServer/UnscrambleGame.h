@@ -61,7 +61,7 @@ class UnscrambleGame : public TableGame
 
 public:
 
-    void initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName, DatabaseHandler* dbHandler);
+    QByteArray initialize(DatabaseHandler* dbHandler);
     UnscrambleGame(Table*);
     ~UnscrambleGame();
 

@@ -24,59 +24,44 @@ extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
 QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
-                             QByteArray tableDescription, DatabaseHandler* dbHandler)
+                             DatabaseHandler* dbHandler)
 {
 
 
     this->tableNumber = tableNumber;
-    QDataStream in(&tableDescription, QIODevice::ReadOnly);
-    // TODO possible exploit, if there aren't enough bytes in tableDescription to read all the below.
-    // check for crash/instability.
 
-    in >> gameType >> tableName >> maxPlayers;
-    qDebug() << "Creating table" << tableNumber << tableName << gameType << maxPlayers << tableDescription.size();
+    tableCreator->connData.in >> gameType >> maxPlayers;
+    qDebug() << "Creating table" << tableNumber << "type:" << gameType << "with" << maxPlayers << "max players";
     host = tableCreator;
     canJoin = true;
     switch (gameType)
     {
         case GAME_TYPE_UNSCRAMBLE:
         {
-            quint8 unscrambleType, tableTimer;
-            in >> lexiconIndex >> unscrambleType >> tableTimer;
 
             tableGame = new UnscrambleGame(this);
-            // TODO FIX. initialize should only take the parameter (in) possibly
-            // TODO fix lexicon below.
-            tableGame->initialize(unscrambleType, tableTimer, tableName, "", dbHandler);
 
-            // compute array to be sent out as table information array
-            writeHeaderData();
-            out << (quint8) SERVER_NEW_TABLE;
-            out << (quint16) tableNumber;
-            out << (quint8) GAME_TYPE_UNSCRAMBLE;
-            out << (quint8) lexiconIndex;
-            out << tableName;
-            out << maxPlayers;
-            fixHeaderLength();
+            tableInformationArray =
+                    tableGame->initialize(dbHandler);
 
-            tableInformationArray = block;
+
         }
         case GAME_TYPE_BONUS:
         {
-            in >> lexiconIndex;
-            tableGame = new BonusGame(this);    // TODO FIX lexiconname!
-            tableGame->initialize(0,0, tableName, "", dbHandler);
-
-            writeHeaderData();
-            out << (quint8) SERVER_NEW_TABLE;
-            out << (quint16) tableNumber;
-            out << (quint8) GAME_TYPE_BONUS;
-            out << (quint8) lexiconIndex;
-            out << tableName;
-            out << maxPlayers;
-            fixHeaderLength();
-
-            tableInformationArray = block;
+//            in >> lexiconIndex;
+//            tableGame = new BonusGame(this);    // TODO FIX lexiconname!
+//            tableGame->initialize(0,0, tableName, "", dbHandler);
+//
+//            writeHeaderData();
+//            out << (quint8) SERVER_NEW_TABLE;
+//            out << (quint16) tableNumber;
+//            out << (quint8) GAME_TYPE_BONUS;
+//            out << (quint8) lexiconIndex;
+//            out << tableName;
+//            out << maxPlayers;
+//            fixHeaderLength();
+//
+//            tableInformationArray = block;
 
         }
         break;

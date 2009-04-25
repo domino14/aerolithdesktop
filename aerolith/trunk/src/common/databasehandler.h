@@ -79,6 +79,7 @@ public:
     void connectToDatabases(bool clientCall, QStringList dbList);
     void createLexiconDatabases(QStringList);
     QStringList checkForDatabases();
+    QStringList availableDatabases;
     QMap<QString, LexiconInfo> lexiconMap;
 private:
 
