@@ -73,7 +73,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
     connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
-    //connect(uiTable.pushButtonBonuses, SIGNAL(clicked()), SLOT(createBonusGameTable()));
+    connect(uiTable.groupBoxSpecialLists, SIGNAL(toggled(bool)), SLOT
 
 
     scoresDialog = new QDialog(this);

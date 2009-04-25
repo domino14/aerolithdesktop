@@ -372,7 +372,7 @@
   <widget class="QGroupBox" name="groupBoxSpecialLists">
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>130</x>
      <y>200</y>
      <width>311</width>
      <height>161</height>
