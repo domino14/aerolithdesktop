@@ -28,15 +28,21 @@ const QString WORD_DATABASE_NAME;  /* TODO FIX. there are many databases */
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
-void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wordList, QString lexiconName,
-                                DatabaseHandler* dbHandler)
+
+UnscrambleGame::UnscrambleGame(Table* table) : TableGame(table)
+{
+    qDebug() << "UnscrambleGame constructor";
+}
+
+QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
 {
     this->dbHandler = dbHandler;
     wroteToMissedFileThisRound = false;
     listExhausted = false;
-    this->wordList = wordList;
-    this->lexiconName = lexiconName;
-    this->cycleState = cycleState;
+
+    quint8 tableTimerValMin;
+
+    table->host->connData.in >> wordList >> lexiconName >> cycleState >> tableTimerValMin;
 
     connect(&gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
     connect(&countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
@@ -44,7 +50,7 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
     gameStarted = false;
     countingDown = false;
     startEnabled = true;
-    tableTimerVal = (quint16)tableTimer * (quint16)60;
+    tableTimerVal = (quint16)tableTimerValMin * (quint16)60;
     currentTimerVal = tableTimerVal;
     countdownTimerVal = COUNTDOWN_TIMER_VAL;
 
@@ -67,13 +73,22 @@ void UnscrambleGame::initialize(quint8 cycleState, quint8 tableTimer, QString wo
         if (wordLength > 8) tableTimerVal = 300;
     }
 
+    // compute array to be sent out as table information array
+    writeHeaderData();
+    out << (quint8) SERVER_NEW_TABLE;
+    out << (quint16) table->tableNumber;
+    out << (quint8) GAME_TYPE_UNSCRAMBLE;
+    out << lexiconName;
+    out << wordList;
+    out << table->maxPlayers;
+    fixHeaderLength();
+
+    return block;
+
+
 
 }
 
-UnscrambleGame::UnscrambleGame(Table* table) : TableGame(table)
-{
-    qDebug() << "UnscrambleGame constructor";
-}
 
 UnscrambleGame::~UnscrambleGame()
 {
@@ -687,7 +702,7 @@ void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
 {
 
     return;
-// TODO this function must be rewritten, we are connecting to many databases.
+    // TODO this function must be rewritten, we are connecting to many databases.
     QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
     query.exec("SELECT listname, lexiconName from wordlists");
     QList <WordList> orderedWordLists;

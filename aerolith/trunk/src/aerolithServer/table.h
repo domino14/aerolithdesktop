@@ -35,23 +35,23 @@ public:
 
     ~Table();
     QByteArray initialize(ClientSocket* tableCreator, quint16 tableNumber,
-                          QByteArray tableDescription, DatabaseHandler* dbHandler);
+                           DatabaseHandler* dbHandler);
     quint16 tableNumber;
-    quint8 lexiconIndex;
-    QByteArray tableInformationArray;
+
     QString tableName;
     QList <ClientSocket*> playerList;
     quint8 maxPlayers;
     bool canJoin;
+
     TableGame* tableGame;
     ClientSocket *host;
 
     void sendChatSentPacket(QString, QString);
     void sendGenericPacket();
     void sendTableMessage(QString);
-    // anagrams mode?
+
     quint8 gameType;
-    QByteArray letters; // the letters that are showing on the board
+    QByteArray tableInformationArray;
     void removePlayerFromTable(ClientSocket*);
 
 };

@@ -29,7 +29,7 @@ void ServerThread::startThread()
   //  shouldQuitThread = true;
   //while (isRunning());
   exit(); // terminate event loop
-  while (isRunning());
+  while (isRunning()) ;
   start();
 }
 
@@ -37,7 +37,7 @@ void ServerThread::stopThread()
 {
   //  shouldQuitThread = true;
   exit(); // terminate event loop
-  while (isRunning());
+  while (isRunning()) ;
   
 }
 

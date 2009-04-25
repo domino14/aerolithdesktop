@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>461</width>
-    <height>427</height>
+    <height>425</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -158,7 +158,7 @@
     <string/>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBox_2">
+  <widget class="QGroupBox" name="groupBoxProbability">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -369,28 +369,37 @@
     </property>
    </widget>
   </widget>
-  <widget class="QCheckBox" name="checkBoxSpecialLists">
+  <widget class="QGroupBox" name="groupBoxSpecialLists">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>190</y>
-     <width>131</width>
-     <height>21</height>
+     <x>140</x>
+     <y>200</y>
+     <width>311</width>
+     <height>161</height>
     </rect>
    </property>
-   <property name="text">
-    <string>Special lists:</string>
+   <property name="title">
+    <string>Special Lists</string>
    </property>
-  </widget>
-  <widget class="QListWidget" name="listWidgetTopLevelList">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>220</y>
-     <width>321</width>
-     <height>141</height>
-    </rect>
+   <property name="flat">
+    <bool>false</bool>
    </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <widget class="QListWidget" name="listWidgetTopLevelList">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>281</width>
+      <height>131</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>
@@ -424,38 +433,6 @@
     <hint type="destinationlabel">
      <x>375</x>
      <y>368</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>groupBox_2</sender>
-   <signal>clicked()</signal>
-   <receiver>checkBoxSpecialLists</receiver>
-   <slot>toggle()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>268</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>230</x>
-     <y>204</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBoxSpecialLists</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>groupBox_2</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>272</x>
-     <y>208</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>384</x>
-     <y>173</y>
     </hint>
    </hints>
   </connection>

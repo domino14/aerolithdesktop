@@ -75,6 +75,7 @@ QStringList DatabaseHandler::checkForDatabases()
         }
 
     }
+    availableDatabases = dbList;
     return dbList;
 
 
