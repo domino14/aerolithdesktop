@@ -119,11 +119,12 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
 void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
 {
     if (lexiconNames.size() == 0) return;
-    setProgressMessage("Creating lexicon databases...");
+
     qDebug() << "In here";
 
     if (!isRunning())
     {
+        setProgressMessage("Creating lexicon databases...");
         dbsToCreate = lexiconNames;
         start();
 
@@ -150,6 +151,7 @@ void DatabaseHandler::run()
 
     QSqlQuery lexiconQuery(lexiconNamesDB);
     lexiconQuery.exec("CREATE TABLE IF NOT EXISTS lexica(lexiconName VARCHAR(15))");
+    lexiconQuery.exec("CREATE UNIQUE INDEX lexicaIndex ON lexica(lexiconName)");
     lexiconQuery.prepare("INSERT INTO lexica(lexiconName) VALUES(?)");
 
     foreach (QString key, dbsToCreate)
@@ -229,7 +231,8 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     bool updateCSWPoundSigns = false;
     /* update lexicon symbols if this is CSW (compare to OWL2)*/
     LexiconInfo* lexInfoAmerica = NULL;
-    if (lexiconName == "CSW" && dbsToCreate.contains("OWL2+LWL"))
+    if (lexiconName == "CSW" &&
+        (availableDatabases.contains("OWL2+LWL") || dbsToCreate.contains("OWL2+LWL")))
     {
         updateCSWPoundSigns = true;
         lexInfoAmerica = &(lexiconMap["OWL2+LWL"]);
@@ -344,7 +347,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     // do this indexing at the end.
     wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
-
+    wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram)");
 
 
     emit setProgressMessage(lexiconName + ": Creating special lists...");
@@ -362,10 +365,10 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     if (lexiconName == "CSW")
     {
-        QString newWordsQueryString = "SELECT probability from alphagrams where length = %1 and "
+        QString newWordsQueryString = "SELECT alphagram from words where length(alphagram) = %1 and "
                                       "lexiconstrings like '%#%'";
         for (int i = 7; i <= 8; i++)
-            sqlListMaker(newWordsQueryString.arg(i), QString("CSW-only %1s").arg(i), i, db);
+            sqlListMaker(newWordsQueryString.arg(i), QString("CSW-only %1s").arg(i), i, db, ALPHAGRAM_QUERY);
     }
 
     wordQuery.exec("END TRANSACTION");
@@ -376,19 +379,43 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
 }
 
-void DatabaseHandler::sqlListMaker(QString queryString, QString listName, quint8 wordLength, QSqlDatabase& db)
+void DatabaseHandler::sqlListMaker(QString queryString, QString listName, quint8 wordLength,
+                                   QSqlDatabase& db, SqlListMakerQueryTypes queryType)
 {
+
     QSqlQuery wordQuery(db);
     wordQuery.exec(queryString);
     QVector <quint32> probIndices;
-
-    while (wordQuery.next())
+    if (queryType == PROBABILITY_QUERY)
     {
-        probIndices.append(wordQuery.value(0).toInt());
+        while (wordQuery.next())
+        {
+            probIndices.append(wordQuery.value(0).toInt());
+        }
+        qDebug() << listName << "found" << probIndices.size();
+        if (probIndices.size() == 0) return;
     }
-    qDebug() << listName << "found" << probIndices.size();
-    if (probIndices.size() == 0) return;
+    else if (queryType == ALPHAGRAM_QUERY)
+    {
+        QStringList alphagrams;
+        while (wordQuery.next())
+        {
+            alphagrams.append(wordQuery.value(0).toString());
+        }
+        /* has a list of all the alphagrams */
+        if (alphagrams.size() == 0) return;
+        foreach (QString alpha, alphagrams)
+        {
+            wordQuery.exec("SELECT probability from alphagrams where alphagram = '" + alpha + "'");
 
+            while (wordQuery.next())
+            {
+                probIndices.append(wordQuery.value(0).toInt());
+            }
+
+        }
+
+    }
     QByteArray ba;
     QDataStream baWriter(&ba, QIODevice::WriteOnly);
 

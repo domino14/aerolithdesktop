@@ -90,19 +90,6 @@ private:
         LIST_TYPE_DAILY_CHALLENGE, LIST_TYPE_REGULAR
     };
 
-
-    struct WordList
-    {
-        QString name;
-        WordListTypes type;
-        QString lexiconName;
-        WordList(QString _name, WordListTypes _type, QString _lexiconName)
-        {
-            name = _name; type = _type; lexiconName = _lexiconName;
-        }
-        WordList();
-    };
-    static QList <WordList> orderedWordLists;
     static QByteArray wordListDataToSend;
 
     void prepareTableAlphagrams();
@@ -120,6 +107,7 @@ private:
     };
 
     //  QHash <QString, playerData> playerDataHash;
+    QString wordDbConName;
     QSqlQuery query;
     QString wordList;
     bool neverStarted;

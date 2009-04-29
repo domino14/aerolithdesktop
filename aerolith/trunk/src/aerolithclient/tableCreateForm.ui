@@ -171,7 +171,7 @@
     <string>Search by probability</string>
    </property>
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <widget class="QSpinBox" name="spinBoxProb2">
     <property name="geometry">
@@ -370,22 +370,25 @@
    </widget>
   </widget>
   <widget class="QGroupBox" name="groupBoxSpecialLists">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>200</y>
+     <y>190</y>
      <width>311</width>
-     <height>161</height>
+     <height>171</height>
     </rect>
    </property>
    <property name="title">
-    <string>Special Lists</string>
+    <string>Other lists</string>
    </property>
    <property name="flat">
     <bool>false</bool>
    </property>
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="checked">
     <bool>false</bool>
@@ -394,10 +397,57 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>30</y>
       <width>281</width>
       <height>131</height>
      </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>A test list lol!1</string>
+     </property>
+    </item>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>19</x>
+     <y>140</y>
+     <width>101</width>
+     <height>80</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>List search</string>
+   </property>
+   <widget class="QRadioButton" name="radioButtonProbability">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>30</y>
+      <width>101</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Probability</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButtonOtherLists">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>50</y>
+      <width>101</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Other lists</string>
     </property>
    </widget>
   </widget>
@@ -433,6 +483,38 @@
     <hint type="destinationlabel">
      <x>375</x>
      <y>368</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonOtherLists</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupBoxSpecialLists</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>35</x>
+     <y>207</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>134</x>
+     <y>229</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonProbability</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupBoxProbability</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>103</x>
+     <y>186</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>135</x>
+     <y>149</y>
     </hint>
    </hints>
   </connection>

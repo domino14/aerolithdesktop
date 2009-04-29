@@ -87,7 +87,7 @@ private:
     QList <LexiconLists> lexiconLists;
 
 
-    void handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lexiconIndex, QString wordListDescriptor,
+    void handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName, QString wordListDescriptor,
                            quint8 maxPlayers);
     void handleDeleteTable(quint16 tablenum);
     void handleAddToTable(quint16 tablenum, QString player);
@@ -202,6 +202,7 @@ signals:
     void setCheckbox(QString);
  private slots:
     void createDatabasesOKClicked();
+    void rebuildDatabaseAction(QAction*);
     void createUnscrambleGameTable();
     void createBonusGameTable();
     void lexiconComboBoxIndexChanged(int);

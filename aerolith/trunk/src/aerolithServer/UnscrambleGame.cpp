@@ -24,7 +24,6 @@ const quint8 COUNTDOWN_TIMER_VAL = 3;
 const quint8 maxRacks = 50;
 QHash <QString, challengeInfo> UnscrambleGame::challenges;
 bool UnscrambleGame::midnightSwitchoverToggle;
-const QString WORD_DATABASE_NAME;  /* TODO FIX. there are many databases */
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
@@ -37,12 +36,20 @@ UnscrambleGame::UnscrambleGame(Table* table) : TableGame(table)
 QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
 {
     this->dbHandler = dbHandler;
+
     wroteToMissedFileThisRound = false;
     listExhausted = false;
 
     quint8 tableTimerValMin;
 
     table->host->connData.in >> wordList >> lexiconName >> cycleState >> tableTimerValMin;
+
+    if (dbHandler->availableDatabases.contains(lexiconName))
+    {
+        wordDbConName = lexiconName + "DB_server";  // this is how it is in databaseHandler. todo perhaps should make this a variable.
+
+    }
+
 
     connect(&gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
     connect(&countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
@@ -54,10 +61,6 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     currentTimerVal = tableTimerVal;
     countdownTimerVal = COUNTDOWN_TIMER_VAL;
 
-
-    /*
-
-        */
     numRacksSeen = 0;
     numTotalRacks = 0;
 
@@ -72,6 +75,8 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
         if (wordLength >= 7 && wordLength <= 8) tableTimerVal = 270;
         if (wordLength > 8) tableTimerVal = 300;
     }
+
+
 
     // compute array to be sent out as table information array
     writeHeaderData();
@@ -107,6 +112,7 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
     // possibly send scores, solved solutions, etc. in the future.
     if (table->playerList.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
     {
+        qDebug() << "playerJoined";
         QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
         userQuery.prepare("SELECT saveData from users where username = :username");
         userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
@@ -429,22 +435,20 @@ void UnscrambleGame::generateQuizArray()
         QTime timer;
         timer.start();
 
-        QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+        QSqlQuery query(QSqlDatabase::database(wordDbConName));
         query.setForwardOnly(true);
 
-        query.prepare("SELECT wordlength, probindices from wordlists where listname = ? and lexiconName = ?");
+        query.prepare("SELECT probindices from wordlists where listname = ?");
         query.bindValue(0, wordList);
-        query.bindValue(1, lexiconName);
         query.exec();
 
         QByteArray indices;
         while (query.next())
         {
-            wordLength = query.value(0).toInt();
             indices = query.value(1).toByteArray();
         }
 
-        qDebug() << "Query executed. time=" << timer.elapsed();
+        qDebug() << "generateQuizArray. Query executed. time=" << timer.elapsed();
 
         QDataStream stream(indices);
 
@@ -487,7 +491,7 @@ void UnscrambleGame::generateQuizArray()
         }
 
 
-        //        qDebug() << "Generated quiz array, time=" << timer.elapsed() << quizArray;
+        qDebug() << "Generated quiz array, time=" << timer.elapsed() << quizArray;
 
     }
     else
@@ -506,10 +510,7 @@ void UnscrambleGame::generateQuizArray()
     }
 
     quizIndex = 0;
-    /* point alphaInfo to the correct vector for this particular word length. this
-        assumes a table can only have one word length at the moment */
 
-    //alphaInfo = (QVector<alphagramInfo>*)&(alphagramData.at(wordLength-2));
     neverStarted = true;
 
 
@@ -518,7 +519,6 @@ void UnscrambleGame::generateQuizArray()
 void UnscrambleGame::prepareTableAlphagrams()
 {
     // load alphagrams into the gamesolutions hash and the alphagrams list
-
     gameSolutions.clear();
     unscrambleGameQuestions.clear();
     alphagramIndices.clear();
@@ -539,12 +539,10 @@ void UnscrambleGame::prepareTableAlphagrams()
     QTime timer, timer2;
     timer.start();
 
-    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+    QSqlQuery query(QSqlDatabase::database(wordDbConName));
     query.setForwardOnly(true);
     query.exec("BEGIN TRANSACTION");
-    query.prepare(QString("SELECT alphagram, words from alphagrams where length = ? and lexiconName = ? and probability = ?"));
-    query.bindValue(0, wordLength);
-    query.bindValue(1, lexiconName);
+    query.prepare(QString("SELECT alphagram, words from alphagrams where probability = ?"));
 
     for (quint8 i = 0; i < maxRacks; i++)
     {
@@ -572,7 +570,7 @@ void UnscrambleGame::prepareTableAlphagrams()
             numRacksSeen++;
             quint32 index = quizArray.at(quizIndex);
 
-            query.bindValue(2, index);
+            query.bindValue(0, index);
             timer2.start();
             query.exec();
             qDebug() << " singleAlpha" << timer2.restart();
@@ -701,36 +699,46 @@ void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end
 void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
 {
 
-    return;
-    // TODO this function must be rewritten, we are connecting to many databases.
-    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-    query.exec("SELECT listname, lexiconName from wordlists");
-    QList <WordList> orderedWordLists;
-    orderedWordLists.clear();
-    while (query.next())
-        orderedWordLists << WordList(query.value(0).toString(), LIST_TYPE_REGULAR, query.value(1).toString());
 
     writeHeaderData();
     out << (quint8) SERVER_WORD_LISTS;		// word lists
-    out << (quint8) dbHandler->lexiconMap.size();
-    foreach(QString lexiconName, dbHandler->lexiconMap.keys())
-        out << lexiconName.toAscii(); // TODO fix
+    out << (quint8) dbHandler->availableDatabases.size();
+    foreach(QString lexiconName, dbHandler->availableDatabases)
+        out << lexiconName.toAscii();
     out << (quint8) 2;           // two types right now, regular, and challenge.
     out << (quint8) 'R';	// regular
-    out << (quint16)orderedWordLists.size();
-    foreach (WordList wl, orderedWordLists)
-    {
-        // TODO fix
-        /*out << (quint8)ListMaker::lexiconList.indexOf(wl.lexiconName) << wl.name.toAscii();*/
-    }
-    out << (quint8) 'D';/* //TODO FIX
-    out << (quint16) (14*ListMaker::lexiconList.size()); // 14 per lexicon
-    for (int i = 0; i < ListMaker::lexiconList.size(); i++)
-    {
 
-        for (int j = 2; j <= 15; j++)
-            out << (quint8)i << QString("Today's " + ListMaker::lexiconList[i] + " %1s").arg(j).toAscii();
-    }*/
+    for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
+    {
+        QSqlQuery query(dbHandler->lexiconMap.value(dbHandler->availableDatabases[i]).db);
+        query.exec("SELECT listname from wordlists");
+        QStringList wordLists;
+        while (query.next())
+            wordLists << query.value(0).toString();
+
+        out << i;   // lexicon index
+        out << (quint16)wordLists.size();
+        foreach (QString wordlistName, wordLists)
+            out << wordlistName.toAscii();
+    }
+
+    out << (quint8) 'D';
+    for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
+    {
+        out << i;
+        if (dbHandler->availableDatabases.at(i) != "Volost")
+        {
+            out << (quint16)14;
+            for (int j = 2; j <= 15; j++)
+                out << QString("Today's " + dbHandler->availableDatabases.at(i) + " %1s").arg(j).toAscii();
+        }
+        else
+        {
+            out << (quint16)2;
+            out << QString("Today's Volost 7s").toAscii();
+            out << QString("Today's Volost 8s").toAscii();
+        }
+    }
     fixHeaderLength();
     wordListDataToSend = block; // copy to a block so that we don't have to recompute this everytime someone logs in
 }
@@ -774,8 +782,8 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
     challenges.clear();
     QTime timer;
 
-    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-    query.exec("BEGIN TRANSACTION");
+//    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+//    query.exec("BEGIN TRANSACTION");
     /*for (int j = 0; j < ListMaker::lexiconList.size(); j++)
     {
         for (int i = 2; i <= 15; i++)

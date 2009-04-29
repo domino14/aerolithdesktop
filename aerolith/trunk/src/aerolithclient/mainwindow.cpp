@@ -73,8 +73,6 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
     connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
-    connect(uiTable.groupBoxSpecialLists, SIGNAL(toggled(bool)), SLOT
-
 
     scoresDialog = new QDialog(this);
     uiScores.setupUi(scoresDialog);
@@ -181,9 +179,14 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     }
     else
     {
+        QMenu* rebuildDbMenu = new QMenu(this);
         foreach (QString str, dbList)
+        {
             setCheckbox(str);
-
+            rebuildDbMenu->addAction(str);
+        }
+        uiDatabase.pushButtonRebuildDatabase->setMenu(rebuildDbMenu);
+        connect(rebuildDbMenu, SIGNAL(triggered(QAction*)), SLOT(rebuildDatabaseAction(QAction*)));
         dbHandler->connectToDatabases(true, dbList);
     }
 }
@@ -205,6 +208,12 @@ void MainWindow::databaseCreated(QString lexiconName)
     setCheckbox(lexiconName);
 }
 
+void MainWindow::rebuildDatabaseAction(QAction* action)
+{
+    if (QMessageBox::question(this, "Rebuild?", "Would you really like to rebuild the database '" + action->text() + "'?",
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
+        dbHandler->createLexiconDatabases(QStringList(action->text()));
+}
 
 void MainWindow::setCheckbox(QString lexiconName)
 {
@@ -505,14 +514,14 @@ void MainWindow::readFromServer()
                 // static information
                 quint16 tablenum;
                 quint8 gameType;
-                quint8 lexiconIndex;
+                QString lexiconName;
                 QString tableName;
                 quint8 maxPlayers;
                 //		QStringList
 
-                in >> tablenum >> gameType >> lexiconIndex >> tableName >> maxPlayers;
+                in >> tablenum >> gameType >> lexiconName >> tableName >> maxPlayers;
                 // create table
-                handleCreateTable(tablenum, gameType, lexiconIndex, tableName, maxPlayers);
+                handleCreateTable(tablenum, gameType, lexiconName, tableName, maxPlayers);
                 /* TODO genericize this as well (like in the server) to take in a table number and type,
                            then read different amount of info for each type */
             }
@@ -523,6 +532,7 @@ void MainWindow::readFromServer()
                 QString playerName;
 
                 in >> tablenum >> playerName; // this will also black out the corresponding button for can join
+                qDebug() << playerName << "joined" << tablenum;
                 handleAddToTable(tablenum, playerName);
                 if (playerName == currentUsername)
                 {
@@ -532,7 +542,7 @@ void MainWindow::readFromServer()
                     tableRepresenter* t = tables.value(tablenum);
 
                     QString wList = t->descriptorItem->text();
-
+                    qDebug() << "I joined table!";
                     gameBoardWidget->resetTable(tablenum, wList, playerName);
                     gameBoardWidget->show();
                     uiMainWindow.comboBoxLexicon->setEnabled(false);
@@ -835,7 +845,7 @@ void MainWindow::receivedPM(QString username, QString message)
 
 void MainWindow::createUnscrambleGameTable()
 {
-    if (uiTable.listWidgetTopLevelList->currentItem())
+    if (uiTable.radioButtonOtherLists->isChecked() && uiTable.listWidgetTopLevelList->currentItem())
     {
         writeHeaderData();
         out << (quint8)CLIENT_NEW_TABLE;
@@ -851,6 +861,13 @@ void MainWindow::createUnscrambleGameTable()
         out << (quint8)uiTable.timerSpinBox->value();
         fixHeaderLength();
         commsSocket->write(block);
+    }
+    else if (uiTable.radioButtonProbability->isChecked())
+    {
+
+
+
+
     }
 
 }
@@ -1064,17 +1081,18 @@ void MainWindow::handleWordlistsMessage()
 
         case 'R':
             {
-                quint16 numLists;
-                in >> numLists;
-
-                qDebug() << numLists << "regular lists.";
-                for (int i = 0; i < numLists; i++)
+                for (int j = 0; j < numLexica; j++)
                 {
                     quint8 lexiconIndex;
-                    QByteArray listTitle;
-                    in >> lexiconIndex >> listTitle;
-                    lexiconLists[lexiconIndex].regularWordLists << listTitle;
+                    quint16 numLists;
+                    in >> lexiconIndex >> numLists;
 
+                    for (int k = 0; k < numLists; k++)
+                    {
+                        QByteArray listTitle;
+                        in >> listTitle;
+                        lexiconLists[lexiconIndex].regularWordLists << listTitle;
+                    }
                 }
             }
             break;
@@ -1082,16 +1100,18 @@ void MainWindow::handleWordlistsMessage()
 
         case 'D':
             {
-                quint16 numLists;
-                in >> numLists;
-                qDebug() << numLists << "daily lists.";
-
-                for (int i = 0; i < numLists; i++)
+                for (int j = 0; j < numLexica; j++)
                 {
                     quint8 lexiconIndex;
-                    QByteArray listTitle;
-                    in >> lexiconIndex >> listTitle;
-                    lexiconLists[lexiconIndex].dailyWordLists << listTitle;
+                    quint16 numLists;
+                    in >> lexiconIndex >> numLists;
+
+                    for (int k = 0; k < numLists; k++)
+                    {
+                        QByteArray listTitle;
+                        in >> listTitle;
+                        lexiconLists[lexiconIndex].dailyWordLists << listTitle;
+                    }
                 }
             }
             break;
@@ -1133,12 +1153,12 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
 }
 
 
-void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, quint8 lexiconIndex,
+void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName,
                                    QString tableName, quint8 maxPlayers)
 {
     tableRepresenter* t = new tableRepresenter;
     t->tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
-    t->descriptorItem = new QTableWidgetItem("(" + uiMainWindow.comboBoxLexicon->itemText(lexiconIndex) +
+    t->descriptorItem = new QTableWidgetItem("(" + lexiconName +
                                              ") " + tableName);
     t->playersItem = new QTableWidgetItem("");
     t->maxPlayers = maxPlayers;

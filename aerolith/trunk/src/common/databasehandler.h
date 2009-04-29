@@ -82,12 +82,17 @@ public:
     QStringList availableDatabases;
     QMap<QString, LexiconInfo> lexiconMap;
 private:
+    enum SqlListMakerQueryTypes
+    {
+      ALPHAGRAM_QUERY, PROBABILITY_QUERY
+    };
 
     QList<unsigned char> letterList;
     QStringList dbsToCreate;
     void run();
 
-    void sqlListMaker(QString queryString, QString listName, quint8 wordLength, QSqlDatabase& db);
+    void sqlListMaker(QString queryString, QString listName, quint8 wordLength,
+                      QSqlDatabase& db, SqlListMakerQueryTypes queryType = PROBABILITY_QUERY);
 
     void createLexiconDatabase(QString lexiconName);
 
