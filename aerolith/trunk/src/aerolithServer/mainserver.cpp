@@ -654,9 +654,8 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
         return;
     }
 
-    Table *tmp = tables.value(tablenum);
-
-    if (!tmp->canJoin)
+    Table *table = tables.value(tablenum);
+    if (!table->canJoin)
     {
         writeToClient(socket, "That table is full! You can not join.", S_ERROR);
         return;
@@ -675,13 +674,12 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     }
 
     // got here with no errors, join table!
+    qDebug() << "Ok, join table!";
 
-    // does this work?
+    table->playerList << socket;
+    if (table->playerList.size() == table->maxPlayers) table->canJoin = false;
 
-    tmp->playerList << socket;
-    if (tmp->playerList.size() == tmp->maxPlayers) tmp->canJoin = false;
-
-    qDebug() << "players in table" << tablenum << tmp->playerList;
+    qDebug() << "players in table" << tablenum << table->playerList;
 
     writeHeaderData();
     out << (quint8) SERVER_JOIN_TABLE;
@@ -696,7 +694,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     //  socket->playerData.readyToPlay = false;
     socket->playerData.gaveUp = false;
 
-    foreach (ClientSocket* thisConn, tmp->playerList)
+    foreach (ClientSocket* thisConn, table->playerList)
     {
         thisConn->playerData.readyToPlay = false;
 
@@ -708,7 +706,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
             sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
     }
 
-    tmp->tableGame->playerJoined(socket);
+    table->tableGame->playerJoined(socket);
 
 }
 
