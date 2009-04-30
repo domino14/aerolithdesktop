@@ -445,10 +445,10 @@ void UnscrambleGame::generateQuizArray()
         QByteArray indices;
         while (query.next())
         {
-            indices = query.value(1).toByteArray();
+            indices = query.value(0).toByteArray();
         }
 
-        qDebug() << "generateQuizArray. Query executed. time=" << timer.elapsed();
+        qDebug() << "generateQuizArray. Query executed. time=" << timer.elapsed() << indices.size();
 
         QDataStream stream(indices);
 
@@ -471,20 +471,20 @@ void UnscrambleGame::generateQuizArray()
         if (type == 1)
         {
             // a list of indices
-            quint16 size;
+            quint32 size;
             stream >> size;
             QVector <quint32> tempVector;
             QVector <quint32> indexVector;
             indexVector.resize(size);
             quint32 index;
             getUniqueRandomNumbers(tempVector, 0, size-1, size);
-            for (quint16 i = 0; i < size; i++)
+            for (quint32 i = 0; i < size; i++)
             {
                 stream >> index;
                 indexVector[tempVector.at(i)] = index;
             }
 
-            for (quint16 i = 0; i < size; i++)
+            for (quint32 i = 0; i < size; i++)
                 quizArray << indexVector.at(i);
 
             numTotalRacks = size;
@@ -569,11 +569,12 @@ void UnscrambleGame::prepareTableAlphagrams()
         {
             numRacksSeen++;
             quint32 index = quizArray.at(quizIndex);
+            //qDebug() << "indices" << index << quizIndex;
 
             query.bindValue(0, index);
-            timer2.start();
+          //  timer2.start();
             query.exec();
-            qDebug() << " singleAlpha" << timer2.restart();
+           // qDebug() << " singleAlpha" << timer2.restart();
             while (query.next())
             {
                 thisQuestionData.alphagram = query.value(0).toString();
@@ -587,7 +588,7 @@ void UnscrambleGame::prepareTableAlphagrams()
                     gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
                     numTotalSolutions++;
                 }
-                //qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
+             //   qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
             }
             quizIndex++;
 

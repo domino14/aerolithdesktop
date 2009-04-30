@@ -223,7 +223,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
                    "probability INTEGER, length INTEGER, num_vowels INTEGER)");
 
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), numalphagrams INTEGER, probindices BLOB)");
-
+// TOO create index for wordlists?
     LessThans lessThan;
     if (lexInfo->lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
     else lessThan = ENGLISH_LESS_THAN;
