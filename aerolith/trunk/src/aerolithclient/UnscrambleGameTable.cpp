@@ -16,10 +16,11 @@
 
 #include "UnscrambleGameTable.h"
 
-UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
+UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, DatabaseHandler *dbHandler) :
         GameTable(parent, f, 8)
 {
     currentWordLength = 0;
+    this->dbHandler = dbHandler;
     //this->setStyle(new QWindowsStyle);
     tableUi.setupUi(this);
 
@@ -655,15 +656,15 @@ void UnscrambleGameTable::populateSolutionsTable()
     QBrush missedColorBrush;
     missedColorBrush.setColor(Qt::red);
     int numTotalSols = 0, numWrong = 0;
+    QSqlDatabase wordDb = dbHandler->lexiconMap.value(lexiconName).db;
     if (wordDb.isOpen())
     {
 
         QSqlQuery transactionQuery(wordDb);
-        QSqlQuery query(wordDb);
+        QSqlQuery alphagramQuery(wordDb);
         transactionQuery.exec("BEGIN TRANSACTION");
-        query.prepare("select front_hooks, back_hooks, definitions, probability, lexiconstrings, words from alphagrams "
-                      "where lexiconName = ? and alphagram = ?");
-        query.bindValue(0, lexiconName);
+        alphagramQuery.prepare("select words, probability from alphagrams "
+                      "where alphagram = ?");
         for (int i = 0; i < wordQuestions.size(); i++)
         {
 
@@ -675,56 +676,55 @@ void UnscrambleGameTable::populateSolutionsTable()
                 QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
                 tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
                 int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-                query.bindValue(1, alphagram);
-                query.exec();
+                alphagramQuery.bindValue(0, alphagram);
+                alphagramQuery.exec();
 
-                QString backHooks, frontHooks, definitions, lexiconstrings, words;
+                QString words;
                 int probability;
-                while (query.next())
+                while (alphagramQuery.next())   // should only be one result.
                 {
-                    frontHooks = query.value(0).toString();
-                    backHooks = query.value(1).toString();
-                    definitions = query.value(2).toString();
-                    probability = query.value(3).toInt() & 0xFFFFFF;
-                    lexiconstrings = query.value(4).toString();
-                    words = query.value(5).toString();
-                    QStringList defs = definitions.split("@");
-                    QStringList fh = frontHooks.split("@");
-                    QStringList bh = backHooks.split("@");
-                    QStringList ls = lexiconstrings.split("@");
+                    probability = alphagramQuery.value(1).toInt() & 0xFFFFFF;
+                    words = alphagramQuery.value(0).toString();
 
-                    //if (words.split(" ").size() != theseSols.size())
-                    //{
-                    // should not allow to even select incorrect lexicon.
-                    //  updateLog("Sizes do not match. Please select correct lexicon.");
-                    // return;
-                    // }
+                    QSqlQuery wordQuery(wordDb);
+                    wordQuery.prepare("select definition, lexiconstrings, front_hooks, back_hooks from words where word = ?");
+
                     for (int j = 0; j < theseSols.size(); j++)
                     {
 
-                        numTotalSols++;
+                        wordQuery.bindValue(0, theseSols.at(j));
+                        wordQuery.exec();
 
-                        uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
-
-
-                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4, new QTableWidgetItem(bh.at(j)));
-                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2, new QTableWidgetItem(fh.at(j)));
-                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5, new QTableWidgetItem(defs.at(j)));
-
-                        QTableWidgetItem* wordItem = new QTableWidgetItem(theseSols.at(j) + ls.at(j));
-                        if (!rightAnswers.contains(theseSols.at(j)))
+                        while (wordQuery.next())
                         {
-                            numWrong++;
-                            wordItem->setForeground(missedColorBrush);
-                            QFont wordItemFont = wordItem->font();
-                            wordItemFont.setBold(true);
-                            wordItem->setFont(wordItemFont);
 
+                            numTotalSols++;
+
+                            uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
+
+
+                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4,
+                                                                      new QTableWidgetItem(wordQuery.value(3).toString()));
+                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2,
+                                                                      new QTableWidgetItem(wordQuery.value(2).toString()));
+                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5,
+                                                                      new QTableWidgetItem(wordQuery.value(0).toString()));
+
+                            QTableWidgetItem* wordItem = new QTableWidgetItem(theseSols.at(j) +
+                                                                              wordQuery.value(1).toString());
+                            if (!rightAnswers.contains(theseSols.at(j)))
+                            {
+                                numWrong++;
+                                wordItem->setForeground(missedColorBrush);
+                                QFont wordItemFont = wordItem->font();
+                                wordItemFont.setBold(true);
+                                wordItem->setFont(wordItemFont);
+
+                            }
+
+                            wordItem->setTextAlignment(Qt::AlignCenter);
+                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 3, wordItem); // word
                         }
-
-                        wordItem->setTextAlignment(Qt::AlignCenter);
-                        uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 3, wordItem); // word
-
                     }
                 }
 

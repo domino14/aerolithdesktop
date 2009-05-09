@@ -448,7 +448,7 @@ void UnscrambleGame::generateQuizArray()
             indices = query.value(0).toByteArray();
         }
 
-        qDebug() << "generateQuizArray. Query executed. time=" << timer.elapsed() << indices.size();
+        //qDebug() << "generateQuizArray. Query executed. time=" << timer.elapsed() << indices.size();
 
         QDataStream stream(indices);
 
@@ -491,7 +491,7 @@ void UnscrambleGame::generateQuizArray()
         }
 
 
-        qDebug() << "Generated quiz array, time=" << timer.elapsed() << quizArray;
+       // qDebug() << "Generated quiz array, time=" << timer.elapsed() << quizArray;
 
     }
     else
@@ -543,7 +543,7 @@ void UnscrambleGame::prepareTableAlphagrams()
     query.setForwardOnly(true);
     query.exec("BEGIN TRANSACTION");
     query.prepare(QString("SELECT alphagram, words from alphagrams where probability = ?"));
-
+    // maybe try making probability a primary key? this may make it faster?
     for (quint8 i = 0; i < maxRacks; i++)
     {
         unscrambleGameQuestionData thisQuestionData;
@@ -572,9 +572,9 @@ void UnscrambleGame::prepareTableAlphagrams()
             //qDebug() << "indices" << index << quizIndex;
 
             query.bindValue(0, index);
-          //  timer2.start();
+            timer2.start();
             query.exec();
-           // qDebug() << " singleAlpha" << timer2.restart();
+            qDebug() << " singleAlpha" << timer2.restart();
             while (query.next())
             {
                 thisQuestionData.alphagram = query.value(0).toString();

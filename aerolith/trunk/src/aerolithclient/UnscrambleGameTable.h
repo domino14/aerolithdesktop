@@ -28,6 +28,7 @@
 #include "chip.h"
 #include "wordRectangle.h"
 #include "GameTable.h"
+#include "databasehandler.h"
 
 
 class UnscrambleGameTable : public GameTable
@@ -35,7 +36,7 @@ class UnscrambleGameTable : public GameTable
     Q_OBJECT
 
 public:
-    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f);
+    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, DatabaseHandler *dbHandler);
     ~UnscrambleGameTable();
     void resetTable(quint16, QString, QString);
     void leaveTable();
@@ -57,10 +58,10 @@ public:
 
     void setReadyIndicator(QString);
     void clearReadyIndicators();
-   // void setDatabase(QString name);
+
 private:
-//    QSqlDatabase zyzzyvaDb;
-    QSqlDatabase wordDb;
+
+
     QGraphicsScene gfxScene;
     Ui::tableForm tableUi;
     int currentWordLength;

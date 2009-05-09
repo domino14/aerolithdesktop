@@ -220,7 +220,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
                    "definition VARCHAR(256), lexiconstrings VARCHAR(5), front_hooks VARCHAR(26), "
                    "back_hooks VARCHAR(26))");
     wordQuery.exec("CREATE TABLE IF NOT EXISTS alphagrams(alphagram VARCHAR(15), words VARCHAR(255), "
-                   "probability INTEGER, length INTEGER, num_vowels INTEGER)");
+                   "probability INTEGER PRIMARY KEY, length INTEGER, num_vowels INTEGER)");
 
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), numalphagrams INTEGER, probindices BLOB)");
 // TOO create index for wordlists?
@@ -287,8 +287,8 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
             wordQuery.bindValue(1, word);
             wordQuery.bindValue(2, definition);
             wordQuery.bindValue(3, lexSymbols);
-            wordQuery.bindValue(4, QString(backHooks));
-            wordQuery.bindValue(5, QString(frontHooks));
+            wordQuery.bindValue(4, QString(frontHooks));
+            wordQuery.bindValue(5, QString(backHooks));
             wordQuery.exec();
         }
     }
@@ -346,7 +346,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
 
     // do this indexing at the end.
-    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
+//    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
     wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram)");
 
 

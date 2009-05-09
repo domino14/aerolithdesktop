@@ -18,6 +18,7 @@
 #define GAMETABLE_H
 
 #include <QtGui>
+#include "databasehandler.h"
 #include "ui_playerInfoForm.h"
 
 #define NUM_AVATAR_IDS 73
@@ -45,6 +46,7 @@ public:
 signals:
     void avatarChange(quint8);
 protected:
+    DatabaseHandler* dbHandler;
     QString myUsername;
 
     // most of these have to do with the player widgets.
