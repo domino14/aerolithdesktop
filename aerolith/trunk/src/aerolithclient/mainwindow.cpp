@@ -102,7 +102,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     uiLogin.stackedWidget->setCurrentIndex(0);
 
 
-    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window);
+    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, dbHandler);
     gameBoardWidget->setWindowTitle("Table");
     gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
     gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
