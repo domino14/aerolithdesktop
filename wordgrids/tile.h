@@ -35,9 +35,14 @@ public:
     QBrush getTileBrush();
     void setWidth(int w, double hscale);
     int getWidth();
+    QString getTileLetter();
+    void setTileCoords(int x, int y);
+    int tileCoordX, tileCoordY;
+
 private:
     int width;
     int height;
+
 
     QBrush tileBrush;
     QPen foregroundPen;
@@ -46,7 +51,7 @@ private:
     void mousePressEvent ( QGraphicsSceneMouseEvent * event);
 
 signals:
-    void mousePressed();
+    void mousePressedCorner(int x, int y);
 };
 
 #endif

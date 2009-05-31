@@ -1,8 +1,26 @@
+//    Copyright 2007, 2008, 2009, Cesar Del Solar  <delsolar@gmail.com>
+//    This file is part of Wordgrids.
+//
+//    Wordgrids is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    Wordgrids is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with Wordgrids.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QtGui/QMainWindow>
 #include <QtGui>
+#include "Tile.h"
+#include <QtSql>
 namespace Ui
 {
     class MainWindowClass;
@@ -16,9 +34,44 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+
+
 private:
+    enum CornerStates
+    {
+        LEFT_CORNER_ON, BOTH_CORNERS_ON, BOTH_CORNERS_OFF
+    };
+
     Ui::MainWindowClass *ui;
     QGraphicsScene scene;
+    QVector <Tile*> tiles;
+    QGraphicsPixmapItem *firstCorner, *secondCorner;
+    CornerStates cornerState;
+    int crossHairsWidth;
+    void setTilesPos();
+    QTimer gameTimer;
+    int timerSecs;
+    int curTileWidth;
+    int curScore;
+    QSqlDatabase wordDb;
+
+    bool gameGoing;
+    void possibleRectangleCheck();
+
+    int boardWidth, boardHeight;
+
+    int x1, y1, x2, y2;
+    QString alphagrammize(QString);
+    QList<unsigned char> letterList;
+    int numSolvedLetters;
+    int lastGridSize;
+public slots:
+    void tileMouseCornerClicked(int, int);
+private slots:
+    void secPassed();
+    void on_pushButtonNewGame_clicked();
+    void on_toolButtonMinusSize_clicked();
+    void on_toolButtonPlusSize_clicked();
 };
 
 #endif // MAINWINDOW_H
