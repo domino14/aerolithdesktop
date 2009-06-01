@@ -134,6 +134,7 @@ void Tile::setTileLetter(QString tileLetter)
 void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
 {
     event->ignore();
+    return; // was not return before
     /* corners
         1 top left
         2 top right

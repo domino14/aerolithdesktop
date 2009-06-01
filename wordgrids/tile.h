@@ -36,6 +36,7 @@ public:
     void setWidth(int w, double hscale);
     int getWidth();
     QString getTileLetter();
+
     void setTileCoords(int x, int y);
     int tileCoordX, tileCoordY;
 
