@@ -26,6 +26,16 @@ namespace Ui
     class MainWindowClass;
 }
 
+class WordgridsScene : public QGraphicsScene
+{
+    Q_OBJECT
+    void mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent );
+    void mouseMoveEvent (QGraphicsSceneMouseEvent * mouseEvent );
+signals:
+    void sceneMouseClicked(double, double);
+    void sceneMouseMoved(double, double);
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -40,12 +50,13 @@ private:
     enum CornerStates
     {
         LEFT_CORNER_ON, BOTH_CORNERS_ON, BOTH_CORNERS_OFF
-    };
+            };
 
     Ui::MainWindowClass *ui;
-    QGraphicsScene scene;
+    WordgridsScene scene;
     QVector <Tile*> tiles;
     QGraphicsPixmapItem *firstCorner, *secondCorner;
+    QGraphicsLineItem *line1, *line2, *line3, *line4;
     CornerStates cornerState;
     int crossHairsWidth;
     void setTilesPos();
@@ -63,13 +74,19 @@ private:
     int x1, y1, x2, y2;
     QString alphagrammize(QString);
     QList<unsigned char> letterList;
+    QList <QString> thisRoundLetters;
     int numSolvedLetters;
     int lastGridSize;
 public slots:
     void tileMouseCornerClicked(int, int);
 private slots:
     void secPassed();
+    void sceneMouseClicked(double, double);
+    void sceneMouseMoved(double, double);
     void on_pushButtonNewGame_clicked();
+    void on_pushButtonRetry_clicked();
+    void on_pushButtonGiveUp_clicked();
+
     void on_toolButtonMinusSize_clicked();
     void on_toolButtonPlusSize_clicked();
 };

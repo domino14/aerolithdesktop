@@ -19,7 +19,9 @@
 
 #include <QDateTime>
 
-
+int scoresByLength[16] =
+{ 0, 0, 4, 9, 16, 25, 49, 64, 81, 100, 121, 169, 196, 225, 256, 289 };
+/*0  1  2  3  4    5   6   7   8    9   10   11   12   13   14   15*/
 
 int letterDist[26] =
 { 9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1 };
@@ -47,10 +49,38 @@ MainWindow::MainWindow(QWidget *parent)
     scene.addItem(firstCorner);
     scene.addItem(secondCorner);
 
+    QPen linePen;
+    linePen.setStyle(Qt::DashLine);
+    linePen.setWidth(1);
+
+
+    line1 = new QGraphicsLineItem();
+    line2 = new QGraphicsLineItem();
+    line3 = new QGraphicsLineItem();
+    line4 = new QGraphicsLineItem();
+    line1->setPen(linePen);
+    line2->setPen(linePen);
+    line3->setPen(linePen);
+    line4->setPen(linePen);
+
+    line1->setZValue(1);
+    line2->setZValue(1);
+    line3->setZValue(1);
+    line4->setZValue(1);
+    scene.addItem(line1);
+    scene.addItem(line2);
+    scene.addItem(line3);
+    scene.addItem(line4);
+
+    line1->setVisible(false);
+    line2->setVisible(false);
+    line3->setVisible(false);
+    line4->setVisible(false);
+
+
     firstCorner->setVisible(false);
     secondCorner->setVisible(false);
-    firstCorner->setPos(0,0);
-    secondCorner->setPos(0, 0);
+
 
 
     curTileWidth = 40;
@@ -72,6 +102,95 @@ MainWindow::MainWindow(QWidget *parent)
     gameGoing = false;
     numSolvedLetters = 0;
     lastGridSize = 10;
+
+    connect(&scene, SIGNAL(sceneMouseClicked(double, double)), SLOT(sceneMouseClicked(double, double)));
+    connect(&scene, SIGNAL(sceneMouseMoved(double, double)), SLOT(sceneMouseMoved(double, double)));
+}
+
+void MainWindow::sceneMouseMoved(double x, double y)
+{
+    switch (cornerState)
+    {
+        case BOTH_CORNERS_OFF:
+
+        break;
+        case LEFT_CORNER_ON:
+
+            x2 = qRound(x/curTileWidth);
+            y2 = qRound(y/curTileWidth);
+            if (x2 < 0) x2 = 0;
+            if (y2 < 0) y2 = 0;
+            if (x2 > boardWidth) x2 = boardWidth;
+            if (y2 > boardHeight) y2 = boardHeight;
+
+            int lx1 = x1*curTileWidth;
+            int ly1 = y1*curTileWidth;
+            int lx2 = x2*curTileWidth;
+            int ly2 = y2*curTileWidth;
+
+            secondCorner->setVisible(true);
+            secondCorner->setPos(lx2 - crossHairsWidth/2, ly2 - crossHairsWidth/2);
+
+
+
+
+            line1->setLine(lx1, ly1, lx2, ly1);
+            line2->setLine(lx2, ly1, lx2, ly2);
+            line3->setLine(lx2, ly2, lx1, ly2);
+            line4->setLine(lx1, ly2, lx1, ly1);
+            line1->setVisible(true);
+            line2->setVisible(true);
+            line3->setVisible(true);
+            line4->setVisible(true);
+        break;
+    }
+}
+
+void MainWindow::sceneMouseClicked(double x, double y)
+{
+    if (!gameGoing)
+    {
+        cornerState = BOTH_CORNERS_OFF;
+        return;
+    }
+    switch (cornerState)
+    {
+    case BOTH_CORNERS_OFF:
+        firstCorner->setVisible(true);
+        x1 = qRound(x/curTileWidth);
+        y1 = qRound(y/curTileWidth);
+        if (x1 < 0) x1 = 0;
+        if (y1 < 0) y1 = 0;
+        if (x1 > boardWidth) x1 = boardWidth;
+        if (y1 > boardHeight) y1 = boardHeight;
+        firstCorner->setPos(x1*curTileWidth - crossHairsWidth/2, y1*curTileWidth - crossHairsWidth/2);
+        cornerState = LEFT_CORNER_ON;
+        break;
+    case LEFT_CORNER_ON:
+        x2 = qRound(x/curTileWidth);
+        y2 = qRound(y/curTileWidth);
+        if (x2 < 0) x2 = 0;
+        if (y2 < 0) y2 = 0;
+        if (x2 > boardWidth) x2 = boardWidth;
+        if (y2 > boardHeight) y2 = boardHeight;
+
+        firstCorner->setVisible(false);
+        secondCorner->setVisible(false);
+
+        cornerState = BOTH_CORNERS_OFF;
+        possibleRectangleCheck();
+        line1->setVisible(false);
+        line2->setVisible(false);
+        line3->setVisible(false);
+        line4->setVisible(false);
+        break;
+
+    }
+
+    //    QString debugStr = QString("%1 %2").arg(x).arg(y);
+    //    ui->labelDebug->setText(debugStr);
+
+
 }
 
 void MainWindow::tileMouseCornerClicked(int x, int y)
@@ -121,8 +240,8 @@ void MainWindow::possibleRectangleCheck()
     }
     if (letters.size() < 2) return;
 
-   // QString debugStr = QString("%1 %2 %3 %4 %5").arg(x1).arg(y1).arg(x2).arg(y2).arg(letters);
-   // ui->labelDebug->setText(debugStr);
+    // QString debugStr = QString("%1 %2 %3 %4 %5").arg(x1).arg(y1).arg(x2).arg(y2).arg(letters);
+    // ui->labelDebug->setText(debugStr);
 
     letters = alphagrammize(letters);
 
@@ -149,20 +268,30 @@ void MainWindow::possibleRectangleCheck()
                 tiles.at(index)->setTileBrush(brushSolved);
             }
         }
+        int thisScore = 0;
+        if (letters.size() <= 15)
+            thisScore = scoresByLength[letters.size()];
+        else
+            thisScore = 400;
+
 
         scene.update(scene.itemsBoundingRect());
         ui->textEdit->append(QString("+%1 for %2-letter word!").
-                             arg(letters.size()*letters.size()).arg(letters.size()));
+                             arg(thisScore).arg(letters.size()));
 
         numSolvedLetters += letters.size();
-        curScore += (letters.size() * letters.size());
+        curScore += thisScore;
         if (numSolvedLetters == boardWidth * boardHeight)
         {
             // cleared whole board
+
+            int clearBonus = boardWidth * boardHeight * 3;
+            curScore += clearBonus;
+            ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
+            int timeBonus = timerSecs;
+            ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+            curScore += timeBonus;
             timerSecs = 0;
-            int bonus = boardWidth * boardHeight;
-            curScore += bonus;
-            ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(bonus));
         }
 
 
@@ -178,7 +307,7 @@ void MainWindow::possibleRectangleCheck()
     }
 
     query.exec("END TRANSACTION");
-    //    ui->listWidget->addItem(letters);
+
 }
 
 
@@ -211,8 +340,36 @@ void MainWindow::setTilesPos()
 
 }
 
+void MainWindow::on_pushButtonGiveUp_clicked()
+{
+    timerSecs = 0;
+}
+
+void MainWindow::on_pushButtonRetry_clicked()
+{
+    int i = 0;
+    foreach (Tile* tile, tiles)
+    {
+        tile->setTileLetter(thisRoundLetters.at(i));
+        tile->setTileBrush(brushUnsolved);
+        i++;
+    }
+    timerSecs = boardWidth*boardHeight*3;
+    ui->lcdNumber->display(timerSecs);
+    ui->lcdNumberScore->display(0);
+    gameTimer.start();
+    ui->listWidget->clear();
+    gameGoing = true;
+    curScore = 0;
+    numSolvedLetters = 0;
+    ui->textEdit->append("---------------------------------------------");
+
+    scene.update(scene.itemsBoundingRect());
+}
+
 void MainWindow::on_pushButtonNewGame_clicked()
 {
+    thisRoundLetters.clear();
     foreach (Tile* tile, tiles)
         tile->deleteLater();
     tiles.clear();
@@ -235,7 +392,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
             tile->setTileCoords(i, j);
             tile->setWidth(curTileWidth, 1);
             tile->setTileBrush(brushUnsolved);
-            connect(tile, SIGNAL(mousePressedCorner(int, int)), SLOT(tileMouseCornerClicked(int, int)));
+            // connect(tile, SIGNAL(mousePressedCorner(int, int)), SLOT(tileMouseCornerClicked(int, int)));
         }
     }
     setTilesPos();
@@ -252,12 +409,14 @@ void MainWindow::on_pushButtonNewGame_clicked()
             if (letter < accum) break;
         }
         tile->setTileLetter(QString((char)lettercounter + 'A'));
+        thisRoundLetters << QString((char)lettercounter + 'A');
         tile->setTileBrush(brushUnsolved);
     }
     timerSecs = boardWidth*boardHeight*3;
     ui->lcdNumber->display(timerSecs);
     ui->lcdNumberScore->display(0);
     gameTimer.start();
+    ui->listWidget->clear();
     gameGoing = true;
     curScore = 0;
     numSolvedLetters = 0;
@@ -305,4 +464,18 @@ MainWindow::~MainWindow()
         tile->deleteLater();
 
 
+}
+/***********************/
+
+void WordgridsScene::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
+{
+    emit sceneMouseClicked(mouseEvent->scenePos().x(), mouseEvent->scenePos().y());
+    mouseEvent->ignore();
+
+}
+
+void WordgridsScene::mouseMoveEvent (QGraphicsSceneMouseEvent * mouseEvent )
+{
+    emit sceneMouseMoved(mouseEvent->scenePos().x(), mouseEvent->scenePos().y());
+    mouseEvent->ignore();
 }
