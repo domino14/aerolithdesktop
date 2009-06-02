@@ -372,14 +372,22 @@ void MainWindow::on_pushButtonRetry_clicked()
 
 void MainWindow::on_pushButtonNewGame_clicked()
 {
-    thisRoundLetters.clear();
-    foreach (Tile* tile, tiles)
-        tile->deleteLater();
-    tiles.clear();
     bool ok;
     int gridSize = QInputDialog::getInteger(this, "Grid size?", "Please select a grid size", lastGridSize, 2, 20, 1, &ok);
 
     if (!ok) return;
+
+    timerSecs = QInputDialog::getInteger(this, "Timer?", "Please select desired timer (seconds)",
+                                         boardWidth*boardHeight*3, 1, 5000, 1, &ok);
+    if (!ok) timerSecs = boardWidth*boardHeight*3;
+
+
+    thisRoundLetters.clear();
+    foreach (Tile* tile, tiles)
+        tile->deleteLater();
+    tiles.clear();
+
+
 
     lastGridSize = gridSize;
     boardHeight = gridSize;
@@ -415,7 +423,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
         thisRoundLetters << QString((char)lettercounter + 'A');
         tile->setTileBrush(brushUnsolved);
     }
-    timerSecs = boardWidth*boardHeight*3;
+
     ui->lcdNumber->display(timerSecs);
     ui->lcdNumberScore->display(0);
     gameTimer.start();
