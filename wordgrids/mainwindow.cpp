@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->graphicsView->setScene(&scene);
+    ui->graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+    ui->graphicsView->viewport()->setFocusPolicy(Qt::NoFocus);
 
     firstCorner = new QGraphicsPixmapItem();
     secondCorner = new QGraphicsPixmapItem();
@@ -275,7 +277,7 @@ void MainWindow::possibleRectangleCheck()
             thisScore = 400;
 
 
-        scene.update(scene.itemsBoundingRect());
+        scene.update();
         ui->textEdit->append(QString("+%1 for %2-letter word!").
                              arg(thisScore).arg(letters.size()));
 
@@ -335,9 +337,10 @@ void MainWindow::setTilesPos()
         tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
     }
 
-    // tile->setTileLetter(QString(qrand()%26 + 'A'));
 
-
+//    ui->graphicsView->resetTransform();
+//    ui->graphicsView->translate(-100, -100);
+    scene.setSceneRect(QRectF(0, 0, curTileWidth*boardWidth, curTileWidth*boardHeight));
 }
 
 void MainWindow::on_pushButtonGiveUp_clicked()
@@ -364,7 +367,7 @@ void MainWindow::on_pushButtonRetry_clicked()
     numSolvedLetters = 0;
     ui->textEdit->append("---------------------------------------------");
 
-    scene.update(scene.itemsBoundingRect());
+    scene.update();
 }
 
 void MainWindow::on_pushButtonNewGame_clicked()
@@ -422,7 +425,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
     numSolvedLetters = 0;
     ui->textEdit->append("---------------------------------------------");
 
-    scene.update(scene.itemsBoundingRect());
+//    scene.update();
 }
 
 void MainWindow::secPassed()
