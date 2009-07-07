@@ -154,11 +154,11 @@ void MainWindow::on_pushButtonLoad_clicked()
 	}	
 	ui.labelInfo->setText(QString::number(RAND_MAX));
 	
-	qsrand(randomSeed);
+	csrand(randomSeed);
 	for (int i = 0; i < questions.size(); i++)
 	{
 		Question temp;
-		int randomIndex = qrand() % questions.size();
+		int randomIndex = crand() % questions.size();
 		temp = questions[i];
 		questions[i] = questions[randomIndex];
 		questions[randomIndex] = temp;
