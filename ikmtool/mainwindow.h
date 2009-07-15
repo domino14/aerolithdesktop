@@ -34,6 +34,7 @@ class MainWindow : public QWidget
 	QTimer* questionTimer;
 	int timeLimitSecs, currentTime;
 	void askQuestion();
+    QTextCursor* textCursor;
 	QSqlDatabase wordDb;
 	
   private slots:

@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent)
 		", by Michael Thelen, found at <a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
 	}
 
+    textCursor = new QTextCursor(ui.plainTextEdit->document());
   
 }
 
@@ -265,9 +266,10 @@ void MainWindow::displayQuestion()
 	" of " + QString::number(questions.size()) + " (" + 
 	QString::number(questions.at(currentQuestionNumber).solutions.size()) + ")");
 	
-	ui.plainTextEdit->clear();
+//	ui.plainTextEdit->clear();
+
 	
-	QTextCursor cursor(ui.plainTextEdit->document());
+
 	QTextCharFormat chFormat;
 
 	QString spaces;
@@ -275,23 +277,24 @@ void MainWindow::displayQuestion()
 		spaces += " ";	
 	
 	chFormat.setFont(QFont("Courier New", 40, 66));
-	cursor.insertText(spaces + questions.at(currentQuestionNumber).alphagram, chFormat);
+    textCursor->insertText("-------------------\n" + spaces + questions.at(currentQuestionNumber).alphagram, chFormat);
 	
+     ui.plainTextEdit->ensureCursorVisible();
 	
-	ui.plainTextEdit->setTextCursor(cursor);
+    //ui.plainTextEdit->setTextCursor(cursor);
 
 }
 
 void MainWindow::displayAnswers(bool correct)
 {
 
-	QTextCursor cursor = ui.plainTextEdit->textCursor();
+   // QTextCursor cursor(ui.plainTextEdit->document());
 	QTextCharFormat chFormat;
 	if (correct)
 		chFormat.setBackground(QBrush(QColor(150, 255, 150)));
 	else
 		chFormat.setBackground(QBrush(QColor(255, 150, 150)));
-	cursor.insertBlock();
+    textCursor->insertBlock();
 	chFormat.setFont(QFont("Arial", 14, 35));
 	
 	for (int i = 0; i < questions.at(currentQuestionNumber).solutions.size(); i++)
@@ -314,12 +317,12 @@ void MainWindow::displayAnswers(bool correct)
 			}
 		}
 	
-		cursor.insertText(frontHooks + "\t" + questions.at(currentQuestionNumber).solutions.at(i) 
+        textCursor->insertText(frontHooks + "\t" + questions.at(currentQuestionNumber).solutions.at(i)
 		+ "\t" + backHooks + "\t" + definition, chFormat);
-		cursor.insertBlock();
+        textCursor->insertBlock();
 	}
-	
-	ui.plainTextEdit->setTextCursor(cursor);
+    ui.plainTextEdit->ensureCursorVisible();
+//	ui.plainTextEdit->setTextCursor(cursor);
 }
 
 void MainWindow::on_pushButtonMark_clicked()
