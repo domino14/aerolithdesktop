@@ -61,7 +61,7 @@ private:
     int crossHairsWidth;
     void setTilesPos();
     QTimer gameTimer;
-    int timerSecs;
+    int timerSecs, lastTimerSecs;
     int curTileWidth;
     int curScore;
     QSqlDatabase wordDb;
@@ -77,6 +77,7 @@ private:
     QList <QString> thisRoundLetters;
     int numSolvedLetters;
     int lastGridSize;
+    int solvedWordsByLength[16];
 public slots:
     void tileMouseCornerClicked(int, int);
 private slots:
