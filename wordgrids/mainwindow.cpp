@@ -89,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
     boardWidth = 10;
     boardHeight = 10;
 
+    lastTimerSecs = 0;
 
     cornerState = BOTH_CORNERS_OFF;
     qsrand(QDateTime::currentDateTime().toTime_t());
@@ -107,43 +108,45 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(&scene, SIGNAL(sceneMouseClicked(double, double)), SLOT(sceneMouseClicked(double, double)));
     connect(&scene, SIGNAL(sceneMouseMoved(double, double)), SLOT(sceneMouseMoved(double, double)));
+
+
 }
 
 void MainWindow::sceneMouseMoved(double x, double y)
 {
     switch (cornerState)
     {
-        case BOTH_CORNERS_OFF:
+    case BOTH_CORNERS_OFF:
 
         break;
-        case LEFT_CORNER_ON:
+    case LEFT_CORNER_ON:
 
-            x2 = qRound(x/curTileWidth);
-            y2 = qRound(y/curTileWidth);
-            if (x2 < 0) x2 = 0;
-            if (y2 < 0) y2 = 0;
-            if (x2 > boardWidth) x2 = boardWidth;
-            if (y2 > boardHeight) y2 = boardHeight;
+        x2 = qRound(x/curTileWidth);
+        y2 = qRound(y/curTileWidth);
+        if (x2 < 0) x2 = 0;
+        if (y2 < 0) y2 = 0;
+        if (x2 > boardWidth) x2 = boardWidth;
+        if (y2 > boardHeight) y2 = boardHeight;
 
-            int lx1 = x1*curTileWidth;
-            int ly1 = y1*curTileWidth;
-            int lx2 = x2*curTileWidth;
-            int ly2 = y2*curTileWidth;
+        int lx1 = x1*curTileWidth;
+        int ly1 = y1*curTileWidth;
+        int lx2 = x2*curTileWidth;
+        int ly2 = y2*curTileWidth;
 
-            secondCorner->setVisible(true);
-            secondCorner->setPos(lx2 - crossHairsWidth/2, ly2 - crossHairsWidth/2);
-
-
+        secondCorner->setVisible(true);
+        secondCorner->setPos(lx2 - crossHairsWidth/2, ly2 - crossHairsWidth/2);
 
 
-            line1->setLine(lx1, ly1, lx2, ly1);
-            line2->setLine(lx2, ly1, lx2, ly2);
-            line3->setLine(lx2, ly2, lx1, ly2);
-            line4->setLine(lx1, ly2, lx1, ly1);
-            line1->setVisible(true);
-            line2->setVisible(true);
-            line3->setVisible(true);
-            line4->setVisible(true);
+
+
+        line1->setLine(lx1, ly1, lx2, ly1);
+        line2->setLine(lx2, ly1, lx2, ly2);
+        line3->setLine(lx2, ly2, lx1, ly2);
+        line4->setLine(lx1, ly2, lx1, ly1);
+        line1->setVisible(true);
+        line2->setVisible(true);
+        line3->setVisible(true);
+        line4->setVisible(true);
         break;
     }
 }
@@ -271,23 +274,27 @@ void MainWindow::possibleRectangleCheck()
             }
         }
         int thisScore = 0;
-        if (letters.size() <= 15)
-            thisScore = scoresByLength[letters.size()];
+        int wordLength = letters.size();
+        if (wordLength <= 15)
+        {
+            thisScore = scoresByLength[wordLength];
+            solvedWordsByLength[wordLength]++;
+        }
         else
             thisScore = 400;
 
 
         scene.update();
         ui->textEdit->append(QString("+%1 for %2-letter word!").
-                             arg(thisScore).arg(letters.size()));
+                             arg(thisScore).arg(wordLength));
 
-        numSolvedLetters += letters.size();
+        numSolvedLetters += wordLength;
         curScore += thisScore;
         if (numSolvedLetters == boardWidth * boardHeight)
         {
             // cleared whole board
 
-            int clearBonus = boardWidth * boardHeight * 3;
+            int clearBonus = boardWidth * boardHeight * 2;
             curScore += clearBonus;
             ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
             int timeBonus = timerSecs;
@@ -338,8 +345,8 @@ void MainWindow::setTilesPos()
     }
 
 
-//    ui->graphicsView->resetTransform();
-//    ui->graphicsView->translate(-100, -100);
+    //    ui->graphicsView->resetTransform();
+    //    ui->graphicsView->translate(-100, -100);
     scene.setSceneRect(QRectF(0, 0, curTileWidth*boardWidth, curTileWidth*boardHeight));
 }
 
@@ -357,7 +364,7 @@ void MainWindow::on_pushButtonRetry_clicked()
         tile->setTileBrush(brushUnsolved);
         i++;
     }
-    timerSecs = boardWidth*boardHeight*3;
+    timerSecs = lastTimerSecs;
     ui->lcdNumber->display(timerSecs);
     ui->lcdNumberScore->display(0);
     gameTimer.start();
@@ -366,6 +373,9 @@ void MainWindow::on_pushButtonRetry_clicked()
     curScore = 0;
     numSolvedLetters = 0;
     ui->textEdit->append("---------------------------------------------");
+
+    for (int i = 0; i < 16; i++)
+        solvedWordsByLength[i] = 0;
 
     scene.update();
 }
@@ -378,9 +388,9 @@ void MainWindow::on_pushButtonNewGame_clicked()
     if (!ok) return;
 
     timerSecs = QInputDialog::getInteger(this, "Timer?", "Please select desired timer (seconds)",
-                                         boardWidth*boardHeight*3, 1, 5000, 1, &ok);
-    if (!ok) timerSecs = boardWidth*boardHeight*3;
-
+                                         gridSize*gridSize*3, 1, 5000, 1, &ok);
+    if (!ok) timerSecs = gridSize*gridSize*3;
+    lastTimerSecs = timerSecs;
 
     thisRoundLetters.clear();
     foreach (Tile* tile, tiles)
@@ -433,7 +443,9 @@ void MainWindow::on_pushButtonNewGame_clicked()
     numSolvedLetters = 0;
     ui->textEdit->append("---------------------------------------------");
 
-//    scene.update();
+    for (int i = 0; i < 16; i++)
+        solvedWordsByLength[i] = 0;
+    //    scene.update();
 }
 
 void MainWindow::secPassed()
@@ -444,6 +456,14 @@ void MainWindow::secPassed()
         gameTimer.stop();
         gameGoing = false;
         ui->textEdit->append("<font color=red>Time is up!</font>");
+        QString summary = "You scored %1 points. Word breakdown by length:";
+        summary = summary.arg(curScore);
+        for (int i = 0; i < 16; i++)
+        {
+            if (solvedWordsByLength[i] > 0)
+                summary += " <font color=green>" + QString::number(i) + "s:</font> " + solvedWordsByLength[i];
+        }
+        ui->textEdit->append(summary);
     }
     ui->lcdNumber->display(qMax(timerSecs, 0));
 }
