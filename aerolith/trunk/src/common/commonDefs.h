@@ -27,12 +27,18 @@
 #define GAME_TYPE_ANAGRAMS 5
 
 
-/* table 'cycle' type (marathon, cycle, random, daily challenge, etc) */
+/* table 'cycle' type (marathon, cycle, random, daily challenge, etc) for Unscramble game */
 
 #define TABLE_TYPE_DAILY_CHALLENGES 3
 #define TABLE_TYPE_RANDOM_MODE 0
 #define TABLE_TYPE_MARATHON_MODE 2 
 #define TABLE_TYPE_CYCLE_MODE 1
+
+/* list type for Unscramble game */
+#define LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH 1
+#define LIST_TYPE_NAMED_LIST 2
+#define LIST_TYPE_MULTIPLE_INDICES 3
+#define LIST_TYPE_ALL_WORD_LENGTH 4
 
 
 /* network packet headers */

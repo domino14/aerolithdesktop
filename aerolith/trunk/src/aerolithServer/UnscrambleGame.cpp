@@ -42,7 +42,26 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
 
     quint8 tableTimerValMin;
 
-    table->host->connData.in >> wordList >> lexiconName >> cycleState >> tableTimerValMin;
+    table->host->connData.in >> listType;   // TODO need to check to make sure client can't send malicious packet
+    // that lacks some of these fields!
+
+    if (listType == LIST_TYPE_NAMED_LIST)
+    {
+        table->host->connData.in >> wordList;
+    }
+    else if (listType == LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH)
+    {
+        table->host->connData.in >> wordLength >> lowProbIndex >> highProbIndex;
+        wordList = QString("The %1s: %2 to %3").
+                   arg(wordLength).arg(lowProbIndex).arg(highProbIndex);
+    }
+    else if (listType == LIST_TYPE_ALL_WORD_LENGTH)
+    {
+        table->host->connData.in >> wordLength;
+        wordList = QString("The %1s").arg(wordLength);
+    }
+
+    table->host->connData.in >> lexiconName >> cycleState >> tableTimerValMin;
 
     if (dbHandler->availableDatabases.contains(lexiconName))
     {
@@ -435,30 +454,55 @@ void UnscrambleGame::generateQuizArray()
         QTime timer;
         timer.start();
 
-        QSqlQuery query(QSqlDatabase::database(wordDbConName));
-        query.setForwardOnly(true);
-
-        query.prepare("SELECT probindices from wordlists where listname = ?");
-        query.bindValue(0, wordList);
-        query.exec();
-
         QByteArray indices;
-        while (query.next())
+        if (listType == LIST_TYPE_NAMED_LIST)
         {
-            indices = query.value(0).toByteArray();
-        }
 
-        //qDebug() << "generateQuizArray. Query executed. time=" << timer.elapsed() << indices.size();
+            QSqlQuery query(QSqlDatabase::database(wordDbConName));
+            query.setForwardOnly(true);
+
+            query.prepare("SELECT probindices from wordlists where listname = ?");
+            query.bindValue(0, wordList);
+            query.exec();
+
+            while (query.next())
+            {
+                indices = query.value(0).toByteArray();
+            }
+        }
+        else if (listType == LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH)
+        {  
+            lowProbIndex += (wordLength << 24);
+            highProbIndex += (wordLength << 24);    // this is the encoding we use for probability.
+
+            QDataStream stream(&indices, QIODevice::WriteOnly);
+            stream << (quint8)0 << wordLength << lowProbIndex << highProbIndex;
+
+            // TODO maybe it'll be more efficient to process numbers directly rather
+            // than packing into a QByteArray just to immediately unpack below!
+        }
+        else if (listType == LIST_TYPE_ALL_WORD_LENGTH)
+        {
+            QDataStream stream(&indices, QIODevice::WriteOnly);
+
+            lowProbIndex = 1 + (wordLength << 24);  // probability 1 is the first
+            if (wordLength >=2 && wordLength <= 15)
+                highProbIndex = dbHandler->lexiconMap.value(lexiconName).alphagramsPerLength[wordLength] + (wordLength << 24);
+
+            stream << (quint8)0 << wordLength << lowProbIndex << highProbIndex;
+            qDebug() << "all" << wordLength << lowProbIndex << highProbIndex;
+        }
 
         QDataStream stream(indices);
 
         quint8 type, length;
-        stream >> type >> length;
+        stream >> type >> length;   /*TODO remove length from the parameters */
         if (type == 0)
         {
             // a range of indices
             quint32 start, end;
             stream >> start >> end;
+            qDebug() << "Type0" << start << end;
             QVector <quint32> indexVector;
             getUniqueRandomNumbers(indexVector, start, end, end-start+1);
 
@@ -491,7 +535,9 @@ void UnscrambleGame::generateQuizArray()
         }
 
 
-       // qDebug() << "Generated quiz array, time=" << timer.elapsed() << quizArray;
+        qDebug() << "Generated quiz array, time=" << timer.elapsed();
+        qDebug() << " array size" << quizArray.size();
+        //qDebug() << quizArray;
 
     }
     else
@@ -522,6 +568,7 @@ void UnscrambleGame::prepareTableAlphagrams()
     gameSolutions.clear();
     unscrambleGameQuestions.clear();
     alphagramIndices.clear();
+    qDebug() << "here size" << quizIndex << quizArray.size();
     if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == quizArray.size())
     {
         quizArray = missedArray;		// copy missedArray to quizArray
@@ -547,7 +594,7 @@ void UnscrambleGame::prepareTableAlphagrams()
     for (quint8 i = 0; i < maxRacks; i++)
     {
         unscrambleGameQuestionData thisQuestionData;
-
+       // qDebug() << "qindex, size" << quizIndex << quizArray.size();
         if (quizIndex == quizArray.size())
         {
             thisQuestionData.alphagram = "";
@@ -569,12 +616,12 @@ void UnscrambleGame::prepareTableAlphagrams()
         {
             numRacksSeen++;
             quint32 index = quizArray.at(quizIndex);
-            //qDebug() << "indices" << index << quizIndex;
+          //  qDebug() << " indices" << index << quizIndex;
 
             query.bindValue(0, index);
             timer2.start();
             query.exec();
-            qDebug() << " singleAlpha" << timer2.restart();
+            //qDebug() << " singleAlpha" << timer2.restart();
             while (query.next())
             {
                 thisQuestionData.alphagram = query.value(0).toString();
@@ -588,7 +635,7 @@ void UnscrambleGame::prepareTableAlphagrams()
                     gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
                     numTotalSolutions++;
                 }
-             //   qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
+                //   qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
             }
             quizIndex++;
 
@@ -783,8 +830,8 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
     challenges.clear();
     QTime timer;
 
-//    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-//    query.exec("BEGIN TRANSACTION");
+    //    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
+    //    query.exec("BEGIN TRANSACTION");
     /*for (int j = 0; j < ListMaker::lexiconList.size(); j++)
     {
         for (int i = 2; i <= 15; i++)

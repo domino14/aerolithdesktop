@@ -121,6 +121,7 @@ private:
     quint16 currentTimerVal;
     quint16 tableTimerVal;
     quint8 countdownTimerVal;
+    quint8 listType;
     quint16 totalNumberQuestions;
     quint8 cycleState;
     quint16 numTotalSolutions;
@@ -137,7 +138,9 @@ private:
     quint16 quizIndex;
     QVector <alphagramInfo> *alphaInfo;
 
-    quint8 wordLength; // the word length of this list
+    quint8 wordLength; // the word length of this list , not used for "named list" type (see commonDefs.h for list types)
+    quint32 lowProbIndex, highProbIndex;    // not used for "named list" type
+
     bool thisTableSwitchoverToggle;
 
     quint16 numTotalRacks;

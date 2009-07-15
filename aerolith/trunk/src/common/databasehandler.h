@@ -46,16 +46,24 @@ struct LexiconInfo
     QString dawgFilename, dawgRFilename;
     Dawg dawg, reverseDawg;
     QSqlDatabase db;
+    QVector <int> alphagramsPerLength;
+    QList <double> fullChooseCombos;    // copied from Zyzzyva
+    QList<QList<double> > subChooseCombos; // ditto
+
     LexiconInfo(QString name, QString filename, QMap <unsigned char, int> d, QString df, QString drf)
     {
         lexiconName = name;
         wordsFilename = filename; letterDist = d;
         dawgFilename = df;
         dawgRFilename = drf;
+        alphagramsPerLength.resize(16);  // 0-15 index
     }
     LexiconInfo()
     {
+        alphagramsPerLength.resize(16);
     }
+    void resetLetterDistributionVariables();
+    double combinations(QString alphagram);
 
 };
 
@@ -100,7 +108,7 @@ private:
     QString alphagrammize(QString, LessThans lessThan);
     int fact(int n);
     int nCr(int n, int r);
-    int combinations(QString alphagram, QMap <unsigned char, int> letterDist);
+
     QMap <unsigned char, int> getEnglishDist();
     QMap <unsigned char, int> getSpanishDist();
     void updateDefinitions(QHash<QString, QString>&, int, QSqlDatabase& db);

@@ -845,31 +845,43 @@ void MainWindow::receivedPM(QString username, QString message)
 
 void MainWindow::createUnscrambleGameTable()
 {
+    writeHeaderData();
+    out << (quint8)CLIENT_NEW_TABLE;
+    out << (quint8)GAME_TYPE_UNSCRAMBLE;
+    out << (quint8)uiTable.playersSpinBox->value();
     if (uiTable.radioButtonOtherLists->isChecked() && uiTable.listWidgetTopLevelList->currentItem())
     {
-        writeHeaderData();
-        out << (quint8)CLIENT_NEW_TABLE;
-        out << (quint8)GAME_TYPE_UNSCRAMBLE;
-        out << (quint8)uiTable.playersSpinBox->value();
+
+        out << (quint8)LIST_TYPE_NAMED_LIST;
         out << uiTable.listWidgetTopLevelList->currentItem()->text();
-        out << uiMainWindow.comboBoxLexicon->currentText();
-
-        if (uiTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
-        else if (uiTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
-        //else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
-
-        out << (quint8)uiTable.timerSpinBox->value();
-        fixHeaderLength();
-        commsSocket->write(block);
     }
     else if (uiTable.radioButtonProbability->isChecked())
     {
+        if (!uiTable.checkBoxAll->isChecked())
+        {
+            out << (quint8)LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH;
+            if (uiTable.spinBoxProb2->value() <= uiTable.spinBoxProb1->value()) return;   // don't send any data, this table is invalid
 
-
-
-
+            out << (quint8)uiTable.spinBoxWL->value() <<
+                    (quint32)uiTable.spinBoxProb1->value() << (quint32)uiTable.spinBoxProb2->value();
+        }
+        else
+        {
+            out << (quint8)LIST_TYPE_ALL_WORD_LENGTH;
+            out << (quint8)uiTable.spinBoxWL->value();   // special values mean the entire range.
+        }
     }
 
+
+    out << uiMainWindow.comboBoxLexicon->currentText();
+
+    if (uiTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
+    else if (uiTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
+    //else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
+
+    out << (quint8)uiTable.timerSpinBox->value();
+    fixHeaderLength();
+    commsSocket->write(block);
 }
 
 void MainWindow::createBonusGameTable()
