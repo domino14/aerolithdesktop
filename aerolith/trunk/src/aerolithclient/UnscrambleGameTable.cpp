@@ -656,6 +656,8 @@ void UnscrambleGameTable::populateSolutionsTable()
     QBrush missedColorBrush;
     missedColorBrush.setColor(Qt::red);
     int numTotalSols = 0, numWrong = 0;
+    QTime time;
+    time.start();
     QSqlDatabase wordDb = dbHandler->lexiconMap.value(lexiconName).db;
     if (wordDb.isOpen())
     {
@@ -745,6 +747,8 @@ void UnscrambleGameTable::populateSolutionsTable()
     }
     else
         qDebug() << "Database is not open.";
+
+    qDebug() << "Time to populate sols" << time.elapsed();
 }
 
 void UnscrambleGameTable::alphagrammizeWords()

@@ -203,7 +203,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     lexInfo->dawg.readDawg("words/" + lexInfo->dawgFilename);
     lexInfo->reverseDawg.readDawg("words/" + lexInfo->dawgRFilename);
 
-
+    lexInfo->resetLetterDistributionVariables();
     emit setProgressMessage(lexiconName + ": Reading in dictionary.");
 
     QHash <QString, Alph> alphagramsHash;
@@ -272,7 +272,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
             QString alphagram = alphagrammize(word, lessThan);
             if (!alphagramsHash.contains(alphagram))
-                alphagramsHash.insert(alphagram, Alph(dummy, combinations(alphagram, lexInfo->letterDist), alphagram));
+                alphagramsHash.insert(alphagram, Alph(dummy, lexInfo->combinations(alphagram), alphagram));
 
             alphagramsHash[alphagram].words << word;
 
@@ -620,20 +620,6 @@ QString DatabaseHandler::alphagrammize(QString word, LessThans lessThan)
     return ret;
 }
 
-int DatabaseHandler::combinations(QString alphagram, QMap <unsigned char, int> letterDist)
-{
-    int temp = 1;
-    QMapIterator<unsigned char, int> i(letterDist);
-
-    while (i.hasNext())
-    {
-        i.next();
-        int ct = alphagram.count(QChar(i.key()));
-        if (ct > 0)
-            temp *= nCr(letterDist.value(i.key()), ct);
-    }
-    return temp;
-}
 
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
 {
@@ -648,7 +634,7 @@ QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
     dist.insert('P', 2); dist.insert('Q', 1); dist.insert('R', 6);
     dist.insert('S', 4); dist.insert('T', 6); dist.insert('U', 4);
     dist.insert('V', 2); dist.insert('W', 2); dist.insert('X', 1);
-    dist.insert('Y', 2); dist.insert('Z', 1);
+    dist.insert('Y', 2); dist.insert('Z', 1); dist.insert('?', 2);
     return dist;
 }
 
@@ -664,51 +650,126 @@ QMap <unsigned char, int> DatabaseHandler::getSpanishDist()
     dist.insert('P', 2); dist.insert('Q', 1); dist.insert('R', 5);
     dist.insert('S', 6); dist.insert('T', 4); dist.insert('U', 5);
     dist.insert('V', 1); dist.insert('X', 1); dist.insert('Y', 1);
-    dist.insert('Z', 1);
+    dist.insert('Z', 1); dist.insert('?', 2);
     return dist;
 }
+
 /*
-int main(int argc, char**argv)
+
+  ****************
+
+  */
+
+
+void LexiconInfo::resetLetterDistributionVariables()
 {
-    QCoreApplication app(argc, argv);
-    DatabaseHandler::createListDatabase();
+    int maxFrequency = 15;
 
+    int totalLetters = 0;
 
-    Dawg dawg;
-    dawg.readDawg("words/owl2-lwl.dwg");
-    qDebug() << dawg.findHooks("easting");
-    dawg.readDawg("words/owl2-lwl-r.dwg");
-    qDebug() << dawg.findHooks("gnitsae");
+    foreach (unsigned char c, letterDist.keys())
+    {
+        int frequency = letterDist.value(c);
+        totalLetters += frequency;
+        if (frequency > maxFrequency)
+            maxFrequency = frequency;
+    }
 
+    // Precalculate M choose N combinations - use doubles because the numbers
+    // get very large
+    double a = 1;
+    double r = 1;
+    for (int i = 0; i <= maxFrequency; ++i, ++r)
+    {
+        fullChooseCombos.append(a);
+        a *= (totalLetters + 1.0 - r) / r;
 
-    dawg.checkDawg("words/fise.txt");
-
-    dawg.readDawg("words/fise-r.dwg");
-    dawg.checkDawg("fiseSortedReversed.txt");
-
-    dawg.readDawg("words/owl2-lwl.dwg");
-    dawg.checkDawg("words/owl2-lwl.txt");
-    dawg.readDawg("words/owl2-lwl-r.dwg");
-    dawg.checkDawg("owl2-lwlReversed.txt");
-    dawg.readDawg("words/owl-lwl.dwg");
-    dawg.checkDawg("words/owl-lwl.txt");
-    dawg.readDawg("words/owl-lwl-r.dwg");
-    dawg.checkDawg("owl-lwlReversed.txt");
-
-    dawg.readDawg("words/volost.dwg");
-    dawg.checkDawg("words/volost.txt");
-    dawg.readDawg("words/volost-r.dwg");
-    dawg.checkDawg("volostr.txt");
-
-     dawg.readDawg("words/csw.dwg");
-    dawg.checkDawg("words/csw.txt");
-    dawg.readDawg("words/csw-r.dwg");
-    dawg.checkDawg("cswReversed.txt");
-
-
-
-
-    return app.exec();
+        QList<double> subList;
+        for (int j = 0; j <= maxFrequency; ++j)
+        {
+            if ((i == j) || (j == 0))
+                subList.append(1.0);
+            else if (i == 0)
+                subList.append(0.0);
+            else {
+                // XXX: For some reason this crashes on Linux when referencing
+                // the first value as subChooseCombos[i-1][j-1], so value() is
+                // used instead.  Weeeeird.
+                subList.append(subChooseCombos.value(i-1).value(j-1) +
+                               subChooseCombos.value(i-1).value(j));
+            }
+        }
+        subChooseCombos.append(subList);
+    }
 
 }
-*/
+
+double LexiconInfo::combinations(QString alphagram)
+{
+        // Build parallel arrays of letters with their counts, and the
+    // precalculated combinations based on the letter frequency
+    QList<unsigned char> letters;
+    QList<int> counts;
+    QList<const QList<double>*> combos;
+    for (int i = 0; i < alphagram.length(); ++i) {
+        unsigned char c = alphagram.at(i).toAscii();
+
+        bool foundLetter = false;
+        for (int j = 0; j < letters.size(); ++j) {
+            if (letters[j] == c) {
+                ++counts[j];
+                foundLetter = true;
+                break;
+            }
+        }
+
+        if (!foundLetter) {
+            letters.append(c);
+            counts.append(1);
+            combos.append(&subChooseCombos[ letterDist[c] ]);
+        }
+    }
+
+    // XXX: Generalize the following code to handle arbitrary number of blanks
+    double totalCombos = 0.0;
+    int numLetters = letters.size();
+
+    // Calculate the combinations with no blanks
+    double thisCombo = 1.0;
+    for (int i = 0; i < numLetters; ++i) {
+        thisCombo *= (*combos[i])[ counts[i] ];
+    }
+    totalCombos += thisCombo;
+
+    // Calculate the combinations with one blank
+    for (int i = 0; i < numLetters; ++i) {
+        --counts[i];
+        thisCombo = subChooseCombos[ letterDist['?'] ][1];
+        for (int j = 0; j < numLetters; ++j) {
+            thisCombo *= (*combos[j])[ counts[j] ];
+        }
+        totalCombos += thisCombo;
+        ++counts[i];
+    }
+
+    // Calculate the combinations with two blanks
+    for (int i = 0; i < numLetters; ++i) {
+        --counts[i];
+        for (int j = i; j < numLetters; ++j) {
+            if (!counts[j])
+                continue;
+            --counts[j];
+            thisCombo = subChooseCombos[ letterDist['?'] ][2];
+
+            for (int k = 0; k < numLetters; ++k) {
+                thisCombo *= (*combos[k])[ counts[k] ];
+            }
+            totalCombos += thisCombo;
+            ++counts[j];
+        }
+        ++counts[i];
+    }
+
+    return totalCombos;
+
+}
