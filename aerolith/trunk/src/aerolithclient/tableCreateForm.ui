@@ -473,6 +473,19 @@
     </property>
    </widget>
   </widget>
+  <widget class="QCheckBox" name="checkBoxStrictSpelling">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>230</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Strict spelling</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
