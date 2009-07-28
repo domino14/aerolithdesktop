@@ -568,8 +568,9 @@ void UnscrambleGameTable::enteredGuess()
     if (tableUi.lineEditSolution->text() == "") return;
 
     emit guessSubmitted(tableUi.lineEditSolution->text());
-    if (tableUi.lineEditSolution->text().length() == currentWordLength)
+
         tableUi.textEditGuesses->append(tableUi.lineEditSolution->text());
+
     tableUi.lineEditSolution->clear();
 
 }

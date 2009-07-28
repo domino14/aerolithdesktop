@@ -734,7 +734,7 @@ void MainWindow::serverDisconnection()
     uiLogin.loginPushButton->setText("Connect");
     //centralWidget->hide();
     loginDialog->show();
-    loginDialog->raise();
+    loginDialog->raise();   // crash at mainwindow.cpp:737???? crash at show!
     uiMainWindow.roomTableWidget->clearContents();
     uiMainWindow.roomTableWidget->setRowCount(0);
 
