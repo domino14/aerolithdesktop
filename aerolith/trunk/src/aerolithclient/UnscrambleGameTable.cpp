@@ -684,6 +684,7 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                 QString words;
                 int probability;
+                bool wrongAnswer = false;   // got this alphagram wrong?
                 while (alphagramQuery.next())   // should only be one result.
                 {
                     probability = alphagramQuery.value(1).toInt() & 0xFFFFFF;
@@ -722,6 +723,7 @@ void UnscrambleGameTable::populateSolutionsTable()
                                 QFont wordItemFont = wordItem->font();
                                 wordItemFont.setBold(true);
                                 wordItem->setFont(wordItemFont);
+                                wrongAnswer = true;
 
                             }
 
@@ -733,6 +735,15 @@ void UnscrambleGameTable::populateSolutionsTable()
 
 
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
+                if (wrongAnswer)
+                {
+                    tableAlphagramItem->setForeground(missedColorBrush);
+                    QFont alphFont = tableAlphagramItem->font();
+                    alphFont.setBold(true);
+
+                    tableAlphagramItem->setFont(alphFont);
+                }
+
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
                                                                   new QTableWidgetItem(QString::number(probability)));
 
