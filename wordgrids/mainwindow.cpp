@@ -29,6 +29,8 @@ const int letterDistSum = 98;
 
 QBrush brushUnsolved = QBrush(QColor(255, 200, 150));
 QBrush brushSolved = QBrush(QColor(155, 100, 0));
+QBrush brushBonusActive = QBrush(QColor(0, 255, 0));
+QBrush brushBonusInactive = QBrush(QColor(0, 60, 0));
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindowClass)
@@ -108,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(&scene, SIGNAL(sceneMouseClicked(double, double)), SLOT(sceneMouseClicked(double, double)));
     connect(&scene, SIGNAL(sceneMouseMoved(double, double)), SLOT(sceneMouseMoved(double, double)));
-
+    connect(&scene, SIGNAL(keyPressed(int)), SLOT(keyPressed(int)));
 
 }
 
@@ -160,10 +162,69 @@ void MainWindow::sceneMouseClicked(double x, double y)
     }
     switch (cornerState)
     {
+
+    case BONUS_TILE_SELECTED:
+        {
+            QGraphicsItem* item = scene.itemAt(x, y);
+            Tile* tile = dynamic_cast<Tile *>(item);
+            if (tile)
+            {
+                if (tile->getAddlAttribute() == 1)
+                {
+                    if (curselBonusTile)
+                    {
+                        /* if we clicked on the bonus area just reset this tile */
+                        curselBonusTile->setTileBrush(brushBonusActive);
+                        scene.update();
+                        cornerState = BOTH_CORNERS_OFF;
+                        break;
+                    }
+                }
+            }
+
+
+            if (curselBonusTile)
+            {
+
+                cornerState = BOTH_CORNERS_OFF;
+            }
+        }
+        break;
+
     case BOTH_CORNERS_OFF:
-        firstCorner->setVisible(true);
+        /* maybe i clicked on a RETINA tile */
+
+        //        if (x/curTileWidth >= -3 + boardWidth/2 && x/curTileWidth <= 2 + boardWidth/2 && int(y/curTileWidth) == -2)
+        //        {
+        //          //  cornerState = BONUS_TILE_SELECTED;
+        //            ui->textEdit->append(QString::number(x/curTileWidth));
+        //            break;
+        //        }
+
+        QGraphicsItem* item = scene.itemAt(x, y);
+        Tile* tile = dynamic_cast<Tile *>(item);
+        if (tile)
+        {
+            if (tile->getAddlAttribute() == 1)
+            {
+                //ui->textEdit->append(tile->getTileLetter());
+                foreach (Tile* t, bonusTiles)
+                {
+                    t->setTileBrush(brushBonusActive);
+                }
+
+                tile->setTileBrush(brushUnsolved);
+                curselBonusTile = tile;
+                cornerState = BONUS_TILE_SELECTED;
+                scene.update();
+                break; // bonus tile selected!
+            }
+        }
+
         x1 = qRound(x/curTileWidth);
         y1 = qRound(y/curTileWidth);
+        firstCorner->setVisible(true);
+
         if (x1 < 0) x1 = 0;
         if (y1 < 0) y1 = 0;
         if (x1 > boardWidth) x1 = boardWidth;
@@ -196,6 +257,11 @@ void MainWindow::sceneMouseClicked(double x, double y)
     //    ui->labelDebug->setText(debugStr);
 
 
+}
+
+void MainWindow::keyPressed(int keyCode)
+{
+    ui->textEdit->append("Key was pressed: " + QString::number(keyCode));
 }
 
 void MainWindow::tileMouseCornerClicked(int x, int y)
@@ -248,7 +314,7 @@ void MainWindow::possibleRectangleCheck()
     // QString debugStr = QString("%1 %2 %3 %4 %5").arg(x1).arg(y1).arg(x2).arg(y2).arg(letters);
     // ui->labelDebug->setText(debugStr);
 
-    letters = alphagrammize(letters);
+    letters = alphagrammize(letters.toUpper());
 
     /* look for this string in the db*/
 
@@ -275,6 +341,8 @@ void MainWindow::possibleRectangleCheck()
         }
         int thisScore = 0;
         int wordLength = letters.size();
+        /* handle special QU case */
+        if (letters.contains("Q")) wordLength--;    // Q only exists with U. this is a dirty hack.
         if (wordLength <= 15)
         {
             thisScore = scoresByLength[wordLength];
@@ -283,13 +351,16 @@ void MainWindow::possibleRectangleCheck()
         else
             thisScore = 400;
 
-
         scene.update();
-        ui->textEdit->append(QString("+%1 for %2-letter word!").
-                             arg(thisScore).arg(wordLength));
 
-        numSolvedLetters += wordLength;
-        curScore += thisScore;
+        if (wordLength != 2)
+        {
+            ui->textEdit->append(QString("+%1 for %2-letter word!").
+                                 arg(thisScore).arg(wordLength));
+
+            numSolvedLetters += wordLength;
+            curScore += thisScore;
+        }   /* do not count 2-letter words in score! */
         if (numSolvedLetters == boardWidth * boardHeight)
         {
             // cleared whole board
@@ -339,6 +410,12 @@ QString MainWindow::alphagrammize(QString word)
 void MainWindow::setTilesPos()
 {
     foreach (Tile* tile, tiles)
+    {
+
+        tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
+    }
+
+    foreach (Tile* tile, bonusTiles)
     {
 
         tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
@@ -397,11 +474,29 @@ void MainWindow::on_pushButtonNewGame_clicked()
         tile->deleteLater();
     tiles.clear();
 
+    foreach (Tile* tile, bonusTiles)
+        tile->deleteLater();
+
+    bonusTiles.clear();
 
 
     lastGridSize = gridSize;
     boardHeight = gridSize;
     boardWidth = gridSize;
+
+    /* add RETINA tiles */
+    QString bonus = "RETINA";
+    for (int i = 0; i < bonus.length(); i++)
+    {
+        Tile* tile = new Tile();
+        bonusTiles << tile;
+        scene.addItem(tile);
+        tile->setTileCoords(i-3 + boardWidth/2, -2);
+        tile->setWidth(curTileWidth, 1);
+        tile->setTileBrush(brushBonusActive);
+        tile->setTileLetter(QString(bonus[i]));
+        tile->setAddlAttribute(1);
+    }
 
     for (int j = 0; j < boardHeight; j++)
     {
@@ -429,8 +524,17 @@ void MainWindow::on_pushButtonNewGame_clicked()
             accum += letterDist[lettercounter];
             if (letter < accum) break;
         }
-        tile->setTileLetter(QString((char)lettercounter + 'A'));
-        thisRoundLetters << QString((char)lettercounter + 'A');
+        /* handle special Q case */
+        if ((char)lettercounter + 'A' == 'Q')
+        {
+            tile->setTileLetter("Qu");
+            thisRoundLetters << "Qu";
+        }
+        else
+        {
+            tile->setTileLetter(QString((char)lettercounter + 'A'));
+            thisRoundLetters << QString((char)lettercounter + 'A');
+        }
         tile->setTileBrush(brushUnsolved);
     }
 
@@ -475,6 +579,9 @@ void MainWindow::on_toolButtonMinusSize_clicked()
     foreach (Tile* tile, tiles)
         tile->setWidth(curTileWidth, 1);
 
+    foreach (Tile* tile, bonusTiles)
+        tile->setWidth(curTileWidth, 1);
+
     setTilesPos();
 }
 
@@ -485,6 +592,9 @@ void MainWindow::on_toolButtonPlusSize_clicked()
     foreach (Tile* tile, tiles)
         tile->setWidth(curTileWidth, 1);
 
+    foreach (Tile* tile, bonusTiles)
+        tile->setWidth(curTileWidth, 1);
+
     setTilesPos();
 }
 
@@ -492,6 +602,9 @@ MainWindow::~MainWindow()
 {
     delete ui;
     foreach (Tile* tile, tiles)
+        tile->deleteLater();
+
+    foreach (Tile* tile, bonusTiles)
         tile->deleteLater();
 
 
@@ -509,4 +622,10 @@ void WordgridsScene::mouseMoveEvent (QGraphicsSceneMouseEvent * mouseEvent )
 {
     emit sceneMouseMoved(mouseEvent->scenePos().x(), mouseEvent->scenePos().y());
     mouseEvent->ignore();
+}
+
+void WordgridsScene::keyPressEvent ( QKeyEvent * keyEvent )
+{
+    emit keyPressed(keyEvent->key());
+    keyEvent->ignore();
 }

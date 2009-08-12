@@ -35,6 +35,17 @@ Tile::Tile()
     width = 17;
     height = (double)width;
     //setFlag(QGraphicsItem::ItemIsMovable);
+    addlAttribute = 0;
+}
+
+int Tile::getAddlAttribute()
+{
+    return addlAttribute;
+}
+
+void Tile::setAddlAttribute(int a)
+{
+    addlAttribute = a;
 }
 
 int Tile::getWidth()
@@ -81,12 +92,20 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // Draw text
 
     int baseFontSize;
+    QString fontName = "Courier";
     if (width == height) baseFontSize = 0;
     else baseFontSize = 2;
+    /* figure out if there's a way to make the text skinny */
+    if (tileLetter.size() == 2)
+    {
+        baseFontSize-=18;
+        fontName = "Arial";
+    }
+
 #ifdef Q_WS_MAC
     QFont font("Courier New", width + 4 + baseFontSize, 75);
 #else
-    QFont font("Courier", width + baseFontSize, 100);
+    QFont font(fontName, width + baseFontSize, 100);
 #endif
     //	font.setStyleStrategy(QFont::PreferAntialias);
     painter->setFont(font);

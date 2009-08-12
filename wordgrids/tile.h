@@ -32,6 +32,8 @@ public:
     void setTileBrush(QBrush& b);
     void setForegroundPen(QPen& p);
     void setEdgePen(QPen& e);
+    int getAddlAttribute();
+    void setAddlAttribute(int a);
     QBrush getTileBrush();
     void setWidth(int w, double hscale);
     int getWidth();
@@ -43,7 +45,7 @@ public:
 private:
     int width;
     int height;
-
+    int addlAttribute;
 
     QBrush tileBrush;
     QPen foregroundPen;
