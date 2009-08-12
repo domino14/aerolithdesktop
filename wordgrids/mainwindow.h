@@ -31,9 +31,11 @@ class WordgridsScene : public QGraphicsScene
     Q_OBJECT
     void mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent );
     void mouseMoveEvent (QGraphicsSceneMouseEvent * mouseEvent );
+    void keyPressEvent ( QKeyEvent * keyEvent )  ;
 signals:
     void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
+    void keyPressed(int);
 };
 
 class MainWindow : public QMainWindow
@@ -49,12 +51,14 @@ public:
 private:
     enum CornerStates
     {
-        LEFT_CORNER_ON, BOTH_CORNERS_ON, BOTH_CORNERS_OFF
-            };
+        LEFT_CORNER_ON, BOTH_CORNERS_ON, BOTH_CORNERS_OFF, BONUS_TILE_SELECTED
+    };
 
     Ui::MainWindowClass *ui;
     WordgridsScene scene;
+    Tile* curselBonusTile;
     QVector <Tile*> tiles;
+    QVector <Tile*> bonusTiles;
     QGraphicsPixmapItem *firstCorner, *secondCorner;
     QGraphicsLineItem *line1, *line2, *line3, *line4;
     CornerStates cornerState;
@@ -84,6 +88,7 @@ private slots:
     void secPassed();
     void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
+    void keyPressed(int);
     void on_pushButtonNewGame_clicked();
     void on_pushButtonRetry_clicked();
     void on_pushButtonGiveUp_clicked();
