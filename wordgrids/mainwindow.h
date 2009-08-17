@@ -32,6 +32,7 @@ class WordgridsScene : public QGraphicsScene
     void mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent );
     void mouseMoveEvent (QGraphicsSceneMouseEvent * mouseEvent );
     void keyPressEvent ( QKeyEvent * keyEvent )  ;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* mouseEvent);
 signals:
     void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
@@ -57,6 +58,8 @@ private:
     Ui::MainWindowClass *ui;
     WordgridsScene scene;
     Tile* curselBonusTile;
+    Tile* requiredBonusTile;
+    bool bonusTilesAllowed;
     QVector <Tile*> tiles;
     QVector <Tile*> bonusTiles;
     QGraphicsPixmapItem *firstCorner, *secondCorner;
