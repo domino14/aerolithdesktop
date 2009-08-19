@@ -39,6 +39,7 @@
 #define LIST_TYPE_NAMED_LIST 2
 #define LIST_TYPE_MULTIPLE_INDICES 3
 #define LIST_TYPE_ALL_WORD_LENGTH 4
+#define LIST_TYPE_DAILY_CHALLENGE 5
 
 
 /* network packet headers */
