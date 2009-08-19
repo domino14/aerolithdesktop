@@ -85,10 +85,10 @@ private:
 
     //  static QVector<QVector <QVector<alphagramInfo> > > alphagramData;
 
-    enum WordListTypes
-    {
-        LIST_TYPE_DAILY_CHALLENGE, LIST_TYPE_REGULAR
-    };
+//    enum WordListTypes
+//    {
+//        LIST_TYPE_DAILY_CHALLENGE, LIST_TYPE_REGULAR
+//    };
 
     static QByteArray wordListDataToSend;
 

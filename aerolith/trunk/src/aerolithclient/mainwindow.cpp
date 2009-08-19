@@ -1441,9 +1441,11 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
         writeHeaderData();
         out << (quint8)CLIENT_NEW_TABLE;
         out << (quint8)GAME_TYPE_UNSCRAMBLE;
-        out << challengeAction->text(); // create a table
         out << (quint8)1; // 1 player
-        out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
+        out << (quint8)LIST_TYPE_DAILY_CHALLENGE;
+        out << challengeAction->text();
+        out << uiMainWindow.comboBoxLexicon->currentText(); // TODO this is kind of kludgy, should already know what lexicon
+                                                            // I'm on.
         out << (quint8)TABLE_TYPE_DAILY_CHALLENGES;
         out << (quint8)0;	// server should decide time for daily challenge
 

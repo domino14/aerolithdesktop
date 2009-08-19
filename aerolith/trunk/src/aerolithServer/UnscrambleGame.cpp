@@ -60,6 +60,10 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
         table->host->connData.in >> wordLength;
         wordList = QString("The %1s").arg(wordLength);
     }
+    else if (listType == LIST_TYPE_DAILY_CHALLENGE)
+    {
+        table->host->connData.in >> wordList;
+    }
 
     table->host->connData.in >> lexiconName >> cycleState >> tableTimerValMin;
 
@@ -830,18 +834,13 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
     challenges.clear();
     QTime timer;
 
-    //    QSqlQuery query(QSqlDatabase::database(WORD_DATABASE_NAME));
-    //    query.exec("BEGIN TRANSACTION");
-    /*for (int j = 0; j < ListMaker::lexiconList.size(); j++)
+     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
-        for (int i = 2; i <= 15; i++)
+        QSqlQuery query(dbHandler->lexiconMap.value(dbHandler->availableDatabases[i]).db);
+        query.exec("BEGIN TRANSACTION");
+        for (int j = 2; j <= 15; j++)
         {
-            challengeInfo tmpChallenge;
-            tmpChallenge.highScores = new QHash <QString, highScoreData>;
-
-            QString challengeName = QString("Today's " + ListMaker::lexiconList[j] + " %1s").arg(i);
-
-            query.exec(QString("SELECT numalphagrams from wordlists where listname = '" + ListMaker::lexiconList[j] + " %1s'").arg(i));
+            query.exec(QString("SELECT count(*) from alphagrams where length = %1").arg(j));
             int wordCount = 0;
             while (query.next())
             {
@@ -849,16 +848,19 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
             }
             if (wordCount != 0)
             {
-                getUniqueRandomNumbers(tmpChallenge.dbIndices, 1+(i<<24), wordCount+(i<<24), qMin(wordCount, 50));
-                qDebug() << "generated" + challengeName;
-                qDebug() << tmpChallenge.dbIndices;
-                tmpChallenge.wordLength = i;
+                challengeInfo tmpChallenge;
+                tmpChallenge.highScores = new QHash <QString, highScoreData>;
+                getUniqueRandomNumbers(tmpChallenge.dbIndices, 1 + (j << 24), wordCount+(j << 24), qMin(wordCount, 50));
+                tmpChallenge.wordLength = j;
+                QString challengeName = QString("Today's " + dbHandler->availableDatabases.at(i) + " %1s").arg(j);
                 challenges.insert(challengeName, tmpChallenge);
+                qDebug() << "Generated" << challengeName << tmpChallenge.dbIndices;
             }
+
         }
+        query.exec("END TRANSACTION");
     }
-    query.exec("END TRANSACTION");
-*/ // TODO FIX
+     qDebug() << "Generated daily challenges!";
 }
 
 
