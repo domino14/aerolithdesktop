@@ -13,8 +13,11 @@ MainWindow::MainWindow(QWidget *parent)
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);
 
-    cardTop = new Flashcard(cardSep, cardSep, cardWidth, cardHeight);
-    cardBottom = new Flashcard(cardSep, cardSep *2 + cardHeight, cardWidth, cardHeight);
+    cardTop = new Flashcard(0, 0, cardWidth, cardHeight);
+    cardBottom = new Flashcard(0, 0, cardWidth, cardHeight);
+
+    cardTop->setPos(cardSep, cardSep);
+    cardBottom->setPos(cardSep, cardSep*2 + cardHeight);
 
     ui->graphicsView->setSceneRect(0, 0, cardWidth, cardSep * 2 + cardHeight * 2);
 
@@ -71,6 +74,7 @@ void MainWindow::on_toolButtonAddPicture_clicked()
 
 void MainWindow::on_toolButtonAddText_clicked()
 {
+    qDebug() << "Here" << cardBottom->scenePos() << cardTop->scenePos();
     QString text = QInputDialog::getText(this, "Type in text", "Type in text");
     if (text.size() != 0)
     {

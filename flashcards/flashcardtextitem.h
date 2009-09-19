@@ -27,6 +27,11 @@ protected:
 private:
     ResizeHandle* rh;
 
+private slots:
+    void brHandleMoved(QPointF);
+    void tlHandleMoved(QPointF);
+    void refreshHandles();
+
 };
 
 #endif // FLASHCARDTEXTITEM_H

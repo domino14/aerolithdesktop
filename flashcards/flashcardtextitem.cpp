@@ -8,6 +8,11 @@
      setFlag(QGraphicsItem::ItemIsSelectable);
 
      rh = new ResizeHandle(this);
+
+     connect(rh, SIGNAL(movedBRHandle(QPointF)), this, SLOT(brHandleMoved(QPointF)));
+     connect(rh, SIGNAL(movedTLHandle(QPointF)), this, SLOT(tlHandleMoved(QPointF)));
+
+     connect(rh, SIGNAL(stoppedMovingHandles()), this, SLOT(refreshHandles()));
  }
 
  QVariant FlashcardTextItem::itemChange(GraphicsItemChange change,
@@ -50,4 +55,25 @@ void FlashcardTextItem::setText(QString text)
 
     rh->moveHandles(this->boundingRect());
 
+}
+
+void FlashcardTextItem::brHandleMoved(QPointF pos)
+{
+    QPointF mapped = mapFromItem(rh->brHandle, pos);
+    prepareGeometryChange();
+    setTextWidth(qAbs(mapped.x()));
+    update();
+}
+
+void FlashcardTextItem::tlHandleMoved(QPointF pos)
+{
+    QPointF mapped = mapFromItem(rh->tlHandle, pos);
+    prepareGeometryChange();
+    setTextWidth(qAbs(this->boundingRect().width() - mapped.x()));
+}
+
+void FlashcardTextItem::refreshHandles()
+{
+    qDebug() << this->boundingRect();
+    rh->moveHandles(this->boundingRect());
 }
