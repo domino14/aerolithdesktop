@@ -12,32 +12,17 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);
-    cardTop = new QGraphicsRectItem(cardSep, cardSep, cardWidth, cardHeight);
-    cardBottom = new QGraphicsRectItem(cardSep, cardSep *2 + cardHeight, cardWidth, cardHeight);
 
-    textTop = new FlashcardTextItem(cardTop, scene);
-    textBottom = new FlashcardTextItem(cardBottom, scene);
-
-    gfxTop = new QGraphicsPixmapItem(cardTop, scene);
-    gfxBottom = new QGraphicsPixmapItem(cardBottom, scene);
-
-//    textTop->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsFocusable);
-//    textBottom->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsFocusable);
-
-    gfxTop->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
-    gfxBottom->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+    cardTop = new Flashcard(cardSep, cardSep, cardWidth, cardHeight);
+    cardBottom = new Flashcard(cardSep, cardSep *2 + cardHeight, cardWidth, cardHeight);
 
     ui->graphicsView->setSceneRect(0, 0, cardWidth, cardSep * 2 + cardHeight * 2);
 
-    textTop->setPos(cardSep, cardSep);
-    textBottom->setPos(cardSep, cardSep + cardSep + cardHeight);
-    textTop->setTextWidth(cardWidth);
-    textBottom->setTextWidth(cardWidth);
     scene->addItem(cardTop);
     scene->addItem(cardBottom);
 
-
 }
+
 
 
 void MainWindow::on_pushButtonStartQuiz_clicked()
@@ -49,40 +34,53 @@ void MainWindow::on_pushButtonAddCard_clicked()
     ui->stackedWidget->setCurrentIndex(2);
 }
 
-void MainWindow::on_toolButtonAddTopPic_clicked()
+void MainWindow::on_toolButtonAddPicture_clicked()
 {
-    addPic(gfxTop);
-    gfxTop->setPos(cardSep, cardSep);
 
-}
-
-void MainWindow::on_toolButtonAddBottomPic_clicked()
-{
-    addPic(gfxBottom);
-
-    gfxBottom->setPos(cardSep, cardSep*2 + cardHeight);
-}
-
-void MainWindow::addPic(QGraphicsPixmapItem* pixItem)
-{
     QString filename = QFileDialog::getOpenFileName(this, "Select a picture file");
     QPixmap pix(filename);
-    pixItem->setPixmap(pix);
-    QSize picSize = pix.size();
-
-    double beforeWidth = picSize.width();
-
-    if (picSize.width() > cardWidth || picSize.height() > cardHeight)
+    double scaleFactor = 1;
+    if (!pix.isNull())
     {
-        picSize.scale(cardWidth, cardHeight, Qt::KeepAspectRatio);
+        QSize picSize = pix.size();
 
-        qDebug() << "Scaled:"<< picSize.width() << picSize.height();
+        double beforeWidth = picSize.width();
 
-        double scaleFactor = (double)picSize.width() / beforeWidth;
-        qDebug() << "Scalefactor" << scaleFactor;
-        pixItem->scale(scaleFactor, scaleFactor);
+        if (picSize.width() > cardWidth || picSize.height() > cardHeight)
+        {
+            picSize.scale(cardWidth, cardHeight, Qt::KeepAspectRatio);
+
+            qDebug() << "Scaled:"<< picSize.width() << picSize.height();
+
+            scaleFactor = (double)picSize.width() / beforeWidth;
+            qDebug() << "Scalefactor" << scaleFactor;
+        }
+
+    }
+    else return;
+
+
+
+
+
+    if (ui->radioButtonBottomCard->isChecked())
+        cardBottom->addPicture(pix, scaleFactor);
+    else if (ui->radioButtonTopCard->isChecked())
+        cardTop->addPicture(pix, scaleFactor);
+}
+
+void MainWindow::on_toolButtonAddText_clicked()
+{
+    QString text = QInputDialog::getText(this, "Type in text", "Type in text");
+    if (text.size() != 0)
+    {
+        if (ui->radioButtonBottomCard->isChecked())
+            cardBottom->addText(text);
+        else if (ui->radioButtonTopCard->isChecked())
+            cardTop->addText(text);
     }
 }
+
 
 MainWindow::~MainWindow()
 {

@@ -9,8 +9,14 @@ TARGET = FlashCards
 TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \
-    flashcardtextitem.cpp
+    flashcardtextitem.cpp \
+    flashcard.cpp \
+    flashcardpictureitem.cpp \
+    resizehandle.cpp
 HEADERS += mainwindow.h \
-    flashcardtextitem.h
+    flashcardtextitem.h \
+    flashcard.h \
+    flashcardpictureitem.h \
+    resizehandle.h
 FORMS += mainwindow.ui \
     newCardDialog.ui

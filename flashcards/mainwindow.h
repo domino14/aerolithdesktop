@@ -4,7 +4,7 @@
 #include <QtGui/QMainWindow>
 #include <QtGui>
 
-#include "flashcardtextitem.h"
+#include "flashcard.h"
 
 namespace Ui
 {
@@ -23,20 +23,17 @@ public:
 private:
     Ui::MainWindow *ui;
     QGraphicsScene *scene;
-    QGraphicsRectItem* cardTop;
-    QGraphicsRectItem* cardBottom;
-    FlashcardTextItem* textTop;
-    FlashcardTextItem* textBottom;
-    QGraphicsPixmapItem* gfxTop;
-    QGraphicsPixmapItem* gfxBottom;
+    Flashcard* cardTop;
+    Flashcard* cardBottom;
+
 
     void addPic(QGraphicsPixmapItem*);
 private slots:
     void on_pushButtonStartQuiz_clicked();
     void on_pushButtonAddCard_clicked();
 
-    void on_toolButtonAddBottomPic_clicked();
-    void on_toolButtonAddTopPic_clicked();
+    void on_toolButtonAddPicture_clicked();
+    void on_toolButtonAddText_clicked();
 };
 
 #endif // MAINWINDOW_H
