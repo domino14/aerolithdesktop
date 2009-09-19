@@ -2,6 +2,8 @@
 
 Flashcard::Flashcard(qreal x, qreal y, qreal width, qreal height) : QGraphicsRectItem(x, y, width, height)
 {
+    qDebug() << "Mypos" << this->pos();
+    qDebug() << "Myscenepos" << this->scenePos();
     for (int i = 0; i < MAX_TEXT_ITEMS; i++)
     {
         textItems[i] = new FlashcardTextItem(this);
@@ -20,6 +22,8 @@ Flashcard::Flashcard(qreal x, qreal y, qreal width, qreal height) : QGraphicsRec
 
 void Flashcard::addText(QString text)
 {
+        qDebug() << "Mypos" << this->pos();
+    qDebug() << "Myscenepos" << this->scenePos();
     int openSlot = -1;
     for (int i = 0; i < MAX_TEXT_ITEMS; i++)
     {
