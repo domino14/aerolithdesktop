@@ -20,6 +20,8 @@
 #include <QDateTime>
 
 #define BONUS_TURNOFF_TILES 16
+#define MAXIMUM_LENGTH_HINTS 15
+#define MINIMUM_LENGTH_HINTS 7
 int scoresByLength[16] =
 { 0, 0, 4, 9, 16, 25, 49, 64, 81, 100, 121, 169, 196, 225, 256, 289 };
 /*0  1  2  3  4    5   6   7   8    9   10   11   12   13   14   15*/
@@ -33,8 +35,10 @@ QBrush brushSolved = QBrush(QColor(155, 100, 0));
 QBrush brushBonusActive = QBrush(QColor(0, 255, 0));
 QBrush brushBonusInactive = QBrush(QColor(0, 60, 0));
 
+
+
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindowClass)
+        : QMainWindow(parent), ui(new Ui::MainWindowClass)
 {
     ui->setupUi(this);
     ui->graphicsView->setScene(&scene);
@@ -102,9 +106,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->textEdit->document()->setMaximumBlockCount(500);
     connect(&gameTimer, SIGNAL(timeout()), SLOT(secPassed()));
 
-    wordDb = QSqlDatabase::addDatabase("QSQLITE");
-    wordDb.setDatabaseName("OWL2+LWL.db");
-    wordDb.open();
     gameGoing = false;
     numSolvedLetters = 0;
     lastGridSize = 10;
@@ -115,6 +116,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     bonusTilesAllowed = false;
 
+    wordStructure = new WordStructure(this);
+    loadedWordStructure = false;
+    connect(wordStructure, SIGNAL(finishedLoadingWordStructure()), this, SLOT(finishedLoadingWordStructure()));
+    wordStructure->loadWordStructure();
+
+    ui->textEdit->append("Please wait for word structure to load...");
 }
 
 void MainWindow::sceneMouseMoved(double x, double y)
@@ -224,45 +231,46 @@ void MainWindow::sceneMouseClicked(double x, double y)
         break;
 
     case BOTH_CORNERS_OFF:
-
-        QGraphicsItem* item = scene.itemAt(x, y);
-        Tile* tile = dynamic_cast<Tile *>(item);
-        if (tile)
         {
-            if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
+            QGraphicsItem* item = scene.itemAt(x, y);
+            Tile* tile = dynamic_cast<Tile *>(item);
+            if (tile)
             {
-                foreach (Tile* t, bonusTiles)
+                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
                 {
-                    t->setTileBrush(brushBonusActive);
+                    foreach (Tile* t, bonusTiles)
+                    {
+                        t->setTileBrush(brushBonusActive);
+                    }
+
+                    tile->setTileBrush(brushUnsolved);
+                    curselBonusTile = tile;
+                    cornerState = BONUS_TILE_SELECTED;
+
+                    if (requiredBonusTile)
+                    {
+                        requiredBonusTile->setTileLetter("");
+                        requiredBonusTile->setTileBrush(brushSolved);
+                        requiredBonusTile = NULL;
+                    }
+
+                    scene.update();
+                    break; // bonus tile selected!
                 }
-
-                tile->setTileBrush(brushUnsolved);
-                curselBonusTile = tile;
-                cornerState = BONUS_TILE_SELECTED;
-
-                if (requiredBonusTile)
-                {
-                    requiredBonusTile->setTileLetter("");
-                    requiredBonusTile->setTileBrush(brushSolved);
-                    requiredBonusTile = NULL;
-                }
-
-                scene.update();
-                break; // bonus tile selected!
             }
+
+            x1 = qRound(x/curTileWidth);
+            y1 = qRound(y/curTileWidth);
+            firstCorner->setVisible(true);
+
+            if (x1 < 0) x1 = 0;
+            if (y1 < 0) y1 = 0;
+            if (x1 > boardWidth) x1 = boardWidth;
+            if (y1 > boardHeight) y1 = boardHeight;
+            firstCorner->setPos(x1*curTileWidth - crossHairsWidth/2, y1*curTileWidth - crossHairsWidth/2);
+            cornerState = LEFT_CORNER_ON;
+            break;
         }
-
-        x1 = qRound(x/curTileWidth);
-        y1 = qRound(y/curTileWidth);
-        firstCorner->setVisible(true);
-
-        if (x1 < 0) x1 = 0;
-        if (y1 < 0) y1 = 0;
-        if (x1 > boardWidth) x1 = boardWidth;
-        if (y1 > boardHeight) y1 = boardHeight;
-        firstCorner->setPos(x1*curTileWidth - crossHairsWidth/2, y1*curTileWidth - crossHairsWidth/2);
-        cornerState = LEFT_CORNER_ON;
-        break;
     case LEFT_CORNER_ON:
         x2 = qRound(x/curTileWidth);
         y2 = qRound(y/curTileWidth);
@@ -350,17 +358,10 @@ void MainWindow::possibleRectangleCheck()
 
     /* look for this string in the db*/
 
-    QSqlQuery query;
-    query.exec("BEGIN TRANSACTION");
-    query.prepare("SELECT words from alphagrams where alphagram = ?");
-    query.addBindValue(letters);
-    query.exec();
-
-    int numResults = 0;
-    while (query.next())
+    if (wordStructure->wordStructure.contains(letters))
     {
-        numResults++;
-        ui->listWidget->insertItem(0, query.value(0).toString());
+        QString answers = wordStructure->wordStructure.value(letters);
+        ui->listWidget->insertItem(0, answers);
         for (int j = qMin(y1, y2); j < qMax(y1, y2); j++)
         {
             for (int i = qMin(x1, x2); i < qMax(x1, x2); i++)
@@ -369,6 +370,7 @@ void MainWindow::possibleRectangleCheck()
                 int index = j*boardWidth + i;
                 tiles.at(index)->setTileLetter("");
                 tiles.at(index)->setTileBrush(brushSolved);
+                simpleGridRep[i][j] = ' ';
             }
         }
         int thisScore = 0;
@@ -438,23 +440,20 @@ void MainWindow::possibleRectangleCheck()
         }
 
 
-
-
         ui->lcdNumberScore->display(curScore);
 
         scene.update();
+        generateFindList();
 
     }
-
-    if (numResults > 1)
-        ui->listWidget->addItem("ERROR!!!!!!!");
-    else if (numResults == 0)
+    else
     {
         timerSecs -= 10;
         ui->textEdit->append("<font color=red>10-second penalty!</font>");
     }
 
-    query.exec("END TRANSACTION");
+
+
 
 }
 
@@ -502,6 +501,7 @@ void MainWindow::on_pushButtonGiveUp_clicked()
 
 void MainWindow::on_pushButtonRetry_clicked()
 {
+    if (!loadedWordStructure) return;
     int i = 0;
     foreach (Tile* tile, tiles)
     {
@@ -527,8 +527,10 @@ void MainWindow::on_pushButtonRetry_clicked()
 
 void MainWindow::on_pushButtonNewGame_clicked()
 {
+    if (!loadedWordStructure) return;
     bool ok;
-    int gridSize = QInputDialog::getInteger(this, "Grid size?", "Please select a grid size", lastGridSize, 2, 20, 1, &ok);
+    int gridSize = QInputDialog::getInteger(this, "Grid size?", "Please select a grid size", lastGridSize,
+                                            MIN_GRID_SIZE, MAX_GRID_SIZE, 1, &ok);
 
     if (!ok) return;
 
@@ -585,7 +587,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
     }
     setTilesPos();
 
-
+    int index = 0;
     foreach (Tile* tile, tiles)
     {
         int letter = qrand()%letterDistSum;
@@ -608,6 +610,20 @@ void MainWindow::on_pushButtonNewGame_clicked()
             thisRoundLetters << QString((char)lettercounter + 'A');
         }
         tile->setTileBrush(brushUnsolved);
+        int x = index % boardWidth;
+        int y = index / boardWidth;
+        simpleGridRep[x][y] = (char)lettercounter + 'A';
+        index++;
+    }
+
+    for (int j = 0; j < boardHeight; j++)
+    {
+        QString line;
+        for (int i = 0; i < boardWidth; i++)
+        {
+            line += simpleGridRep[i][j];
+        }
+        qDebug() << line;
     }
 
     ui->lcdNumber->display(timerSecs);
@@ -621,7 +637,12 @@ void MainWindow::on_pushButtonNewGame_clicked()
 
     for (int i = 0; i < 16; i++)
         solvedWordsByLength[i] = 0;
+
+    generateFindList();
+
     //    scene.update();
+
+
 }
 
 void MainWindow::secPassed()
@@ -682,6 +703,101 @@ MainWindow::~MainWindow()
 
 
 }
+
+void MainWindow::generateFindList()
+{
+    QTime t;
+    t.start();
+    /* here generate all possible rectangles with words of certain sizes */
+
+    QSet <QString>alphaSet;
+    for (int i = 0; i < lastGridSize; i++)
+    {
+        for (int j = 0; j < lastGridSize; j++)
+        {
+            // qDebug() << "i j" << i << j;
+            generateSingleFindList(MINIMUM_LENGTH_HINTS, MAXIMUM_LENGTH_HINTS, 0, i, j, i, j, false, "", alphaSet);
+        }
+    }
+    qDebug() << "Time:" << t.elapsed();
+
+    ui->listWidgetWordsToFind->clear();
+
+    foreach (QString alph, alphaSet)
+    {
+        if (wordStructure->wordStructure.contains(alph))
+        {
+
+            ui->listWidgetWordsToFind->insertItem(0, wordStructure->wordStructure.value(alph));
+
+        }
+    }
+}
+
+void MainWindow::generateSingleFindList(int minLength, int maxLength, int lengthSoFar,
+                                        int TLi, int TLj, int BRi, int BRj, bool right, QString curStr, QSet<QString>& alphaSet)
+{
+    //
+    //    lengthSoFar++;
+    //    if (lengthSoFar > maxLength) return;
+
+    if (right)
+    {
+        // we went right
+        for (int j = TLj; j <= BRj; j++)  // add the column from BRi, TLj down to BRi, BRj
+        {
+            char letter = simpleGridRep[BRi][j];
+            if (letter != ' ')
+            {
+                lengthSoFar++;
+                curStr += letter;
+            }
+            if (letter == 'Q')
+            {
+                // special case, handle QU
+                lengthSoFar++;
+                curStr += 'U';
+            }
+        }
+    }
+    else
+    {
+        // we went down
+        for (int i = TLi; i <= BRi; i++)    // add the row from TLi, BRj to BRi, BRj
+        {
+            char letter = simpleGridRep[i][BRj];
+            if (letter != ' ')
+            {
+                lengthSoFar++;
+                curStr += letter;
+            }
+            if (letter == 'Q')
+            {
+                // special case, handle QU
+                lengthSoFar++;
+                curStr += 'U';
+            }
+        }
+    }
+
+    if (lengthSoFar > maxLength) return;
+
+    if (lengthSoFar >= minLength)
+    {
+        //qDebug() << curStr;
+        alphaSet.insert(alphagrammize(curStr));
+
+    }
+    if (BRi+1 < lastGridSize) generateSingleFindList(minLength, maxLength, lengthSoFar, TLi, TLj, BRi+1, BRj, true, curStr, alphaSet);
+    if (BRj+1 < lastGridSize) generateSingleFindList(minLength, maxLength, lengthSoFar, TLi, TLj, BRi, BRj+1, false, curStr, alphaSet);
+}
+
+void MainWindow::finishedLoadingWordStructure()
+{
+    loadedWordStructure = true;
+    ui->textEdit->append("Loaded word structure! You may begin playing.");
+}
+
 /***********************/
 
 void WordgridsScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* mouseEvent)

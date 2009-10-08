@@ -19,8 +19,10 @@
 
 #include <QtGui/QMainWindow>
 #include <QtGui>
+#include <QtCore>
 #include "Tile.h"
-#include <QtSql>
+
+#include "wordstructure.h"
 namespace Ui
 {
     class MainWindowClass;
@@ -38,6 +40,9 @@ signals:
     void sceneMouseMoved(double, double);
     void keyPressed(int);
 };
+
+#define MIN_GRID_SIZE 3
+#define MAX_GRID_SIZE 20
 
 class MainWindow : public QMainWindow
 {
@@ -71,7 +76,8 @@ private:
     int timerSecs, lastTimerSecs;
     int curTileWidth;
     int curScore;
-    QSqlDatabase wordDb;
+
+    WordStructure* wordStructure;
 
     bool gameGoing;
     void possibleRectangleCheck();
@@ -85,6 +91,12 @@ private:
     int numSolvedLetters;
     int lastGridSize;
     int solvedWordsByLength[16];
+    char simpleGridRep[MAX_GRID_SIZE][MAX_GRID_SIZE];
+
+    void generateFindList();
+    void generateSingleFindList(int minLength, int maxLength, int lengthSoFar, int, int, int, int, bool,
+                                QString curStr, QSet <QString>&);
+    bool loadedWordStructure;
 public slots:
     void tileMouseCornerClicked(int, int);
 private slots:
@@ -98,6 +110,8 @@ private slots:
 
     void on_toolButtonMinusSize_clicked();
     void on_toolButtonPlusSize_clicked();
+    void finishedLoadingWordStructure();
+
 };
 
 #endif // MAINWINDOW_H
