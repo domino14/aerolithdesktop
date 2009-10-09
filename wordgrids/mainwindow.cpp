@@ -34,9 +34,18 @@ QBrush brushBonusActive = QBrush(QColor(0, 255, 0));
 QBrush brushBonusInactive = QBrush(QColor(0, 60, 0));
 
 
+bool isPerfectSquare(int n)
+{
+    // Returns true if n is a perfect square
+    int i = 0;
+    while (i * i < n) i++;
+    return i * i == n;
+} // isPerfectSquare
+
+
 
 MainWindow::MainWindow(QWidget *parent)
-        : QMainWindow(parent), ui(new Ui::MainWindowClass)
+    : QMainWindow(parent), ui(new Ui::MainWindowClass)
 {
     ui->setupUi(this);
     ui->graphicsView->setScene(&scene);
@@ -121,7 +130,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->textEdit->append("Please wait for word structure to load...");
 
+
+    shouldLoadNextNewGame = false;
+
+
 }
+
 
 void MainWindow::sceneMouseMoved(double x, double y)
 {
@@ -505,50 +519,66 @@ void MainWindow::on_pushButtonGiveUp_clicked()
 
 void MainWindow::on_pushButtonRetry_clicked()
 {
-    if (!loadedWordStructure) return;
-
-    bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
-    minLengthHints = ui->spinBoxMinLengthGen->value();
-    maxLengthHints = ui->spinBoxMaxLengthGen->value();
-
-    int i = 0;
-    foreach (Tile* tile, tiles)
-    {
-        tile->setTileLetter(thisRoundLetters.at(i));
-        tile->setTileBrush(brushUnsolved);
-        i++;
-    }
-    timerSecs = lastTimerSecs;
-    ui->lcdNumber->display(timerSecs);
-    ui->lcdNumberScore->display(0);
-    gameTimer.start();
-    ui->listWidget->clear();
-    gameGoing = true;
-    curScore = 0;
-    numSolvedLetters = 0;
-    ui->textEdit->append("---------------------------------------------");
-
-    for (int i = 0; i < 16; i++)
-        solvedWordsByLength[i] = 0;
-
-    generateFindList();
-    scene.update();
+    shouldLoadNextNewGame = true;
+    gameToLoad = currentGameCode;
+    ui->pushButtonNewGame->animateClick();
+//
+//    if (!loadedWordStructure) return;
+//
+//    bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
+//    minLengthHints = ui->spinBoxMinLengthGen->value();
+//    maxLengthHints = ui->spinBoxMaxLengthGen->value();
+//
+//    int i = 0;
+//    foreach (Tile* tile, tiles)
+//    {
+//        tile->setTileLetter(thisRoundLetters.at(i));
+//        tile->setTileBrush(brushUnsolved);
+//        i++;
+//    }
+//    timerSecs = lastTimerSecs;
+//    ui->lcdNumber->display(timerSecs);
+//    ui->lcdNumberScore->display(0);
+//    gameTimer.start();
+//    ui->listWidget->clear();
+//    gameGoing = true;
+//    curScore = 0;
+//    numSolvedLetters = 0;
+//    ui->textEdit->append("---------------------------------------------");
+//
+//    for (int i = 0; i < 16; i++)
+//        solvedWordsByLength[i] = 0;
+//
+//    generateFindList();
+//    scene.update();
 }
 
 void MainWindow::on_pushButtonNewGame_clicked()
 {
     if (!loadedWordStructure) return;
 
+
     bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
     minLengthHints = ui->spinBoxMinLengthGen->value();
     maxLengthHints = ui->spinBoxMaxLengthGen->value();
 
 
+
+    int gridSize = 0;
     bool ok;
-    int gridSize = QInputDialog::getInteger(this, "Grid size?", "Please select a grid size", lastGridSize,
+    if (!shouldLoadNextNewGame)
+    {
+
+
+        gridSize = QInputDialog::getInteger(this, "Grid size?", "Please select a grid size", lastGridSize,
                                             MIN_GRID_SIZE, MAX_GRID_SIZE, 1, &ok);
 
-    if (!ok) return;
+        if (!ok) return;
+    }
+    else
+    {
+        gridSize = sqrt(gameToLoad.length());
+    }
 
     timerSecs = QInputDialog::getInteger(this, "Timer?", "Please select desired timer (seconds)",
                                          gridSize*gridSize*3, 1, 5000, 1, &ok);
@@ -604,33 +634,67 @@ void MainWindow::on_pushButtonNewGame_clicked()
     setTilesPos();
 
     int index = 0;
-    foreach (Tile* tile, tiles)
+
+    if (!shouldLoadNextNewGame)
     {
-        int letter = qrand()%letterDistSum;
-        int accum = 0;
-        int lettercounter;
-        for (lettercounter = 0; lettercounter < 26; lettercounter++)
+        currentGameCode = "";
+        foreach (Tile* tile, tiles)
         {
-            accum += letterDist[lettercounter];
-            if (letter < accum) break;
+            int letter = qrand()%letterDistSum;
+            int accum = 0;
+            int lettercounter;
+            for (lettercounter = 0; lettercounter < 26; lettercounter++)
+            {
+                accum += letterDist[lettercounter];
+                if (letter < accum) break;
+            }
+            /* handle special Q case */
+            if ((char)lettercounter + 'A' == 'Q')
+            {
+                tile->setTileLetter("Qu");
+                thisRoundLetters << "Qu";
+            }
+            else
+            {
+                tile->setTileLetter(QString((char)lettercounter + 'A'));
+                thisRoundLetters << QString((char)lettercounter + 'A');
+            }
+            currentGameCode += ((char)lettercounter + 'A');
+            tile->setTileBrush(brushUnsolved);
+            int x = index % boardWidth;
+            int y = index / boardWidth;
+            simpleGridRep[x][y] = (char)lettercounter + 'A';
+            index++;
         }
-        /* handle special Q case */
-        if ((char)lettercounter + 'A' == 'Q')
-        {
-            tile->setTileLetter("Qu");
-            thisRoundLetters << "Qu";
-        }
-        else
-        {
-            tile->setTileLetter(QString((char)lettercounter + 'A'));
-            thisRoundLetters << QString((char)lettercounter + 'A');
-        }
-        tile->setTileBrush(brushUnsolved);
-        int x = index % boardWidth;
-        int y = index / boardWidth;
-        simpleGridRep[x][y] = (char)lettercounter + 'A';
-        index++;
+
     }
+    else
+    {
+
+        foreach (Tile* tile, tiles)
+        {
+            if (gameToLoad[index] == 'Q')
+            {
+                tile->setTileLetter("Qu");
+                thisRoundLetters << "Qu";
+            }
+            else
+            {
+                tile->setTileLetter(QString(gameToLoad[index]));
+                thisRoundLetters << QString(gameToLoad[index]);
+            }
+            tile->setTileBrush(brushUnsolved);
+            int x = index % boardWidth;
+            int y = index / boardWidth;
+            simpleGridRep[x][y] = gameToLoad[index].toAscii();
+            index++;
+        }
+
+        shouldLoadNextNewGame = false;
+        currentGameCode = gameToLoad;
+    }
+
+
 
     for (int j = 0; j < boardHeight; j++)
     {
@@ -726,6 +790,7 @@ void MainWindow::generateFindList()
     t.start();
     /* here generate all possible rectangles with words of certain sizes */
 
+
     QSet <QString>alphaSet;
     for (int i = 0; i < lastGridSize; i++)
     {
@@ -736,6 +801,8 @@ void MainWindow::generateFindList()
         }
     }
     qDebug() << "Rectangle generation:" << t.elapsed();
+
+   // ui->textEdit->append(QString("lgs %1 %2").arg(lastGridSize).arg(alphaSet.size()));
 
     ui->listWidgetWordsToFind->clear();
 
@@ -803,6 +870,30 @@ void MainWindow::finishedLoadingWordStructure()
 {
     loadedWordStructure = true;
     ui->textEdit->append("Loaded word structure! You may begin playing.");
+}
+
+void MainWindow::on_actionLoad_board_triggered()
+{
+    QString code = QInputDialog::getText(this, "Enter code", "Enter passcode");
+    if (code != "" && isPerfectSquare(code.length()))
+    {
+        shouldLoadNextNewGame = true;
+        gameToLoad = code.simplified().toUpper();
+        ui->pushButtonNewGame->animateClick();
+    }
+    else
+    {
+        QMessageBox::warning(this, "Code incorrect!", "Code incorrect");
+    }
+}
+
+void MainWindow::on_actionSave_board_triggered()
+{
+    if (currentGameCode != "")
+    {
+        ui->textEdit->append("Use the following code when you click 'Load game':");
+        ui->textEdit->append(currentGameCode);
+    }
 }
 
 /***********************/
