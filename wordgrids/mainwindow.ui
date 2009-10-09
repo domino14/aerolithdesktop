@@ -226,11 +226,29 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuLoad_board">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionLoad_board"/>
+    <addaction name="actionSave_board"/>
+   </widget>
+   <addaction name="menuLoad_board"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionLoad_board">
+   <property name="text">
+    <string>Load board</string>
+   </property>
+  </action>
+  <action name="actionSave_board">
+   <property name="text">
+    <string>Save board</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

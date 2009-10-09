@@ -99,9 +99,14 @@ private:
     bool loadedWordStructure;
 
     int minLengthHints, maxLengthHints, bonusTurnoffTiles;
+    bool shouldLoadNextNewGame;
+    QString gameToLoad;
+    QString currentGameCode;
 public slots:
     void tileMouseCornerClicked(int, int);
 private slots:
+    void on_actionLoad_board_triggered();
+    void on_actionSave_board_triggered();
     void secPassed();
     void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
