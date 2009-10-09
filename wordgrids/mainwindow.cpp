@@ -19,9 +19,7 @@
 
 #include <QDateTime>
 
-#define BONUS_TURNOFF_TILES 16
-#define MAXIMUM_LENGTH_HINTS 15
-#define MINIMUM_LENGTH_HINTS 7
+
 int scoresByLength[16] =
 { 0, 0, 4, 9, 16, 25, 49, 64, 81, 100, 121, 169, 196, 225, 256, 289 };
 /*0  1  2  3  4    5   6   7   8    9   10   11   12   13   14   15*/
@@ -122,6 +120,7 @@ MainWindow::MainWindow(QWidget *parent)
     wordStructure->loadWordStructure();
 
     ui->textEdit->append("Please wait for word structure to load...");
+
 }
 
 void MainWindow::sceneMouseMoved(double x, double y)
@@ -418,24 +417,29 @@ void MainWindow::possibleRectangleCheck()
         }
 
         /* deal with bonus tiles */
-        if (numSolvedLetters > 0 && numSolvedLetters < (boardWidth*boardHeight) - BONUS_TURNOFF_TILES)
+        if (numSolvedLetters > 0 && numSolvedLetters < (boardWidth*boardHeight) - bonusTurnoffTiles)
         {
 
-            bonusTilesAllowed = true;
-            foreach (Tile* tile, bonusTiles)
+            if (!bonusTilesAllowed)
             {
-                tile->setTileBrush(brushBonusActive);
+                bonusTilesAllowed = true;
+                foreach (Tile* tile, bonusTiles)
+                {
+                    tile->setTileBrush(brushBonusActive);
+                }
             }
-
         }
         else
         {
-            ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
-                                 arg(boardWidth*boardHeight - numSolvedLetters));
-            bonusTilesAllowed = false;
-            foreach (Tile* tile, bonusTiles)
+            if (bonusTilesAllowed)      // this makes this message only pop up once
             {
-                tile->setTileBrush(brushBonusInactive);
+                ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
+                                     arg(boardWidth*boardHeight - numSolvedLetters));
+                foreach (Tile* tile, bonusTiles)
+                {
+                    tile->setTileBrush(brushBonusInactive);
+                }
+                bonusTilesAllowed = false;
             }
         }
 
@@ -502,6 +506,11 @@ void MainWindow::on_pushButtonGiveUp_clicked()
 void MainWindow::on_pushButtonRetry_clicked()
 {
     if (!loadedWordStructure) return;
+
+    bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
+    minLengthHints = ui->spinBoxMinLengthGen->value();
+    maxLengthHints = ui->spinBoxMaxLengthGen->value();
+
     int i = 0;
     foreach (Tile* tile, tiles)
     {
@@ -522,12 +531,19 @@ void MainWindow::on_pushButtonRetry_clicked()
     for (int i = 0; i < 16; i++)
         solvedWordsByLength[i] = 0;
 
+    generateFindList();
     scene.update();
 }
 
 void MainWindow::on_pushButtonNewGame_clicked()
 {
     if (!loadedWordStructure) return;
+
+    bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
+    minLengthHints = ui->spinBoxMinLengthGen->value();
+    maxLengthHints = ui->spinBoxMaxLengthGen->value();
+
+
     bool ok;
     int gridSize = QInputDialog::getInteger(this, "Grid size?", "Please select a grid size", lastGridSize,
                                             MIN_GRID_SIZE, MAX_GRID_SIZE, 1, &ok);
@@ -716,10 +732,10 @@ void MainWindow::generateFindList()
         for (int j = 0; j < lastGridSize; j++)
         {
             // qDebug() << "i j" << i << j;
-            generateSingleFindList(MINIMUM_LENGTH_HINTS, MAXIMUM_LENGTH_HINTS, 0, i, j, i, j, false, "", alphaSet);
+            generateSingleFindList(minLengthHints, maxLengthHints, i, j, alphaSet);
         }
     }
-    qDebug() << "Time:" << t.elapsed();
+    qDebug() << "Rectangle generation:" << t.elapsed();
 
     ui->listWidgetWordsToFind->clear();
 
@@ -732,64 +748,55 @@ void MainWindow::generateFindList()
 
         }
     }
+    qDebug() << "All words: " << t.elapsed();
 }
 
-void MainWindow::generateSingleFindList(int minLength, int maxLength, int lengthSoFar,
-                                        int TLi, int TLj, int BRi, int BRj, bool right, QString curStr, QSet<QString>& alphaSet)
+QString MainWindow::extractStringsFromRectangle(int TLi, int TLj, int BRi, int BRj, int minLength, int maxLength)
+{
+    QString word;
+    int lengthSoFar = 0;
+    for (int i = TLi; i <= BRi; i++)
+    {
+        for (int j = TLj; j <= BRj; j++)
+        {
+            char letter = simpleGridRep[i][j];
+            if (letter != ' ')
+            {
+                lengthSoFar++;
+                word += letter;
+            }
+            if (letter == 'Q')
+            {
+                // special case, handle QU
+                lengthSoFar++;
+                word += 'U';
+            }
+            if (lengthSoFar > maxLength) return ""; // return blank string if the length is already too long.
+        }
+    }
+    if (lengthSoFar >= minLength && lengthSoFar <= maxLength) return word;
+    else return "";
+}
+
+void MainWindow::generateSingleFindList(int minLength, int maxLength,
+                                        int TLi, int TLj, QSet<QString>& alphaSet)
 {
     //
     //    lengthSoFar++;
     //    if (lengthSoFar > maxLength) return;
+    /* try all squares to the right and bottom as the "bottom right corner" */
 
-    if (right)
+    QString curStr;
+    int lengthSoFar = 0;
+    for (int i = TLi; i < lastGridSize; i++)
     {
-        // we went right
-        for (int j = TLj; j <= BRj; j++)  // add the column from BRi, TLj down to BRi, BRj
+        for (int j = TLj; j < lastGridSize; j++)
         {
-            char letter = simpleGridRep[BRi][j];
-            if (letter != ' ')
-            {
-                lengthSoFar++;
-                curStr += letter;
-            }
-            if (letter == 'Q')
-            {
-                // special case, handle QU
-                lengthSoFar++;
-                curStr += 'U';
-            }
-        }
-    }
-    else
-    {
-        // we went down
-        for (int i = TLi; i <= BRi; i++)    // add the row from TLi, BRj to BRi, BRj
-        {
-            char letter = simpleGridRep[i][BRj];
-            if (letter != ' ')
-            {
-                lengthSoFar++;
-                curStr += letter;
-            }
-            if (letter == 'Q')
-            {
-                // special case, handle QU
-                lengthSoFar++;
-                curStr += 'U';
-            }
+            QString possibleWord = extractStringsFromRectangle(TLi, TLj, i, j, minLength, maxLength);
+            if (possibleWord != "") alphaSet.insert(alphagrammize(possibleWord));
         }
     }
 
-    if (lengthSoFar > maxLength) return;
-
-    if (lengthSoFar >= minLength)
-    {
-        //qDebug() << curStr;
-        alphaSet.insert(alphagrammize(curStr));
-
-    }
-    if (BRi+1 < lastGridSize) generateSingleFindList(minLength, maxLength, lengthSoFar, TLi, TLj, BRi+1, BRj, true, curStr, alphaSet);
-    if (BRj+1 < lastGridSize) generateSingleFindList(minLength, maxLength, lengthSoFar, TLi, TLj, BRi, BRj+1, false, curStr, alphaSet);
 }
 
 void MainWindow::finishedLoadingWordStructure()

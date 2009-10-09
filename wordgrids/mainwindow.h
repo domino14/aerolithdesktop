@@ -94,9 +94,11 @@ private:
     char simpleGridRep[MAX_GRID_SIZE][MAX_GRID_SIZE];
 
     void generateFindList();
-    void generateSingleFindList(int minLength, int maxLength, int lengthSoFar, int, int, int, int, bool,
-                                QString curStr, QSet <QString>&);
+    void generateSingleFindList(int, int, int, int, QSet<QString>&);
+    QString extractStringsFromRectangle(int TLi, int TLj, int BRi, int BRj, int minLength, int maxLength);
     bool loadedWordStructure;
+
+    int minLengthHints, maxLengthHints, bonusTurnoffTiles;
 public slots:
     void tileMouseCornerClicked(int, int);
 private slots:
