@@ -13,6 +13,9 @@
      connect(rh, SIGNAL(movedTLHandle(QPointF)), this, SLOT(tlHandleMoved(QPointF)));
 
      connect(rh, SIGNAL(stoppedMovingHandles()), this, SLOT(refreshHandles()));
+     lastTopX = 0;
+     lastTopY = 0;
+     lastWidth = 300;
  }
 
  QVariant FlashcardTextItem::itemChange(GraphicsItemChange change,
@@ -53,7 +56,10 @@ void FlashcardTextItem::setText(QString text)
     this->setTextWidth(300);
     this->setHtml(text);
 
-    rh->moveHandles(this->boundingRect());
+    rh->moveHandles(lastTopX, lastTopY, lastTopX + 300, lastTopY + this->boundingRect().height());
+    lastWidth = this->boundingRect().width();
+    lastTopX = this->boundingRect().x();
+    lastTopY = this->boundingRect().y();
 
 }
 
@@ -62,6 +68,7 @@ void FlashcardTextItem::brHandleMoved(QPointF pos)
     QPointF mapped = mapFromItem(rh->brHandle, pos);
     prepareGeometryChange();
     setTextWidth(qAbs(mapped.x()));
+    lastWidth = this->textWidth();
     update();
 }
 
@@ -69,11 +76,26 @@ void FlashcardTextItem::tlHandleMoved(QPointF pos)
 {
     QPointF mapped = mapFromItem(rh->tlHandle, pos);
     prepareGeometryChange();
-    setTextWidth(qAbs(this->boundingRect().width() - mapped.x()));
+////    setTextWidth(qAbs(lastWidth - mapped.x()));
+////    lastTopX = mapped.x();
+////    lastTopY = mapped.y();
+////    lastWidth = this->textWidth();
+//
+    QPointF toParent = mapToParent(mapped);
+
+    this->setPos(toParent); // setPos is also moving the handles because they're children! how do i stop this?
+
+
+    qDebug() << pos << mapped << toParent;
+
+    update();
 }
 
 void FlashcardTextItem::refreshHandles()
 {
-    qDebug() << this->boundingRect();
-    rh->moveHandles(this->boundingRect());
+    qDebug() << "refresh handles";
+    rh->moveHandles(lastTopX, lastTopY, lastTopX + lastWidth, lastTopY + this->boundingRect().height());
+    lastWidth = this->boundingRect().width();
+    lastTopX = this->boundingRect().x();
+    lastTopY = this->boundingRect().y();
 }

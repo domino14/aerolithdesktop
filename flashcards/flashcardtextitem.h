@@ -26,7 +26,8 @@ protected:
     void focusInEvent(QFocusEvent *event);
 private:
     ResizeHandle* rh;
-
+    double lastWidth;
+    double lastTopX, lastTopY;
 private slots:
     void brHandleMoved(QPointF);
     void tlHandleMoved(QPointF);

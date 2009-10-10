@@ -23,14 +23,23 @@ class ResizeHandle : public QObject
 Q_OBJECT
 public:
     ResizeHandle(QGraphicsItem * parent = 0);
-    void moveHandles(QRectF);
+    ~ResizeHandle();
+    void moveHandles(double tlX, double tlY, double brX, double brY);
 
     SingleResizeRectangle* brHandle;
     SingleResizeRectangle* tlHandle;
+    void showHandles(bool);
+
 signals:
     void movedTLHandle(QPointF newPos);
     void movedBRHandle(QPointF newPos);
     void stoppedMovingHandles();
+private:
+    QPointF lastTLPoint;
+
+private slots:
+ //   void tlHandleWasMoved(QPointF);
+ //   void tlHandleWasReleased();
 };
 
 #endif // RESIZEHANDLE_H
