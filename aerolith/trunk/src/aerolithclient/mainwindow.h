@@ -207,6 +207,7 @@ signals:
     void createBonusGameTable();
     void lexiconComboBoxIndexChanged(int);
     void dbDialogEnableClose(bool);
+    void spinBoxWordLengthChange(int);
 };
 
 

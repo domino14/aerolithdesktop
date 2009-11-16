@@ -111,7 +111,25 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
                 lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
                 lexInfo->db.open();
             }
+            // make sure to populate word length in lexInfo!
+
+            QSqlQuery query(lexInfo->db);
+            query.exec("BEGIN TRANSACTION");
+            query.prepare("SELECT numalphagrams from lengthcounts where length = ?");
+            for (int i = 0; i < 16; i++)
+            {
+                query.addBindValue(i);
+                query.exec();
+                while (query.next())
+                {
+                    lexInfo->alphagramsPerLength[i] = query.value(0).toInt();
+                    qDebug() << "lengths " << i << lexInfo->alphagramsPerLength[i];
+                }
+            }
+            query.exec("END TRANSACTION");
         }
+
+
     }
 }
 
@@ -223,6 +241,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
                    "probability INTEGER PRIMARY KEY, length INTEGER, num_vowels INTEGER)");
 
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), numalphagrams INTEGER, probindices BLOB)");
+    wordQuery.exec("CREATE TABLE IF NOT EXISTS lengthcounts(length INTEGER, numalphagrams INTEGER)");
 // TOO create index for wordlists?
     LessThans lessThan;
     if (lexInfo->lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
@@ -349,6 +368,13 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 //    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
     wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram)");
 
+    wordQuery.prepare("INSERT INTO lengthcounts(length, numalphagrams) VALUES(?, ?)");
+    for (int i = 2; i <= 15; i++)
+    {
+        wordQuery.addBindValue(i);
+        wordQuery.addBindValue(probs[i]);
+        wordQuery.exec();
+    }
 
     emit setProgressMessage(lexiconName + ": Creating special lists...");
 
@@ -620,6 +646,12 @@ QString DatabaseHandler::alphagrammize(QString word, LessThans lessThan)
     return ret;
 }
 
+int DatabaseHandler::getNumWordsByLength(QString lexiconName, int length)
+{
+    if (length >= 2 && length <= 15)
+        return lexiconMap.value(lexiconName).alphagramsPerLength[length];
+    else return 0;
+}
 
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
 {

@@ -74,6 +74,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
     connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
 
+    connect(uiTable.spinBoxWL, SIGNAL(valueChanged(int)), SLOT(spinBoxWordLengthChange(int)));
+
     scoresDialog = new QDialog(this);
     uiScores.setupUi(scoresDialog);
     uiScores.scoresTableWidget->verticalHeader()->hide();
@@ -189,6 +191,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
         connect(rebuildDbMenu, SIGNAL(triggered(QAction*)), SLOT(rebuildDatabaseAction(QAction*)));
         dbHandler->connectToDatabases(true, dbList);
     }
+
+
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -1132,8 +1136,16 @@ void MainWindow::handleWordlistsMessage()
     }
     uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
     lexiconComboBoxIndexChanged(0);
+
+    /* we connect the signals here instead of earlier in the constructor for some reason having to do with the
+       above two lines. the 'disconnect' is earlier in this function */
+
+
     connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(int)),
             SLOT(lexiconComboBoxIndexChanged(int)));
+
+    spinBoxWordLengthChange(uiTable.spinBoxWL->value());
+
 
 }
 
@@ -1445,7 +1457,7 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
         out << (quint8)LIST_TYPE_DAILY_CHALLENGE;
         out << challengeAction->text();
         out << uiMainWindow.comboBoxLexicon->currentText(); // TODO this is kind of kludgy, should already know what lexicon
-                                                            // I'm on.
+        // I'm on.
         out << (quint8)TABLE_TYPE_DAILY_CHALLENGES;
         out << (quint8)0;	// server should decide time for daily challenge
 
@@ -1508,6 +1520,11 @@ void MainWindow::viewProfile(QString username)
     uiGetProfile.lineEditUsername->setText(username);
     getProfileWidget->show();
 
+}
+
+void MainWindow::spinBoxWordLengthChange(int length)
+{
+    uiTable.spinBoxProb2->setMaximum(dbHandler->getNumWordsByLength(currentLexicon, length));
 }
 
 void MainWindow::startOwnServer()
