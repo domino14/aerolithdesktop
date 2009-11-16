@@ -90,6 +90,7 @@ public:
     QStringList availableDatabases;
     QMap<QString, LexiconInfo> lexiconMap;
     int getNumWordsByLength(QString lexiconName, int length);
+    bool getProbIndices(QStringList, QString, QList<quint32>&);
 private:
     enum SqlListMakerQueryTypes
     {

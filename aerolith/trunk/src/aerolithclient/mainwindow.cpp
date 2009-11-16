@@ -164,6 +164,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(dbHandler, SIGNAL(enableClose(bool)), SLOT(dbDialogEnableClose(bool)));
     connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
 
+    connect(uiTable.pushButtonUseOwnList, SIGNAL(clicked()), SLOT(uploadOwnList()));
+
     ///////
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
@@ -1524,7 +1526,9 @@ void MainWindow::viewProfile(QString username)
 
 void MainWindow::spinBoxWordLengthChange(int length)
 {
-    uiTable.spinBoxProb2->setMaximum(dbHandler->getNumWordsByLength(currentLexicon, length));
+    int max = dbHandler->getNumWordsByLength(currentLexicon, length);
+    if (max != 0)
+        uiTable.spinBoxProb2->setMaximum(max);
 }
 
 void MainWindow::startOwnServer()
@@ -1566,6 +1570,40 @@ void MainWindow::serverThreadHasFinished()
     uiLogin.loginPushButton->setEnabled(true);
 
 }
+
+void MainWindow::uploadOwnList()
+{
+    QString filename = QFileDialog::getOpenFileName(this, "Select word list");
+
+    QFile file(filename);
+     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+         return;
+
+     QTextStream in(&file);
+     QStringList words;
+     while (!in.atEnd())
+     {
+         QString line = in.readLine().simplified();
+         if (line == line.section(" ", 0, 0))
+         {
+             /* basically, just ensuring that the line just has the word */
+             words << line;
+
+         }
+     }
+
+     QList <quint32> probIndices;
+
+     bool success = dbHandler->getProbIndices(words, currentLexicon, probIndices);
+
+     if (!success)
+     {
+        QMessageBox::warning(this, "Error", "You must first create a database for this lexicon!");
+        return;
+     }
+    qDebug() << probIndices.size() << "," << probIndices;
+ }
+
 
 /////////////////////////////////////////////////////
 

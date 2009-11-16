@@ -216,7 +216,7 @@ void MainServer::receiveMessage()
     // this seems like it'll be slow, but it'll do for now
     ClientSocket* socket = static_cast<ClientSocket*> (sender());
 
-    if (socket->bytesAvailable() > 15000)
+    if (socket->bytesAvailable() > 16500)
     {
         qDebug() << "too many available bytes.";
         socket->disconnectFromHost();

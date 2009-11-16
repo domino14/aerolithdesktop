@@ -653,6 +653,34 @@ int DatabaseHandler::getNumWordsByLength(QString lexiconName, int length)
     else return 0;
 }
 
+bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QList<quint32>& probIndices)
+{
+    if (!lexiconMap.value(lexiconName).db.isOpen()) return false;
+
+    LessThans lessThan;
+    if (lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
+    else lessThan = ENGLISH_LESS_THAN;
+
+    QSqlQuery query(lexiconMap.value(lexiconName).db);
+    query.prepare("SELECT probability from alphagrams where alphagram = ?");
+    QSet <QString> alphaset;
+    foreach (QString word, words)
+    {
+        QString alpha = alphagrammize(word.toUpper(), lessThan);
+        if (!alphaset.contains(alpha))
+        {
+            query.addBindValue(alpha);
+            query.exec();
+
+            while (query.next())
+            {
+                probIndices << (quint32) query.value(0).toInt();
+            }
+            alphaset.insert(alpha);
+        }
+    }
+}
+
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
 {
     QMap <unsigned char, int> dist;
