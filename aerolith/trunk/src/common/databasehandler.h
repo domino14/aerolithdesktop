@@ -89,6 +89,7 @@ public:
     QStringList checkForDatabases();
     QStringList availableDatabases;
     QMap<QString, LexiconInfo> lexiconMap;
+    int getNumWordsByLength(QString lexiconName, int length);
 private:
     enum SqlListMakerQueryTypes
     {
