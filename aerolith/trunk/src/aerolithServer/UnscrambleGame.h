@@ -66,10 +66,13 @@ public:
     ~UnscrambleGame();
 
     void gameStartRequest(ClientSocket*);
-    void guessSent(ClientSocket*, QString);
+//    void guessSent(ClientSocket*, QString);
+    void handleMiscPacket(ClientSocket*, quint8);
     void gameEndRequest(ClientSocket*);
     void playerJoined(ClientSocket*);
     void playerLeftGame(ClientSocket*);
+
+    void correctAnswerSent(ClientSocket*, quint8 space, quint8 specificAnswer);
 
     void endGame();
     void startGame();
@@ -93,17 +96,26 @@ private:
     static QByteArray wordListDataToSend;
 
     void prepareTableAlphagrams();
-    void sendUserCurrentAlphagrams(ClientSocket*);
+    void prepareTableQuestions();
+ //   void sendUserCurrentAlphagrams(ClientSocket*);
+    void sendUserCurrentQuestions(ClientSocket*);
     QString lexiconName;
     DatabaseHandler* dbHandler;
-    struct unscrambleGameQuestionData
+//    struct unscrambleGameQuestionData
+//    {
+//        // holds data for each word
+//        QString alphagram;
+//        quint8 numNotYetSolved;
+//        //    quint8 index;	// index
+//        QStringList solutions;
+//        int probability;
+//    };
+
+    struct UnscrambleGameQuestionData
     {
-        // holds data for each word
-        QString alphagram;
+        QSet <quint8> notYetSolved; // which of these question's anagrams have not yet been solved?
+        quint32 probIndex;  // this question's probability index
         quint8 numNotYetSolved;
-        //    quint8 index;	// index
-        QStringList solutions;
-        int probability;
     };
 
     //  QHash <QString, playerData> playerDataHash;
@@ -125,9 +137,13 @@ private:
     quint16 totalNumberQuestions;
     quint8 cycleState;
     quint16 numTotalSolutions;
-    QHash <QString, QString> gameSolutions;
-    QHash <QString, quint8> alphagramIndices;
-    QList <unscrambleGameQuestionData> unscrambleGameQuestions;
+    quint16 numTotalSolvedSoFar;
+
+//    QHash <QString, QString> gameSolutions;
+//    QHash <QString, quint8> alphagramIndices;
+
+    QList <UnscrambleGameQuestionData> unscrambleGameQuestions;
+
     /*QTextStream alphagramReader;
   QFile inFile;
   QFile outFile;
@@ -146,9 +162,11 @@ private:
     quint16 numTotalRacks;
     quint16 numRacksSeen;
     void generateQuizArray();
+    void sendCorrectAnswerPacket(QString, quint8, quint8);
+
     void sendTimerValuePacket(quint16);
     void sendGiveUpPacket(QString);
-    void sendGuessRightPacket(QString, QString, quint8);
+
     void sendNumQuestionsPacket();
 
 

@@ -60,10 +60,12 @@
 #define CLIENT_REGISTER 'r'
 // table subcommands
 #define CLIENT_TABLE_READY_BEGIN 'b'
-#define CLIENT_TABLE_GUESS 's'
 #define CLIENT_TABLE_CHAT 'c'
 #define CLIENT_TABLE_GIVEUP 'u'
 #define CLIENT_TABLE_ACTION 'a'
+// misc table subcommands, by game
+#define CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER 'w'
+
 
 #define SERVER_PING '?'
 #define SERVER_HIGH_SCORES 'H'
@@ -87,10 +89,12 @@
 #define SERVER_TABLE_GAME_START 'S'
 #define SERVER_TABLE_GAME_END 'E'
 #define SERVER_TABLE_ALPHAGRAMS 'W'
+#define SERVER_TABLE_QUESTIONS 'Q'
 #define SERVER_TABLE_TIMER_VALUE 'T'
 #define SERVER_TABLE_NUM_QUESTIONS 'N'
 #define SERVER_TABLE_GIVEUP 'U'
 #define SERVER_TABLE_GUESS_RIGHT 'A'
+#define SERVER_TABLE_CORRECT_ANSWER 'Y'
 
 
 

@@ -443,14 +443,14 @@ void MainServer::processTableCommand(ClientSocket* socket)
         table->tableGame->gameStartRequest(socket);
 
         break;
-    case CLIENT_TABLE_GUESS:
-        // guess from solution box
-        {
-            QByteArray guess;
-            socket->connData.in >> guess;
-            table->tableGame->guessSent(socket, guess);
-        }
-        break;
+//    case CLIENT_TABLE_GUESS:
+//        // guess from solution box
+//        {
+//            QByteArray guess;
+//            socket->connData.in >> guess;
+//            table->tableGame->guessSent(socket, guess);
+//        }
+//        break;
     case CLIENT_TABLE_CHAT:
         // chat
         {
@@ -496,7 +496,8 @@ void MainServer::processTableCommand(ClientSocket* socket)
         }
         break;
     default:
-        socket->disconnectFromHost();
+        table->tableGame->handleMiscPacket(socket, subcommand);
+        //socket->disconnectFromHost();
     }
 
 }

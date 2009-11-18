@@ -130,59 +130,59 @@ UnscrambleGame::~UnscrambleGame()
 void UnscrambleGame::playerJoined(ClientSocket* client)
 {
     if (gameStarted)
-        sendUserCurrentAlphagrams(client);
+        sendUserCurrentQuestions(client);
 
     // possibly send scores, solved solutions, etc. in the future.
     if (table->playerList.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
     {
         qDebug() << "playerJoined";
-        QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
-        userQuery.prepare("SELECT saveData from users where username = :username");
-        userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
-        userQuery.exec();
-        while (userQuery.next())
-        {
-            QByteArray ba = userQuery.value(0).toByteArray();
-            QDataStream stream(ba);
-            if (ba.size() == 0)
-            {
-                qDebug() << "there was no save data";
-                /* do nothing. this is a new table, and there was no save data. */
-            }
-            else
-            {
-                QString savedWordList;
-                QVector <quint32> savedMissedArray;
-                QVector <quint32> savedQuizArray;
-                stream >> savedWordList >> savedMissedArray >> savedQuizArray;
-                if (savedQuizArray.size() == 0 && savedMissedArray.size() == 0)
-                {
-                    qDebug() << "nothing needs to be loaded";
-                    /* this data was saved when the user left the table, but after completely exhausting the quiz.
-                                                so do nothing, nothing needs to be loaded*/
-                }
-                else
-                {
-                    if (savedWordList != wordList)
-                    {
-                        table->sendTableMessage("You currently have save data for the following word list: " + savedWordList + ". Please "
-                                                "exit the table if you don't wish to lose your save data, and select the above list instead. If you click Start, "
-                                                "the saved data will be deleted!");
-                    }
-                    else
-                    {
-                        quizArray = savedQuizArray;
-                        missedArray = savedMissedArray;
-                        table->sendTableMessage("You had saved data for this word list, and it has been loaded!");
-
-                        numRacksSeen = 0;
-                        numTotalRacks = savedQuizArray.size();
-
-                    }
-
-                }
-            }
-        }	//while
+        //        QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
+        //        userQuery.prepare("SELECT saveData from users where username = :username");
+        //        userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
+        //        userQuery.exec();
+        //        while (userQuery.next())
+        //        {
+        //            QByteArray ba = userQuery.value(0).toByteArray();
+        //            QDataStream stream(ba);
+        //            if (ba.size() == 0)
+        //            {
+        //                qDebug() << "there was no save data";
+        //                /* do nothing. this is a new table, and there was no save data. */
+        //            }
+        //            else
+        //            {
+        //                QString savedWordList;
+        //                QVector <quint32> savedMissedArray;
+        //                QVector <quint32> savedQuizArray;
+        //                stream >> savedWordList >> savedMissedArray >> savedQuizArray;
+        //                if (savedQuizArray.size() == 0 && savedMissedArray.size() == 0)
+        //                {
+        //                    qDebug() << "nothing needs to be loaded";
+        //                    /* this data was saved when the user left the table, but after completely exhausting the quiz.
+        //                                                so do nothing, nothing needs to be loaded*/
+        //                }
+        //                else
+        //                {
+        //                    if (savedWordList != wordList)
+        //                    {
+        //                        table->sendTableMessage("You currently have save data for the following word list: " + savedWordList + ". Please "
+        //                                                "exit the table if you don't wish to lose your save data, and select the above list instead. If you click Start, "
+        //                                                "the saved data will be deleted!");
+        //                    }
+        //                    else
+        //                    {
+        //                        quizArray = savedQuizArray;
+        //                        missedArray = savedMissedArray;
+        //                        table->sendTableMessage("You had saved data for this word list, and it has been loaded!");
+        //
+        //                        numRacksSeen = 0;
+        //                        numTotalRacks = savedQuizArray.size();
+        //
+        //                    }
+        //
+        //                }
+        //            }
+        //        }	//while
 
 
 
@@ -287,33 +287,50 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
     }
 
 }
+//
+//void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
+//{
+//
+//    guess = guess.toUpper().trimmed();
+//    if (guess == "")
+//    {
+//
+//
+//    }
+//    else
+//    {
+//        if (gameStarted)
+//        {
+//            if (gameSolutions.contains(guess))
+//            {
+//                QString alphagram = gameSolutions.value(guess);
+//                gameSolutions.remove(guess);
+//                quint8 indexOfQuestion = alphagramIndices.value(alphagram);
+//                unscrambleGameQuestions[indexOfQuestion].numNotYetSolved--;
+//
+//                sendGuessRightPacket(socket->connData.userName, guess, indexOfQuestion);
+//                if (gameSolutions.isEmpty()) endGame();
+//            }
+//        }
+//    }
+//    qDebug() << " ->GUESS" << socket->connData.userName << guess;
+//}
 
-void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
+void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint8 specificAnswer)
 {
-
-    guess = guess.toUpper().trimmed();
-    if (guess == "")
+    if (space < maxRacks)
     {
-
-
-    }
-    else
-    {
-        if (gameStarted)
+        if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
         {
-            if (gameSolutions.contains(guess))
-            {
-                QString alphagram = gameSolutions.value(guess);
-                gameSolutions.remove(guess);
-                quint8 indexOfQuestion = alphagramIndices.value(alphagram);
-                unscrambleGameQuestions[indexOfQuestion].numNotYetSolved--;
+            unscrambleGameQuestions[space].notYetSolved.remove(specificAnswer);
+            unscrambleGameQuestions[space].numNotYetSolved--;
+            numTotalSolvedSoFar++;
 
-                sendGuessRightPacket(socket->connData.userName, guess, indexOfQuestion);
-                if (gameSolutions.isEmpty()) endGame();
-            }
+            sendCorrectAnswerPacket(socket->connData.userName, space, specificAnswer);
+            if (numTotalSolvedSoFar == numTotalSolutions) endGame();
         }
     }
-    qDebug() << " ->GUESS" << socket->connData.userName << guess;
+
 }
 
 void UnscrambleGame::gameEndRequest(ClientSocket* socket)
@@ -354,9 +371,9 @@ void UnscrambleGame::startGame()
     //    - maxRacks alphagrams
     gameStarted = true;
     wroteToMissedFileThisRound = false;
-    prepareTableAlphagrams();
+    prepareTableQuestions();
     foreach (ClientSocket* socket, table->playerList)
-        sendUserCurrentAlphagrams(socket);
+        sendUserCurrentQuestions(socket);
 
     sendGameStartPacket();
     sendTimerValuePacket(tableTimerVal);
@@ -391,7 +408,7 @@ void UnscrambleGame::endGame()
             {
                 if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
                 {
-                    missedArray << unscrambleGameQuestions.at(i).probability;
+                    missedArray << unscrambleGameQuestions.at(i).probIndex;
                 }
 
             }
@@ -418,7 +435,7 @@ void UnscrambleGame::endGame()
                         highScoreData tmp;
                         tmp.userName = table->playerList.at(0)->connData.userName;
                         tmp.numSolutions = numTotalSolutions;
-                        tmp.numCorrect = numTotalSolutions - gameSolutions.size();
+                        tmp.numCorrect = numTotalSolvedSoFar;
                         tmp.timeRemaining = currentTimerVal;
                         challenges.value(wordList).highScores->insert(table->playerList.at(0)->connData.userName.toLower(), tmp);
 
@@ -566,13 +583,12 @@ void UnscrambleGame::generateQuizArray()
 
 }
 
-void UnscrambleGame::prepareTableAlphagrams()
+void UnscrambleGame::prepareTableQuestions()
 {
-    // load alphagrams into the gamesolutions hash and the alphagrams list
-    gameSolutions.clear();
     unscrambleGameQuestions.clear();
-    alphagramIndices.clear();
-    qDebug() << "here size" << quizIndex << quizArray.size();
+
+    numTotalSolutions = 0;
+    numTotalSolvedSoFar = 0;
     if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == quizArray.size())
     {
         quizArray = missedArray;		// copy missedArray to quizArray
@@ -582,26 +598,22 @@ void UnscrambleGame::prepareTableAlphagrams()
 
         numRacksSeen = 0;
         numTotalRacks = quizArray.size();
-        //      numTotalRacks = missedFileWriter
     }
-    QStringList lineList;
-    QString line;
-    numTotalSolutions = 0;
-    QTime timer, timer2;
+
+    QTime timer;
     timer.start();
 
     QSqlQuery query(QSqlDatabase::database(wordDbConName));
-    query.setForwardOnly(true);
+
     query.exec("BEGIN TRANSACTION");
-    query.prepare(QString("SELECT alphagram, words from alphagrams where probability = ?"));
-    // maybe try making probability a primary key? this may make it faster?
+    query.prepare(QString("SELECT words from alphagrams where probability = ?"));
+
     for (quint8 i = 0; i < maxRacks; i++)
     {
-        unscrambleGameQuestionData thisQuestionData;
-       // qDebug() << "qindex, size" << quizIndex << quizArray.size();
+        UnscrambleGameQuestionData thisQuestionData;
+
         if (quizIndex == quizArray.size())
         {
-            thisQuestionData.alphagram = "";
             thisQuestionData.numNotYetSolved = 0;
             if (i == 0)
             {
@@ -620,56 +632,154 @@ void UnscrambleGame::prepareTableAlphagrams()
         {
             numRacksSeen++;
             quint32 index = quizArray.at(quizIndex);
-          //  qDebug() << " indices" << index << quizIndex;
 
             query.bindValue(0, index);
-            timer2.start();
             query.exec();
-            //qDebug() << " singleAlpha" << timer2.restart();
+
             while (query.next())
             {
-                thisQuestionData.alphagram = query.value(0).toString();
-                QStringList sols = query.value(1).toString().split(" ");
+                QStringList sols = query.value(0).toString().split(" ");
                 int size = sols.size();
                 thisQuestionData.numNotYetSolved = size;
-                thisQuestionData.probability = index;
-                thisQuestionData.solutions = sols;
+                thisQuestionData.probIndex = index;
                 for (int k = 0; k < size; k++)
                 {
-                    gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
+                    thisQuestionData.notYetSolved.insert(k);
                     numTotalSolutions++;
                 }
-                //   qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
             }
             quizIndex++;
 
-
-
         }
         unscrambleGameQuestions.append(thisQuestionData);
-        alphagramIndices.insert(thisQuestionData.alphagram, i);
     }
     query.exec("END TRANSACTION");
-    qDebug() << "finished PrepareTableAlphagrams, time=" << timer.elapsed();
+    qDebug() << "finished PrepareTableQuestions, time=" << timer.elapsed();
 
 }
 
-void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
+//void UnscrambleGame::prepareTableAlphagrams()
+//{
+//    // load alphagrams into the gamesolutions hash and the alphagrams list
+//    gameSolutions.clear();
+//    unscrambleGameQuestions.clear();
+//    alphagramIndices.clear();
+//    qDebug() << "here size" << quizIndex << quizArray.size();
+//    if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == quizArray.size())
+//    {
+//        quizArray = missedArray;		// copy missedArray to quizArray
+//        quizIndex = 0;	// and set the index back at the beginning
+//        missedArray.clear();	// also clear the missed array, cuz we're starting a new one.
+//        table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
+//
+//        numRacksSeen = 0;
+//        numTotalRacks = quizArray.size();
+//        //      numTotalRacks = missedFileWriter
+//    }
+//    QStringList lineList;
+//    QString line;
+//    numTotalSolutions = 0;
+//    QTime timer, timer2;
+//    timer.start();
+//
+//    QSqlQuery query(QSqlDatabase::database(wordDbConName));
+//    query.setForwardOnly(true);
+//    query.exec("BEGIN TRANSACTION");
+//    query.prepare(QString("SELECT alphagram, words from alphagrams where probability = ?"));
+//    // maybe try making probability a primary key? this may make it faster?
+//    for (quint8 i = 0; i < maxRacks; i++)
+//    {
+//        unscrambleGameQuestionData thisQuestionData;
+//        // qDebug() << "qindex, size" << quizIndex << quizArray.size();
+//        if (quizIndex == quizArray.size())
+//        {
+//            thisQuestionData.alphagram = "";
+//            thisQuestionData.numNotYetSolved = 0;
+//            if (i == 0)
+//            {
+//                listExhausted = true;
+//                if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
+//                {
+//                    table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
+//
+//                }
+//                else
+//                    table->sendTableMessage("This challenge is over. To view scores, please exit table and "
+//                                            "select 'Get today's scores' from the 'Challenges' button.");
+//            }
+//        }
+//        else
+//        {
+//            numRacksSeen++;
+//            quint32 index = quizArray.at(quizIndex);
+//            //  qDebug() << " indices" << index << quizIndex;
+//
+//            query.bindValue(0, index);
+//            timer2.start();
+//            query.exec();
+//            //qDebug() << " singleAlpha" << timer2.restart();
+//            while (query.next())
+//            {
+//                thisQuestionData.alphagram = query.value(0).toString();
+//                QStringList sols = query.value(1).toString().split(" ");
+//                int size = sols.size();
+//                thisQuestionData.numNotYetSolved = size;
+//                thisQuestionData.probability = index;
+//                thisQuestionData.solutions = sols;
+//                for (int k = 0; k < size; k++)
+//                {
+//                    gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
+//                    numTotalSolutions++;
+//                }
+//                //   qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
+//            }
+//            quizIndex++;
+//
+//
+//
+//        }
+//        unscrambleGameQuestions.append(thisQuestionData);
+//        alphagramIndices.insert(thisQuestionData.alphagram, i);
+//    }
+//    query.exec("END TRANSACTION");
+//    qDebug() << "finished PrepareTableAlphagrams, time=" << timer.elapsed();
+//
+//}
+
+//void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
+//{
+//    writeHeaderData();
+//    out << (quint8) SERVER_TABLE_COMMAND;
+//    out << table->tableNumber;
+//    out << (quint8) SERVER_TABLE_ALPHAGRAMS;
+//    out << (quint8) maxRacks;
+//    for (int i = 0; i < maxRacks; i++)
+//    {
+//        out << unscrambleGameQuestions.at(i).alphagram;
+//        out << unscrambleGameQuestions.at(i).numNotYetSolved;
+//        out << unscrambleGameQuestions.at(i).solutions;
+//    }
+//    fixHeaderLength();
+//    socket->write(block);
+//}
+
+void UnscrambleGame::sendUserCurrentQuestions(ClientSocket* socket)
 {
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
     out << table->tableNumber;
-    out << (quint8) SERVER_TABLE_ALPHAGRAMS;
+    out << (quint8) SERVER_TABLE_QUESTIONS;
     out << (quint8) maxRacks;
     for (int i = 0; i < maxRacks; i++)
     {
-        out << unscrambleGameQuestions.at(i).alphagram;
+        out << unscrambleGameQuestions.at(i).probIndex;
         out << unscrambleGameQuestions.at(i).numNotYetSolved;
-        out << unscrambleGameQuestions.at(i).solutions;
+        foreach (quint8 notSolved, unscrambleGameQuestions.at(i).notYetSolved)
+            out << notSolved;
     }
     fixHeaderLength();
     socket->write(block);
-}                 
+}
 
 void UnscrambleGame::sendTimerValuePacket(quint16 timerValue)
 {
@@ -706,16 +816,48 @@ void UnscrambleGame::sendGiveUpPacket(QString username)
     table->sendGenericPacket();
 }
 
-void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quint8 index)
+void UnscrambleGame::sendCorrectAnswerPacket(QString username, quint8 space, quint8 specificAnswer)
 {
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
     out << (quint16) table->tableNumber;
-    out << (quint8)SERVER_TABLE_GUESS_RIGHT;
-    out << username << answer << index;
+    out << (quint8) SERVER_TABLE_CORRECT_ANSWER;
+    out << username << space << specificAnswer;
     fixHeaderLength();
-    table->sendGenericPacket();
 }
+
+void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
+{
+    switch (header)
+    {
+        case CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER:
+        {
+            quint8 space, specificAnswer;
+            socket->connData.in >> space >> specificAnswer;
+            correctAnswerSent(socket, space, specificAnswer);
+
+        }
+        break;
+        default:
+            socket->disconnectFromHost();
+
+
+    }
+
+
+}
+
+//
+//void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quint8 index)
+//{
+//    writeHeaderData();
+//    out << (quint8) SERVER_TABLE_COMMAND;
+//    out << (quint16) table->tableNumber;
+//    out << (quint8)SERVER_TABLE_GUESS_RIGHT;
+//    out << username << answer << index;
+//    fixHeaderLength();
+//    table->sendGenericPacket();
+//}
 
 /*************** static and utility functions ****************/
 
@@ -834,7 +976,7 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
     challenges.clear();
     QTime timer;
 
-     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
+    for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
         QSqlQuery query(dbHandler->lexiconMap.value(dbHandler->availableDatabases[i]).db);
         query.exec("BEGIN TRANSACTION");
@@ -860,7 +1002,7 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
         }
         query.exec("END TRANSACTION");
     }
-     qDebug() << "Generated daily challenges!";
+    qDebug() << "Generated daily challenges!";
 }
 
 
