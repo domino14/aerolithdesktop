@@ -364,17 +364,17 @@ void MainWindow::chatTable(QString textToSend)
 
 void MainWindow::submitGuess(QString guess)
 {
-    // chatText->append(QString("From solution: ") + solutionLE->text());
-    // solutionLE->clear();
-    if (guess.length() > 15) return;
-
-    writeHeaderData();
-    out << (quint8) CLIENT_TABLE_COMMAND;
-    out << (quint16) currentTablenum;
-    out << (quint8) CLIENT_TABLE_GUESS; // from solution box
-    out << guess.toAscii();
-    fixHeaderLength();
-    commsSocket->write(block);
+//    // chatText->append(QString("From solution: ") + solutionLE->text());
+//    // solutionLE->clear();
+//    if (guess.length() > 15) return;
+//
+//    writeHeaderData();
+//    out << (quint8) CLIENT_TABLE_COMMAND;
+//    out << (quint16) currentTablenum;
+//    out << (quint8) CLIENT_TABLE_GUESS; // from solution box
+//    out << guess.toAscii();
+//    fixHeaderLength();
+//    commsSocket->write(block);
 }
 
 void MainWindow::readFromServer()
