@@ -112,7 +112,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
     connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
     connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
-    connect(gameBoardWidget, SIGNAL(guessSubmitted(QString)), this, SLOT(submitGuess(QString)));
+    connect(gameBoardWidget, SIGNAL(correctAnswerSubmitted(quint8, quint8)), this, SLOT(submitCorrectAnswer(quint8, quint8)));
     connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
 
     connect(gameBoardWidget, SIGNAL(viewProfile(QString)), this, SLOT(viewProfile(QString)));
@@ -362,19 +362,18 @@ void MainWindow::chatTable(QString textToSend)
 
 }
 
-void MainWindow::submitGuess(QString guess)
+void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
 {
-//    // chatText->append(QString("From solution: ") + solutionLE->text());
-//    // solutionLE->clear();
-//    if (guess.length() > 15) return;
-//
-//    writeHeaderData();
-//    out << (quint8) CLIENT_TABLE_COMMAND;
-//    out << (quint16) currentTablenum;
-//    out << (quint8) CLIENT_TABLE_GUESS; // from solution box
-//    out << guess.toAscii();
-//    fixHeaderLength();
-//    commsSocket->write(block);
+    // chatText->append(QString("From solution: ") + solutionLE->text());
+    // solutionLE->clear();
+
+    writeHeaderData();
+    out << (quint8) CLIENT_TABLE_COMMAND;
+    out << (quint16) currentTablenum;
+    out << (quint8) CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
+    out << space << specificAnswer;
+    fixHeaderLength();
+    commsSocket->write(block);
 }
 
 void MainWindow::readFromServer()
@@ -1006,7 +1005,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
         }
         break;
 
-    case SERVER_TABLE_ALPHAGRAMS:
+    case SERVER_TABLE_QUESTIONS:
         // alphagrams!!!
         {
             QTime t;
@@ -1015,13 +1014,19 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
             in >> numRacks;
             for (int i = 0; i < numRacks; i++)
             {
-                QString alphagram;
-                in >> alphagram;
+                quint32 probIndex;
+                in >> probIndex;
                 quint8 numSolutionsNotYetSolved;
                 in >> numSolutionsNotYetSolved;
-                QStringList solutions;
-                in >> solutions;
-                gameBoardWidget->addNewWord(i, alphagram, solutions, numSolutionsNotYetSolved);
+                QSet <quint8> notSolved;
+
+                quint8 temp;
+                for (int j = 0; j < numSolutionsNotYetSolved; j++)
+                {
+                    in >> temp;
+                    notSolved.insert(temp);
+                }
+                gameBoardWidget->addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
             }
             gameBoardWidget->clearSolutionsDialog();
 
@@ -1047,19 +1052,15 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
             gameBoardWidget->gotChat("<font color=red>" + username + " gave up! </font>");
         }
         break;
-    case SERVER_TABLE_GUESS_RIGHT:
-        {
-            QString username, answer;
-            quint8 index;
-            in >> username >> answer >> index;
-            // will change row column to a single number, so hardcode this
 
-            gameBoardWidget->answeredCorrectly(index, username, answer);
-            gameBoardWidget->addToPlayerList(username, answer);
-            if (username==currentUsername)
-            {
-                //               QSound::play("sounds/correct.wav");
-            }
+    case SERVER_TABLE_CORRECT_ANSWER:
+        {
+            QString username;
+            quint8 space, specificAnswer;
+            in >> username >> space >> specificAnswer;
+            QString wordAnswer = gameBoardWidget->answeredCorrectly(username, space, specificAnswer);
+            gameBoardWidget->addToPlayerList(username, wordAnswer);
+
         }
         break;
     }

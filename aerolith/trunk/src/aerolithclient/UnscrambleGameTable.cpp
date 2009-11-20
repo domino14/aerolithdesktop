@@ -179,27 +179,27 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     loadUserPreferences();
 
 
-     #ifdef Q_WS_MAC
+#ifdef Q_WS_MAC
 
-    #endif
+#endif
 
     /* connect to word database*/
     //wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
-   /* TODO FIX (connect to appropriate lexicon database)
+    /* TODO FIX (connect to appropriate lexicon database)
     wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);*/
-//    bool success = wordDb.open();
-//    if (!success)
-//    {
-//        qDebug() << "could not open!";
-//        QMessageBox::critical(this, "Error",
-//                              "Word database was not found in your directory. You will not be able to use many features of Aerolith.");
-//
-//    }
-//    else
-//    {
-//        qDebug() << "Connected to word database successfully";
-//        qDebug() << wordDb.isOpen();
-//    }
+    //    bool success = wordDb.open();
+    //    if (!success)
+    //    {
+    //        qDebug() << "could not open!";
+    //        QMessageBox::critical(this, "Error",
+    //                              "Word database was not found in your directory. You will not be able to use many features of Aerolith.");
+    //
+    //    }
+    //    else
+    //    {
+    //        qDebug() << "Connected to word database successfully";
+    //        qDebug() << wordDb.isOpen();
+    //    }
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -565,11 +565,22 @@ void UnscrambleGameTable::enteredChat()
 
 void UnscrambleGameTable::enteredGuess()
 {
-    if (tableUi.lineEditSolution->text() == "") return;
 
-    emit guessSubmitted(tableUi.lineEditSolution->text());
+    QString guess = tableUi.lineEditSolution->text().simplified().toUpper();
+    if (guess == "") return;
 
-        tableUi.textEditGuesses->append(tableUi.lineEditSolution->text());
+
+    if (answerHash.contains(guess))
+    {
+        const wordQuestion* wq = &(wordQuestions.at(answerHash.value(guess)));
+        int pos = wq->solutions.indexOf(guess);         // TODO should find something more efficient than a linear search
+        emit correctAnswerSubmitted(wq->space, pos);
+        qDebug() << "enteredguess" << wq->space << pos;
+    }
+
+
+
+    tableUi.textEditGuesses->append(guess);
 
     tableUi.lineEditSolution->clear();
 
@@ -595,6 +606,8 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 
     tableUi.lineEditSolution->setFocus();
     tableUi.textEditGuesses->clear();
+
+    answerHash.clear();
 }
 
 void UnscrambleGameTable::leaveTable()
@@ -659,7 +672,7 @@ void UnscrambleGameTable::populateSolutionsTable()
     int numTotalSols = 0, numWrong = 0;
     QTime time;
     time.start();
-    QSqlDatabase wordDb = dbHandler->lexiconMap.value(lexiconName).db;
+
     if (wordDb.isOpen())
     {
 
@@ -667,7 +680,7 @@ void UnscrambleGameTable::populateSolutionsTable()
         QSqlQuery alphagramQuery(wordDb);
         transactionQuery.exec("BEGIN TRANSACTION");
         alphagramQuery.prepare("select words, probability from alphagrams "
-                      "where alphagram = ?");
+                               "where alphagram = ?");
         for (int i = 0; i < wordQuestions.size(); i++)
         {
 
@@ -745,7 +758,7 @@ void UnscrambleGameTable::populateSolutionsTable()
                 }
 
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
-                                                                  new QTableWidgetItem(QString::number(probability)));
+                                                          new QTableWidgetItem(QString::number(probability)));
 
             }
         }
@@ -883,12 +896,29 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
     }
 }
 
-void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList solutions, quint8 numNotSolved)
+void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
+                                     quint8 numNotYetSolved, QSet <quint8> notYetSolved)
 {
-    currentWordLength = alphagram.length();
-    wordQuestion thisWord(alphagram, solutions, numNotSolved);
+
+    QSqlQuery query(wordDb);
+    query.prepare("select words, alphagram from alphagrams "
+                  "where probability = ?");
+
+    query.bindValue(0, probIndex);
+    query.exec();
+
+    QString alphagram;
+    QStringList solutions;
+
+    while (query.next())   // should only be one result.
+    {
+        alphagram = query.value(1).toString();
+        solutions = query.value(0).toString().split(" ");
+    }
+
+    wordQuestion thisWord(alphagram, solutions, numNotYetSolved);
     bool shouldShowTiles = uiPreferences.groupBoxUseTiles->isChecked();
-    if (numNotSolved > 0)
+    if (numNotYetSolved > 0)
     {
 
         int tileWidth = getTileWidth(alphagram.length());
@@ -918,7 +948,7 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
 
         Chip *item = chips.at(index);
 
-        item->setChipNumber(numNotSolved);
+        item->setChipNumber(numNotYetSolved);
         item->setPos(chipX, chipY);
         item->resetTransform();
         double scale = (double)tileWidth / 19.0;
@@ -926,22 +956,28 @@ void UnscrambleGameTable::addNewWord(int index, QString alphagram, QStringList s
         item->show();
         thisWord.chip = item;
     }
+    thisWord.space = index;
+    thisWord.notYetSolved = notYetSolved;
 
     wordQuestions << thisWord;
+    foreach (QString answer, solutions)
+        answerHash.insert(answer, index);
 
 }
 
-void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString answer)
+QString UnscrambleGameTable::answeredCorrectly(QString username, quint8 space, quint8 specificAnswer)
 {
-    QString alphagram = wordQuestions.at(index).alphagram;
+    QString alphagram = wordQuestions.at(space).alphagram;
     int tileWidth = getTileWidth(alphagram.length());
     double scale = (double)tileWidth/19.0;
-    wordQuestions[index].numNotYetSolved--;
-    int numSolutions = wordQuestions.at(index).numNotYetSolved;
+    wordQuestions[space].numNotYetSolved--;
+    int numSolutions = wordQuestions.at(space).numNotYetSolved;
+
+    qDebug() << "ac" << space << specificAnswer << alphagram << numSolutions;
 
     if (numSolutions > 0)
     {
-        Chip* chip = wordQuestions.at(index).chip;
+        Chip* chip = wordQuestions.at(space).chip;
         chip->resetTransform();
         chip->scale(scale, scale);
         chip->setChipNumber(numSolutions);
@@ -949,16 +985,20 @@ void UnscrambleGameTable::answeredCorrectly(int index, QString username, QString
     }
     else
     {
-        wordQuestions.at(index).chip->hide();
-        foreach (Tile* tile, wordQuestions.at(index).tiles)
+        wordQuestions.at(space).chip->hide();
+        foreach (Tile* tile, wordQuestions.at(space).tiles)
             tile->hide();
 
-        wordRectangles.at(index)->setText("");
+        wordRectangles.at(space)->setText("");
     }
+
+    QString answer = wordQuestions[space].solutions.at(specificAnswer);
+    wordQuestions[space].notYetSolved.remove(specificAnswer);
 
     rightAnswers.insert(answer);
     gfxScene.update();
     // maybe later color code by username
+    return answer;
 }
 
 void UnscrambleGameTable::clearAllWordTiles()
@@ -986,6 +1026,7 @@ void UnscrambleGameTable::setupForGameStart()
         playerUis.at(i).labelAddInfo->clear();
     }
     rightAnswers.clear();
+    answerHash.clear();
     clearReadyIndicators();
 }
 

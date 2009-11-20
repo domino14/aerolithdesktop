@@ -287,39 +287,14 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
     }
 
 }
-//
-//void UnscrambleGame::guessSent(ClientSocket* socket, QString guess)
-//{
-//
-//    guess = guess.toUpper().trimmed();
-//    if (guess == "")
-//    {
-//
-//
-//    }
-//    else
-//    {
-//        if (gameStarted)
-//        {
-//            if (gameSolutions.contains(guess))
-//            {
-//                QString alphagram = gameSolutions.value(guess);
-//                gameSolutions.remove(guess);
-//                quint8 indexOfQuestion = alphagramIndices.value(alphagram);
-//                unscrambleGameQuestions[indexOfQuestion].numNotYetSolved--;
-//
-//                sendGuessRightPacket(socket->connData.userName, guess, indexOfQuestion);
-//                if (gameSolutions.isEmpty()) endGame();
-//            }
-//        }
-//    }
-//    qDebug() << " ->GUESS" << socket->connData.userName << guess;
-//}
+
 
 void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint8 specificAnswer)
 {
+    qDebug() << "cas" << space << specificAnswer;
     if (space < maxRacks)
     {
+        qDebug() << "  " << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
         if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
         {
             unscrambleGameQuestions[space].notYetSolved.remove(specificAnswer);
@@ -372,10 +347,12 @@ void UnscrambleGame::startGame()
     gameStarted = true;
     wroteToMissedFileThisRound = false;
     prepareTableQuestions();
+    sendGameStartPacket();
+
     foreach (ClientSocket* socket, table->playerList)
         sendUserCurrentQuestions(socket);
 
-    sendGameStartPacket();
+
     sendTimerValuePacket(tableTimerVal);
     sendNumQuestionsPacket();
     currentTimerVal = tableTimerVal;
@@ -658,111 +635,6 @@ void UnscrambleGame::prepareTableQuestions()
 
 }
 
-//void UnscrambleGame::prepareTableAlphagrams()
-//{
-//    // load alphagrams into the gamesolutions hash and the alphagrams list
-//    gameSolutions.clear();
-//    unscrambleGameQuestions.clear();
-//    alphagramIndices.clear();
-//    qDebug() << "here size" << quizIndex << quizArray.size();
-//    if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == quizArray.size())
-//    {
-//        quizArray = missedArray;		// copy missedArray to quizArray
-//        quizIndex = 0;	// and set the index back at the beginning
-//        missedArray.clear();	// also clear the missed array, cuz we're starting a new one.
-//        table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
-//
-//        numRacksSeen = 0;
-//        numTotalRacks = quizArray.size();
-//        //      numTotalRacks = missedFileWriter
-//    }
-//    QStringList lineList;
-//    QString line;
-//    numTotalSolutions = 0;
-//    QTime timer, timer2;
-//    timer.start();
-//
-//    QSqlQuery query(QSqlDatabase::database(wordDbConName));
-//    query.setForwardOnly(true);
-//    query.exec("BEGIN TRANSACTION");
-//    query.prepare(QString("SELECT alphagram, words from alphagrams where probability = ?"));
-//    // maybe try making probability a primary key? this may make it faster?
-//    for (quint8 i = 0; i < maxRacks; i++)
-//    {
-//        unscrambleGameQuestionData thisQuestionData;
-//        // qDebug() << "qindex, size" << quizIndex << quizArray.size();
-//        if (quizIndex == quizArray.size())
-//        {
-//            thisQuestionData.alphagram = "";
-//            thisQuestionData.numNotYetSolved = 0;
-//            if (i == 0)
-//            {
-//                listExhausted = true;
-//                if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
-//                {
-//                    table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
-//
-//                }
-//                else
-//                    table->sendTableMessage("This challenge is over. To view scores, please exit table and "
-//                                            "select 'Get today's scores' from the 'Challenges' button.");
-//            }
-//        }
-//        else
-//        {
-//            numRacksSeen++;
-//            quint32 index = quizArray.at(quizIndex);
-//            //  qDebug() << " indices" << index << quizIndex;
-//
-//            query.bindValue(0, index);
-//            timer2.start();
-//            query.exec();
-//            //qDebug() << " singleAlpha" << timer2.restart();
-//            while (query.next())
-//            {
-//                thisQuestionData.alphagram = query.value(0).toString();
-//                QStringList sols = query.value(1).toString().split(" ");
-//                int size = sols.size();
-//                thisQuestionData.numNotYetSolved = size;
-//                thisQuestionData.probability = index;
-//                thisQuestionData.solutions = sols;
-//                for (int k = 0; k < size; k++)
-//                {
-//                    gameSolutions.insert(sols.at(k), thisQuestionData.alphagram);
-//                    numTotalSolutions++;
-//                }
-//                //   qDebug() << quizIndex << index << thisQuestionData.alphagram << thisQuestionData.solutions;
-//            }
-//            quizIndex++;
-//
-//
-//
-//        }
-//        unscrambleGameQuestions.append(thisQuestionData);
-//        alphagramIndices.insert(thisQuestionData.alphagram, i);
-//    }
-//    query.exec("END TRANSACTION");
-//    qDebug() << "finished PrepareTableAlphagrams, time=" << timer.elapsed();
-//
-//}
-
-//void UnscrambleGame::sendUserCurrentAlphagrams(ClientSocket* socket)
-//{
-//    writeHeaderData();
-//    out << (quint8) SERVER_TABLE_COMMAND;
-//    out << table->tableNumber;
-//    out << (quint8) SERVER_TABLE_ALPHAGRAMS;
-//    out << (quint8) maxRacks;
-//    for (int i = 0; i < maxRacks; i++)
-//    {
-//        out << unscrambleGameQuestions.at(i).alphagram;
-//        out << unscrambleGameQuestions.at(i).numNotYetSolved;
-//        out << unscrambleGameQuestions.at(i).solutions;
-//    }
-//    fixHeaderLength();
-//    socket->write(block);
-//}
-
 void UnscrambleGame::sendUserCurrentQuestions(ClientSocket* socket)
 {
     writeHeaderData();
@@ -824,6 +696,7 @@ void UnscrambleGame::sendCorrectAnswerPacket(QString username, quint8 space, qui
     out << (quint8) SERVER_TABLE_CORRECT_ANSWER;
     out << username << space << specificAnswer;
     fixHeaderLength();
+    table->sendGenericPacket();
 }
 
 void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
