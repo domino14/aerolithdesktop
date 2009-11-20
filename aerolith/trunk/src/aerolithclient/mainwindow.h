@@ -163,7 +163,7 @@ signals:
     void startServerThread();
     void stopServerThread();
         public slots:
-    void submitGuess(QString);
+    void submitCorrectAnswer(quint8, quint8);
     void chatTable(QString);
     void submitChatLEContents();
     void readFromServer();

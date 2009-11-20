@@ -41,11 +41,13 @@ public:
     void setLexicon(QString name)
     {
         lexiconName = name;
+        wordDb = dbHandler->lexiconMap.value(lexiconName).db;
     }
 
 signals:
     void avatarChange(quint8);
 protected:
+    QSqlDatabase wordDb;
     DatabaseHandler* dbHandler;
     QString myUsername;
 

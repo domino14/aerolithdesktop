@@ -86,12 +86,6 @@ public:
 
 private:
 
-    //  static QVector<QVector <QVector<alphagramInfo> > > alphagramData;
-
-//    enum WordListTypes
-//    {
-//        LIST_TYPE_DAILY_CHALLENGE, LIST_TYPE_REGULAR
-//    };
 
     static QByteArray wordListDataToSend;
 
@@ -101,15 +95,7 @@ private:
     void sendUserCurrentQuestions(ClientSocket*);
     QString lexiconName;
     DatabaseHandler* dbHandler;
-//    struct unscrambleGameQuestionData
-//    {
-//        // holds data for each word
-//        QString alphagram;
-//        quint8 numNotYetSolved;
-//        //    quint8 index;	// index
-//        QStringList solutions;
-//        int probability;
-//    };
+
 
     struct UnscrambleGameQuestionData
     {
@@ -143,11 +129,6 @@ private:
 //    QHash <QString, quint8> alphagramIndices;
 
     QList <UnscrambleGameQuestionData> unscrambleGameQuestions;
-
-    /*QTextStream alphagramReader;
-  QFile inFile;
-  QFile outFile;
-  QTextStream missedFileWriter;*/
 
     QVector <quint32> missedArray;
     QVector <quint32> quizArray;

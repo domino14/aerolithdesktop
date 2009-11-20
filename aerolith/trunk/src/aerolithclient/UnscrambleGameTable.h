@@ -52,9 +52,9 @@ public:
     void clearSolutionsDialog();
     void populateSolutionsTable();
 
-    void addNewWord(int, QString, QStringList, quint8);
+    void addNewWord(int, quint32, quint8, QSet <quint8>);
     void clearAllWordTiles();
-    void answeredCorrectly(int index, QString username, QString answer);
+    QString answeredCorrectly(QString username, quint8 space, quint8 specificAnswer);
 
     void setReadyIndicator(QString);
     void clearReadyIndicators();
@@ -90,10 +90,13 @@ private:
         QString alphagram;
         QStringList solutions;
         quint8 numNotYetSolved;
+        QSet <quint8> notYetSolved;
         Chip* chip;
         QList <Tile*> tiles;
+        quint8 space;
     };
 
+    QHash <QString, int> answerHash;
     QList <wordQuestion> wordQuestions;
     QSet <QString> rightAnswers;
     double verticalVariation;
@@ -108,7 +111,7 @@ protected:
 signals:
     void giveUp();
     void sendStartRequest();
-    void guessSubmitted(QString);
+    void correctAnswerSubmitted(quint8, quint8);
     void chatTable(QString);
     void sendPM(QString);
     void exitThisTable();
