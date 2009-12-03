@@ -18,8 +18,6 @@
 #include "commonDefs.h"
 #include "databasehandler.h"
 const quint16 MAGIC_NUMBER = 25349;
-const QString WindowTitle = "Aerolith 0.5";
-
 
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
@@ -42,6 +40,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     uiMainWindow.roomTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
 
+    WindowTitle = "Aerolith " + aerolithVersion;
     setWindowTitle(WindowTitle);
 
     challengesMenu = new QMenu;
@@ -406,12 +405,15 @@ void MainWindow::readFromServer()
                 // call an updater program
                 // QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
                 // QCoreApplication::quit();
+                QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
+                                      "version of Aerolith. Please go to www.aerolith.org and download the newest "
+                                      " update.");
 #endif
 #ifdef Q_WS_X11
                 QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
                                       "version of Aerolith. If you compiled this from source, please check out the new "
                                       "version of Aerolith by typing into a terminal window: <BR>"
-                                      "svn co svn://www.aerolith.org/aerolith/tags/0.5 aerolith<BR>"
+                                      "svn co svn://www.aerolith.org/aerolith/tags/1.0 aerolith<BR>"
                                       "and then go to this directory, type in qmake, then make."
                                       " You must have Qt 4.5 on your system.");
 #endif
