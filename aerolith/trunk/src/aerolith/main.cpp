@@ -23,7 +23,7 @@ QTextStream *outFile = 0;
 
 
 static const quint16 DEFAULT_PORT = 1988;
-const QString aerolithVersion = "0.5";
+const QString aerolithVersion = "1.0";
 void myMessageOutput(QtMsgType type, const char *msg)
 {
     QString debugdate =

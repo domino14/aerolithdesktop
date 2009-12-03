@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>tableForm</class>
- <widget class="QWidget" name="tableForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="tableForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,39 +10,39 @@
     <height>720</height>
    </rect>
   </property>
-  <property name="sizePolicy" >
-   <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <property name="minimumSize" >
+  <property name="minimumSize">
    <size>
     <width>1024</width>
     <height>720</height>
    </size>
   </property>
-  <property name="maximumSize" >
+  <property name="maximumSize">
    <size>
     <width>2000</width>
     <height>2000</height>
    </size>
   </property>
-  <property name="palette" >
+  <property name="palette">
    <palette>
     <active>
-     <colorrole role="Base" >
-      <brush brushstyle="SolidPattern" >
-       <color alpha="255" >
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
         <red>255</red>
         <green>255</green>
         <blue>255</blue>
        </color>
       </brush>
      </colorrole>
-     <colorrole role="Window" >
-      <brush brushstyle="SolidPattern" >
-       <color alpha="255" >
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
         <red>223</red>
         <green>223</green>
         <blue>223</blue>
@@ -50,18 +51,18 @@
      </colorrole>
     </active>
     <inactive>
-     <colorrole role="Base" >
-      <brush brushstyle="SolidPattern" >
-       <color alpha="255" >
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
         <red>255</red>
         <green>255</green>
         <blue>255</blue>
        </color>
       </brush>
      </colorrole>
-     <colorrole role="Window" >
-      <brush brushstyle="SolidPattern" >
-       <color alpha="255" >
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
         <red>223</red>
         <green>223</green>
         <blue>223</blue>
@@ -70,18 +71,18 @@
      </colorrole>
     </inactive>
     <disabled>
-     <colorrole role="Base" >
-      <brush brushstyle="SolidPattern" >
-       <color alpha="255" >
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
         <red>223</red>
         <green>223</green>
         <blue>223</blue>
        </color>
       </brush>
      </colorrole>
-     <colorrole role="Window" >
-      <brush brushstyle="SolidPattern" >
-       <color alpha="255" >
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
         <red>223</red>
         <green>223</green>
         <blue>223</blue>
@@ -91,14 +92,14 @@
     </disabled>
    </palette>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string/>
   </property>
-  <widget class="QGraphicsView" name="graphicsView" >
-   <property name="enabled" >
+  <widget class="QGraphicsView" name="graphicsView">
+   <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="geometry" >
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>50</y>
@@ -106,33 +107,33 @@
      <height>685</height>
     </rect>
    </property>
-   <property name="cursor" stdset="0" >
+   <property name="cursor" stdset="0">
     <cursorShape>ArrowCursor</cursorShape>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="frameShape" >
+   <property name="frameShape">
     <enum>QFrame::NoFrame</enum>
    </property>
-   <property name="frameShadow" >
+   <property name="frameShadow">
     <enum>QFrame::Plain</enum>
    </property>
-   <property name="lineWidth" >
+   <property name="lineWidth">
     <number>0</number>
    </property>
-   <property name="verticalScrollBarPolicy" >
+   <property name="verticalScrollBarPolicy">
     <enum>Qt::ScrollBarAlwaysOff</enum>
    </property>
-   <property name="horizontalScrollBarPolicy" >
+   <property name="horizontalScrollBarPolicy">
     <enum>Qt::ScrollBarAlwaysOff</enum>
    </property>
-   <property name="interactive" >
+   <property name="interactive">
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonAlphagrams" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonAlphagrams">
+   <property name="geometry">
     <rect>
      <x>820</x>
      <y>630</y>
@@ -140,35 +141,35 @@
      <height>34</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(0, 220, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(0, 100, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(0, 150, 0);&#xd;
-     border-style: inset;&#xd;
+   <property name="styleSheet">
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Alphagrams</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonShuffle" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonShuffle">
+   <property name="geometry">
     <rect>
      <x>820</x>
      <y>670</y>
@@ -176,46 +177,46 @@ QPushButton:disabled{&#xd;
      <height>34</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(0, 220, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(0, 100, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(0, 150, 0);&#xd;
-     border-style: inset;&#xd;
+   <property name="styleSheet">
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Shuffle</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonGiveUp" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonGiveUp">
+   <property name="geometry">
     <rect>
-     <x>280</x>
+     <x>250</x>
      <y>10</y>
      <width>94</width>
-     <height>28</height>
+     <height>31</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QPushButton {
      background-color: rgb(220, 0, 0);
      border-style: outset;
@@ -235,12 +236,12 @@ QPushButton:disabled{
      border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Give Up</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonExit" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonExit">
+   <property name="geometry">
     <rect>
      <x>880</x>
      <y>10</y>
@@ -248,10 +249,10 @@ QPushButton:disabled{
      <height>34</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QPushButton {
      background-color: rgb(220, 0, 0);
      border-style: outset;
@@ -271,12 +272,12 @@ QPushButton:disabled{
      border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Exit Table #</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonStart" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonStart">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>10</y>
@@ -284,10 +285,10 @@ QPushButton:disabled{
      <height>34</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QPushButton {
      background-color: rgb(0, 220, 0);
      border-style: outset;
@@ -307,12 +308,12 @@ QPushButton:disabled{
      border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Start!</string>
    </property>
   </widget>
-  <widget class="QLCDNumber" name="lcdNumberTimer" >
-   <property name="geometry" >
+  <widget class="QLCDNumber" name="lcdNumberTimer">
+   <property name="geometry">
     <rect>
      <x>130</x>
      <y>10</y>
@@ -320,32 +321,32 @@ QPushButton:disabled{
      <height>31</height>
     </rect>
    </property>
-   <property name="styleSheet" >
-    <string> QPushButton {&#xd;
-     background-color: rgb(220, 0, 0);&#xd;
-     border-style: outset;&#xd;
-     border-width: 2px;&#xd;
-     border-radius: 10px;&#xd;
-     border-color: beige;&#xd;
-     font: bold 14px;&#xd;
-     min-width: 5em;&#xd;
-     padding: 6px;&#xd;
- }&#xd;
-QPushButton:disabled{&#xd;
-	background-color: rgb(50, 0, 0);&#xd;
-	color: rgb(100, 100, 100);&#xd;
-}&#xd;
- QPushButton:pressed {&#xd;
-     background-color: rgb(100, 0, 0);&#xd;
-     border-style: inset;&#xd;
+   <property name="styleSheet">
+    <string> QPushButton {
+     background-color: rgb(220, 0, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(50, 0, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(100, 0, 0);
+     border-style: inset;
  } </string>
    </property>
-   <property name="segmentStyle" >
+   <property name="segmentStyle">
     <enum>QLCDNumber::Filled</enum>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEditSolution" >
-   <property name="geometry" >
+  <widget class="QLineEdit" name="lineEditSolution">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>580</y>
@@ -353,7 +354,7 @@ QPushButton:disabled{&#xd;
      <height>30</height>
     </rect>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QLineEdit {
      border: 2px solid gray;
      border-radius: 8px;
@@ -364,12 +365,12 @@ QPushButton:disabled{&#xd;
  } 
 </string>
    </property>
-   <property name="maxLength" >
+   <property name="maxLength">
     <number>15</number>
    </property>
   </widget>
-  <widget class="QLabel" name="labelGuess" >
-   <property name="geometry" >
+  <widget class="QLabel" name="labelGuess">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>560</y>
@@ -377,12 +378,12 @@ QPushButton:disabled{&#xd;
      <height>16</height>
     </rect>
    </property>
-   <property name="text" >
-    <string>&lt;B>Guess:&lt;/B></string>
+   <property name="text">
+    <string>&lt;B&gt;Guess:&lt;/B&gt;</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEditChat" >
-   <property name="geometry" >
+  <widget class="QLineEdit" name="lineEditChat">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>620</y>
@@ -390,7 +391,7 @@ QPushButton:disabled{&#xd;
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QLineEdit {
      border: 2px solid gray;
      border-radius: 10px;
@@ -400,12 +401,12 @@ QPushButton:disabled{&#xd;
  } 
 </string>
    </property>
-   <property name="maxLength" >
+   <property name="maxLength">
     <number>500</number>
    </property>
   </widget>
-  <widget class="QTextEdit" name="textEditChat" >
-   <property name="geometry" >
+  <widget class="QTextEdit" name="textEditChat">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>640</y>
@@ -413,21 +414,21 @@ QPushButton:disabled{&#xd;
      <height>71</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::ClickFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QTextEdit, QListView {
      border: 2px solid gray;
      border-radius: 10px;
  } </string>
    </property>
-   <property name="readOnly" >
+   <property name="readOnly">
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="playerListWidget" name="listWidgetPeopleInRoom" >
-   <property name="geometry" >
+  <widget class="playerListWidget" name="listWidgetPeopleInRoom">
+   <property name="geometry">
     <rect>
      <x>460</x>
      <y>640</y>
@@ -435,10 +436,10 @@ QPushButton:disabled{&#xd;
      <height>71</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string>QListWidget {
      border: 2px solid gray;
      border-radius: 10px;
@@ -446,8 +447,8 @@ QPushButton:disabled{&#xd;
 }</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="textEditGuesses" >
-   <property name="geometry" >
+  <widget class="QTextEdit" name="textEditGuesses">
+   <property name="geometry">
     <rect>
      <x>650</x>
      <y>640</y>
@@ -455,10 +456,10 @@ QPushButton:disabled{&#xd;
      <height>71</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QTextEdit, QListView {
      border: 2px solid gray;
      border-radius: 10px;
@@ -466,8 +467,8 @@ QPushButton:disabled{&#xd;
  } </string>
    </property>
   </widget>
-  <widget class="QLabel" name="labelYourGuesses" >
-   <property name="geometry" >
+  <widget class="QLabel" name="labelYourGuesses">
+   <property name="geometry">
     <rect>
      <x>650</x>
      <y>620</y>
@@ -475,24 +476,24 @@ QPushButton:disabled{&#xd;
      <height>16</height>
     </rect>
    </property>
-   <property name="text" >
-    <string>&lt;B>Your guesses:&lt;/B></string>
+   <property name="text">
+    <string>&lt;B&gt;Your guesses:&lt;/B&gt;</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonSolutions" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonSolutions">
+   <property name="geometry">
     <rect>
-     <x>410</x>
+     <x>360</x>
      <y>10</y>
      <width>111</width>
      <height>34</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
-    <string> QPushButton {
+   <property name="styleSheet">
+    <string notr="true"> QPushButton {
      background-color: rgb(0, 220, 0);
      border-style: outset;
      border-width: 2px;
@@ -511,12 +512,12 @@ QPushButton:disabled{
      border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Solutions</string>
    </property>
   </widget>
-  <widget class="QLabel" name="labelWordListInfo" >
-   <property name="geometry" >
+  <widget class="QLabel" name="labelWordListInfo">
+   <property name="geometry">
     <rect>
      <x>20</x>
      <y>540</y>
@@ -524,23 +525,23 @@ QPushButton:disabled{
      <height>18</height>
     </rect>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Word List Info</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonPreferences" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonPreferences">
+   <property name="geometry">
     <rect>
-     <x>720</x>
+     <x>610</x>
      <y>10</y>
      <width>106</width>
      <height>34</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string> QPushButton {
      background-color: rgb(0, 220, 0);
      border-style: outset;
@@ -560,24 +561,80 @@ QPushButton:disabled{
      border-style: inset;
  } </string>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Preferences</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonFontToggle" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonFontToggle">
+   <property name="geometry">
     <rect>
-     <x>560</x>
+     <x>490</x>
      <y>10</y>
-     <width>113</width>
+     <width>106</width>
      <height>32</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="text" >
+   <property name="styleSheet">
+    <string notr="true"> QPushButton {
+     background-color: rgb(0, 170, 170);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 100);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 150);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text">
     <string>Font Toggle</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonSave">
+   <property name="geometry">
+    <rect>
+     <x>750</x>
+     <y>10</y>
+     <width>106</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="focusPolicy">
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet">
+    <string> QPushButton {
+     background-color: rgb(0, 220, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(0, 100, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(0, 150, 0);
+     border-style: inset;
+ } </string>
+   </property>
+   <property name="text">
+    <string>Save</string>
    </property>
   </widget>
  </widget>
@@ -593,7 +650,7 @@ QPushButton:disabled{
   <tabstop>lineEditSolution</tabstop>
  </tabstops>
  <resources>
-  <include location="../client.qrc" />
+  <include location="../../client.qrc"/>
  </resources>
  <connections/>
 </ui>

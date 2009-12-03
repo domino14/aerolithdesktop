@@ -61,7 +61,7 @@ public:
     MainWindow(QString, DatabaseHandler*);
 private:
     QString aerolithVersion;
-
+    QString WindowTitle;
     QString currentLexicon;
     QTcpSocket *commsSocket;
 
