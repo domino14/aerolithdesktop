@@ -30,6 +30,12 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
         out(&block, QIODevice::WriteOnly)
 {
 
+
+
+    createTableDialog = new QDialog(this);
+    uiTable.setupUi(createTableDialog);
+
+
     uiMainWindow.setupUi(this);
     uiMainWindow.roomTableWidget->verticalHeader()->hide();
     uiMainWindow.roomTableWidget->setColumnWidth(0, 30);
@@ -66,9 +72,6 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(commsSocket, SIGNAL(connected()), this, SLOT(connectedToServer()));
 
     connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
-
-    createTableDialog = new QDialog(this);
-    uiTable.setupUi(createTableDialog);
 
     connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
     connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
@@ -163,7 +166,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(dbHandler, SIGNAL(enableClose(bool)), SLOT(dbDialogEnableClose(bool)));
     connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
 
-    connect(uiTable.pushButtonUseOwnList, SIGNAL(clicked()), SLOT(uploadOwnList()));
+    //   connect(uiTable.pushButtonUseOwnList, SIGNAL(clicked()), SLOT(uploadOwnList()));
+
+
 
     ///////
     // set game icons
@@ -175,8 +180,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     {
 
         if (QMessageBox::question(this, "Create databases?", "You do not seem to have any lexicon databases created. "
-                                  "Creating a lexicon database allows you to see definitions, hooks, and create your own "
-                                  "lists for quizzing. If you would like to create a lexicon database, please click Yes.",
+                                  "Creating a lexicon database is necessary to use Aerolith!",
                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             databaseDialog->show();
     }
@@ -1574,39 +1578,66 @@ void MainWindow::serverThreadHasFinished()
 
 }
 
-void MainWindow::uploadOwnList()
+void MainWindow::on_pushButtonImportList_clicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Select word list");
+    QString filename = QFileDialog::getOpenFileName(this, "Select a list of words or alphagrams");
 
     QFile file(filename);
-     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-         return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
 
-     QTextStream in(&file);
-     QStringList words;
-     while (!in.atEnd())
-     {
-         QString line = in.readLine().simplified();
-         if (line == line.section(" ", 0, 0))
-         {
-             /* basically, just ensuring that the line just has the word */
-             words << line;
+    QTextStream in(&file);
+    QStringList words;
+    while (!in.atEnd())
+    {
+        QString line = in.readLine().simplified();
+        if (line == line.section(" ", 0, 0))
+        {
+            /* basically, just ensuring that the line just has the word */
+            words << line;
 
-         }
-     }
+        }
+    }
 
-     QList <quint32> probIndices;
+    QList <quint32> probIndices;
 
-     bool success = dbHandler->getProbIndices(words, currentLexicon, probIndices);
+    bool success = dbHandler->getProbIndices(words, currentLexicon, probIndices);
 
-     if (!success)
-     {
+    if (!success)
+    {
         QMessageBox::warning(this, "Error", "You must first create a database for this lexicon!");
         return;
-     }
-    qDebug() << probIndices.size() << "," << probIndices;
- }
+    }
+    if (probIndices.size() > 1000)
+    {
+        QMessageBox::warning(this, "List too big", "Your list had more than 500 alphagrams. You can only quiz on 500 "
+                             "at a time. The first 500 alphagrams will be presented to you in this table. The rest of "
+                             "the alphagrams have been saved to disk, and can be loaded with the 'Load Saved List' button.");
+        for (int i = 500; i < probIndices.size(); i++)
+        {
 
+
+        }
+
+    }
+
+}
+
+void MainWindow::on_radioButtonProbability_clicked()
+{
+    uiTable.stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::on_radioButtonOtherLists_clicked()
+{
+    uiTable.stackedWidget->setCurrentIndex(1);
+}
+
+void MainWindow::on_radioButtonMyLists_clicked()
+{
+    uiTable.stackedWidget->setCurrentIndex(2);
+    uiTable.tableWidgetMyLists->resizeColumnsToContents();
+}
 
 /////////////////////////////////////////////////////
 
