@@ -208,7 +208,12 @@ signals:
     void lexiconComboBoxIndexChanged(int);
     void dbDialogEnableClose(bool);
     void spinBoxWordLengthChange(int);
-    void uploadOwnList();
+
+    // uiTable auto-slots
+    void on_radioButtonProbability_clicked();
+    void on_radioButtonOtherLists_clicked();
+    void on_radioButtonMyLists_clicked();
+    void on_pushButtonImportList_clicked();
 };
 
 
