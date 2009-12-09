@@ -200,6 +200,7 @@ signals:
     void serverThreadHasFinished();
     void databaseCreated(QString);
     void setCheckbox(QString);
+    void repopulateMyListsTable();
  private slots:
     void createDatabasesOKClicked();
     void rebuildDatabaseAction(QAction*);

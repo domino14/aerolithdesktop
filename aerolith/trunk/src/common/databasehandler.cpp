@@ -1,6 +1,8 @@
 //    Copyright 2007, 2008, 2009, Cesar Del Solar  <delsolar@gmail.com>
 //    This file is part of Aerolith.
 //
+//    Some of this code is copyright Michael Thelen; noted below.
+//
 //    Aerolith is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
 //    the Free Software Foundation, either version 3 of the License, or
@@ -131,7 +133,31 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
 
 
     }
+
+
+
+    if (clientCall)
+    {
+        dir = QDir::home();
+        if (!dir.exists(".aerolith"))
+            return;
+        dir.cd(".aerolith");
+        if (!dir.exists("userlists"))
+            return;
+        dir.cd("userlists");
+        userlistsDb = QSqlDatabase::addDatabase("QSQLITE", "userlistsDB");
+        userlistsDb.setDatabaseName(dir.absolutePath() + "/userlists.db");
+        userlistsDb.open();
+
+
+        QSqlQuery userListsQuery(userlistsDb);
+        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlists(lexiconName VARCHAR(15), listName VARCHAR(64), "
+                            "lastdateSaved VARCHAR(64), listdata BLOB)");
+        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(listName)");
+
+    }
 }
+
 
 
 void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
@@ -242,7 +268,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
     wordQuery.exec("CREATE TABLE IF NOT EXISTS wordlists(listname VARCHAR(40), numalphagrams INTEGER, probindices BLOB)");
     wordQuery.exec("CREATE TABLE IF NOT EXISTS lengthcounts(length INTEGER, numalphagrams INTEGER)");
-// TOO create index for wordlists?
+    // TOO create index for wordlists?
     LessThans lessThan;
     if (lexInfo->lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
     else lessThan = ENGLISH_LESS_THAN;
@@ -365,7 +391,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
 
 
     // do this indexing at the end.
-//    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
+    //    wordQuery.exec("CREATE UNIQUE INDEX probability_index on alphagrams(probability)");
     wordQuery.exec("CREATE UNIQUE INDEX alphagram_index on alphagrams(alphagram)");
 
     wordQuery.prepare("INSERT INTO lengthcounts(length, numalphagrams) VALUES(?, ?)");
@@ -681,6 +707,104 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QLi
     }
 }
 
+bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QList <quint32>& probIndices)
+{
+    if (probIndices.size() <= 500 && probIndices.size() > 0) saveSingleList(lexiconName, listName, probIndices);
+    else
+    {
+        bool pIndicesIsEmpty = probIndices.isEmpty();
+        int listNum = 1;
+        while (!pIndicesIsEmpty)
+        {
+            QList <quint32> indices;
+
+            for (int i = 0; i < 500; i++)
+            {
+                if (!probIndices.isEmpty())
+                    indices << probIndices.takeFirst();
+                else
+                {
+                    pIndicesIsEmpty = true;
+                    break;
+                }
+            }
+            if (indices.size() > 0)
+            {
+                saveSingleList(lexiconName, listName + "_" + QString::number(listNum), indices);
+                listNum++;
+
+            }
+
+        }
+    }
+
+}
+
+bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QList <quint32>& probIndices)
+{
+    if (!userlistsDb.isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("INSERT INTO userlists(lexiconName, listName, lastdateSaved, listdata) VALUES(?, ?, ?, ?)");
+
+    QByteArray ba;
+    QDataStream baWriter(&ba, QIODevice::WriteOnly);
+
+    baWriter << (quint16)probIndices.size();
+
+    foreach(quint32 index, probIndices)
+    {
+        baWriter << index;
+        baWriter << (quint16)0;  /* number of times missed */
+    }
+    baWriter << (quint16)0; // progress along full list
+    baWriter << (quint16)0; // progress along missed list
+    baWriter << (quint16)0; // number of missed questions of this level
+    baWriter << (quint16)0; // maxNumMissed (i.e. what level miss this is, e.g. words missed 8 times already)
+
+    userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.bindValue(1, listName);
+    userListsQuery.bindValue(2, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+    userListsQuery.bindValue(3, ba);
+    userListsQuery.exec();
+}
+
+
+QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName)
+{
+    QList<QStringList> retList;
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("SELECT listName, lastdateSaved, listdata from userlists where lexiconName = ?");
+    userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.exec();
+
+    while (userListsQuery.next())
+    {
+        QString listName = userListsQuery.value(0).toString();
+        QString lastdateSaved = userListsQuery.value(1).toString();
+        QByteArray ba = userListsQuery.value(2).toByteArray();
+
+        QDataStream baReader(ba);
+
+        quint16 numAlphas;
+        baReader >> numAlphas;
+        baReader.skipRawData((int)6*(int)numAlphas);    // skip all of these questions
+        quint16 progFull, progMissed, numMissed, maxNumMissed;
+        baReader >> progFull >> progMissed >> numMissed >> maxNumMissed;
+
+        QString alphaProg = QString("%1 / %2").arg(progFull).arg(numAlphas);
+        QString missedProg = QString("%1 / %2").arg(progMissed).arg(numMissed);
+
+        QStringList sl;
+        sl << listName << alphaProg << missedProg << lastdateSaved;
+        retList << sl;
+    }
+    return retList;
+}
+
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
 {
     QMap <unsigned char, int> dist;
@@ -766,7 +890,7 @@ void LexiconInfo::resetLetterDistributionVariables()
 
 double LexiconInfo::combinations(QString alphagram)
 {
-        // Build parallel arrays of letters with their counts, and the
+    // Build parallel arrays of letters with their counts, and the
     // precalculated combinations based on the letter frequency
     QList<unsigned char> letters;
     QList<int> counts;
