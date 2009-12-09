@@ -91,7 +91,11 @@ public:
     QMap<QString, LexiconInfo> lexiconMap;
     int getNumWordsByLength(QString lexiconName, int length);
     bool getProbIndices(QStringList, QString, QList<quint32>&);
+    bool saveNewLists(QString lexiconName, QString listName, QList <quint32>& probIndices);
+    QList <QStringList> getListLabels(QString lexiconName);
 private:
+     bool saveSingleList(QString lexiconName, QString listName, QList <quint32>& probIndices);
+    QSqlDatabase userlistsDb;
     enum SqlListMakerQueryTypes
     {
       ALPHAGRAM_QUERY, PROBABILITY_QUERY

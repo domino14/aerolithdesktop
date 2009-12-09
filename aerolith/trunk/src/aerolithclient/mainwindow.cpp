@@ -197,7 +197,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
         dbHandler->connectToDatabases(true, dbList);
     }
 
-
+    repopulateMyListsTable();
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -1580,6 +1580,8 @@ void MainWindow::serverThreadHasFinished()
 
 void MainWindow::on_pushButtonImportList_clicked()
 {
+    QString listName = QInputDialog::getText(this, "List name", "Please enter a name for this list");
+    if (listName == "") return;
     QString filename = QFileDialog::getOpenFileName(this, "Select a list of words or alphagrams");
 
     QFile file(filename);
@@ -1608,19 +1610,40 @@ void MainWindow::on_pushButtonImportList_clicked()
         QMessageBox::warning(this, "Error", "You must first create a database for this lexicon!");
         return;
     }
-    if (probIndices.size() > 1000)
+
+    if (probIndices.size() > 500)
     {
         QMessageBox::warning(this, "List too big", "Your list had more than 500 alphagrams. You can only quiz on 500 "
-                             "at a time. The first 500 alphagrams will be presented to you in this table. The rest of "
-                             "the alphagrams have been saved to disk, and can be loaded with the 'Load Saved List' button.");
-        for (int i = 500; i < probIndices.size(); i++)
-        {
-
-
-        }
-
+                             "at a time. The list has been split up into several parts; you can see these below.");
     }
 
+    success = dbHandler->saveNewLists(currentLexicon, listName, probIndices);
+    if (!success)
+    {
+        QMessageBox::critical(this, "Error", "Was unable to connect to userlists database! Please inform "
+                              "delsolar@gmail.com about this.");
+        return;
+    }
+    repopulateMyListsTable();
+
+}
+
+void MainWindow::repopulateMyListsTable()
+{
+    uiTable.tableWidgetMyLists->clearContents();
+    QList <QStringList> myListsTableLabels = dbHandler->getListLabels(currentLexicon);
+
+    for (int i = 0; i < myListsTableLabels.size(); i++)
+    {
+
+        uiTable.tableWidgetMyLists->insertRow(i);
+        uiTable.tableWidgetMyLists->setItem(i, 0, new QTableWidgetItem(myListsTableLabels[i][0]));
+        uiTable.tableWidgetMyLists->setItem(i, 1, new QTableWidgetItem(myListsTableLabels[i][1]));
+        uiTable.tableWidgetMyLists->setItem(i, 2, new QTableWidgetItem(myListsTableLabels[i][2]));
+        uiTable.tableWidgetMyLists->setItem(i, 3, new QTableWidgetItem(myListsTableLabels[i][3]));
+
+    }
+    uiTable.tableWidgetMyLists->resizeColumnsToContents();
 }
 
 void MainWindow::on_radioButtonProbability_clicked()
@@ -1636,7 +1659,7 @@ void MainWindow::on_radioButtonOtherLists_clicked()
 void MainWindow::on_radioButtonMyLists_clicked()
 {
     uiTable.stackedWidget->setCurrentIndex(2);
-    uiTable.tableWidgetMyLists->resizeColumnsToContents();
+
 }
 
 /////////////////////////////////////////////////////
