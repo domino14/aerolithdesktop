@@ -83,6 +83,13 @@ public:
     DatabaseHandler()
     {
     }
+
+    enum UserListQuizModes
+    {
+        MODE_CONTINUE, MODE_RESTART, MODE_FIRSTMISSED
+    };
+
+
     void createLexiconMap(bool);
     void connectToDatabases(bool clientCall, QStringList dbList);
     void createLexiconDatabases(QStringList);
@@ -91,8 +98,10 @@ public:
     QMap<QString, LexiconInfo> lexiconMap;
     int getNumWordsByLength(QString lexiconName, int length);
     bool getProbIndices(QStringList, QString, QList<quint32>&);
+    bool getProbIndicesFromSavedList(QString, QString, QList<quint32>&, UserListQuizModes);
     bool saveNewLists(QString lexiconName, QString listName, QList <quint32>& probIndices);
     QList <QStringList> getListLabels(QString lexiconName);
+    void deleteUserList(QString lexiconName, QString listName);
 private:
      bool saveSingleList(QString lexiconName, QString listName, QList <quint32>& probIndices);
     QSqlDatabase userlistsDb;

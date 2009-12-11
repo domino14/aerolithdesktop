@@ -215,6 +215,7 @@ signals:
     void on_radioButtonOtherLists_clicked();
     void on_radioButtonMyLists_clicked();
     void on_pushButtonImportList_clicked();
+    void on_pushButtonDeleteList_clicked();
 };
 
 

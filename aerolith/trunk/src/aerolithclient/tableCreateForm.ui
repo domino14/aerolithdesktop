@@ -287,7 +287,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QGroupBox" name="groupBoxProbability">
@@ -498,17 +498,22 @@
      </column>
      <column>
       <property name="text">
-       <string>Alpha. prog.</string>
+       <string>Total Qs</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>Missed prog.</string>
+       <string>#current Qs</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>Last quizzed</string>
+       <string>#1st missed</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Last saved</string>
       </property>
      </column>
     </widget>
@@ -531,8 +536,8 @@
     <widget class="QPushButton" name="pushButtonDeleteList">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>310</y>
+       <x>410</x>
+       <y>10</y>
        <width>90</width>
        <height>27</height>
       </rect>
@@ -544,7 +549,7 @@
     <widget class="QRadioButton" name="radioButtonContinueListQuiz">
      <property name="geometry">
       <rect>
-       <x>130</x>
+       <x>10</x>
        <y>310</y>
        <width>108</width>
        <height>23</height>
@@ -560,7 +565,7 @@
     <widget class="QRadioButton" name="radioButtonRestartListQuiz">
      <property name="geometry">
       <rect>
-       <x>230</x>
+       <x>110</x>
        <y>310</y>
        <width>131</width>
        <height>23</height>
@@ -568,6 +573,19 @@
      </property>
      <property name="text">
       <string>Restart list quiz</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButtonQuizFirstMissed">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>310</y>
+       <width>161</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Quiz on first-missed</string>
      </property>
     </widget>
    </widget>

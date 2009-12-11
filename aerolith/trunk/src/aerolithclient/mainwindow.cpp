@@ -197,7 +197,10 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
         dbHandler->connectToDatabases(true, dbList);
     }
 
-    repopulateMyListsTable();
+    uiTable.tableWidgetMyLists->setSelectionMode(QAbstractItemView::SingleSelection);
+    uiTable.tableWidgetMyLists->setSelectionBehavior(QAbstractItemView::SelectRows);
+    uiTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -856,6 +859,8 @@ void MainWindow::receivedPM(QString username, QString message)
 
 void MainWindow::createUnscrambleGameTable()
 {
+    if (uiTable.radioButtonMyLists->isChecked() && uiTable.tableWidgetMyLists->selectedItems().size() == 0) return;
+
     writeHeaderData();
     out << (quint8)CLIENT_NEW_TABLE;
     out << (quint8)GAME_TYPE_UNSCRAMBLE;
@@ -881,6 +886,21 @@ void MainWindow::createUnscrambleGameTable()
             out << (quint8)LIST_TYPE_ALL_WORD_LENGTH;
             out << (quint8)uiTable.spinBoxWL->value();   // special values mean the entire range.
         }
+    }
+    else if (uiTable.radioButtonMyLists->isChecked())
+    {
+        out << (quint8)LIST_TYPE_MULTIPLE_INDICES;
+        QList<QTableWidgetItem*> si = uiTable.tableWidgetMyLists->selectedItems();
+        if (si.size() != 5) return;
+
+        QList <quint32> qindices;
+
+        DatabaseHandler::UserListQuizModes mode;
+
+        if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = DatabaseHandler::MODE_CONTINUE;
+        else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = DatabaseHandler::MODE_RESTART;
+        else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = DatabaseHandler::MODE_FIRSTMISSED;
+        dbHandler->getProbIndicesFromSavedList(currentLexicon,si[0]->text(), qindices, mode);
     }
 
 
@@ -1182,6 +1202,7 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
     gameBoardWidget->setLexicon(lexiconLists.at(index).lexicon);
     currentLexicon = lexiconLists.at(index).lexicon;
     uiTable.labelLexiconName->setText(currentLexicon);
+    repopulateMyListsTable();
 
 }
 
@@ -1631,16 +1652,15 @@ void MainWindow::on_pushButtonImportList_clicked()
 void MainWindow::repopulateMyListsTable()
 {
     uiTable.tableWidgetMyLists->clearContents();
+    uiTable.tableWidgetMyLists->setRowCount(0);
     QList <QStringList> myListsTableLabels = dbHandler->getListLabels(currentLexicon);
 
     for (int i = 0; i < myListsTableLabels.size(); i++)
     {
 
-        uiTable.tableWidgetMyLists->insertRow(i);
-        uiTable.tableWidgetMyLists->setItem(i, 0, new QTableWidgetItem(myListsTableLabels[i][0]));
-        uiTable.tableWidgetMyLists->setItem(i, 1, new QTableWidgetItem(myListsTableLabels[i][1]));
-        uiTable.tableWidgetMyLists->setItem(i, 2, new QTableWidgetItem(myListsTableLabels[i][2]));
-        uiTable.tableWidgetMyLists->setItem(i, 3, new QTableWidgetItem(myListsTableLabels[i][3]));
+        uiTable.tableWidgetMyLists->insertRow(0);
+        for (int j = 0; j < myListsTableLabels.at(i).size(); j++)
+            uiTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(myListsTableLabels[i][j]));
 
     }
     uiTable.tableWidgetMyLists->resizeColumnsToContents();
@@ -1659,6 +1679,24 @@ void MainWindow::on_radioButtonOtherLists_clicked()
 void MainWindow::on_radioButtonMyLists_clicked()
 {
     uiTable.stackedWidget->setCurrentIndex(2);
+    uiTable.radioButtonContinueListQuiz->setChecked(true);
+
+}
+
+void MainWindow::on_pushButtonDeleteList_clicked()
+{
+    QList<QTableWidgetItem*> si = uiTable.tableWidgetMyLists->selectedItems();
+    if (si.size() != 5) return;
+
+    if (QMessageBox::Yes == QMessageBox::warning(this, "Are you sure?", "Are you sure you wish to delete '" +
+                         si[0]->text() + "'?",
+                         QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    {
+        dbHandler->deleteUserList(currentLexicon, si[0]->text());
+        repopulateMyListsTable();
+
+
+    }
 
 }
 
