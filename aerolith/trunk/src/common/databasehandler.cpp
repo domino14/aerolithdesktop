@@ -140,10 +140,10 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
     {
         dir = QDir::home();
         if (!dir.exists(".aerolith"))
-            return;
+            dir.mkdir(".aerolith");
         dir.cd(".aerolith");
         if (!dir.exists("userlists"))
-            return;
+            dir.mkdir("userlists");
         dir.cd("userlists");
         userlistsDb = QSqlDatabase::addDatabase("QSQLITE", "userlistsDB");
         userlistsDb.setDatabaseName(dir.absolutePath() + "/userlists.db");
@@ -153,7 +153,7 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
         QSqlQuery userListsQuery(userlistsDb);
         userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlists(lexiconName VARCHAR(15), listName VARCHAR(64), "
                             "lastdateSaved VARCHAR(64), listdata BLOB)");
-        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(listName)");
+        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(listName, lexiconName)");
 
     }
 }
@@ -705,11 +705,27 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QLi
             alphaset.insert(alpha);
         }
     }
+    return true;
+}
+
+bool DatabaseHandler::getProbIndicesFromSavedList(QString lexiconName, QString listName,
+                                                QList<quint32>& indices, UserListQuizModes mode)
+{
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("SELECT listdata from userlists where lexiconName = ? and listName = ?");
+    userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.bindValue(1, listName);
+    userListsQuery.exec();
+
 }
 
 bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QList <quint32>& probIndices)
 {
-    if (probIndices.size() <= 500 && probIndices.size() > 0) saveSingleList(lexiconName, listName, probIndices);
+    if (probIndices.size() <= 500 && probIndices.size() > 0)
+    {
+        bool success = saveSingleList(lexiconName, listName, probIndices);
+        if (!success) return false;
+    }
     else
     {
         bool pIndicesIsEmpty = probIndices.isEmpty();
@@ -730,14 +746,14 @@ bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QList 
             }
             if (indices.size() > 0)
             {
-                saveSingleList(lexiconName, listName + "_" + QString::number(listNum), indices);
+                bool success = saveSingleList(lexiconName, listName + "_" + QString::number(listNum), indices);
                 listNum++;
-
+                if (!success) return false;
             }
 
         }
     }
-
+    return true;
 }
 
 bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QList <quint32>& probIndices)
@@ -758,18 +774,25 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QLis
     foreach(quint32 index, probIndices)
     {
         baWriter << index;
-        baWriter << (quint16)0;  /* number of times missed */
     }
-    baWriter << (quint16)0; // progress along full list
-    baWriter << (quint16)0; // progress along missed list
-    baWriter << (quint16)0; // number of missed questions of this level
-    baWriter << (quint16)0; // maxNumMissed (i.e. what level miss this is, e.g. words missed 8 times already)
+
+    baWriter << (quint16)0; // size of first-missed indices
+    baWriter << (quint16)probIndices.size(); // size of question list to be currently quizzed on
+
+    /* this is redundant, but disk space is cheap and I want a very simple save format */
+    foreach(quint32 index, probIndices)
+    {
+        baWriter << index;
+    }
+    baWriter << (quint16)0; // size of missed list for current question set
 
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
     userListsQuery.bindValue(2, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
     userListsQuery.bindValue(3, ba);
     userListsQuery.exec();
+
+    return true;
 }
 
 
@@ -791,18 +814,41 @@ QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName)
 
         quint16 numAlphas;
         baReader >> numAlphas;
-        baReader.skipRawData((int)6*(int)numAlphas);    // skip all of these questions
-        quint16 progFull, progMissed, numMissed, maxNumMissed;
-        baReader >> progFull >> progMissed >> numMissed >> maxNumMissed;
+        baReader.skipRawData((int)4*(int)numAlphas);    // skip all of these questions
 
-        QString alphaProg = QString("%1 / %2").arg(progFull).arg(numAlphas);
-        QString missedProg = QString("%1 / %2").arg(progMissed).arg(numMissed);
+        quint16 sizeFMI;
+        baReader >> sizeFMI;
+        baReader.skipRawData((int)4*(int)sizeFMI);  // skip all first-missed questions
+
+        quint16 sizeCurrentQL;
+        baReader >> sizeCurrentQL;
+        baReader.skipRawData((int)4*(int)sizeCurrentQL);    // skip all current-list questions
+
+        quint16 sizeMissedList;
+        baReader >> sizeMissedList;
+        // could skip to the end here, but don't need to.
+
+        QString totalQs, currentQs, firstMissedQs;
+        totalQs = QString::number(numAlphas);
+        firstMissedQs = QString::number(sizeFMI);
+        currentQs = QString::number(sizeCurrentQL + sizeMissedList);
+
 
         QStringList sl;
-        sl << listName << alphaProg << missedProg << lastdateSaved;
+        sl << listName << totalQs << currentQs <<  firstMissedQs << lastdateSaved;
         retList << sl;
     }
     return retList;
+}
+
+void DatabaseHandler::deleteUserList(QString lexiconName, QString listName)
+{
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("DELETE from userlists where lexiconName = ? and listName = ?");
+    userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.bindValue(1, listName);
+    userListsQuery.exec();
+
 }
 
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
