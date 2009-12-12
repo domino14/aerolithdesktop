@@ -88,15 +88,14 @@
 #define SERVER_TABLE_READY_BEGIN 'B'
 #define SERVER_TABLE_GAME_START 'S'
 #define SERVER_TABLE_GAME_END 'E'
-#define SERVER_TABLE_ALPHAGRAMS 'W'
 #define SERVER_TABLE_QUESTIONS 'Q'
 #define SERVER_TABLE_TIMER_VALUE 'T'
 #define SERVER_TABLE_NUM_QUESTIONS 'N'
 #define SERVER_TABLE_GIVEUP 'U'
-#define SERVER_TABLE_GUESS_RIGHT 'A'
 #define SERVER_TABLE_CORRECT_ANSWER 'Y'
 
-//#define SERVER_TABLE_
+#define SERVER_TABLE_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
+#define SERVER_TABLE_FULL_QUIZ_DONE 'F' // no more questions in missed or current
 
 
 

@@ -23,7 +23,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     this->dbHandler = dbHandler;
     //this->setStyle(new QWindowsStyle);
     tableUi.setupUi(this);
-
+    savingAllowed = false;
 
     connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
     connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
@@ -184,23 +184,6 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
 
 #endif
 
-    /* connect to word database*/
-    //wordDb = QSqlDatabase::addDatabase("QSQLITE", "wordDB_client");
-    /* TODO FIX (connect to appropriate lexicon database)
-    wordDb.setDatabaseName(QCoreApplication::applicationDirPath() + "/" + WORD_DATABASE_FILENAME);*/
-    //    bool success = wordDb.open();
-    //    if (!success)
-    //    {
-    //        qDebug() << "could not open!";
-    //        QMessageBox::critical(this, "Error",
-    //                              "Word database was not found in your directory. You will not be able to use many features of Aerolith.");
-    //
-    //    }
-    //    else
-    //    {
-    //        qDebug() << "Connected to word database successfully";
-    //        qDebug() << wordDb.isOpen();
-    //    }
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -213,34 +196,15 @@ UnscrambleGameTable::~UnscrambleGameTable()
 
 }
 
-//void UnscrambleGameTable::setDatabase(QString name)
-//{
-//    zyzzyvaDb.close();
-//    QSqlDatabase::removeDatabase("zyzzyvaDB");
-//    #ifdef Q_WS_MAC
-//    QSettings ZyzzyvaSettings("pietdepsi.com", "Zyzzyva");
-//#else
-//    QSettings ZyzzyvaSettings("Piet Depsi", "Zyzzyva");
-//#endif
-//    ZyzzyvaSettings.beginGroup("Zyzzyva");
-//
-//    QString defaultUserDir = QDir::homePath() + "/.zyzzyva";
-//    QString zyzzyvaDataDir = QDir::cleanPath (ZyzzyvaSettings.value("user_data_dir", defaultUserDir).toString());
-//
-//    if (QFile::exists(zyzzyvaDataDir + "/lexicons/" + name + ".db"))
-//    {
-//        zyzzyvaDb = QSqlDatabase::addDatabase("QSQLITE", "zyzzyvaDB");
-//        zyzzyvaDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/" + name + ".db");
-//        zyzzyvaDb.open();
-//    }
-//    else
-//    {
-//        QMessageBox::warning(this, "Database not found", "A word database was not found. "
-//                             "You will not be able to see definitions and hooks for the words at the end of each round. Please generate the "
-//                             "database for this lexicon with Zyzzyva, a free word study tool, by Michael Thelen, found at "
-//                             "<a href=""http://www.zyzzyva.net"">http://www.zyzzyva.net</a>.");
-//    }
-//}
+void UnscrambleGameTable::setCurrentSug(SavedUnscrambleGame sug)
+{
+    currentSug = sug;
+}
+
+void UnscrambleGameTable::setSavingAllowed(bool a)
+{
+    savingAllowed = a;
+}
 
 void UnscrambleGameTable::changeTileColors(int option)
 {
@@ -757,6 +721,19 @@ void UnscrambleGameTable::populateSolutionsTable()
                     alphFont.setBold(true);
 
                     tableAlphagramItem->setFont(alphFont);
+
+                    if (savingAllowed)
+                    {
+                        if (currentSug.seenWholeList)
+                        {
+                            currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
+                        }
+                        else
+                        {
+                            currentSug.firstMissed.insert(wordQuestions.at(i).probIndex);
+                        }
+                        currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
+                    }
                 }
 
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
@@ -961,12 +938,39 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
     thisWord.space = index;
     qDebug() << "Added thisword" << index;
     thisWord.notYetSolved = notYetSolved;
-
+    thisWord.probIndex = probIndex;
     wordQuestions << thisWord;
     foreach (QString answer, solutions)
         answerHash.insert(answer, index);
 
 }
+
+void UnscrambleGameTable::mainQuizDone()
+{
+    if (savingAllowed)
+    {
+        /* we are finally done with the main quiz */
+        if (!currentSug.seenWholeList)
+        {
+            currentSug.seenWholeList = true;
+        }
+
+        currentSug.curQuizList = currentSug.curMissedList;
+        currentSug.curMissedList.clear();
+    }
+}
+
+void UnscrambleGameTable::fullQuizDone()
+{
+    // we are done with the entire quiz
+    if (savingAllowed)
+    {
+        Q_ASSERT(currentSug.curMissedList.isEmpty());
+        Q_ASSERT(currentSug.curQuizList.isEmpty());
+
+    }
+}
+
 
 QString UnscrambleGameTable::answeredCorrectly(QString username, quint8 space, quint8 specificAnswer)
 {
@@ -993,6 +997,18 @@ QString UnscrambleGameTable::answeredCorrectly(QString username, quint8 space, q
             tile->hide();
 
         wordRectangles.at(space)->setText("");
+
+        if (savingAllowed)
+        {
+            if (currentSug.brandNew)
+            {
+                currentSug.brandNew = false;
+                currentSug.curQuizList = currentSug.origIndices;
+            }
+            Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
+            currentSug.curQuizList.remove(wordQuestions.at(space).probIndex);
+
+        }
     }
 
     QString answer = wordQuestions[space].solutions.at(specificAnswer);

@@ -2,3 +2,4 @@
 
 - The idea behind a "progress" is flawed! Server randomizes question order, so progress makes no sense! Think
   of an alternate idea.
+  -- get rid of progress and just keep track of whether a list has been fully gone through once or not.

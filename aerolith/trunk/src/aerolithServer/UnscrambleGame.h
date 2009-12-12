@@ -22,6 +22,8 @@
 #include <QObject>
 #include "TableGame.h"
 #include "databasehandler.h"
+#include "SavedUnscrambleGame.h"
+
 
 struct highScoreData
 {
@@ -134,6 +136,10 @@ private:
 
     QVector <quint32> missedArray;
     QVector <quint32> quizArray;
+
+    QSet <quint32> quizSet;
+    QSet <quint32> missedSet;
+
     quint16 quizIndex;
     QVector <alphagramInfo> *alphaInfo;
 
@@ -151,7 +157,8 @@ private:
     void sendGiveUpPacket(QString);
 
     void sendNumQuestionsPacket();
-
+    void sendListCompletelyExhaustedMessage();
+    void sendListExhaustedMessage();
 
 private slots:
     void updateGameTimer();
