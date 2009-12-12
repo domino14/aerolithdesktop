@@ -561,6 +561,7 @@ void MainWindow::readFromServer()
                     gameBoardWidget->resetTable(tablenum, wList, playerName);
                     gameBoardWidget->show();
                     uiMainWindow.comboBoxLexicon->setEnabled(false);
+                    gameBoardWidget->setSavingAllowed(savingGameAllowable);
 
                 }
                 if (currentTablenum == tablenum)
@@ -910,8 +911,8 @@ void MainWindow::createUnscrambleGameTable()
         QList<QTableWidgetItem*> si = uiTable.tableWidgetMyLists->selectedItems();
         if (si.size() != 5) return;
 
-        QList <quint32> qindices;
-        QList <quint32> mindices;
+        QSet <quint32> qindices;
+        QSet <quint32> mindices;
 
         DatabaseHandler::UserListQuizModes mode;
         bool seenWholeList;
@@ -919,10 +920,41 @@ void MainWindow::createUnscrambleGameTable()
         if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = DatabaseHandler::MODE_CONTINUE;
         else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = DatabaseHandler::MODE_RESTART;
         else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = DatabaseHandler::MODE_FIRSTMISSED;
-        dbHandler->getProbIndicesFromSavedList(currentLexicon,si[0]->text(), qindices, mindices, mode, seenWholeList);
+        QByteArray savedGameBA = dbHandler->getSavedListArray(currentLexicon, si[0]->text());
+
+        SavedUnscrambleGame thisSug;
+        thisSug.populateFromByteArray(savedGameBA);
+
+        switch (mode)
+        {
+            case DatabaseHandler::MODE_RESTART:
+                qindices = thisSug.origIndices;
+                mindices.clear();
+                break;
+
+            case DatabaseHandler::MODE_FIRSTMISSED:
+                qindices = thisSug.firstMissed;
+                mindices.clear();
+                break;
+
+            case DatabaseHandler::MODE_CONTINUE:
+                if (thisSug.brandNew)
+                {
+                    qindices = thisSug.origIndices;
+                    mindices.clear();
+                }
+                else
+                {
+                    qindices = thisSug.curQuizList;
+                    mindices = thisSug.curMissedList;
+                }
+                break;
+        }
 
         out << si[0]->text().left(32);
         out << qindices << mindices;
+        gameBoardWidget->setCurrentSug(thisSug);
+        gameBoardWidget->setUnmodifiedListName(si[0]->text());
     }
 
 
@@ -1112,6 +1144,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
         }
         break;
+    case SERVER_TABLE_MAIN_QUIZ_DONE:
+        gameBoardWidget->mainQuizDone();
+        break;
+    case SERVER_TABLE_FULL_QUIZ_DONE:
+        gameBoardWidget->fullQuizDone();
+        break;
+
     }
 
 
@@ -1645,7 +1684,7 @@ void MainWindow::on_pushButtonImportList_clicked()
         }
     }
 
-    QList <quint32> probIndices;
+    QSet <quint32> probIndices;
 
     bool success = dbHandler->getProbIndices(words, currentLexicon, probIndices);
 

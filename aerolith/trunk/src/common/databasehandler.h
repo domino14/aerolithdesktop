@@ -22,6 +22,8 @@
 #include <QtSql>
 #include "dawg.h"
 
+#include "SavedUnscrambleGame.h"
+
 
 struct Alph
 {
@@ -97,16 +99,16 @@ public:
     QStringList availableDatabases;
     QMap<QString, LexiconInfo> lexiconMap;
     int getNumWordsByLength(QString lexiconName, int length);
-    bool getProbIndices(QStringList, QString, QList<quint32>&);
-    bool getProbIndicesFromSavedList(QString, QString, QList<quint32>&, QList<quint32>&, UserListQuizModes, bool&);
-    bool saveNewLists(QString lexiconName, QString listName, QList <quint32>& probIndices);
+    bool getProbIndices(QStringList, QString, QSet<quint32>&);
+    QByteArray getSavedListArray(QString, QString);
+    bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
     QList <QStringList> getListLabels(QString lexiconName);
     void deleteUserList(QString lexiconName, QString listName);
 
 
 
 private:
-     bool saveSingleList(QString lexiconName, QString listName, QList <quint32>& probIndices);
+     bool saveSingleList(QString lexiconName, QString listName, QSet <quint32>& probIndices);
     QSqlDatabase userlistsDb;
     enum SqlListMakerQueryTypes
     {

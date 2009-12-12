@@ -30,17 +30,6 @@
 #include "GameTable.h"
 #include "databasehandler.h"
 
-struct SavedUnscrambleGame
-{
-    QList <quint16> origIndices;
-    QList <quint16> firstMissed;
-    quint16 firstProgress;
-    QList <quint16> curQuizList;
-    QList <quint16> curMissedList;
-
-};
-
-
 
 class UnscrambleGameTable : public GameTable
 {
@@ -59,6 +48,8 @@ public:
     void gotChat(QString);
     void gotTimerValue(quint16 timerval);
     void gotWordListInfo(QString);
+    void mainQuizDone();
+    void fullQuizDone();
 
     void clearSolutionsDialog();
     void populateSolutionsTable();
@@ -69,10 +60,16 @@ public:
 
     void setReadyIndicator(QString);
     void clearReadyIndicators();
-
+    void setCurrentSug(SavedUnscrambleGame sug);
+    void setSavingAllowed(bool);
+    void setUnmodifiedListName(QString u)
+    {
+        unmodifiedListName = u;
+    }
 private:
 
-
+    SavedUnscrambleGame currentSug;
+    bool savingAllowed;
     QGraphicsScene gfxScene;
     Ui::tableForm tableUi;
     int currentWordLength;
@@ -105,6 +102,7 @@ private:
         Chip* chip;
         QList <Tile*> tiles;
         quint8 space;
+        quint32 probIndex;
     };
 
     QHash <QString, int> answerHash;
@@ -117,6 +115,8 @@ private:
     int getTileWidth(int wordLength);
     void getBasePosition(int index, double& x, double& y, int tileWidth);
 
+    QString unmodifiedListName;
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 signals:
@@ -127,6 +127,7 @@ signals:
     void sendPM(QString);
     void exitThisTable();
     void viewProfile(QString);
+    void saveCurrentGameBA(QByteArray, QString, QString);
         private slots:
     void enteredGuess();
     void enteredChat();

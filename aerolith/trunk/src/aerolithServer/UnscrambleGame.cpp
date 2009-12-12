@@ -67,8 +67,8 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     else if (listType == LIST_TYPE_MULTIPLE_INDICES)
     {
         table->host->connData.in >> wordList;
-        table->host->connData.in >> quizArray;  /* TODO need some sanity checks on these inputs! */
-        table->host->connData.in >> missedArray;
+        table->host->connData.in >> quizSet;  /* TODO need some sanity checks on these inputs! */
+        table->host->connData.in >> missedSet;
         wordList = "(User list) " + wordList;
     }
 
@@ -550,21 +550,23 @@ void UnscrambleGame::generateQuizArray()
         }
         else    // multiple_indices
         {
-            quint32 size = quizArray.size();   // already assigned earlier in initialize()
+            quint32 size = quizSet.size();   // already assigned earlier in initialize()
 
             QVector <quint32> tempVector;
             QVector <quint32> indexVector;
             indexVector.resize(size);
-            quint32 index;
+
             getUniqueRandomNumbers(tempVector, 0, size-1, size);
+            QList <quint32> setVals = quizSet.values();
             for (quint32 i = 0; i < size; i++)
             {
-                indexVector[tempVector.at(i)] = quizArray[i];
+                indexVector[tempVector.at(i)] = setVals[i];
             }
-
+            quizArray.resize(size);
             for (quint32 i = 0; i < size; i++)
                 quizArray[i] = indexVector.at(i);
 
+            missedArray = missedSet.values().toVector();
             numTotalRacks = size;
 
         }
@@ -604,7 +606,7 @@ void UnscrambleGame::prepareTableQuestions()
         quizIndex = 0;	// and set the index back at the beginning
         missedArray.clear();	// also clear the missed array, cuz we're starting a new one.
         table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
-
+        sendListExhaustedMessage();
         numRacksSeen = 0;
         numTotalRacks = quizArray.size();
     }
@@ -630,11 +632,14 @@ void UnscrambleGame::prepareTableQuestions()
                 if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
                 {
                     table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
-
+                    sendListCompletelyExhaustedMessage();
                 }
                 else
+                {
                     table->sendTableMessage("This challenge is over. To view scores, please exit table and "
                                             "select 'Get today's scores' from the 'Challenges' button.");
+                    sendListCompletelyExhaustedMessage();
+                }
             }
             break;
         }
@@ -685,6 +690,26 @@ void UnscrambleGame::sendUserCurrentQuestions(ClientSocket* socket)
     }
     fixHeaderLength();
     socket->write(block);
+}
+
+void UnscrambleGame::sendListExhaustedMessage()
+{
+    writeHeaderData();
+    out << (quint8) SERVER_TABLE_COMMAND;
+    out << table->tableNumber;
+    out << (quint8) SERVER_TABLE_MAIN_QUIZ_DONE;
+    fixHeaderLength();
+    table->sendGenericPacket();
+}
+
+void UnscrambleGame::sendListCompletelyExhaustedMessage()
+{
+    writeHeaderData();
+    out << (quint8) SERVER_TABLE_COMMAND;
+    out << table->tableNumber;
+    out << (quint8) SERVER_TABLE_FULL_QUIZ_DONE;
+    fixHeaderLength();
+    table->sendGenericPacket();
 }
 
 void UnscrambleGame::sendTimerValuePacket(quint16 timerValue)

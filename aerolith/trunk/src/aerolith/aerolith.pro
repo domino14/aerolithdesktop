@@ -50,7 +50,8 @@ HEADERS += mainwindow.h \
     playerlistwidget.h \
     GameTable.h \
     BonusGame.h \
-    databasehandler.h
+    databasehandler.h \
+    ../aerolithclient/SavedUnscrambleGame.h
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 HEADERS += mainserver.h \
