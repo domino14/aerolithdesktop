@@ -709,14 +709,116 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QLi
 }
 
 bool DatabaseHandler::getProbIndicesFromSavedList(QString lexiconName, QString listName,
-                                                QList<quint32>& indices, UserListQuizModes mode)
+                                                QList<quint32>& qindices, QList <quint32>& mindices,
+                                                UserListQuizModes mode, bool& seenWholeList)
 {
     QSqlQuery userListsQuery(userlistsDb);
     userListsQuery.prepare("SELECT listdata from userlists where lexiconName = ? and listName = ?");
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
     userListsQuery.exec();
+    seenWholeList = false;
+    while (userListsQuery.next())
+    {
+        QByteArray ba = userListsQuery.value(0).toByteArray();
+        QDataStream baReader(ba);
 
+        quint16 numAlphas;
+        baReader >> numAlphas;
+
+        for (int i = 0; i < numAlphas; i++)
+        {
+            quint32 index;
+            baReader >> index;
+            qindices << index;
+
+        }
+
+        quint16 sizeFMI;
+        baReader >> sizeFMI;
+        for (int i = 0; i < sizeFMI; i++)
+        {
+            quint32 index;
+            baReader >> index;
+            mindices << index;
+        }
+
+        switch (mode)
+        {
+            case MODE_RESTART:
+                mindices.clear();
+                // no change to qindices
+            break;
+            case MODE_FIRSTMISSED:
+                qindices = mindices;
+                mindices.clear();
+            break;
+            case MODE_CONTINUE:
+                {
+
+                    quint16 progress;
+                    baReader >> progress;
+
+                    if (progress == 0)
+                    {
+                        // quiz has never been started; easiest case.
+                       mindices.clear();
+                    }
+                    else if (progress == numAlphas)
+                    {
+                        // list has been gone through once already. (at least)
+                        // there is more data after 'progress'
+                        seenWholeList = true;
+                        quint16 sizeCurrentQL;
+                        baReader >> sizeCurrentQL;
+                        qindices.clear();
+                        mindices.clear();
+
+                        for (int i = 0; i < sizeCurrentQL; i++)
+                        {
+                            quint32 index;
+                            baReader >> index;
+                            qindices << index;
+
+                        }
+
+                        quint16 sizeMissedList;
+                        baReader >> sizeMissedList;
+
+                        for (int i = 0; i < sizeMissedList; i++)
+                        {
+                            quint32 index;
+                            baReader >> index;
+                            mindices << index;
+                        }
+
+                    }
+                    else
+                    {
+                        // progress is somewhere in between.
+                        qindices.clear();
+                        mindices.clear();
+
+                        quint16 sizeMissedList;
+                        baReader >> sizeMissedList;
+
+                        for (int i = 0; i < sizeMissedList; i++)
+                        {
+                            quint32 index;
+                            baReader >> index;
+                            mindices << index;
+                        }
+
+                        qindices = qindices.mid(progress);
+
+                    }
+
+                }
+            break;
+
+        }
+    }
+    return true;
 }
 
 bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QList <quint32>& probIndices)
@@ -777,14 +879,7 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QLis
     }
 
     baWriter << (quint16)0; // size of first-missed indices
-    baWriter << (quint16)probIndices.size(); // size of question list to be currently quizzed on
-
-    /* this is redundant, but disk space is cheap and I want a very simple save format */
-    foreach(quint32 index, probIndices)
-    {
-        baWriter << index;
-    }
-    baWriter << (quint16)0; // size of missed list for current question set
+    baWriter << (quint16)0; // progress
 
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
@@ -820,18 +915,42 @@ QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName)
         baReader >> sizeFMI;
         baReader.skipRawData((int)4*(int)sizeFMI);  // skip all first-missed questions
 
-        quint16 sizeCurrentQL;
-        baReader >> sizeCurrentQL;
-        baReader.skipRawData((int)4*(int)sizeCurrentQL);    // skip all current-list questions
-
-        quint16 sizeMissedList;
-        baReader >> sizeMissedList;
-        // could skip to the end here, but don't need to.
+        quint16 progress;
+        baReader >> progress;
 
         QString totalQs, currentQs, firstMissedQs;
         totalQs = QString::number(numAlphas);
         firstMissedQs = QString::number(sizeFMI);
-        currentQs = QString::number(sizeCurrentQL + sizeMissedList);
+
+        if (progress == 0)
+        {
+            // list was never started
+            currentQs = totalQs;
+        }
+        else if (progress == numAlphas)
+        {
+            // list has been gone through once already. (at least)
+            // there is more data after the 'progress' 2-byte number
+            totalQs += " *";    // to mark that this list has been gone through once already
+            quint16 sizeCurrentQL;
+            baReader >> sizeCurrentQL;
+            baReader.skipRawData((int)4*(int)sizeCurrentQL);    // skip all current-list questions
+
+            quint16 sizeMissedList;
+            baReader >> sizeMissedList;
+            currentQs = QString::number(sizeCurrentQL + sizeMissedList);
+        }
+        else
+        {
+            // we are going through this list for the first time.
+            // the only data that exists after 'progress' is the missed list. the 'current' list is just
+            // an ordered subset of the original list.
+
+            quint16 sizeMissedList;
+            baReader >> sizeMissedList;
+
+            currentQs = QString::number(numAlphas-progress + sizeMissedList);
+        }
 
 
         QStringList sl;

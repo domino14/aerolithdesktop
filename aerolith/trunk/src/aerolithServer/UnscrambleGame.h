@@ -102,6 +102,7 @@ private:
         QSet <quint8> notYetSolved; // which of these question's anagrams have not yet been solved?
         quint32 probIndex;  // this question's probability index
         quint8 numNotYetSolved;
+        bool exists;
     };
 
     //  QHash <QString, playerData> playerDataHash;
@@ -116,6 +117,7 @@ private:
     bool startEnabled;
     QTimer gameTimer;
     QTimer countdownTimer;
+    quint8 numRacksThisRound;
     quint16 currentTimerVal;
     quint16 tableTimerVal;
     quint8 countdownTimerVal;

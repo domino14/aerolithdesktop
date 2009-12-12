@@ -1,0 +1,4 @@
+12/11/09
+
+- The idea behind a "progress" is flawed! Server randomizes question order, so progress makes no sense! Think
+  of an alternate idea.

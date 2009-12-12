@@ -29,6 +29,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
     connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
     connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
+    connect(tableUi.pushButtonSave, SIGNAL(clicked()), this, SLOT(saveGame()));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(sendPM(QString)), this, SIGNAL(sendPM(QString)));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(viewProfile(QString)), this, SIGNAL(viewProfile(QString)));
 
@@ -603,6 +604,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
     tableUi.lineEditChat->clear();
     tableUi.textEditChat->clear();
     tableUi.graphicsView->centerOn(tableItem);
+    tableUi.listWidgetPeopleInRoom->clear();
 
     tableUi.lineEditSolution->setFocus();
     tableUi.textEditGuesses->clear();
@@ -957,6 +959,7 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
         thisWord.chip = item;
     }
     thisWord.space = index;
+    qDebug() << "Added thisword" << index;
     thisWord.notYetSolved = notYetSolved;
 
     wordQuestions << thisWord;
@@ -1078,5 +1081,10 @@ void UnscrambleGameTable::loadUserPreferences()
     useFixedWidthFontForRectangles(uiPreferences.checkBoxUseFixedWidthFont->isChecked());
     drawWordBorders(uiPreferences.checkBoxWordBorders->isChecked());
     settings.endGroup();
+
+}
+
+void UnscrambleGameTable::saveGame()
+{
 
 }

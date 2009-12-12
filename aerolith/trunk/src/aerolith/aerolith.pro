@@ -69,4 +69,5 @@ SOURCES += mainserver.cpp \
     serverthread.cpp \
     dawg.cpp
 HEADERS += commonDefs.h
-OTHER_FILES += acknowledgments.txt
+OTHER_FILES += acknowledgments.txt \
+    ../../codingIdeasAndProgress.txt

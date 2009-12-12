@@ -36,7 +36,7 @@ const QString incompatibleVersionString =
                              "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 //const QString thisVersion = "0.4.1";
 
-#define MAX_NUM_TABLES 1000
+#define MAX_NUM_TABLES 65535
 
 MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler) :
         aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
