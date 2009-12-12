@@ -201,6 +201,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     uiTable.tableWidgetMyLists->setSelectionBehavior(QAbstractItemView::SelectRows);
     uiTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+    savingGameAllowable = false;
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -741,14 +742,14 @@ void MainWindow::toggleConnectToServer()
 
 void MainWindow::serverDisconnection()
 {
-
+    savingGameAllowable = false;
     uiLogin.connectStatusLabel->setText("You are disconnected.");
     uiMainWindow.listWidgetPeopleConnected->clear();
     //	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
     uiLogin.loginPushButton->setText("Connect");
     //centralWidget->hide();
     loginDialog->show();
-    loginDialog->raise();   // crash at mainwindow.cpp:737???? crash at show!
+    loginDialog->raise();
     uiMainWindow.roomTableWidget->clearContents();
     uiMainWindow.roomTableWidget->setRowCount(0);
 
@@ -796,6 +797,7 @@ void MainWindow::connectedToServer()
         fixHeaderLength();
         commsSocket->write(block);
     }
+    savingGameAllowable = false;
 }
 
 void MainWindow::sendPM(QString person)
@@ -864,7 +866,22 @@ void MainWindow::createUnscrambleGameTable()
     writeHeaderData();
     out << (quint8)CLIENT_NEW_TABLE;
     out << (quint8)GAME_TYPE_UNSCRAMBLE;
-    out << (quint8)uiTable.playersSpinBox->value();
+
+    quint8 numPlayers = uiTable.playersSpinBox->value();
+
+    out << numPlayers;
+
+    if (numPlayers == 1)
+    {
+        // we are creating a 1-player table. these are the only conditions in which it is allowable to
+        // save the game.
+        savingGameAllowable = true;
+
+    }
+    else
+        savingGameAllowable = false;
+
+
     if (uiTable.radioButtonOtherLists->isChecked() && uiTable.listWidgetTopLevelList->currentItem())
     {
 
@@ -894,13 +911,18 @@ void MainWindow::createUnscrambleGameTable()
         if (si.size() != 5) return;
 
         QList <quint32> qindices;
+        QList <quint32> mindices;
 
         DatabaseHandler::UserListQuizModes mode;
+        bool seenWholeList;
 
         if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = DatabaseHandler::MODE_CONTINUE;
         else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = DatabaseHandler::MODE_RESTART;
         else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = DatabaseHandler::MODE_FIRSTMISSED;
-        dbHandler->getProbIndicesFromSavedList(currentLexicon,si[0]->text(), qindices, mode);
+        dbHandler->getProbIndicesFromSavedList(currentLexicon,si[0]->text(), qindices, mindices, mode, seenWholeList);
+
+        out << si[0]->text().left(32);
+        out << qindices << mindices;
     }
 
 
@@ -962,6 +984,7 @@ void MainWindow::leaveThisTable()
     out << (quint16)currentTablenum;
     fixHeaderLength();
     commsSocket->write(block);
+    savingGameAllowable = false;
 }
 
 

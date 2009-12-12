@@ -159,6 +159,8 @@ private:
     };
 
     QHash <quint16, tableRepresenter*> tables;
+
+    bool savingGameAllowable;
 signals:
     void startServerThread();
     void stopServerThread();

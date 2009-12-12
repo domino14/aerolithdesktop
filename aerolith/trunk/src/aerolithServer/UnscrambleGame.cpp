@@ -64,6 +64,13 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     {
         table->host->connData.in >> wordList;
     }
+    else if (listType == LIST_TYPE_MULTIPLE_INDICES)
+    {
+        table->host->connData.in >> wordList;
+        table->host->connData.in >> quizArray;  /* TODO need some sanity checks on these inputs! */
+        table->host->connData.in >> missedArray;
+        wordList = "(User list) " + wordList;
+    }
 
     table->host->connData.in >> lexiconName >> cycleState >> tableTimerValMin;
 
@@ -292,7 +299,7 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint8 specificAnswer)
 {
     qDebug() << "cas" << space << specificAnswer;
-    if (space < maxRacks)
+    if (space < numRacksThisRound)
     {
         qDebug() << "  " << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
         if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
@@ -381,7 +388,7 @@ void UnscrambleGame::endGame()
         if (!wroteToMissedFileThisRound)
         {
             wroteToMissedFileThisRound = true;
-            for (int i = 0; i < maxRacks; i++)
+            for (int i = 0; i < numRacksThisRound; i++)
             {
                 if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
                 {
@@ -453,6 +460,7 @@ void UnscrambleGame::generateQuizArray()
         timer.start();
 
         QByteArray indices;
+
         if (listType == LIST_TYPE_NAMED_LIST)
         {
 
@@ -491,30 +499,59 @@ void UnscrambleGame::generateQuizArray()
             qDebug() << "all" << wordLength << lowProbIndex << highProbIndex;
         }
 
-        QDataStream stream(indices);
-
-        quint8 type, length;
-        stream >> type >> length;   /*TODO remove length from the parameters */
-        if (type == 0)
+        if (listType != LIST_TYPE_MULTIPLE_INDICES)
         {
-            // a range of indices
-            quint32 start, end;
-            stream >> start >> end;
-            qDebug() << "Type0" << start << end;
-            QVector <quint32> indexVector;
-            getUniqueRandomNumbers(indexVector, start, end, end-start+1);
+
+            QDataStream stream(indices);
+
+            quint8 type, length;
+            stream >> type >> length;   /*TODO remove length from the parameters */
+            if (type == 0)
+            {
+                // a range of indices
+                quint32 start, end;
+                stream >> start >> end;
+                qDebug() << "Type0" << start << end;
+                QVector <quint32> indexVector;
+                getUniqueRandomNumbers(indexVector, start, end, end-start+1);
 
 
-            for (quint32 i = start; i <= end; i++)
-                quizArray << indexVector.at(i-start);
+                for (quint32 i = start; i <= end; i++)
+                    quizArray << indexVector.at(i-start);
 
-            numTotalRacks = end-start+1;
+                numTotalRacks = end-start+1;
+            }
+            if (type == 1)
+            {
+                // a list of indices
+                quint32 size;
+                stream >> size;
+                QVector <quint32> tempVector;
+                QVector <quint32> indexVector;
+                indexVector.resize(size);
+                quint32 index;
+                getUniqueRandomNumbers(tempVector, 0, size-1, size);
+                for (quint32 i = 0; i < size; i++)
+                {
+                    stream >> index;
+                    indexVector[tempVector.at(i)] = index;
+                }
+
+                for (quint32 i = 0; i < size; i++)
+                    quizArray << indexVector.at(i);
+
+                numTotalRacks = size;
+            }
+
+
+            qDebug() << "Generated quiz array, time=" << timer.elapsed();
+            qDebug() << " array size" << quizArray.size();
+            //qDebug() << quizArray;
         }
-        if (type == 1)
+        else    // multiple_indices
         {
-            // a list of indices
-            quint32 size;
-            stream >> size;
+            quint32 size = quizArray.size();   // already assigned earlier in initialize()
+
             QVector <quint32> tempVector;
             QVector <quint32> indexVector;
             indexVector.resize(size);
@@ -522,20 +559,15 @@ void UnscrambleGame::generateQuizArray()
             getUniqueRandomNumbers(tempVector, 0, size-1, size);
             for (quint32 i = 0; i < size; i++)
             {
-                stream >> index;
-                indexVector[tempVector.at(i)] = index;
+                indexVector[tempVector.at(i)] = quizArray[i];
             }
 
             for (quint32 i = 0; i < size; i++)
-                quizArray << indexVector.at(i);
+                quizArray[i] = indexVector.at(i);
 
             numTotalRacks = size;
+
         }
-
-
-        qDebug() << "Generated quiz array, time=" << timer.elapsed();
-        qDebug() << " array size" << quizArray.size();
-        //qDebug() << quizArray;
 
     }
     else
@@ -584,6 +616,7 @@ void UnscrambleGame::prepareTableQuestions()
 
     query.exec("BEGIN TRANSACTION");
     query.prepare(QString("SELECT words from alphagrams where probability = ?"));
+    numRacksThisRound = 0;
 
     for (quint8 i = 0; i < maxRacks; i++)
     {
@@ -591,7 +624,6 @@ void UnscrambleGame::prepareTableQuestions()
 
         if (quizIndex == quizArray.size())
         {
-            thisQuestionData.numNotYetSolved = 0;
             if (i == 0)
             {
                 listExhausted = true;
@@ -604,10 +636,12 @@ void UnscrambleGame::prepareTableQuestions()
                     table->sendTableMessage("This challenge is over. To view scores, please exit table and "
                                             "select 'Get today's scores' from the 'Challenges' button.");
             }
+            break;
         }
         else
         {
             numRacksSeen++;
+            numRacksThisRound++;
             quint32 index = quizArray.at(quizIndex);
 
             query.bindValue(0, index);
@@ -626,7 +660,7 @@ void UnscrambleGame::prepareTableQuestions()
                 }
             }
             quizIndex++;
-
+            thisQuestionData.exists = true;
         }
         unscrambleGameQuestions.append(thisQuestionData);
     }
@@ -641,8 +675,8 @@ void UnscrambleGame::sendUserCurrentQuestions(ClientSocket* socket)
     out << (quint8) SERVER_TABLE_COMMAND;
     out << table->tableNumber;
     out << (quint8) SERVER_TABLE_QUESTIONS;
-    out << (quint8) maxRacks;
-    for (int i = 0; i < maxRacks; i++)
+    out << (quint8) numRacksThisRound;
+    for (int i = 0; i < numRacksThisRound; i++)
     {
         out << unscrambleGameQuestions.at(i).probIndex;
         out << unscrambleGameQuestions.at(i).numNotYetSolved;
@@ -703,7 +737,7 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
 {
     switch (header)
     {
-        case CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER:
+    case CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER:
         {
             quint8 space, specificAnswer;
             socket->connData.in >> space >> specificAnswer;
@@ -711,8 +745,8 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
 
         }
         break;
-        default:
-            socket->disconnectFromHost();
+    default:
+        socket->disconnectFromHost();
 
 
     }

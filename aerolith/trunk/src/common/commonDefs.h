@@ -96,6 +96,7 @@
 #define SERVER_TABLE_GUESS_RIGHT 'A'
 #define SERVER_TABLE_CORRECT_ANSWER 'Y'
 
+//#define SERVER_TABLE_
 
 
 

@@ -30,6 +30,17 @@
 #include "GameTable.h"
 #include "databasehandler.h"
 
+struct SavedUnscrambleGame
+{
+    QList <quint16> origIndices;
+    QList <quint16> firstMissed;
+    quint16 firstProgress;
+    QList <quint16> curQuizList;
+    QList <quint16> curMissedList;
+
+};
+
+
 
 class UnscrambleGameTable : public GameTable
 {
@@ -119,6 +130,7 @@ signals:
         private slots:
     void enteredGuess();
     void enteredChat();
+    void saveGame();
 
     void alphagrammizeWords();
     void shuffleWords();

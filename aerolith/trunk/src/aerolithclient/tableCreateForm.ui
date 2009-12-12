@@ -484,7 +484,7 @@
       <rect>
        <x>10</x>
        <y>110</y>
-       <width>511</width>
+       <width>521</width>
        <height>191</height>
       </rect>
      </property>
@@ -503,12 +503,12 @@
      </column>
      <column>
       <property name="text">
-       <string>#current Qs</string>
+       <string>Cur. Qs</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>#1st missed</string>
+       <string>1st missed Qs</string>
       </property>
      </column>
      <column>
@@ -550,7 +550,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>310</y>
+       <y>320</y>
        <width>108</width>
        <height>23</height>
       </rect>
@@ -566,7 +566,7 @@
      <property name="geometry">
       <rect>
        <x>110</x>
-       <y>310</y>
+       <y>320</y>
        <width>131</width>
        <height>23</height>
       </rect>
@@ -579,13 +579,26 @@
      <property name="geometry">
       <rect>
        <x>250</x>
-       <y>310</y>
+       <y>320</y>
        <width>161</width>
        <height>23</height>
       </rect>
      </property>
      <property name="text">
       <string>Quiz on first-missed</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_7">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>300</y>
+       <width>461</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>* indicates all words in this list have been quizzed on at least once.</string>
      </property>
     </widget>
    </widget>
