@@ -1399,10 +1399,7 @@ void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
     QString textToSet="";
     foreach(QString thisplayer, t->playerList)
     {
-        if (thisplayer != t->tableHost)
-            textToSet += thisplayer + " ";
-        else
-            textToSet += "*" + thisplayer +"* ";
+        textToSet += thisplayer + " ";
     }
 
     int numPlayers = t->playerList.size();
@@ -1427,10 +1424,8 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
     QString textToSet = "";
     foreach(QString thisplayer, t->playerList)
     {
-        if (thisplayer != t->tableHost)
-            textToSet += thisplayer + " ";
-        else
-            textToSet += "*" + thisplayer +"* ";
+        textToSet += thisplayer + " ";
+
     }
 
     quint8 numPlayers = t->playerList.size();

@@ -86,18 +86,19 @@ Table::~Table()
 void Table::removePlayerFromTable(ClientSocket* socket)
 {
     tableGame->playerLeftGame(socket);
+    playerList.removeAll(socket);
 
     if (socket == host)
     {
         // the host has left. create a new host.
-        if (playerList.size() > 1)
+        if (playerList.size() >= 1)
         {
             host = playerList.at(0);
             sendHostChangePacket(host);
         }
     }
 
-    playerList.removeAll(socket);
+
     qDebug() << "players in table" << tableNumber << playerList;
 
 }

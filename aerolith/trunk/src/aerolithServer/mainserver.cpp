@@ -705,9 +705,21 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
         // send this guy's avatar to every socket
         if (socket != thisConn)
             sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
+
     }
 
     table->tableGame->playerJoined(socket);
+
+    if (table->host)
+    {
+        writeHeaderData();
+        out << (quint8) SERVER_TABLE_COMMAND;
+        out << (quint16) tablenum;
+        out << (quint8) SERVER_TABLE_HOST;
+        out << table->host->connData.userName;
+        fixHeaderLength();
+        socket->write(block);
+    }
 
 }
 
