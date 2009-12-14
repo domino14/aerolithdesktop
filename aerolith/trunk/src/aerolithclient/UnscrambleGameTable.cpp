@@ -561,7 +561,7 @@ void UnscrambleGameTable::closeEvent(QCloseEvent* event)
 
 void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QString myUsername)
 {
-    setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3").arg(tableNum).arg(wordListName).arg(myUsername));
+    setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3 - Table Host: %4").arg(tableNum).arg(wordListName).arg(myUsername).arg(""));
     tableUi.labelWordListInfo->clear();
     tableUi.lcdNumberTimer->display(0);
     clearAndHidePlayers(true);
@@ -1127,6 +1127,11 @@ void UnscrambleGameTable::setHost(QString hostname)
 {
     tableHost = hostname;
     tableUi.textEditChat->append("<font color=green>The host of this table is now " + hostname + ".</font>");
+
+    QString windowTitle = this->windowTitle();
+    int index = windowTitle.indexOf("Table Host:");
+
+    setWindowTitle(windowTitle.left(index) + "Table Host: " + hostname);
 }
 
 void UnscrambleGameTable::exitButtonPressed()
