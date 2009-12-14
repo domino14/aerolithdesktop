@@ -202,6 +202,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     uiTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     savingGameAllowable = false;
+
+    connect(gameBoardWidget, SIGNAL(saveCurrentGameBA(QByteArray,QString,QString)),
+            SLOT(saveGameBA(QByteArray, QString, QString)));
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -532,11 +535,12 @@ void MainWindow::readFromServer()
                 QString lexiconName;
                 QString tableName;
                 quint8 maxPlayers;
+                QString tableHost;
                 //		QStringList
 
-                in >> tablenum >> gameType >> lexiconName >> tableName >> maxPlayers;
+                in >> tablenum >> gameType >> lexiconName >> tableName >> maxPlayers >> tableHost;
                 // create table
-                handleCreateTable(tablenum, gameType, lexiconName, tableName, maxPlayers);
+                handleCreateTable(tablenum, gameType, lexiconName, tableName, maxPlayers, tableHost);
                 /* TODO genericize this as well (like in the server) to take in a table number and type,
                            then read different amount of info for each type */
             }
@@ -928,13 +932,19 @@ void MainWindow::createUnscrambleGameTable()
         switch (mode)
         {
             case DatabaseHandler::MODE_RESTART:
+                thisSug.initialize(thisSug.origIndices);
+
                 qindices = thisSug.origIndices;
                 mindices.clear();
+
                 break;
 
             case DatabaseHandler::MODE_FIRSTMISSED:
                 qindices = thisSug.firstMissed;
                 mindices.clear();
+
+                thisSug.curQuizList = thisSug.firstMissed;
+                thisSug.curMissedList.clear();
                 break;
 
             case DatabaseHandler::MODE_CONTINUE:
@@ -1085,7 +1095,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
             gameBoardWidget->gotChat("[" + username + "] " + chat);
         }
         break;
-
+    case SERVER_TABLE_HOST:
+        {
+            QString host;
+            in >> host;
+            gameBoardWidget->setHost(host);
+        }
+        break;
     case SERVER_TABLE_QUESTIONS:
         // alphagrams!!!
         {
@@ -1270,7 +1286,7 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
 
 
 void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName,
-                                   QString tableName, quint8 maxPlayers)
+                                   QString tableName, quint8 maxPlayers, QString tableHost)
 {
     tableRepresenter* t = new tableRepresenter;
     t->tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
@@ -1278,6 +1294,7 @@ void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString le
                                              ") " + tableName);
     t->playersItem = new QTableWidgetItem("");
     t->maxPlayers = maxPlayers;
+    t->tableHost = tableHost;
     switch (gameType)
     {
     case GAME_TYPE_UNSCRAMBLE:
@@ -1381,7 +1398,12 @@ void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
     t->playerList.removeAll(player);
     QString textToSet="";
     foreach(QString thisplayer, t->playerList)
-        textToSet += thisplayer + " ";
+    {
+        if (thisplayer != t->tableHost)
+            textToSet += thisplayer + " ";
+        else
+            textToSet += "*" + thisplayer +"* ";
+    }
 
     int numPlayers = t->playerList.size();
     textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(t->maxPlayers) + ")";
@@ -1404,7 +1426,12 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
     t->playerList << player;
     QString textToSet = "";
     foreach(QString thisplayer, t->playerList)
-        textToSet += thisplayer + " ";
+    {
+        if (thisplayer != t->tableHost)
+            textToSet += thisplayer + " ";
+        else
+            textToSet += "*" + thisplayer +"* ";
+    }
 
     quint8 numPlayers = t->playerList.size();
     quint8 maxPlayers = t->maxPlayers;
@@ -1726,6 +1753,13 @@ void MainWindow::repopulateMyListsTable()
 
     }
     uiTable.tableWidgetMyLists->resizeColumnsToContents();
+}
+
+void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)
+{
+    dbHandler->saveGameBA(ba, lex, list);
+
+    repopulateMyListsTable();
 }
 
 void MainWindow::on_radioButtonProbability_clicked()

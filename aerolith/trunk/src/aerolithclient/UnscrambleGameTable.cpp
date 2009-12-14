@@ -28,7 +28,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     connect(tableUi.pushButtonGiveUp, SIGNAL(clicked()), this, SIGNAL(giveUp()));
     connect(tableUi.pushButtonStart, SIGNAL(clicked()), this, SIGNAL(sendStartRequest()));
     connect(tableUi.lineEditSolution, SIGNAL(returnPressed()), this, SLOT(enteredGuess()));
-    connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SIGNAL(exitThisTable()));
+    connect(tableUi.pushButtonExit, SIGNAL(clicked()), this, SLOT(exitButtonPressed()));
     connect(tableUi.pushButtonSave, SIGNAL(clicked()), this, SLOT(saveGame()));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(sendPM(QString)), this, SIGNAL(sendPM(QString)));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(viewProfile(QString)), this, SIGNAL(viewProfile(QString)));
@@ -199,11 +199,13 @@ UnscrambleGameTable::~UnscrambleGameTable()
 void UnscrambleGameTable::setCurrentSug(SavedUnscrambleGame sug)
 {
     currentSug = sug;
+    savedGameModified = false;
 }
 
 void UnscrambleGameTable::setSavingAllowed(bool a)
 {
     savingAllowed = a;
+    tableUi.pushButtonSave->setEnabled(a);
 }
 
 void UnscrambleGameTable::changeTileColors(int option)
@@ -714,6 +716,12 @@ void UnscrambleGameTable::populateSolutionsTable()
 
 
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
+
+                if (savingAllowed)
+                {
+                    currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
+                    savedGameModified = true;
+                }
                 if (wrongAnswer)
                 {
                     tableAlphagramItem->setForeground(missedColorBrush);
@@ -724,17 +732,15 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                     if (savingAllowed)
                     {
-                        if (currentSug.seenWholeList)
+                        currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
+                        if (!currentSug.seenWholeList)
                         {
-                            currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
-                        }
-                        else
-                        {
+                            // also put it here if we haven't seen the whole list.
                             currentSug.firstMissed.insert(wordQuestions.at(i).probIndex);
                         }
-                        currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
                     }
                 }
+
 
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
                                                           new QTableWidgetItem(QString::number(probability)));
@@ -957,6 +963,7 @@ void UnscrambleGameTable::mainQuizDone()
 
         currentSug.curQuizList = currentSug.curMissedList;
         currentSug.curMissedList.clear();
+        savedGameModified = true;
     }
 }
 
@@ -1007,7 +1014,7 @@ QString UnscrambleGameTable::answeredCorrectly(QString username, quint8 space, q
             }
             Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
             currentSug.curQuizList.remove(wordQuestions.at(space).probIndex);
-
+            savedGameModified = true;
         }
     }
 
@@ -1102,5 +1109,48 @@ void UnscrambleGameTable::loadUserPreferences()
 
 void UnscrambleGameTable::saveGame()
 {
+    if (savingAllowed)
+    {
+        QByteArray ba = currentSug.toByteArray();
+        emit saveCurrentGameBA(ba, lexiconName, unmodifiedListName);
+        tableUi.textEditChat->append("<font color=green>Word list was saved!</font>");
+        savedGameModified = false;
+    }
+    else
+    {
+        tableUi.textEditChat->append("<font color=red>Saving is only allowed for single-player tables you've "
+                                     "created.</font>");
+    }
+}
+
+void UnscrambleGameTable::setHost(QString hostname)
+{
+    tableHost = hostname;
+    tableUi.textEditChat->append("<font color=green>The host of this table is now " + hostname + ".</font>");
+}
+
+void UnscrambleGameTable::exitButtonPressed()
+{
+    if (savedGameModified && savingAllowed)
+    {
+        QMessageBox::StandardButton b = QMessageBox::warning(this, "Save game?", "Your list has been modified."
+                                                             "Do you wish to save your game before quitting?",
+                                                             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+                                                             QMessageBox::Cancel);
+        if (b == QMessageBox::Yes)
+        {
+            saveGame();
+        }
+        else if (b == QMessageBox::No)
+        {
+            // do nothing, the signal at the bottom will take care of it
+        }
+        else if (b == QMessageBox::Cancel)
+        {
+            return;
+        }
+
+    }
+    emit exitThisTable();
 
 }

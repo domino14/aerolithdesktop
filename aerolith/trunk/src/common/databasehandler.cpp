@@ -723,6 +723,19 @@ QByteArray DatabaseHandler::getSavedListArray(QString lexiconName, QString listN
     return ret;
 }
 
+void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list)
+{
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("UPDATE userlists SET listdata = ?,  lastDateSaved = ? "
+                            "WHERE lexiconName = ? and listName = ?");
+    userListsQuery.bindValue(0, ba);
+    userListsQuery.bindValue(1, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+    userListsQuery.bindValue(2, lex);
+    userListsQuery.bindValue(3, list);
+
+    userListsQuery.exec();
+}
+
 //bool DatabaseHandler::getProbIndicesFromSavedList(QString lexiconName, QString listName,
 //                                                QList<quint32>& qindices, QList <quint32>& mindices,
 //                                                UserListQuizModes mode, bool& seenWholeList)

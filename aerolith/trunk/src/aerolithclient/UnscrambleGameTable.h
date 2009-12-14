@@ -66,8 +66,10 @@ public:
     {
         unmodifiedListName = u;
     }
-private:
+    void setHost(QString hostname);
 
+private:
+    QString tableHost;
     SavedUnscrambleGame currentSug;
     bool savingAllowed;
     QGraphicsScene gfxScene;
@@ -116,7 +118,7 @@ private:
     void getBasePosition(int index, double& x, double& y, int tileWidth);
 
     QString unmodifiedListName;
-
+    bool savedGameModified;
 protected:
     virtual void closeEvent(QCloseEvent*);
 signals:
@@ -132,6 +134,7 @@ signals:
     void enteredGuess();
     void enteredChat();
     void saveGame();
+    void exitButtonPressed();
 
     void alphagrammizeWords();
     void shuffleWords();

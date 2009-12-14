@@ -88,7 +88,7 @@ private:
 
 
     void handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName, QString wordListDescriptor,
-                           quint8 maxPlayers);
+                           quint8 maxPlayers, QString tableHost);
     void handleDeleteTable(quint16 tablenum);
     void handleAddToTable(quint16 tablenum, QString player);
     void handleLeaveTable(quint16 tablenum, QString player);
@@ -155,6 +155,7 @@ private:
         QStringList playerList;
         quint8 gameType;    // see commonDefs.h for game types.
         quint8 maxPlayers;
+        QString tableHost;
 
     };
 
@@ -211,6 +212,8 @@ signals:
     void lexiconComboBoxIndexChanged(int);
     void dbDialogEnableClose(bool);
     void spinBoxWordLengthChange(int);
+
+    void saveGameBA(QByteArray, QString, QString);
 
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
