@@ -45,11 +45,12 @@ public:
 
     TableGame* tableGame;
     ClientSocket *host;
+    ClientSocket *originalHost;
 
     void sendChatSentPacket(QString, QString);
     void sendGenericPacket();
     void sendTableMessage(QString);
-
+    void sendHostChangePacket(ClientSocket* host);
     quint8 gameType;
     QByteArray tableInformationArray;
     void removePlayerFromTable(ClientSocket*);

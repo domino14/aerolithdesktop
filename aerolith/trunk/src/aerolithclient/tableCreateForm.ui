@@ -483,9 +483,9 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>110</y>
+       <y>60</y>
        <width>521</width>
-       <height>191</height>
+       <height>241</height>
       </rect>
      </property>
      <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
@@ -536,7 +536,7 @@
     <widget class="QPushButton" name="pushButtonDeleteList">
      <property name="geometry">
       <rect>
-       <x>410</x>
+       <x>440</x>
        <y>10</y>
        <width>90</width>
        <height>27</height>
@@ -565,20 +565,20 @@
     <widget class="QRadioButton" name="radioButtonRestartListQuiz">
      <property name="geometry">
       <rect>
-       <x>110</x>
+       <x>280</x>
        <y>320</y>
-       <width>131</width>
+       <width>171</width>
        <height>23</height>
       </rect>
      </property>
      <property name="text">
-      <string>Restart list quiz</string>
+      <string>Reset and Restart Quiz</string>
      </property>
     </widget>
     <widget class="QRadioButton" name="radioButtonQuizFirstMissed">
      <property name="geometry">
       <rect>
-       <x>250</x>
+       <x>110</x>
        <y>320</y>
        <width>161</width>
        <height>23</height>

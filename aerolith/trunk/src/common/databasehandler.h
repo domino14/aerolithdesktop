@@ -105,6 +105,7 @@ public:
     QList <QStringList> getListLabels(QString lexiconName);
     void deleteUserList(QString lexiconName, QString listName);
 
+    void saveGameBA(QByteArray, QString, QString);
 
 
 private:

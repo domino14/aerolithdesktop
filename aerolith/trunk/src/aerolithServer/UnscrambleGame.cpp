@@ -116,6 +116,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     out << lexiconName;
     out << wordList;
     out << table->maxPlayers;
+    out << table->host->connData.userName;
     fixHeaderLength();
 
     return block;
@@ -204,33 +205,47 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
     if (table->playerList.size() == 1 && table->maxPlayers == 1)
     {
         gameEndRequest(socket);
-        if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted && !neverStarted)
+//        if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted && !neverStarted)
+//        {
+//            // generate blob for contents of missed file, temp file
+//            // missedFileWriter has written all the necessary words to missedFile, so read the entire file.
+//            QTime timer;
+//            timer.start();
+//
+//            QByteArray ba;
+//            QDataStream stream(&ba, QIODevice::WriteOnly);
+//
+//            stream << wordList;
+//            stream << missedArray;
+//            stream << quizArray.mid(quizIndex);
+//            // now write data to database
+//            QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
+//            userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
+//            userQuery.bindValue(":username", socket->connData.userName.toLower());
+//            userQuery.bindValue(":saveData", ba);
+//            userQuery.exec();
+//
+//            qDebug() << "Saving lists took milliseconds: " << timer.elapsed();
+//
+//        }
+//        else
+//        {
+//
+//        }
+
+
+        if (socket == table->originalHost)
         {
-            // generate blob for contents of missed file, temp file
-            // missedFileWriter has written all the necessary words to missedFile, so read the entire file.
-            QTime timer;
-            timer.start();
+            if (listType == LIST_TYPE_MULTIPLE_INDICES)
+                {
+                    /* the host is no longer able to send out indices to the table.  inform the players of this */
+                    table->sendTableMessage("The original host of the table has left. "
+                                        "Since the host was the one to create this list, you cannot quiz on it any longer.");
 
-            QByteArray ba;
-            QDataStream stream(&ba, QIODevice::WriteOnly);
-
-            stream << wordList;
-            stream << missedArray;
-            stream << quizArray.mid(quizIndex);
-            // now write data to database
-            QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
-            userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
-            userQuery.bindValue(":username", socket->connData.userName.toLower());
-            userQuery.bindValue(":saveData", ba);
-            userQuery.exec();
-
-            qDebug() << "Saving lists took milliseconds: " << timer.elapsed();
-
+                }
         }
-        else
-        {
 
-        }
+
     }
 }
 
@@ -268,27 +283,27 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
                 }
             }
 
-            if (neverStarted)
-            {
-                // this will only be true the very FIRST time this function is called.
-                // overwrite the save array for this user.
-
-                if (table->playerList.size() == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES && table->maxPlayers == 1)
-                {
-
-                    // only overwrite the list if this is a single player playing in a non-daily-challenge table.
-                    QByteArray ba;
-                    QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
-                    userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
-                    userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
-                    userQuery.bindValue(":saveData", ba);
-                    userQuery.exec();
-                    table->sendTableMessage("If you quit Aerolith or leave this table, "
-                                            "your progress on this word list -" + wordList + "- will automatically be saved.");
-                }
-            }
-
-            neverStarted = false;
+//            if (neverStarted)
+//            {
+//                // this will only be true the very FIRST time this function is called.
+//                // overwrite the save array for this user.
+//
+//                if (table->playerList.size() == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES && table->maxPlayers == 1)
+//                {
+//
+//                    // only overwrite the list if this is a single player playing in a non-daily-challenge table.
+//                    QByteArray ba;
+//                    QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
+//                    userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
+//                    userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
+//                    userQuery.bindValue(":saveData", ba);
+//                    userQuery.exec();
+//                    table->sendTableMessage("If you quit Aerolith or leave this table, "
+//                                            "your progress on this word list -" + wordList + "- will automatically be saved.");
+//                }
+//            }
+//
+//            neverStarted = false;
 
         }
     }

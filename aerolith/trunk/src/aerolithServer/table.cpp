@@ -33,10 +33,11 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
     tableCreator->connData.in >> gameType >> maxPlayers;
     qDebug() << "Creating table" << tableNumber << "type:" << gameType << "with" << maxPlayers << "max players";
     host = tableCreator;
+    originalHost = host;
     canJoin = true;
     switch (gameType)
     {
-        case GAME_TYPE_UNSCRAMBLE:
+    case GAME_TYPE_UNSCRAMBLE:
         {
 
             tableGame = new UnscrambleGame(this);
@@ -46,22 +47,22 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
 
 
         }
-        case GAME_TYPE_BONUS:
+    case GAME_TYPE_BONUS:
         {
-//            in >> lexiconIndex;
-//            tableGame = new BonusGame(this);    // TODO FIX lexiconname!
-//            tableGame->initialize(0,0, tableName, "", dbHandler);
-//
-//            writeHeaderData();
-//            out << (quint8) SERVER_NEW_TABLE;
-//            out << (quint16) tableNumber;
-//            out << (quint8) GAME_TYPE_BONUS;
-//            out << (quint8) lexiconIndex;
-//            out << tableName;
-//            out << maxPlayers;
-//            fixHeaderLength();
-//
-//            tableInformationArray = block;
+            //            in >> lexiconIndex;
+            //            tableGame = new BonusGame(this);    // TODO FIX lexiconname!
+            //            tableGame->initialize(0,0, tableName, "", dbHandler);
+            //
+            //            writeHeaderData();
+            //            out << (quint8) SERVER_NEW_TABLE;
+            //            out << (quint16) tableNumber;
+            //            out << (quint8) GAME_TYPE_BONUS;
+            //            out << (quint8) lexiconIndex;
+            //            out << tableName;
+            //            out << maxPlayers;
+            //            fixHeaderLength();
+            //
+            //            tableInformationArray = block;
 
         }
         break;
@@ -85,9 +86,31 @@ Table::~Table()
 void Table::removePlayerFromTable(ClientSocket* socket)
 {
     tableGame->playerLeftGame(socket);
+
+    if (socket == host)
+    {
+        // the host has left. create a new host.
+        if (playerList.size() > 1)
+        {
+            host = playerList.at(0);
+            sendHostChangePacket(host);
+        }
+    }
+
     playerList.removeAll(socket);
     qDebug() << "players in table" << tableNumber << playerList;
 
+}
+
+void Table::sendHostChangePacket(ClientSocket* host)
+{
+    writeHeaderData();
+    out << (quint8) SERVER_TABLE_COMMAND;
+    out << (quint16) tableNumber;
+    out << (quint8) SERVER_TABLE_HOST;
+    out << host->connData.userName;
+    fixHeaderLength();
+    sendGenericPacket();
 }
 
 void Table::sendGenericPacket()
