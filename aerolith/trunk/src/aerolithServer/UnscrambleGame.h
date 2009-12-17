@@ -159,6 +159,8 @@ private:
     void sendNumQuestionsPacket();
     void sendListCompletelyExhaustedMessage();
     void sendListExhaustedMessage();
+    void performSpecificSitActions(ClientSocket*);
+    void performSpecificStandActions(ClientSocket*);
 
 private slots:
     void updateGameTimer();

@@ -83,24 +83,20 @@ Table::~Table()
     delete tableGame;
 }
 
-void Table::removePlayerFromTable(ClientSocket* socket)
+void Table::removePersonFromTable(ClientSocket* socket)
 {
     tableGame->playerLeftGame(socket);
-    playerList.removeAll(socket);
+    peopleInTable.removeAll(socket);
 
     if (socket == host)
     {
         // the host has left. create a new host.
-        if (playerList.size() >= 1)
+        if (peopleInTable.size() >= 1)
         {
-            host = playerList.at(0);
+            host = peopleInTable.at(0);
             sendHostChangePacket(host);
         }
     }
-
-
-    qDebug() << "players in table" << tableNumber << playerList;
-
 }
 
 void Table::sendHostChangePacket(ClientSocket* host)
@@ -116,7 +112,7 @@ void Table::sendHostChangePacket(ClientSocket* host)
 
 void Table::sendGenericPacket()
 {
-    foreach (ClientSocket* thisSocket, playerList)
+    foreach (ClientSocket* thisSocket, peopleInTable)
         thisSocket->write(block);
 }
 

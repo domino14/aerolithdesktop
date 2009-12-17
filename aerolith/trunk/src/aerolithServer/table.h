@@ -39,8 +39,10 @@ public:
     quint16 tableNumber;
 
     QString tableName;
-    QList <ClientSocket*> playerList;
     quint8 maxPlayers;
+
+    QList <ClientSocket*> peopleInTable;
+    QList <ClientSocket*> sittingList;
     bool canJoin;
 
     TableGame* tableGame;
@@ -53,7 +55,7 @@ public:
     void sendHostChangePacket(ClientSocket* host);
     quint8 gameType;
     QByteArray tableInformationArray;
-    void removePlayerFromTable(ClientSocket*);
+    void removePersonFromTable(ClientSocket*);
 
 };
 

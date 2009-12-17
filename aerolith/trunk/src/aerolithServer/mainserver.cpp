@@ -111,6 +111,7 @@ void MainServer::incomingConnection(int socketDescriptor)
         client->connData.in.setDevice(client);
         client->connData.in.setVersion(QDataStream::Qt_4_2);
         client->connData.tableNum = 0;
+        client->connData.isSitting = false;
         client->connData.avatarId = 1;
         client->connData.isActive = true; // assume we responded to the last ping
         client->connData.minutesInactive = 0;
@@ -179,7 +180,7 @@ void MainServer::removeConnection()
         if (tableNum != 0)
         {
             qDebug() << username << " is at table " << tableNum << " so we have to remove him.";
-            removePlayerFromTable(socket, tableNum);
+            removePersonFromTable(socket, tableNum);
         }
         else
             qDebug() << username << " is not at any tables.";
@@ -389,7 +390,7 @@ void MainServer::processAvatarID(ClientSocket* socket)
         Table* table = tables.value(socket->connData.tableNum);
         //      table->sendAvatarChangePacket(username, avatarID);
 
-        foreach (ClientSocket *thisConn, table->playerList)
+        foreach (ClientSocket *thisConn, table->peopleInTable)
             sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
 
     }
@@ -481,6 +482,9 @@ void MainServer::processTableCommand(ClientSocket* socket)
         table->tableGame->gameEndRequest(socket);
 
         break;
+    case CLIENT_TRY_SITTING:
+       table->tableGame->trySitting(socket);
+        break;
     case CLIENT_TABLE_ACTION:
         {
             QString username, actionText;
@@ -509,12 +513,12 @@ void MainServer::processLeftTable(ClientSocket* socket)
 
     // the table checking/deletion process must also be done on disconnection!!!
 
-    removePlayerFromTable(socket,  tablenum);
+    removePersonFromTable(socket,  tablenum);
 
 
 }
 
-void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
+void MainServer::removePersonFromTable(ClientSocket* socket, quint16 tablenum)
 {
     QString username = socket->connData.userName;
     if (socket->connData.tableNum != tablenum)
@@ -528,7 +532,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
     if (tables.contains(tablenum))
     {
         Table *tmp = tables.value(tablenum);
-        tmp->removePlayerFromTable(socket);
+        tmp->removePersonFromTable(socket);
 
 
 
@@ -544,7 +548,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
             connection->write(block);
 
         qDebug() << "wrote " << username << " left " << tablenum;
-        if (tmp->playerList.size() == 0)
+        if (tmp->peopleInTable.size() == 0)
         {
             qDebug() << " need to kill table " << tablenum;
             tables.remove(tablenum);
@@ -566,7 +570,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
         else
         {
             tmp->canJoin = true;
-            foreach (ClientSocket* thisConn, tmp->playerList)
+            foreach (ClientSocket* thisConn, tmp->peopleInTable)
                 thisConn->playerData.readyToPlay = false;
             // TODO: actually send out readytoplay false
         }
@@ -580,6 +584,7 @@ void MainServer::removePlayerFromTable(ClientSocket* socket, quint16 tablenum)
     }
 
     socket->connData.tableNum = 0;
+    socket->connData.isSitting = false;
     socket->playerData.readyToPlay = false;
     socket->playerData.gaveUp = false;
 }
@@ -677,10 +682,8 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     // got here with no errors, join table!
     qDebug() << "Ok, join table!";
 
-    table->playerList << socket;
-    if (table->playerList.size() == table->maxPlayers) table->canJoin = false;
-
-    qDebug() << "players in table" << tablenum << table->playerList;
+    table->peopleInTable << socket;
+//    if (table->peopleInTab.size() == table->maxPlayers) table->canJoin = false;
 
     writeHeaderData();
     out << (quint8) SERVER_JOIN_TABLE;
@@ -695,7 +698,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     //  socket->playerData.readyToPlay = false;
     socket->playerData.gaveUp = false;
 
-    foreach (ClientSocket* thisConn, table->playerList)
+    foreach (ClientSocket* thisConn, table->peopleInTable)
     {
         thisConn->playerData.readyToPlay = false;
 
@@ -935,7 +938,7 @@ void MainServer::processLogin(ClientSocket* socket)
     {
         socket->write(table->tableInformationArray);
 
-        foreach(ClientSocket* thisSocket, table->playerList)
+        foreach(ClientSocket* thisSocket, table->peopleInTable)
         {
             writeHeaderData();
             out << (quint8) SERVER_JOIN_TABLE;
