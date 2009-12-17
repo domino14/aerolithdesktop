@@ -47,7 +47,16 @@ Q_OBJECT
   void sendReadyBeginPacket(QString);
   void sendGameStartPacket();
   void sendGameEndPacket();
-  
+  void sendSuccessfulSitPacket(QString);
+  void sendSuccessfulStandPacket(QString);
+
+  void trySitting(ClientSocket*);
+  void tryStanding(ClientSocket*);
+
+  virtual void performSpecificSitActions(ClientSocket*) = 0;
+  virtual void performSpecificStandActions(ClientSocket*) = 0;
+
+
   virtual void playerLeftGame(ClientSocket*) = 0;
   
 

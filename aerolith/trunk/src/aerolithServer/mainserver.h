@@ -80,7 +80,7 @@ private:
     void processJoinTable(ClientSocket*);
     void doJoinTable(ClientSocket*, quint16);
     void processLeftTable(ClientSocket*);
-    void removePlayerFromTable(ClientSocket* socket, quint16 tablenum);
+    void removePersonFromTable(ClientSocket* socket, quint16 tablenum);
     void processTableCommand(ClientSocket*);
     void processChatAction(ClientSocket*);
     void processVersionNumber(ClientSocket*);

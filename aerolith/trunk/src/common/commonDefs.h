@@ -63,6 +63,8 @@
 #define CLIENT_TABLE_CHAT 'c'
 #define CLIENT_TABLE_GIVEUP 'u'
 #define CLIENT_TABLE_ACTION 'a'
+#define CLIENT_TRY_SITTING 's'
+#define CLIENT_STAND_UP 'p'
 // misc table subcommands, by game
 #define CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER 'w'
 
@@ -94,6 +96,8 @@
 #define SERVER_TABLE_NUM_QUESTIONS 'N'
 #define SERVER_TABLE_GIVEUP 'U'
 #define SERVER_TABLE_CORRECT_ANSWER 'Y'
+#define SERVER_TABLE_SUCCESSFUL_SIT 'Z'
+#define SERVER_TABLE_SUCCESSFUL_STAND 'P'
 
 #define SERVER_TABLE_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
 #define SERVER_TABLE_FULL_QUIZ_DONE 'F' // no more questions in missed or current

@@ -141,7 +141,7 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
         sendUserCurrentQuestions(client);
 
     // possibly send scores, solved solutions, etc. in the future.
-    if (table->playerList.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
+    if (table->peopleInTable.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
     {
         qDebug() << "playerJoined";
         //        QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
@@ -202,7 +202,7 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
 void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 {
     // if this is the ONLY player, stop game.
-    if (table->playerList.size() == 1 && table->maxPlayers == 1)
+    if (table->peopleInTable.size() == 1 && table->maxPlayers == 1)
     {
         gameEndRequest(socket);
 //        if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted && !neverStarted)
@@ -258,11 +258,13 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
         sendReadyBeginPacket(client->connData.userName);
         client->playerData.readyToPlay = true;
 
-        foreach (ClientSocket* thisClient, table->playerList)
+        foreach (ClientSocket* thisClient, table->sittingList)
+        {
             if (thisClient->playerData.readyToPlay == false)
             {
-            startTheGame = false;
-            break;
+                startTheGame = false;
+                break;
+            }
         }
 
 
@@ -276,10 +278,14 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
             {
                 if (challenges.contains(wordList))
                 {
-                    if (challenges.value(wordList).
-                        highScores->contains(table->playerList.at(0)->connData.userName.toLower()))
-                        table->sendTableMessage("You've already played this challenge. You can play again, but only the first game's results count toward today's high scores!");
-
+                    if (table->originalHost)
+                    {
+                        if (challenges.value(wordList).
+                            highScores->contains(table->originalHost->connData.userName.toLower()))
+                                table->sendTableMessage(table->originalHost->connData.userName + " has already played this "
+                                                        "challenge. You can play again, "
+                                                        "but only the first game's results count toward today's high scores!");
+                    }
                 }
             }
 
@@ -339,7 +345,7 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
         sendGiveUpPacket(socket->connData.userName);
         socket->playerData.gaveUp = true;
 
-        foreach (ClientSocket* thisSocket, table->playerList)
+        foreach (ClientSocket* thisSocket, table->sittingList)
         {
             if (thisSocket->playerData.gaveUp == false)
             {
@@ -371,7 +377,7 @@ void UnscrambleGame::startGame()
     prepareTableQuestions();
     sendGameStartPacket();
 
-    foreach (ClientSocket* socket, table->playerList)
+    foreach (ClientSocket* socket, table->peopleInTable)
         sendUserCurrentQuestions(socket);
 
 
@@ -384,6 +390,20 @@ void UnscrambleGame::startGame()
 
 }
 
+void UnscrambleGame::performSpecificSitActions(ClientSocket* socket)
+{
+    socket->playerData.gaveUp = false;
+    socket->playerData.readyToPlay = false;
+    socket->playerData.score = 0;
+}
+
+void UnscrambleGame::performSpecificStandActions(ClientSocket* socket)
+{
+    socket->playerData.gaveUp = false;
+    socket->playerData.readyToPlay = false;
+    socket->playerData.score = 0;
+}
+
 void UnscrambleGame::endGame()
 {
     gameTimer.stop();
@@ -392,7 +412,7 @@ void UnscrambleGame::endGame()
     sendGameEndPacket();
     sendTimerValuePacket((quint16)0);
 
-    foreach (ClientSocket* client, table->playerList)
+    foreach (ClientSocket* client, table->peopleInTable)
     {
         client->playerData.readyToPlay = false;
         client->playerData.gaveUp = false;
@@ -417,26 +437,25 @@ void UnscrambleGame::endGame()
     else if (cycleState == TABLE_TYPE_DAILY_CHALLENGES) // daily challenges
     {
         startEnabled = false;
-        table->sendTableMessage("This challenge is over! To see scores or to try another challenge, exit the table and make the appropriate selections with the Challenges button.");
-        if (table->playerList.size() != 1)
-            qDebug() << table->playerList.size() << "More or less than 1 player in a challenge table!? WTF";
-        else
-        {
+        table->sendTableMessage("This challenge is over! To see scores or to try another challenge, exit the table "
+                                "and make the appropriate selections with the Challenges button.");
+
             // search for player.
-            if (challenges.contains(wordList))
+            if (table->originalHost && challenges.contains(wordList))
             {
-                if (challenges.value(wordList).highScores->contains(table->playerList.at(0)->connData.userName.toLower()))
-                    table->sendTableMessage("You've already played this challenge. These results will not count towards this day's high scores.");
+                if (challenges.value(wordList).highScores->contains(table->originalHost->connData.userName.toLower()))
+                    table->sendTableMessage(table->originalHost->connData.userName + " has already played this challenge. "
+                                            "These results will not count towards this day's high scores.");
                 else
                 {
                     if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
                     {
                         highScoreData tmp;
-                        tmp.userName = table->playerList.at(0)->connData.userName;
+                        tmp.userName = table->originalHost->connData.userName;
                         tmp.numSolutions = numTotalSolutions;
                         tmp.numCorrect = numTotalSolvedSoFar;
                         tmp.timeRemaining = currentTimerVal;
-                        challenges.value(wordList).highScores->insert(table->playerList.at(0)->connData.userName.toLower(), tmp);
+                        challenges.value(wordList).highScores->insert(table->originalHost->connData.userName.toLower(), tmp);
 
                     }
                     else
@@ -444,7 +463,7 @@ void UnscrambleGame::endGame()
                 }
 
             }
-        }
+
     }
 }
 
