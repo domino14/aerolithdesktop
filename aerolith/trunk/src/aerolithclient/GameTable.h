@@ -32,11 +32,11 @@ public:
     virtual ~GameTable() = 0;
     void setMyUsername(QString);
 
-    void setAvatar(QString, quint8);
-    virtual void setReadyIndicator(QString) = 0;
+    void setAvatar(quint8, quint8);
+    virtual void setReadyIndicator(quint8) = 0;
     virtual void clearReadyIndicators() = 0;
     virtual void setupForGameStart() = 0;
-    void addToPlayerList(QString, QString);
+    void addToPlayerList(quint8, QString);
     //virtual void setDatabase(QString name) = 0;
     void setLexicon(QString name)
     {
@@ -44,29 +44,42 @@ public:
         wordDb = dbHandler->lexiconMap.value(lexiconName).db;
     }
 
+    void setTableCapacity(quint8 tc)
+    {
+        tableCapacity = tc;
+    }
+
+    void standup(QString username, quint8 seat);
+    void sitdown(QString username, quint8 seat);
+
 signals:
     void avatarChange(quint8);
+    void sitDown(quint8);
+    void standUp();
 protected:
+    quint8 mySeatNumber;
+    quint8 tableCapacity;
+    avatarLabel* myAvatarLabel;
     QSqlDatabase wordDb;
     DatabaseHandler* dbHandler;
     QString myUsername;
 
     // most of these have to do with the player widgets.
-    QHash <QString, int> seats;
+
     QList <Ui::playerInfoForm> playerUis;
     QList <QWidget*> playerWidgets;
-    int numPlayers;
-    void clearAndHidePlayers(bool hide);
+    int maxPlayers;
+    void clearPlayerWidgets();
     void playerLeaveTable();
 
-
-    void addPlayersToWidgets(QStringList playerList);
-    void removePlayerFromWidgets(QString, bool);
-    void addPlayerToWidgets(QString, bool);
+//
+//    void addPlayersToWidgets(QStringList playerList);
+//    void removePlayerFromWidgets(QString, bool);
+//    void addPlayerToWidgets(QString, bool);
     QString lexiconName;
 
 private slots:
-
+    void sitClicked();
     void possibleAvatarChangeLeft();
     void possibleAvatarChangeRight();
 };

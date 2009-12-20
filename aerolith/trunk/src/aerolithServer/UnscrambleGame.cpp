@@ -116,7 +116,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     out << lexiconName;
     out << wordList;
     out << table->maxPlayers;
-    out << table->host->connData.userName;
+    out << table->isPrivate;
     fixHeaderLength();
 
     return block;
@@ -251,16 +251,17 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 
 void UnscrambleGame::gameStartRequest(ClientSocket* client)
 {
+    if (!client->connData.isSitting) return;    // can't request to start the game if you're standing
     if (startEnabled == true && gameStarted == false && countingDown == false)
     {
         bool startTheGame = true;
 
-        sendReadyBeginPacket(client->connData.userName);
+        sendReadyBeginPacket(client->connData.seatNumber);
         client->playerData.readyToPlay = true;
 
         foreach (ClientSocket* thisClient, table->sittingList)
         {
-            if (thisClient->playerData.readyToPlay == false)
+            if (thisClient && thisClient->playerData.readyToPlay == false)
             {
                 startTheGame = false;
                 break;
@@ -319,21 +320,23 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
 
 void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint8 specificAnswer)
 {
-    qDebug() << "cas" << space << specificAnswer;
-    if (space < numRacksThisRound)
+    if (socket->connData.isSitting)
     {
-        qDebug() << "  " << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
-        if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
+        qDebug() << "cas" << space << specificAnswer;
+        if (space < numRacksThisRound)
         {
-            unscrambleGameQuestions[space].notYetSolved.remove(specificAnswer);
-            unscrambleGameQuestions[space].numNotYetSolved--;
-            numTotalSolvedSoFar++;
+            qDebug() << "  " << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
+            if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
+            {
+                unscrambleGameQuestions[space].notYetSolved.remove(specificAnswer);
+                unscrambleGameQuestions[space].numNotYetSolved--;
+                numTotalSolvedSoFar++;
 
-            sendCorrectAnswerPacket(socket->connData.userName, space, specificAnswer);
-            if (numTotalSolvedSoFar == numTotalSolutions) endGame();
+                sendCorrectAnswerPacket(socket->connData.seatNumber, space, specificAnswer);
+                if (numTotalSolvedSoFar == numTotalSolutions) endGame();
+            }
         }
     }
-
 }
 
 void UnscrambleGame::gameEndRequest(ClientSocket* socket)
@@ -347,7 +350,7 @@ void UnscrambleGame::gameEndRequest(ClientSocket* socket)
 
         foreach (ClientSocket* thisSocket, table->sittingList)
         {
-            if (thisSocket->playerData.gaveUp == false)
+            if (thisSocket && thisSocket->playerData.gaveUp == false)
             {
                 giveUp = false;
                 break;
@@ -781,13 +784,13 @@ void UnscrambleGame::sendGiveUpPacket(QString username)
     table->sendGenericPacket();
 }
 
-void UnscrambleGame::sendCorrectAnswerPacket(QString username, quint8 space, quint8 specificAnswer)
+void UnscrambleGame::sendCorrectAnswerPacket(quint8 seatNumber, quint8 space, quint8 specificAnswer)
 {
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
     out << (quint16) table->tableNumber;
     out << (quint8) SERVER_TABLE_CORRECT_ANSWER;
-    out << username << space << specificAnswer;
+    out << seatNumber << space << specificAnswer;
     fixHeaderLength();
     table->sendGenericPacket();
 }

@@ -35,20 +35,25 @@ public:
 
     ~Table();
     QByteArray initialize(ClientSocket* tableCreator, quint16 tableNumber,
-                           DatabaseHandler* dbHandler);
+                          DatabaseHandler* dbHandler);
     quint16 tableNumber;
 
     QString tableName;
     quint8 maxPlayers;
 
     QList <ClientSocket*> peopleInTable;
-    QList <ClientSocket*> sittingList;
+    QVector <ClientSocket*> sittingList;
     bool canJoin;
+    bool isPrivate;
 
     TableGame* tableGame;
     ClientSocket *host;
     ClientSocket *originalHost;
 
+    void personJoined(ClientSocket*);
+
+
+    void processAvatarID(ClientSocket* socket, quint8 id);
     void sendChatSentPacket(QString, QString);
     void sendGenericPacket();
     void sendTableMessage(QString);
@@ -57,6 +62,14 @@ public:
     QByteArray tableInformationArray;
     void removePersonFromTable(ClientSocket*);
 
+    void sendSuccessfulSitPacket(QString, quint8);
+    void sendSuccessfulStandPacket(QString, quint8);
+
+    void trySitting(ClientSocket*, quint8);
+    void tryStanding(ClientSocket*);
+
+private:
+    void sendAvatarChangePacket(ClientSocket*);
 };
 
 #endif

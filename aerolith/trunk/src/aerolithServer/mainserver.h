@@ -69,8 +69,6 @@ private:
 
 
 
-    void sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *toSocket, quint8 avatarID);
-
     void sendHighScores(ClientSocket*);
     void processLogin(ClientSocket*);
     void processChat(ClientSocket*);
@@ -84,7 +82,6 @@ private:
     void processTableCommand(ClientSocket*);
     void processChatAction(ClientSocket*);
     void processVersionNumber(ClientSocket*);
-    void processAvatarID(ClientSocket*);
     void registerNewName(ClientSocket*);
     bool isValidUsername(QString);
     bool isValidPassword(QString);

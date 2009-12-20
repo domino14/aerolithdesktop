@@ -88,13 +88,12 @@ private:
 
 
     void handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName, QString wordListDescriptor,
-                           quint8 maxPlayers, QString tableHost);
+                           quint8 maxPlayers, bool isPrivate);
     void handleDeleteTable(quint16 tablenum);
     void handleAddToTable(quint16 tablenum, QString player);
     void handleLeaveTable(quint16 tablenum, QString player);
     void handleTableCommand(quint16 tablenum, quint8 commandByte);
     void handleWordlistsMessage();
-
 
 
 
@@ -155,7 +154,7 @@ private:
         QStringList playerList;
         quint8 gameType;    // see commonDefs.h for game types.
         quint8 maxPlayers;
-        QString tableHost;
+        bool isPrivate;
 
     };
 
@@ -212,6 +211,9 @@ signals:
     void lexiconComboBoxIndexChanged(int);
     void dbDialogEnableClose(bool);
     void spinBoxWordLengthChange(int);
+    void standUp();
+    void trySitting(quint8 seatNumber);
+
 
     void saveGameBA(QByteArray, QString, QString);
 

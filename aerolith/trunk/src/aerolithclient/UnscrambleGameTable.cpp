@@ -32,6 +32,8 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     connect(tableUi.pushButtonSave, SIGNAL(clicked()), this, SLOT(saveGame()));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(sendPM(QString)), this, SIGNAL(sendPM(QString)));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(viewProfile(QString)), this, SIGNAL(viewProfile(QString)));
+    connect(tableUi.pushButtonStand, SIGNAL(clicked()), this, SIGNAL(standUp()));
+
 
     preferencesWidget = new QWidget(this);
     uiPreferences.setupUi(preferencesWidget);
@@ -132,7 +134,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
         c->setZValue(2);
     }
 
-    for (int i = 0; i < numPlayers; i++)
+    for (int i = 0; i < maxPlayers; i++)
     {
         Chip *c = new Chip;
         gfxScene.addItem(c);
@@ -158,7 +160,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
 
     readyChips.at(7)->setPos(785, 385);
 
-    for (int i = 0; i < numPlayers; i++)
+    for (int i = 0; i < maxPlayers; i++)
         playerWidgets.at(i)->raise();
 
     playerWidgets.at(0)->move(150, 480);
@@ -477,7 +479,7 @@ void UnscrambleGameTable::changeBackground(int index)
     tableUi.labelGuess->setStyleSheet(sheet);
     tableUi.labelYourGuesses->setStyleSheet(sheet);
 
-    for (int i = 0; i < numPlayers; i++)
+    for (int i = 0; i < maxPlayers; i++)
     {
         playerUis.at(i).labelUsername->setStyleSheet(sheet);
         playerUis.at(i).labelAddInfo->setStyleSheet(sheet);
@@ -494,30 +496,15 @@ void UnscrambleGameTable::setZoom(int zoom)
 
 }
 
-void UnscrambleGameTable::setReadyIndicator(QString username)
+void UnscrambleGameTable::setReadyIndicator(quint8 seat)
 {
-    int seat;
-    if (seats.contains(username))
-        seat = seats.value(username);
-    else
-    {
-        QMessageBox::critical(0, "?", "Please notify developer about this error. (Error code 10004)");
-        return;
-    }
-    //	playerUis.at(seat).labelAddInfo->setText("<font color=green>!</font>");
-
     readyChips.at(seat)->show();
-
-
-
 }
 
 void UnscrambleGameTable::clearReadyIndicators()
 {
-    for (int i = 0; i < numPlayers; i++)
+    for (int i = 0; i < maxPlayers; i++)
         readyChips.at(i)->hide();
-
-
 }
 
 
@@ -564,7 +551,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
     setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3 - Table Host: %4").arg(tableNum).arg(wordListName).arg(myUsername).arg(""));
     tableUi.labelWordListInfo->clear();
     tableUi.lcdNumberTimer->display(0);
-    clearAndHidePlayers(true);
+    clearPlayerWidgets();
     clearAllWordTiles();
     tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
     tableUi.lineEditChat->clear();
@@ -587,23 +574,25 @@ void UnscrambleGameTable::leaveTable()
 void UnscrambleGameTable::addPlayers(QStringList plist)
 {
     tableUi.listWidgetPeopleInRoom->addItems(plist);
-    addPlayersToWidgets(plist);
+//    addPlayersToWidgets(plist);
 }
 
 void UnscrambleGameTable::addPlayer(QString player, bool gameStarted)
 {
-    addPlayerToWidgets(player, gameStarted);
+ //   addPlayerToWidgets(player, gameStarted);
     tableUi.listWidgetPeopleInRoom->addItem(player);
 }
 
 void UnscrambleGameTable::removePlayer(QString player, bool gameStarted)
 {
-    removePlayerFromWidgets(player, gameStarted);
+//    removePlayerFromWidgets(player, gameStarted);
     for (int i = 0; i < tableUi.listWidgetPeopleInRoom->count(); i++)
+    {
         if (tableUi.listWidgetPeopleInRoom->item(i)->text() == player)
         {
-        QListWidgetItem *it = tableUi.listWidgetPeopleInRoom->takeItem(i);
-        delete it;
+            QListWidgetItem *it = tableUi.listWidgetPeopleInRoom->takeItem(i);
+            delete it;
+        }
     }
 }
 
@@ -979,7 +968,7 @@ void UnscrambleGameTable::fullQuizDone()
 }
 
 
-QString UnscrambleGameTable::answeredCorrectly(QString username, quint8 space, quint8 specificAnswer)
+void UnscrambleGameTable::answeredCorrectly(quint8 seatNumber, quint8 space, quint8 specificAnswer)
 {
     QString alphagram = wordQuestions.at(space).alphagram;
     int tileWidth = getTileWidth(alphagram.length());
@@ -1024,7 +1013,9 @@ QString UnscrambleGameTable::answeredCorrectly(QString username, quint8 space, q
     rightAnswers.insert(answer);
     gfxScene.update();
     // maybe later color code by username
-    return answer;
+
+    addToPlayerList(seatNumber, answer);
+
 }
 
 void UnscrambleGameTable::clearAllWordTiles()
@@ -1046,7 +1037,7 @@ void UnscrambleGameTable::clearAllWordTiles()
 void UnscrambleGameTable::setupForGameStart()
 {
     tableUi.graphicsView->centerOn(tableItem);
-    for (int i = 0; i < numPlayers; i++)
+    for (int i = 0; i < maxPlayers; i++)
     {
         playerUis.at(i).listWidgetAnswers->clear();
         playerUis.at(i).labelAddInfo->clear();

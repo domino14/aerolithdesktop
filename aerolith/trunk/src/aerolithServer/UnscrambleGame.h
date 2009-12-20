@@ -151,7 +151,7 @@ private:
     quint16 numTotalRacks;
     quint16 numRacksSeen;
     void generateQuizArray();
-    void sendCorrectAnswerPacket(QString, quint8, quint8);
+    void sendCorrectAnswerPacket(quint8, quint8, quint8);
 
     void sendTimerValuePacket(quint16);
     void sendGiveUpPacket(QString);
