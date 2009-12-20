@@ -238,7 +238,7 @@ void MainServer::receiveMessage()
             // there are 4 bytes available. read them in!
             socket->connData.in >> header;
             socket->connData.in >> packetlength;
-            // THIS IS OPEN TO ABUSE.  what if the user sends a packet thats > 2^16 bytes? packetlength will wrap around,
+            // TODO THIS IS OPEN TO ABUSE.  what if the user sends a packet thats > 2^16 bytes? packetlength will wrap around,
             // and reader won't read all bytes
             // or if user sends 20 bytes e.g. and packetlength = 10
             socket->connData.numBytesInPacket = packetlength;
@@ -297,10 +297,6 @@ void MainServer::receiveMessage()
         case CLIENT_NEW_TABLE:
             // created a new table
             processNewTable(socket);
-            break;
-        case CLIENT_AVATAR:
-            // avatar ID
-            processAvatarID(socket);
             break;
         case CLIENT_VERSION:
             processVersionNumber(socket);
@@ -373,29 +369,6 @@ void MainServer::sendHighScores(ClientSocket* socket)
 
 }
 
-void MainServer::processAvatarID(ClientSocket* socket)
-{
-    QString username;
-    quint8 avatarID;
-
-    username = socket->connData.userName;
-    socket->connData.in >> avatarID;
-    socket->connData.avatarId = avatarID;
-
-    // only send avatars to table and only if this user is in a table
-    // when players join a table, send avatars as well
-
-    if (socket->connData.tableNum != 0)
-    {
-        Table* table = tables.value(socket->connData.tableNum);
-        //      table->sendAvatarChangePacket(username, avatarID);
-
-        foreach (ClientSocket *thisConn, table->peopleInTable)
-            sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
-
-    }
-
-}
 
 
 void MainServer::processChatAction(ClientSocket* socket)
@@ -444,14 +417,14 @@ void MainServer::processTableCommand(ClientSocket* socket)
         table->tableGame->gameStartRequest(socket);
 
         break;
-//    case CLIENT_TABLE_GUESS:
-//        // guess from solution box
-//        {
-//            QByteArray guess;
-//            socket->connData.in >> guess;
-//            table->tableGame->guessSent(socket, guess);
-//        }
-//        break;
+        //    case CLIENT_TABLE_GUESS:
+        //        // guess from solution box
+        //        {
+        //            QByteArray guess;
+        //            socket->connData.in >> guess;
+        //            table->tableGame->guessSent(socket, guess);
+        //        }
+        //        break;
     case CLIENT_TABLE_CHAT:
         // chat
         {
@@ -483,7 +456,16 @@ void MainServer::processTableCommand(ClientSocket* socket)
 
         break;
     case CLIENT_TRY_SITTING:
-       table->tableGame->trySitting(socket);
+        {
+            quint8 seatNumber;
+            socket->connData.in >> seatNumber;
+            table->trySitting(socket, seatNumber);
+        }
+        break;
+    case CLIENT_TRY_STANDING:
+        {
+            table->tryStanding(socket);
+        }
         break;
     case CLIENT_TABLE_ACTION:
         {
@@ -498,6 +480,19 @@ void MainServer::processTableCommand(ClientSocket* socket)
             }
             table->sendTableMessage("* " + username + " " + actionText);
         }
+        break;
+
+    case CLIENT_TABLE_AVATAR:
+        // avatar ID
+        {
+
+            quint8 avatarID;
+            socket->connData.in >> avatarID;
+
+            table->processAvatarID(socket, avatarID);
+
+        }
+
         break;
     default:
         table->tableGame->handleMiscPacket(socket, subcommand);
@@ -596,9 +591,9 @@ void MainServer::processNewTable(ClientSocket* socket)
     quint16 tablenum = 0;
     // read in all the data, and let the table class parse it. this is because the table create
     // packet looks different for different games.
- //   int tableDescriptionSize = socket->connData.numBytesInPacket-sizeof(quint8);
-//    char* newTableBytes = new char[tableDescriptionSize];
-//    socket->connData.in.readRawData(newTableBytes, tableDescriptionSize);
+    //   int tableDescriptionSize = socket->connData.numBytesInPacket-sizeof(quint8);
+    //    char* newTableBytes = new char[tableDescriptionSize];
+    //    socket->connData.in.readRawData(newTableBytes, tableDescriptionSize);
 
     // check to see if we can actually create a new table.
     bool foundFreeNumber = false;
@@ -625,14 +620,15 @@ void MainServer::processNewTable(ClientSocket* socket)
     else if (socket->connData.tableNum != 0)
     {
         writeToClient(socket, "Please leave the table you are in before creating another table.", S_ERROR);
-        qDebug() << "new table when you are already in a table? must be lag. don't create!";
         canCreateTable = false;
+        socket->connData.in.skipRawData(socket->connData.numBytesInPacket-sizeof(quint8));
+        // read and ignore table creation bytes
     }
 
     if (canCreateTable)
     {
         Table *tmp = new Table;
-     //   QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
+        //   QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
         // does not do a deep copy!
         
         QByteArray tableBlock = tmp->initialize(socket, tablenum, dbHandler);
@@ -642,7 +638,7 @@ void MainServer::processNewTable(ClientSocket* socket)
             connection->write(tableBlock);
         doJoinTable(socket, tablenum);
     }
- //   delete [] newTableBytes;
+    //   delete [] newTableBytes;
 
 
 
@@ -682,9 +678,6 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     // got here with no errors, join table!
     qDebug() << "Ok, join table!";
 
-    table->peopleInTable << socket;
-//    if (table->peopleInTab.size() == table->maxPlayers) table->canJoin = false;
-
     writeHeaderData();
     out << (quint8) SERVER_JOIN_TABLE;
     out << (quint16) tablenum;
@@ -693,36 +686,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     foreach (ClientSocket* connection, connections)
         connection->write(block);
 
-    // TODO consider writing functions to update playerData and connData appropriately
-    socket->connData.tableNum = tablenum;
-    //  socket->playerData.readyToPlay = false;
-    socket->playerData.gaveUp = false;
-
-    foreach (ClientSocket* thisConn, table->peopleInTable)
-    {
-        thisConn->playerData.readyToPlay = false;
-
-
-        // send everyone's avatar TO this socket
-        sendAvatarChangePacket(thisConn, socket, thisConn->connData.avatarId);
-        // send this guy's avatar to every socket
-        if (socket != thisConn)
-            sendAvatarChangePacket(socket, thisConn, socket->connData.avatarId);
-
-    }
-
-    table->tableGame->playerJoined(socket);
-
-    if (table->host)
-    {
-        writeHeaderData();
-        out << (quint8) SERVER_TABLE_COMMAND;
-        out << (quint16) tablenum;
-        out << (quint8) SERVER_TABLE_HOST;
-        out << table->host->connData.userName;
-        fixHeaderLength();
-        socket->write(block);
-    }
+    table->personJoined(socket);
 
 }
 
@@ -734,18 +698,6 @@ void MainServer::processJoinTable(ClientSocket* socket)
 
 
     doJoinTable(socket, tablenum);
-}
-
-void MainServer::sendAvatarChangePacket(ClientSocket *fromSocket, ClientSocket *toSocket, quint8 avatarID)
-{
-    // this should not be a table command because there are other situations in which avatars can be changed, i.e. chatroom icons, etc. in the future
-    writeHeaderData();
-    out << (quint8) SERVER_AVATAR_CHANGE;
-    out << fromSocket->connData.userName; // sender of message
-    out << avatarID;
-    fixHeaderLength();
-    toSocket->write(block);
-    qDebug() << "told " << toSocket->connData.userName << "that" << fromSocket->connData.userName << "now has avatar id " << avatarID;
 }
 
 void MainServer::processPrivateMessage(ClientSocket* socket)

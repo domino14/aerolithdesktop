@@ -35,6 +35,10 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
     host = tableCreator;
     originalHost = host;
     canJoin = true;
+    sittingList.resize(maxPlayers);
+    for (int i = 0; i < maxPlayers; i++)
+        sittingList[i] = NULL;
+
     switch (gameType)
     {
     case GAME_TYPE_UNSCRAMBLE:
@@ -70,7 +74,7 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
 
 
     }
-
+//    trySitting(host, 0);    // always seat the host when he enters automatically.
     ////
     return tableInformationArray;
 
@@ -85,6 +89,7 @@ Table::~Table()
 
 void Table::removePersonFromTable(ClientSocket* socket)
 {
+    tryStanding(socket);    // always stand up before leaving.
     tableGame->playerLeftGame(socket);
     peopleInTable.removeAll(socket);
 
@@ -134,6 +139,143 @@ void Table::sendTableMessage(QString message)
     out << (quint16) tableNumber;
     out << (quint8) SERVER_TABLE_MESSAGE;
     out << message;
+    fixHeaderLength();
+    sendGenericPacket();
+}
+
+void Table::personJoined(ClientSocket* socket)
+{
+    peopleInTable << socket;
+
+    socket->connData.tableNum = tableNumber;
+    socket->playerData.gaveUp = false;
+
+    foreach (ClientSocket* thisConn, sittingList)
+    {
+        if (thisConn)
+        {
+            thisConn->playerData.readyToPlay = false;
+
+            if (thisConn->connData.isSitting)
+            {
+                writeHeaderData();
+                out << (quint8) SERVER_TABLE_COMMAND;
+                out << (quint16) tableNumber;
+                out << (quint8)SERVER_TABLE_SUCCESSFUL_SIT;
+                out << thisConn->connData.userName;
+                out << thisConn->connData.seatNumber;
+                fixHeaderLength();
+                socket->write(block);
+
+                writeHeaderData();
+                out << (quint8) SERVER_TABLE_COMMAND;
+                out << (quint16)tableNumber;
+                out << (quint8) SERVER_TABLE_AVATAR_CHANGE;
+                out << thisConn->connData.seatNumber;
+                out << thisConn->connData.avatarId;
+                fixHeaderLength();
+                socket->write(block);
+
+
+            }
+            else
+                qDebug() << "THIS ERROR SHOULDN'T BE";
+        }
+    }
+
+    tableGame->playerJoined(socket);
+
+    if (host)
+    {
+        writeHeaderData();
+        out << (quint8) SERVER_TABLE_COMMAND;
+        out << (quint16) tableNumber;
+        out << (quint8) SERVER_TABLE_HOST;
+        out << host->connData.userName;
+        fixHeaderLength();
+        socket->write(block);
+    }
+
+
+}
+
+void Table::processAvatarID(ClientSocket* socket, quint8 id)
+{
+    socket->connData.avatarId = id;
+    sendAvatarChangePacket(socket);
+}
+
+void Table::sendAvatarChangePacket(ClientSocket *socket)
+{
+    if (socket->connData.isSitting)
+    {
+        writeHeaderData();
+        out << (quint8) SERVER_TABLE_COMMAND;
+        out << (quint16)tableNumber;
+        out << (quint8) SERVER_TABLE_AVATAR_CHANGE;
+        out << socket->connData.seatNumber;
+        out << socket->connData.avatarId;
+        fixHeaderLength();
+        sendGenericPacket();
+    }
+}
+
+
+void Table::trySitting(ClientSocket* socket, quint8 seatNumber)
+{
+    if (!socket->connData.isSitting)
+    {
+        if (seatNumber < maxPlayers && sittingList.at(seatNumber) == NULL)
+        {
+            sittingList[seatNumber] = socket;
+            socket->connData.isSitting = true;
+            socket->connData.seatNumber = seatNumber;
+            sendSuccessfulSitPacket(socket->connData.userName, seatNumber);
+            tableGame->performSpecificSitActions(socket);
+
+            sendAvatarChangePacket(socket);
+            qDebug() << "Sat!";
+        }
+
+
+    }
+}
+
+void Table::tryStanding(ClientSocket* socket)
+{
+    if (socket->connData.isSitting)
+    {
+        if (socket->connData.seatNumber < maxPlayers)
+        {
+            sittingList[socket->connData.seatNumber] = NULL;
+            socket->connData.isSitting = false;
+            sendSuccessfulStandPacket(socket->connData.userName, socket->connData.seatNumber);
+            tableGame->performSpecificStandActions(socket);
+        }
+    }
+
+}
+
+void Table::sendSuccessfulStandPacket(QString username, quint8 previousSeatNumber)
+{
+    writeHeaderData();
+    out << (quint8) SERVER_TABLE_COMMAND;
+    out << (quint16) tableNumber;
+    out << (quint8)SERVER_TABLE_SUCCESSFUL_STAND;
+    out << username;
+    out << previousSeatNumber;
+    fixHeaderLength();
+    sendGenericPacket();
+}
+
+void Table::sendSuccessfulSitPacket(QString username, quint8 seatNumber)
+{
+    writeHeaderData();
+    out << (quint8) SERVER_TABLE_COMMAND;
+    out << (quint16) tableNumber;
+    out << (quint8)SERVER_TABLE_SUCCESSFUL_SIT;
+    out << username;
+    out << seatNumber;
     fixHeaderLength();
     sendGenericPacket();
 }

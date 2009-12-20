@@ -205,6 +205,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     connect(gameBoardWidget, SIGNAL(saveCurrentGameBA(QByteArray,QString,QString)),
             SLOT(saveGameBA(QByteArray, QString, QString)));
+
+    connect(gameBoardWidget, SIGNAL(sitDown(quint8)), SLOT(trySitting(quint8)));
+    connect(gameBoardWidget, SIGNAL(standUp()), SLOT(standUp()));
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -386,6 +389,19 @@ void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
     commsSocket->write(block);
 }
 
+void MainWindow::changeMyAvatar(quint8 avatarID)
+{
+
+    writeHeaderData();
+    out << (quint8) CLIENT_TABLE_COMMAND;
+    out << (quint16) currentTablenum;
+    out << (quint8) CLIENT_TABLE_AVATAR;
+    out << avatarID;
+    fixHeaderLength();
+    commsSocket->write(block);
+}
+
+
 void MainWindow::readFromServer()
 {
     // same structure as server's read
@@ -535,12 +551,12 @@ void MainWindow::readFromServer()
                 QString lexiconName;
                 QString tableName;
                 quint8 maxPlayers;
-                QString tableHost;
+                bool isPrivate;
                 //		QStringList
 
-                in >> tablenum >> gameType >> lexiconName >> tableName >> maxPlayers >> tableHost;
+                in >> tablenum >> gameType >> lexiconName >> tableName >> maxPlayers >> isPrivate;
                 // create table
-                handleCreateTable(tablenum, gameType, lexiconName, tableName, maxPlayers, tableHost);
+                handleCreateTable(tablenum, gameType, lexiconName, tableName, maxPlayers, isPrivate);
                 /* TODO genericize this as well (like in the server) to take in a table number and type,
                            then read different amount of info for each type */
             }
@@ -555,15 +571,18 @@ void MainWindow::readFromServer()
                 handleAddToTable(tablenum, playerName);
                 if (playerName == currentUsername)
                 {
+
                     currentTablenum = tablenum;
                     if (!tables.contains(tablenum))
                         break;
                     tableRepresenter* t = tables.value(tablenum);
-
+                    gameBoardWidget->setTableCapacity(t->maxPlayers);
                     QString wList = t->descriptorItem->text();
                     qDebug() << "I joined table!";
                     gameBoardWidget->resetTable(tablenum, wList, playerName);
                     gameBoardWidget->show();
+                    trySitting(0);  // whenever player joins, they try sitting at spot 0.
+
                     uiMainWindow.comboBoxLexicon->setEnabled(false);
                     gameBoardWidget->setSavingAllowed(savingGameAllowable);
 
@@ -583,7 +602,7 @@ void MainWindow::readFromServer()
                 in >> tablenum >> playerName;
 
                 if (currentTablenum == tablenum)
-                {//i love shoe
+                {
                     modifyPlayerLists(tablenum, playerName, -1);
                 }
 
@@ -656,26 +675,7 @@ void MainWindow::readFromServer()
 
 
             break;
-        case SERVER_AVATAR_CHANGE:
-            // avatar id
-            {
-                QString username;
-                quint8 avatarID;
-                in >> username >> avatarID;
-                // username changed his avatar to avatarID. if we want to display this avatar, display it
-                // i.e. if we are in a table. in the future consider changing this to just a table packet but do the check now
-                // just in case.
-                if (currentTablenum != 0)
-                {
-                    // we are in a table
-                    gameBoardWidget->setAvatar(username, avatarID);
 
-                }
-                // then here we can do something like chatwidget->setavatar( etc). but this requires the server
-                // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
-                // this way we can just send everyone's avatar on login. consider changing this!
-            }
-            break;
         default:
             QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
             commsSocket->disconnectFromHost();
@@ -931,34 +931,34 @@ void MainWindow::createUnscrambleGameTable()
 
         switch (mode)
         {
-            case DatabaseHandler::MODE_RESTART:
-                thisSug.initialize(thisSug.origIndices);
+        case DatabaseHandler::MODE_RESTART:
+            thisSug.initialize(thisSug.origIndices);
 
+            qindices = thisSug.origIndices;
+            mindices.clear();
+
+            break;
+
+        case DatabaseHandler::MODE_FIRSTMISSED:
+            qindices = thisSug.firstMissed;
+            mindices.clear();
+
+            thisSug.curQuizList = thisSug.firstMissed;
+            thisSug.curMissedList.clear();
+            break;
+
+        case DatabaseHandler::MODE_CONTINUE:
+            if (thisSug.brandNew)
+            {
                 qindices = thisSug.origIndices;
                 mindices.clear();
-
-                break;
-
-            case DatabaseHandler::MODE_FIRSTMISSED:
-                qindices = thisSug.firstMissed;
-                mindices.clear();
-
-                thisSug.curQuizList = thisSug.firstMissed;
-                thisSug.curMissedList.clear();
-                break;
-
-            case DatabaseHandler::MODE_CONTINUE:
-                if (thisSug.brandNew)
-                {
-                    qindices = thisSug.origIndices;
-                    mindices.clear();
-                }
-                else
-                {
-                    qindices = thisSug.curQuizList;
-                    mindices = thisSug.curMissedList;
-                }
-                break;
+            }
+            else
+            {
+                qindices = thisSug.curQuizList;
+                mindices = thisSug.curMissedList;
+            }
+            break;
         }
 
         out << si[0]->text().left(32);
@@ -1059,9 +1059,9 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
         // a request for beginning the game from a player
         // refresh ready light for each player.
         {
-            QString username;
-            in >> username;
-            gameBoardWidget->setReadyIndicator(username);
+            quint8 seat;
+            in >> seat;
+            gameBoardWidget->setReadyIndicator(seat);
         }
         break;
     case SERVER_TABLE_GAME_START:
@@ -1152,11 +1152,11 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
     case SERVER_TABLE_CORRECT_ANSWER:
         {
-            QString username;
+            quint8 seatNumber;
             quint8 space, specificAnswer;
-            in >> username >> space >> specificAnswer;
-            QString wordAnswer = gameBoardWidget->answeredCorrectly(username, space, specificAnswer);
-            gameBoardWidget->addToPlayerList(username, wordAnswer);
+            in >> seatNumber >> space >> specificAnswer;
+            gameBoardWidget->answeredCorrectly(seatNumber, space, specificAnswer);
+
 
         }
         break;
@@ -1166,6 +1166,44 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
     case SERVER_TABLE_FULL_QUIZ_DONE:
         gameBoardWidget->fullQuizDone();
         break;
+
+    case SERVER_TABLE_AVATAR_CHANGE:
+        // avatar id
+        {
+            quint8 seatNumber;
+            quint8 avatarID;
+            in >> seatNumber >> avatarID;
+
+            gameBoardWidget->setAvatar(seatNumber, avatarID);
+
+            // then here we can do something like chatwidget->setavatar( etc). but this requires the server
+            // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
+            // this way we can just send everyone's avatar on login. consider changing this!
+        }
+        break;
+
+     case SERVER_TABLE_SUCCESSFUL_STAND:
+        {
+            QString username;
+            quint8 seatNumber;
+
+            in >> username >> seatNumber;
+            gameBoardWidget->standup(username, seatNumber);
+        }
+        break;
+
+     case SERVER_TABLE_SUCCESSFUL_SIT:
+        {
+            QString username;
+            quint8 seatNumber;
+            in >> username >> seatNumber;
+            gameBoardWidget->sitdown(username, seatNumber);
+            qDebug() << "Got saet packet" << username << seatNumber;
+
+        }
+        break;
+
+
 
     }
 
@@ -1286,7 +1324,7 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
 
 
 void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName,
-                                   QString tableName, quint8 maxPlayers, QString tableHost)
+                                   QString tableName, quint8 maxPlayers, bool isPrivate)
 {
     tableRepresenter* t = new tableRepresenter;
     t->tableNumItem = new QTableWidgetItem(QString("%1").arg(tablenum));
@@ -1294,7 +1332,7 @@ void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString le
                                              ") " + tableName);
     t->playersItem = new QTableWidgetItem("");
     t->maxPlayers = maxPlayers;
-    t->tableHost = tableHost;
+    t->isPrivate = isPrivate;
     switch (gameType)
     {
     case GAME_TYPE_UNSCRAMBLE:
@@ -1456,6 +1494,29 @@ void MainWindow::giveUpOnThisGame()
     commsSocket->write(block);
 }
 
+void MainWindow::trySitting(quint8 seatNumber)
+{
+    writeHeaderData();
+    out << (quint8)CLIENT_TABLE_COMMAND;
+    out << (quint16)currentTablenum;
+    out << (quint8)CLIENT_TRY_SITTING;
+    out << seatNumber;
+    fixHeaderLength();
+    commsSocket->write(block);
+}
+
+void MainWindow::standUp()
+{
+    writeHeaderData();
+    out << (quint8)CLIENT_TABLE_COMMAND;
+    out << (quint16)currentTablenum;
+    out << (quint8)CLIENT_TRY_STANDING;
+
+    fixHeaderLength();
+    commsSocket->write(block);
+
+}
+
 void MainWindow::submitReady()
 {
     writeHeaderData();
@@ -1537,14 +1598,7 @@ void MainWindow::sendClientVersion()
     commsSocket->write(block);
 }
 
-void MainWindow::changeMyAvatar(quint8 avatarID)
-{
 
-    writeHeaderData();
-    out << (quint8) CLIENT_AVATAR << avatarID;
-    fixHeaderLength();
-    commsSocket->write(block);
-}
 
 void MainWindow::updateGameTimer()
 {
@@ -1780,8 +1834,8 @@ void MainWindow::on_pushButtonDeleteList_clicked()
     if (si.size() != 5) return;
 
     if (QMessageBox::Yes == QMessageBox::warning(this, "Are you sure?", "Are you sure you wish to delete '" +
-                         si[0]->text() + "'?",
-                         QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+                                                 si[0]->text() + "'?",
+                                                 QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
         dbHandler->deleteUserList(currentLexicon, si[0]->text());
         repopulateMyListsTable();

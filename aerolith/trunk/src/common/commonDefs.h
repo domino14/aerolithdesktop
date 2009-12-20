@@ -51,7 +51,6 @@
 #define CLIENT_CHAT 'c'
 #define CLIENT_PM 'p'
 #define CLIENT_NEW_TABLE 't'
-#define CLIENT_AVATAR 'i'
 #define CLIENT_VERSION 'v'
 #define CLIENT_JOIN_TABLE 'j'
 #define CLIENT_LEAVE_TABLE 'l'
@@ -64,7 +63,9 @@
 #define CLIENT_TABLE_GIVEUP 'u'
 #define CLIENT_TABLE_ACTION 'a'
 #define CLIENT_TRY_SITTING 's'
+#define CLIENT_TRY_STANDING '-'
 #define CLIENT_STAND_UP 'p'
+#define CLIENT_TABLE_AVATAR 'i'
 // misc table subcommands, by game
 #define CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER 'w'
 
@@ -75,7 +76,6 @@
 #define SERVER_KILL_TABLE 'K'
 #define SERVER_NEW_TABLE 'T'
 #define SERVER_JOIN_TABLE 'J'
-#define SERVER_AVATAR_CHANGE 'I'
 #define SERVER_PM 'P'
 #define SERVER_WORD_LISTS 'W'
 #define SERVER_LOGGED_IN 'E'
@@ -98,6 +98,7 @@
 #define SERVER_TABLE_CORRECT_ANSWER 'Y'
 #define SERVER_TABLE_SUCCESSFUL_SIT 'Z'
 #define SERVER_TABLE_SUCCESSFUL_STAND 'P'
+#define SERVER_TABLE_AVATAR_CHANGE 'I'
 
 #define SERVER_TABLE_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
 #define SERVER_TABLE_FULL_QUIZ_DONE 'F' // no more questions in missed or current

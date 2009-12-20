@@ -36,6 +36,7 @@ public:
         quint16 numBytesInPacket;
         quint16 tableNum; // adding here because table number is pretty essential to the workings of this particular server
         bool isSitting;
+        quint8 seatNumber;  // meaningless if not sitting.
 
         quint8 avatarId;
         bool isActive;

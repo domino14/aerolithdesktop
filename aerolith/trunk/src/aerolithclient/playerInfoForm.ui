@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>playerInfoForm</class>
- <widget class="QWidget" name="playerInfoForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="playerInfoForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,27 +10,11 @@
     <height>140</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="avatarLabel" name="labelAvatar" >
-   <property name="geometry" >
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>40</width>
-     <height>40</height>
-    </rect>
-   </property>
-   <property name="text" >
-    <string/>
-   </property>
-   <property name="pixmap" >
-    <pixmap resource="../client.qrc" >:/images/face32.png</pixmap>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidgetAnswers" >
-   <property name="geometry" >
+  <widget class="QListWidget" name="listWidgetAnswers">
+   <property name="geometry">
     <rect>
      <x>0</x>
      <y>40</y>
@@ -37,62 +22,62 @@
      <height>100</height>
     </rect>
    </property>
-   <property name="focusPolicy" >
+   <property name="focusPolicy">
     <enum>Qt::NoFocus</enum>
    </property>
-   <property name="styleSheet" >
+   <property name="styleSheet">
     <string>QListWidget {
      border: 2px solid gray;
      border-radius: 10px;
 	background-color: rgb(255, 255, 150);
 }</string>
    </property>
-   <property name="horizontalScrollBarPolicy" >
+   <property name="horizontalScrollBarPolicy">
     <enum>Qt::ScrollBarAlwaysOff</enum>
    </property>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>arsino</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>oxyphenbutazone</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>senora</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>arseno</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>norias</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>bodega</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>agrafe</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>dagoba</string>
     </property>
    </item>
   </widget>
-  <widget class="QLabel" name="labelUsername" >
-   <property name="geometry" >
+  <widget class="QLabel" name="labelUsername">
+   <property name="geometry">
     <rect>
      <x>40</x>
      <y>10</y>
@@ -100,12 +85,12 @@
      <height>21</height>
     </rect>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>triphenylarsine</string>
    </property>
   </widget>
-  <widget class="QLabel" name="labelAddInfo" >
-   <property name="geometry" >
+  <widget class="QLabel" name="labelAddInfo">
+   <property name="geometry">
     <rect>
      <x>120</x>
      <y>10</y>
@@ -113,9 +98,55 @@
      <height>20</height>
     </rect>
    </property>
-   <property name="text" >
-    <string>&lt;font color=red>99&lt;/font></string>
+   <property name="text">
+    <string>&lt;font color=red&gt;99&lt;/font&gt;</string>
    </property>
+  </widget>
+  <widget class="QStackedWidget" name="stackedWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>40</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="page">
+    <widget class="avatarLabel" name="labelAvatar">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>40</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../../client.qrc">:/images/face32.png</pixmap>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="page_2">
+    <widget class="QToolButton" name="toolButtonSit">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>40</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sit</string>
+     </property>
+    </widget>
+   </widget>
   </widget>
  </widget>
  <customwidgets>
@@ -126,7 +157,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../client.qrc" />
+  <include location="../../client.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -56,9 +56,9 @@ public:
 
     void addNewWord(int, quint32, quint8, QSet <quint8>);
     void clearAllWordTiles();
-    QString answeredCorrectly(QString username, quint8 space, quint8 specificAnswer);
+    void answeredCorrectly(quint8 seat, quint8 space, quint8 specificAnswer);
 
-    void setReadyIndicator(QString);
+    void setReadyIndicator(quint8 seat);
     void clearReadyIndicators();
     void setCurrentSug(SavedUnscrambleGame sug);
     void setSavingAllowed(bool);
@@ -67,6 +67,7 @@ public:
         unmodifiedListName = u;
     }
     void setHost(QString hostname);
+
 
 private:
     QString tableHost;
