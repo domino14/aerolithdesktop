@@ -52,11 +52,13 @@ public:
     void standup(QString username, quint8 seat);
     void sitdown(QString username, quint8 seat);
 
+    QStringList peopleInTable;
 signals:
     void avatarChange(quint8);
     void sitDown(quint8);
     void standUp();
 protected:
+    bool isPrivate;
     quint8 mySeatNumber;
     quint8 tableCapacity;
     avatarLabel* myAvatarLabel;

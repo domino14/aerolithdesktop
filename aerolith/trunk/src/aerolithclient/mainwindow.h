@@ -60,6 +60,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QString, DatabaseHandler*);
 private:
+    QStringList peopleLoggedIn;
     QString aerolithVersion;
     QString WindowTitle;
     QString currentLexicon;
@@ -213,7 +214,8 @@ signals:
     void spinBoxWordLengthChange(int);
     void standUp();
     void trySitting(quint8 seatNumber);
-
+    void trySetTablePrivate(bool);
+    void showInviteDialog();
 
     void saveGameBA(QByteArray, QString, QString);
 

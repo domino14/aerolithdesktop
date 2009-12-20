@@ -66,6 +66,9 @@
 #define CLIENT_TRY_STANDING '-'
 #define CLIENT_STAND_UP 'p'
 #define CLIENT_TABLE_AVATAR 'i'
+#define CLIENT_TABLE_PRIVACY 'y'
+#define CLIENT_TABLE_INVITE 't'
+#define CLIENT_TABLE_BOOT '!'
 // misc table subcommands, by game
 #define CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER 'w'
 
@@ -84,6 +87,8 @@
 #define SERVER_MESSAGE 'S'
 #define SERVER_CHAT 'C'
 #define SERVER_TABLE_COMMAND '+'
+#define SERVER_INVITE_TO_TABLE 'I'
+#define SERVER_BOOT_FROM_TABLE 'B'
 //table subcommands
 #define SERVER_TABLE_CHAT 'C'
 #define SERVER_TABLE_MESSAGE 'M'
@@ -99,6 +104,7 @@
 #define SERVER_TABLE_SUCCESSFUL_SIT 'Z'
 #define SERVER_TABLE_SUCCESSFUL_STAND 'P'
 #define SERVER_TABLE_AVATAR_CHANGE 'I'
+#define SERVER_TABLE_PRIVACY 'A'
 
 #define SERVER_TABLE_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
 #define SERVER_TABLE_FULL_QUIZ_DONE 'F' // no more questions in missed or current

@@ -43,6 +43,7 @@ public:
 
     QList <ClientSocket*> peopleInTable;
     QVector <ClientSocket*> sittingList;
+    QList <ClientSocket*> inviteList;
     bool canJoin;
     bool isPrivate;
 
@@ -52,7 +53,7 @@ public:
 
     void personJoined(ClientSocket*);
 
-
+    bool setTablePrivacy(ClientSocket*, bool p);
     void processAvatarID(ClientSocket* socket, quint8 id);
     void sendChatSentPacket(QString, QString);
     void sendGenericPacket();
