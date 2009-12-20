@@ -481,7 +481,28 @@ void MainServer::processTableCommand(ClientSocket* socket)
             table->sendTableMessage("* " + username + " " + actionText);
         }
         break;
+    case CLIENT_TABLE_PRIVACY:
+        {
+            bool privacy;
+            socket->connData.in >> privacy;
 
+            bool success = table->setTablePrivacy(socket, privacy);
+
+            if (success)
+            {
+                // need to tell everyone that this table is now private or public.
+                writeHeaderData();
+                out << (quint8) SERVER_TABLE_PRIVACY;
+                out << tablenum;
+                out << privacy;
+                fixHeaderLength();
+
+                foreach (ClientSocket* connection, connections)
+                    connection->write(block);
+            }
+
+        }
+        break;
     case CLIENT_TABLE_AVATAR:
         // avatar ID
         {

@@ -208,6 +208,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     connect(gameBoardWidget, SIGNAL(sitDown(quint8)), SLOT(trySitting(quint8)));
     connect(gameBoardWidget, SIGNAL(standUp()), SLOT(standUp()));
+    connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
+    connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -482,6 +484,7 @@ void MainWindow::readFromServer()
                 QString username;
                 in >> username;
                 QListWidgetItem *it = new QListWidgetItem(username, uiMainWindow.listWidgetPeopleConnected);
+                peopleLoggedIn.append(username);
                 if (username == currentUsername)
                 {
                     // QSound::play("sounds/enter.wav");
@@ -510,6 +513,7 @@ void MainWindow::readFromServer()
                     QListWidgetItem *it = uiMainWindow.listWidgetPeopleConnected->takeItem(i);
                     delete it;
                 }
+                peopleLoggedIn.removeAll(username);
 
             }
             break;
@@ -566,7 +570,7 @@ void MainWindow::readFromServer()
                 quint16 tablenum;
                 QString playerName;
 
-                in >> tablenum >> playerName; // this will also black out the corresponding button for can join
+                in >> tablenum >> playerName;
                 qDebug() << playerName << "joined" << tablenum;
                 handleAddToTable(tablenum, playerName);
                 if (playerName == currentUsername)
@@ -582,6 +586,7 @@ void MainWindow::readFromServer()
                     gameBoardWidget->resetTable(tablenum, wList, playerName);
                     gameBoardWidget->show();
                     trySitting(0);  // whenever player joins, they try sitting at spot 0.
+                    gameBoardWidget->setPrivacy(t->isPrivate);
 
                     uiMainWindow.comboBoxLexicon->setEnabled(false);
                     gameBoardWidget->setSavingAllowed(savingGameAllowable);
@@ -592,6 +597,23 @@ void MainWindow::readFromServer()
                 //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
 
 
+            }
+            break;
+        case SERVER_TABLE_PRIVACY:
+            {
+                quint16 tablenum;
+                bool privacy;
+
+                in >> tablenum >> privacy;
+
+                if (tables.contains(tablenum))
+                {
+                    tableRepresenter *t = tables.value(tablenum);
+                    t->isPrivate = privacy;
+                    t->buttonItem->setEnabled(!t->isPrivate);
+                    if (currentTablenum == tablenum)
+                        gameBoardWidget->setPrivacy(privacy);
+                }
             }
             break;
         case SERVER_LEFT_TABLE:
@@ -750,6 +772,7 @@ void MainWindow::serverDisconnection()
     savingGameAllowable = false;
     uiLogin.connectStatusLabel->setText("You are disconnected.");
     uiMainWindow.listWidgetPeopleConnected->clear();
+    peopleLoggedIn.clear();
     //	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
     uiLogin.loginPushButton->setText("Connect");
     //centralWidget->hide();
@@ -1349,7 +1372,7 @@ void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString le
     t->buttonItem->setProperty("tablenum", QVariant((quint16)tablenum));
     t->tableNum = tablenum;
     connect(t->buttonItem, SIGNAL(clicked()), this, SLOT(joinTable()));
-    t->buttonItem->setEnabled(false);
+    t->buttonItem->setEnabled(!t->isPrivate);
 
     //  QStringList playerList;
     //t->playersItem->setData(PLAYERLIST_ROLE, QVariant(playerList));
@@ -1444,10 +1467,6 @@ void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
     textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(t->maxPlayers) + ")";
     t->playersItem->setText(textToSet);
 
-    if (numPlayers >= t->maxPlayers)
-        t->buttonItem->setEnabled(false);
-    else
-        t->buttonItem->setEnabled(true);
 }
 
 void MainWindow::handleAddToTable(quint16 tablenum, QString player)
@@ -1473,14 +1492,6 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 
     t->playersItem->setText(textToSet);
 
-    if (numPlayers >= maxPlayers)
-    {
-        t->buttonItem->setEnabled(false);
-    }
-    else
-    {
-        t->buttonItem->setEnabled(true);
-    }
 }
 
 
@@ -1515,6 +1526,17 @@ void MainWindow::standUp()
     fixHeaderLength();
     commsSocket->write(block);
 
+}
+
+void MainWindow::trySetTablePrivate(bool priv)
+{
+    writeHeaderData();
+    out << (quint8)CLIENT_TABLE_COMMAND;
+    out << (quint16)currentTablenum;
+    out << (quint8)CLIENT_TABLE_PRIVACY;
+    out << priv;
+    fixHeaderLength();
+    commsSocket->write(block);
 }
 
 void MainWindow::submitReady()
@@ -1802,6 +1824,13 @@ void MainWindow::repopulateMyListsTable()
 
     }
     uiTable.tableWidgetMyLists->resizeColumnsToContents();
+}
+
+void MainWindow::showInviteDialog()
+{
+    QStringList playerList = peopleLoggedIn;
+    playerList.removeAll(currentUsername);
+    QString playerToBoot = QInputDialog::getItem(this, "Invite", "Select Player to Invite", playerList, 0, false);
 }
 
 void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)

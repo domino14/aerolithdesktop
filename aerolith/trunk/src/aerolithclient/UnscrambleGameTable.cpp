@@ -33,7 +33,9 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(sendPM(QString)), this, SIGNAL(sendPM(QString)));
     connect(tableUi.listWidgetPeopleInRoom, SIGNAL(viewProfile(QString)), this, SIGNAL(viewProfile(QString)));
     connect(tableUi.pushButtonStand, SIGNAL(clicked()), this, SIGNAL(standUp()));
-
+    connect(tableUi.comboBoxTablePrivacy, SIGNAL(currentIndexChanged(int)), this, SLOT(changeTablePrivacy(int)));
+    connect(tableUi.pushButtonInvite, SIGNAL(clicked()), SIGNAL(showInviteDialog()));
+    connect(tableUi.pushButtonBoot, SIGNAL(clicked()), SLOT(showBootDialog()));
 
     preferencesWidget = new QWidget(this);
     uiPreferences.setupUi(preferencesWidget);
@@ -196,6 +198,15 @@ UnscrambleGameTable::~UnscrambleGameTable()
     while (!tiles.isEmpty())
         delete tiles.takeFirst();
 
+}
+
+void UnscrambleGameTable::setPrivacy(bool p)
+{
+    isPrivate = p;
+    if (p)
+        tableUi.comboBoxTablePrivacy->setCurrentIndex(1);
+    else
+        tableUi.comboBoxTablePrivacy->setCurrentIndex(0);
 }
 
 void UnscrambleGameTable::setCurrentSug(SavedUnscrambleGame sug)
@@ -553,10 +564,13 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
     tableUi.lcdNumberTimer->display(0);
     clearPlayerWidgets();
     clearAllWordTiles();
+
     tableUi.pushButtonExit->setText(QString("Exit table %1").arg(tableNum));
     tableUi.lineEditChat->clear();
     tableUi.textEditChat->clear();
     tableUi.graphicsView->centerOn(tableItem);
+
+    peopleInTable.clear();
     tableUi.listWidgetPeopleInRoom->clear();
 
     tableUi.lineEditSolution->setFocus();
@@ -574,18 +588,21 @@ void UnscrambleGameTable::leaveTable()
 void UnscrambleGameTable::addPlayers(QStringList plist)
 {
     tableUi.listWidgetPeopleInRoom->addItems(plist);
-//    addPlayersToWidgets(plist);
+    peopleInTable.append(plist);
+    //    addPlayersToWidgets(plist);
 }
 
 void UnscrambleGameTable::addPlayer(QString player, bool gameStarted)
 {
- //   addPlayerToWidgets(player, gameStarted);
+    //   addPlayerToWidgets(player, gameStarted);
+    peopleInTable.append(player);
     tableUi.listWidgetPeopleInRoom->addItem(player);
 }
 
 void UnscrambleGameTable::removePlayer(QString player, bool gameStarted)
 {
-//    removePlayerFromWidgets(player, gameStarted);
+    peopleInTable.removeAll(player);
+    //    removePlayerFromWidgets(player, gameStarted);
     for (int i = 0; i < tableUi.listWidgetPeopleInRoom->count(); i++)
     {
         if (tableUi.listWidgetPeopleInRoom->item(i)->text() == player)
@@ -1123,6 +1140,34 @@ void UnscrambleGameTable::setHost(QString hostname)
     int index = windowTitle.indexOf("Table Host:");
 
     setWindowTitle(windowTitle.left(index) + "Table Host: " + hostname);
+
+    if (hostname == myUsername)
+    {
+        tableUi.comboBoxTablePrivacy->setEnabled(true);
+        tableUi.pushButtonInvite->setEnabled(true);
+        tableUi.pushButtonBoot->setEnabled(true);
+    }
+    else
+    {
+        tableUi.comboBoxTablePrivacy->setEnabled(false);
+        tableUi.pushButtonInvite->setEnabled(false);
+        tableUi.pushButtonBoot->setEnabled(false);
+    }
+}
+
+void UnscrambleGameTable::changeTablePrivacy(int index)
+{
+    if (index == 0) // public
+        emit setTablePrivate(false);
+    else if (index == 1)
+        emit setTablePrivate(true);
+}
+
+void UnscrambleGameTable::showBootDialog()
+{
+    QStringList playerList = peopleInTable;
+    playerList.removeAll(myUsername);
+    QString playerToBoot =     QInputDialog::getItem(this, "Boot", "Select player to boot", playerList, 0, false);
 }
 
 void UnscrambleGameTable::exitButtonPressed()

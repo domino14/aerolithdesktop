@@ -44,6 +44,7 @@ public:
     void removePlayer(QString, bool);
     void addPlayers(QStringList);
 
+    void setPrivacy(bool p);
     void setupForGameStart();
     void gotChat(QString);
     void gotTimerValue(quint16 timerval);
@@ -131,6 +132,12 @@ signals:
     void exitThisTable();
     void viewProfile(QString);
     void saveCurrentGameBA(QByteArray, QString, QString);
+    void setTablePrivate(bool);
+    void showInviteDialog();
+
+    void bootFromTable(QString);
+
+
         private slots:
     void enteredGuess();
     void enteredChat();
@@ -156,9 +163,9 @@ signals:
     void pushedFontToggleButton();
 
     void saveUserPreferences();
+    void showBootDialog();
 
-
-public:
+    void changeTablePrivacy(int);
 
 
 };

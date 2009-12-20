@@ -39,6 +39,9 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
     for (int i = 0; i < maxPlayers; i++)
         sittingList[i] = NULL;
 
+    if (maxPlayers == 1) isPrivate = true;
+    else isPrivate = false;
+
     switch (gameType)
     {
     case GAME_TYPE_UNSCRAMBLE:
@@ -218,6 +221,16 @@ void Table::sendAvatarChangePacket(ClientSocket *socket)
         fixHeaderLength();
         sendGenericPacket();
     }
+}
+
+bool Table::setTablePrivacy(ClientSocket* socket, bool p)
+{
+    if (socket == host)
+    {
+        isPrivate = p;
+        return true;
+    }
+    return false;
 }
 
 
