@@ -31,6 +31,7 @@
 #include "ui_getProfileForm.h"
 #include "ui_setProfileForm.h"
 
+#include "wordfilter.h"
 #include "databasehandler.h"
 #include "UnscrambleGameTable.h"
 
@@ -38,15 +39,20 @@ class PMWidget : public QWidget
 {
     Q_OBJECT
 public:
-    PMWidget (QWidget *parent, QString senderUsername, QString receiverUsername);
+    PMWidget (QWidget *parent, QString localUsername, QString remoteUsername);
     void appendText(QString);
-
+    QString getRemoteUsername()
+    {
+        return remoteUsername;
+    }
 private:
     Ui::pmForm uiPm;
-    QString senderUsername;
-    QString receiverUsername;
+    QString localUsername;
+    QString remoteUsername;
+    void closeEvent(QCloseEvent*);
 signals:
     void sendPM(QString user, QString text);
+    void shouldDelete();
         private slots:
     void readAndSendLEContents();
 };
@@ -68,6 +74,7 @@ private:
 
     quint16 blockSize; // used for socket
 
+    WordFilter* wordFilter;
     void processServerString(QString);
 
     QString currentUsername;
@@ -216,6 +223,8 @@ signals:
     void trySitting(quint8 seatNumber);
     void trySetTablePrivate(bool);
     void showInviteDialog();
+    void shouldDeletePMWidget();
+
 
     void saveGameBA(QByteArray, QString, QString);
 

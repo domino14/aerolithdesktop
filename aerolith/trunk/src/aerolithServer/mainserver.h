@@ -50,6 +50,7 @@ private:
     void incomingConnection(int socketDescriptor); // inherited from QTcpServer
     QSqlDatabase userDb;
     QString aerolithVersion;
+
     DatabaseHandler* dbHandler;
     enum packetHeaderStatesEnum
     {

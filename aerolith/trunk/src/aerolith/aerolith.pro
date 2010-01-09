@@ -22,7 +22,8 @@ ICON = $$ROOT/macosxicns.icns
 SOURCES = main.cpp \
     GameTable.cpp \
     BonusGame.cpp \
-    databasehandler.cpp
+    databasehandler.cpp \
+    ../aerolithclient/wordfilter.cpp
 FORMS = tableCreateForm.ui \
     solutionsForm.ui \
     scoresForm.ui \
@@ -34,7 +35,9 @@ FORMS = tableCreateForm.ui \
     getProfileForm.ui \
     setProfileForm.ui \
     mainwindow.ui \
-    databaseDialog.ui
+    databaseDialog.ui \
+    ../aerolithclient/inviteForm.ui \
+    ../aerolithclient/wordFilterForm.ui
 SOURCES += mainwindow.cpp \
     UnscrambleGameTable.cpp \
     avatarLabel.cpp \
@@ -51,7 +54,8 @@ HEADERS += mainwindow.h \
     GameTable.h \
     BonusGame.h \
     databasehandler.h \
-    ../aerolithclient/SavedUnscrambleGame.h
+    ../aerolithclient/SavedUnscrambleGame.h \
+    ../aerolithclient/wordfilter.h
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 HEADERS += mainserver.h \
