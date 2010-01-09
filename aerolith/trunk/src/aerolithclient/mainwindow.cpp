@@ -127,6 +127,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     QTime midnight(0, 0, 0);
     qsrand(midnight.msecsTo(QTime::currentTime()));
 
+
+
     connect(uiMainWindow.actionAerolith_Help, SIGNAL(triggered()), this, SLOT(aerolithHelpDialog()));
     connect(uiMainWindow.actionConnect_to_Aerolith, SIGNAL(triggered()), loginDialog, SLOT(raise()));
     connect(uiMainWindow.actionConnect_to_Aerolith, SIGNAL(triggered()), loginDialog, SLOT(show()));
@@ -167,6 +169,13 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
 
     //   connect(uiTable.pushButtonUseOwnList, SIGNAL(clicked()), SLOT(uploadOwnList()));
+
+
+    wordFilter = new WordFilter(this, Qt::Window);
+    connect(uiMainWindow.actionWord_Filter, SIGNAL(triggered()), wordFilter, SLOT(showWidget()));
+
+    wordFilter->setDbHandler(dbHandler);
+
 
 
 
@@ -836,12 +845,14 @@ void MainWindow::sendPM(QString person)
         PMWidget* w = pmWindows.value(hashString);
         w->show();
         w->activateWindow();
+        w->raise();
     }
     else
     {
         PMWidget *w = new PMWidget(0, currentUsername, person);
         w->setAttribute(Qt::WA_QuitOnClose, false);
         connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
+        connect(w, SIGNAL(shouldDelete()), this, SLOT(shouldDeletePMWidget()));
         w->show();
 
         pmWindows.insert(hashString, w);
@@ -872,18 +883,28 @@ void MainWindow::receivedPM(QString username, QString message)
         PMWidget* w = pmWindows.value(hashString);
         w->appendText("[" + username + "] " + message);
         w->show();
-        //w->activateWindow();
+        w->activateWindow();
+        w->raise();
+
     }
     else
     {
         PMWidget *w = new PMWidget(0, currentUsername, username);
         w->setAttribute(Qt::WA_QuitOnClose, false);
         connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
+        connect(w, SIGNAL(shouldDelete()), this, SLOT(shouldDeletePMWidget()));
         w->appendText("[" + username + "] " + message);
         w->show();
         pmWindows.insert(hashString, w);
     }
     //QSound::play("sounds/inbound.wav");
+}
+
+void MainWindow::shouldDeletePMWidget()
+{
+    PMWidget* w = static_cast<PMWidget*> (sender());
+    pmWindows.remove(w->getRemoteUsername().toLower());
+    w->deleteLater();
 
 }
 
@@ -1205,7 +1226,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
         }
         break;
 
-     case SERVER_TABLE_SUCCESSFUL_STAND:
+    case SERVER_TABLE_SUCCESSFUL_STAND:
         {
             QString username;
             quint8 seatNumber;
@@ -1215,7 +1236,7 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
         }
         break;
 
-     case SERVER_TABLE_SUCCESSFUL_SIT:
+    case SERVER_TABLE_SUCCESSFUL_SIT:
         {
             QString username;
             quint8 seatNumber;
@@ -1341,6 +1362,7 @@ void MainWindow::lexiconComboBoxIndexChanged(int index)
     gameBoardWidget->setLexicon(lexiconLists.at(index).lexicon);
     currentLexicon = lexiconLists.at(index).lexicon;
     uiTable.labelLexiconName->setText(currentLexicon);
+    wordFilter->setCurrentLexicon(currentLexicon);
     repopulateMyListsTable();
 
 }
@@ -1874,21 +1896,22 @@ void MainWindow::on_pushButtonDeleteList_clicked()
 
 }
 
+
 /////////////////////////////////////////////////////
 
-PMWidget::PMWidget(QWidget* parent, QString senderUsername, QString receiverUsername) :
-        QWidget(parent), senderUsername(senderUsername), receiverUsername(receiverUsername)
+PMWidget::PMWidget(QWidget* parent, QString localUsername, QString remoteUsername) :
+        QWidget(parent), localUsername(localUsername), remoteUsername(remoteUsername)
 {
 
     uiPm.setupUi(this);
     connect(uiPm.lineEdit, SIGNAL(returnPressed()), this, SLOT(readAndSendLEContents()));
-    setWindowTitle("Conversation with " + receiverUsername);
+    setWindowTitle("Conversation with " + remoteUsername);
 }
 
 void PMWidget::readAndSendLEContents()
 {
-    emit sendPM(receiverUsername, uiPm.lineEdit->text());
-    uiPm.textEdit->append("[" + senderUsername + "] " + uiPm.lineEdit->text());
+    emit sendPM(remoteUsername, uiPm.lineEdit->text());
+    uiPm.textEdit->append("[" + localUsername + "] " + uiPm.lineEdit->text());
 
     uiPm.lineEdit->clear();
     QSound::play("sounds/outbound.wav");
@@ -1897,4 +1920,10 @@ void PMWidget::readAndSendLEContents()
 void PMWidget::appendText(QString text)
 {
     uiPm.textEdit->append(text);
+}
+
+void PMWidget::closeEvent(QCloseEvent* event)
+{
+    event->accept();
+    emit shouldDelete();
 }
