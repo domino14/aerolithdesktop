@@ -725,9 +725,32 @@ QByteArray DatabaseHandler::getSavedListArray(QString lexiconName, QString listN
 
 void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list)
 {
+    // first see if this list exists
+
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("UPDATE userlists SET listdata = ?,  lastDateSaved = ? "
-                            "WHERE lexiconName = ? and listName = ?");
+
+    userListsQuery.prepare("SELECT listName from userlists WHERE lexiconName = ? and listName = ?");
+    userListsQuery.bindValue(0, lex);
+    userListsQuery.bindValue(1, list);
+
+    userListsQuery.exec();
+
+    bool update = false;
+
+    if (userListsQuery.next()) update = true;
+    else update = false;
+
+
+    if (update)
+    {
+        userListsQuery.prepare("UPDATE userlists SET listdata = ?,  lastDateSaved = ? "
+                                "WHERE lexiconName = ? and listName = ?");
+    }
+    else
+    {
+        userListsQuery.prepare("INSERT into userlists(listData, lastDateSaved, lexiconName, listName) VALUES(?,?,?,?)");
+    }
+
     userListsQuery.bindValue(0, ba);
     userListsQuery.bindValue(1, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
     userListsQuery.bindValue(2, lex);

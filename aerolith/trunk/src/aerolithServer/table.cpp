@@ -34,8 +34,8 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
     qDebug() << "Creating table" << tableNumber << "type:" << gameType << "with" << maxPlayers << "max players";
     host = tableCreator;
     originalHost = host;
-    canJoin = true;
     sittingList.resize(maxPlayers);
+    inviteList.insert(host);
     for (int i = 0; i < maxPlayers; i++)
         sittingList[i] = NULL;
 
@@ -90,11 +90,23 @@ Table::~Table()
     delete tableGame;
 }
 
+bool Table::canJoin(ClientSocket* joiner)
+{
+    if (isPrivate == false) return true;        // anyone can join a public table!
+    else if (isPrivate == true)
+    {
+        if (inviteList.contains(joiner)) return true;
+        else return false;
+    }
+
+}
+
 void Table::removePersonFromTable(ClientSocket* socket)
 {
     tryStanding(socket);    // always stand up before leaving.
     tableGame->playerLeftGame(socket);
     peopleInTable.removeAll(socket);
+    inviteList.remove(socket);
 
     if (socket == host)
     {
@@ -106,6 +118,7 @@ void Table::removePersonFromTable(ClientSocket* socket)
         }
     }
 }
+
 
 void Table::sendHostChangePacket(ClientSocket* host)
 {
