@@ -219,6 +219,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(standUp()), SLOT(standUp()));
     connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
     connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
+    connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -551,7 +552,10 @@ void MainWindow::readFromServer()
             {
                 QString username, message;
                 in >> username >> message;
-                receivedPM(username, message);
+                if (uiMainWindow.checkBoxIgnoreMsgs->isChecked() == false)
+                    receivedPM(username, message);
+                else
+                    ;   // TODO inform user that his message didn't go through
             }
             break;
         case SERVER_NEW_TABLE:	// New table
@@ -623,6 +627,49 @@ void MainWindow::readFromServer()
                     if (currentTablenum == tablenum)
                         gameBoardWidget->setPrivacy(privacy);
                 }
+            }
+            break;
+
+        case SERVER_INVITE_TO_TABLE:
+            {
+                quint16 tablenum;
+                QString username;
+                in >> tablenum >> username;
+
+                if (uiMainWindow.checkBoxIgnoreTableInvites->isChecked() == false)
+                {
+                    Ui::inviteForm ui;
+                    QWidget* inviteWidget = new QWidget(this, Qt::Window);
+                    ui.setupUi(inviteWidget);
+                    inviteWidget->setAttribute(Qt::WA_DeleteOnClose);
+                    inviteWidget->show();
+
+                    ui.pushButtonAccept->setProperty("tablenum", tablenum);
+                    ui.pushButtonAccept->setProperty("host", username);
+
+                    ui.pushButtonDecline->setProperty("tablenum", tablenum);
+                    ui.pushButtonDecline->setProperty("host", username);
+
+                    connect(ui.pushButtonAccept, SIGNAL(clicked()), SLOT(acceptedInvite()));
+                    connect(ui.pushButtonDecline, SIGNAL(clicked()), SLOT(declinedInvite()));
+                    ui.labelInfo->setText(QString("You have been invited to table %1 by %2.").arg(tablenum).arg(username));
+                    //TODO watch out for abuses of this! (invite bombs?)
+                }
+                else
+                    ;   // TODO inform user that their invite didn't go through
+            }
+            break;
+        case SERVER_BOOT_FROM_TABLE:
+            {
+                quint16 tablenum;
+                QString username;
+                in >> tablenum >> username;
+                if (tablenum == currentTablenum)
+                    QMessageBox::information(this, "You have been booted",
+                                         QString("You have been booted from table %1 by %2").arg(tablenum).arg(username));
+
+
+
             }
             break;
         case SERVER_LEFT_TABLE:
@@ -936,6 +983,7 @@ void MainWindow::createUnscrambleGameTable()
 
         out << (quint8)LIST_TYPE_NAMED_LIST;
         out << uiTable.listWidgetTopLevelList->currentItem()->text();
+
     }
     else if (uiTable.radioButtonProbability->isChecked())
     {
@@ -944,13 +992,43 @@ void MainWindow::createUnscrambleGameTable()
             out << (quint8)LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH;
             if (uiTable.spinBoxProb2->value() <= uiTable.spinBoxProb1->value()) return;   // don't send any data, this table is invalid
 
-            out << (quint8)uiTable.spinBoxWL->value() <<
-                    (quint32)uiTable.spinBoxProb1->value() << (quint32)uiTable.spinBoxProb2->value();
+            quint8 wl;
+            quint32 low, high;
+
+            wl = uiTable.spinBoxWL->value();
+            low = uiTable.spinBoxProb1->value();
+            high = uiTable.spinBoxProb2->value();
+
+            out << wl << low << high;
+
+
+            SavedUnscrambleGame thisSug;
+            thisSug.initializeWithIndexRange(low, high, wl);
+
+            gameBoardWidget->setCurrentSug(thisSug);
+            gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
+
         }
         else
         {
             out << (quint8)LIST_TYPE_ALL_WORD_LENGTH;
-            out << (quint8)uiTable.spinBoxWL->value();   // special values mean the entire range.
+
+            quint8 wl;
+            quint32 low, high;
+
+            wl = uiTable.spinBoxWL->value();
+
+            out << wl;   // special values mean the entire range.
+
+            low = 1;    // one
+            high = dbHandler->getNumWordsByLength(currentLexicon, wl);
+
+            SavedUnscrambleGame thisSug;
+            thisSug.initializeWithIndexRange(low, high, wl);
+
+            gameBoardWidget->setCurrentSug(thisSug);
+            gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
+
         }
     }
     else if (uiTable.radioButtonMyLists->isChecked())
@@ -975,34 +1053,34 @@ void MainWindow::createUnscrambleGameTable()
 
         switch (mode)
         {
-        case DatabaseHandler::MODE_RESTART:
-            thisSug.initialize(thisSug.origIndices);
+            case DatabaseHandler::MODE_RESTART:
+                thisSug.initialize(thisSug.origIndices);
 
-            qindices = thisSug.origIndices;
-            mindices.clear();
-
-            break;
-
-        case DatabaseHandler::MODE_FIRSTMISSED:
-            qindices = thisSug.firstMissed;
-            mindices.clear();
-
-            thisSug.curQuizList = thisSug.firstMissed;
-            thisSug.curMissedList.clear();
-            break;
-
-        case DatabaseHandler::MODE_CONTINUE:
-            if (thisSug.brandNew)
-            {
                 qindices = thisSug.origIndices;
                 mindices.clear();
-            }
-            else
-            {
-                qindices = thisSug.curQuizList;
-                mindices = thisSug.curMissedList;
-            }
-            break;
+
+                break;
+
+            case DatabaseHandler::MODE_FIRSTMISSED:
+                qindices = thisSug.firstMissed;
+                mindices.clear();
+
+                thisSug.curQuizList = thisSug.firstMissed;
+                thisSug.curMissedList.clear();
+                break;
+
+            case DatabaseHandler::MODE_CONTINUE:
+                if (thisSug.brandNew)
+                {
+                    qindices = thisSug.origIndices;
+                    mindices.clear();
+                }
+                else
+                {
+                    qindices = thisSug.curQuizList;
+                    mindices = thisSug.curMissedList;
+                }
+                break;
         }
 
         out << si[0]->text().left(32);
@@ -1852,7 +1930,35 @@ void MainWindow::showInviteDialog()
 {
     QStringList playerList = peopleLoggedIn;
     playerList.removeAll(currentUsername);
-    QString playerToBoot = QInputDialog::getItem(this, "Invite", "Select Player to Invite", playerList, 0, false);
+
+    if (playerList.size() >= 1)
+    {
+        QString playerToInvite = QInputDialog::getItem(this, "Invite", "Select Player to Invite", playerList, 0, false);
+
+        if (playerToInvite != "")
+        {
+
+            writeHeaderData();
+            out << (quint8)CLIENT_TABLE_COMMAND;
+            out << (quint16)currentTablenum;
+            out << (quint8)CLIENT_TABLE_INVITE;
+            out << playerToInvite;
+            fixHeaderLength();
+            commsSocket->write(block);
+        }
+    }
+
+}
+
+void MainWindow::bootFromTable(QString playerToBoot)
+{
+    writeHeaderData();
+    out << (quint8)CLIENT_TABLE_COMMAND;
+    out << (quint16)currentTablenum;
+    out << (quint8)CLIENT_TABLE_BOOT;
+    out << playerToBoot;
+    fixHeaderLength();
+    commsSocket->write(block);
 }
 
 void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)
@@ -1894,6 +2000,30 @@ void MainWindow::on_pushButtonDeleteList_clicked()
 
     }
 
+}
+
+void MainWindow::acceptedInvite()
+{
+    QPushButton* p = static_cast<QPushButton*> (sender());
+    quint16 tablenum = p->property("tablenum").toInt();
+
+    writeHeaderData();
+    out << (quint8)CLIENT_JOIN_TABLE;
+    out << (quint16) tablenum;
+    fixHeaderLength();
+    commsSocket->write(block);
+
+    p->parent()->deleteLater();
+}
+
+void MainWindow::declinedInvite()
+{
+    QPushButton* p = static_cast<QPushButton*> (sender());
+
+
+
+
+    p->parent()->deleteLater();
 }
 
 

@@ -138,6 +138,7 @@ signals:
     void bootFromTable(QString);
 
 
+
         private slots:
     void enteredGuess();
     void enteredChat();

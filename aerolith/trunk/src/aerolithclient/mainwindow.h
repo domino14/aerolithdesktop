@@ -35,6 +35,8 @@
 #include "databasehandler.h"
 #include "UnscrambleGameTable.h"
 
+#include "ui_inviteForm.h"
+
 class PMWidget : public QWidget
 {
     Q_OBJECT
@@ -223,8 +225,11 @@ signals:
     void trySitting(quint8 seatNumber);
     void trySetTablePrivate(bool);
     void showInviteDialog();
+    void bootFromTable(QString);
     void shouldDeletePMWidget();
 
+    void acceptedInvite();
+    void declinedInvite();
 
     void saveGameBA(QByteArray, QString, QString);
 

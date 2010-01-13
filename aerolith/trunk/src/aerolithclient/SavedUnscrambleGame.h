@@ -1,6 +1,8 @@
 #ifndef SAVEDUNSCRAMBLEGAME_H
 #define SAVEDUNSCRAMBLEGAME_H
 
+
+
 struct SavedUnscrambleGame
 {
     QSet <quint32> origIndices;
@@ -18,6 +20,21 @@ struct SavedUnscrambleGame
         curQuizList.clear();
         curMissedList.clear();
         firstMissed.clear();
+
+    }
+
+    void initializeWithIndexRange(quint32 low, quint32 high, quint8 wordLength)
+    {
+        // use index mangling formula in databasehandler.cpp : probindex = oldindex + (wordlength << 24)
+        // TODO should have a file for formulas like this to avoid hardcoding
+        low = low + (wordLength << 24);
+        high = high + (wordLength << 24);
+
+        QSet <quint32> set;
+        for (quint32 i = low; i <= high; i++)
+            set.insert(i);
+
+        initialize(set);
 
     }
 

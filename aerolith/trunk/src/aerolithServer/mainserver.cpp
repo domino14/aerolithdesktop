@@ -515,6 +515,47 @@ void MainServer::processTableCommand(ClientSocket* socket)
         }
 
         break;
+    case CLIENT_TABLE_INVITE:
+        {
+            QString username;
+            socket->connData.in >> username;
+
+            // to avoid spoofed invite/boot packets
+            if (socket->connData.userName == table->host->connData.userName && usernamesHash.contains(username))
+            {
+                table->inviteList.insert(usernamesHash.value(username));
+                writeHeaderData();
+                out << (quint8) SERVER_INVITE_TO_TABLE;
+                out << tablenum;
+                out << socket->connData.userName;
+                fixHeaderLength();
+
+                usernamesHash.value(username)->write(block);
+            }
+
+        }
+        break;
+
+    case CLIENT_TABLE_BOOT:
+        {
+            QString username;
+            socket->connData.in >> username;
+            // avoid spoofed invite/boot packets. only the host can boot or invite.
+            if (socket->connData.userName == table->host->connData.userName && usernamesHash.contains(username))
+            {
+                writeHeaderData();
+                out << (quint8) SERVER_BOOT_FROM_TABLE;
+                out << tablenum;
+                out << socket->connData.userName;
+                fixHeaderLength();
+                usernamesHash.value(username)->write(block);
+
+                // also kick the person out of the table
+                removePersonFromTable(usernamesHash.value(username), tablenum);
+            }
+
+        }
+        break;
     default:
         table->tableGame->handleMiscPacket(socket, subcommand);
         //socket->disconnectFromHost();
@@ -585,7 +626,6 @@ void MainServer::removePersonFromTable(ClientSocket* socket, quint16 tablenum)
         }
         else
         {
-            tmp->canJoin = true;
             foreach (ClientSocket* thisConn, tmp->peopleInTable)
                 thisConn->playerData.readyToPlay = false;
             // TODO: actually send out readytoplay false
@@ -678,9 +718,9 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
     }
 
     Table *table = tables.value(tablenum);
-    if (!table->canJoin)
+    if (!table->canJoin(socket))
     {
-        writeToClient(socket, "That table is full! You can not join.", S_ERROR);
+        writeToClient(socket, "You can not join this table!", S_ERROR);
         return;
     }
 
@@ -837,8 +877,9 @@ void MainServer::processLogin(ClientSocket* socket)
 
     if (!query.next())
     {
-        writeToClient(socket, "Your username does not appear in the database. Please click Register, and follow the instructions. "
-                      "If you have been playing prior to July 8, 2008, please register again.", S_ERROR);
+        writeToClient(socket, "Your username does not appear in the database. "
+                      "Please click Register, and follow the instructions. "
+                      , S_ERROR);
         socket->disconnectFromHost();
         return;
     }

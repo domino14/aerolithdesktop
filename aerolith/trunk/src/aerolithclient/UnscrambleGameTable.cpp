@@ -577,6 +577,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
     tableUi.textEditGuesses->clear();
 
     answerHash.clear();
+    savedGameModified = false;
 }
 
 void UnscrambleGameTable::leaveTable()
@@ -1122,6 +1123,8 @@ void UnscrambleGameTable::saveGame()
         QByteArray ba = currentSug.toByteArray();
         emit saveCurrentGameBA(ba, lexiconName, unmodifiedListName);
         tableUi.textEditChat->append("<font color=green>Word list was saved!</font>");
+        tableUi.textEditChat->append("<font color=green>To continue this word list in the future, make sure "
+                                     "you select ""My Lists"" when creating a new table!</font>");
         savedGameModified = false;
     }
     else
@@ -1167,7 +1170,14 @@ void UnscrambleGameTable::showBootDialog()
 {
     QStringList playerList = peopleInTable;
     playerList.removeAll(myUsername);
-    QString playerToBoot =     QInputDialog::getItem(this, "Boot", "Select player to boot", playerList, 0, false);
+
+    if (playerList.size() >= 1)
+    {
+
+        QString playerToBoot =     QInputDialog::getItem(this, "Boot", "Select player to boot", playerList, 0, false);
+        if (playerToBoot != "")
+            emit bootFromTable(playerToBoot);
+    }
 }
 
 void UnscrambleGameTable::exitButtonPressed()

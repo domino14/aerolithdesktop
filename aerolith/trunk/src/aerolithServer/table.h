@@ -43,8 +43,8 @@ public:
 
     QList <ClientSocket*> peopleInTable;
     QVector <ClientSocket*> sittingList;
-    QList <ClientSocket*> inviteList;
-    bool canJoin;
+    QSet <ClientSocket*> inviteList;
+    bool canJoin(ClientSocket*);
     bool isPrivate;
 
     TableGame* tableGame;
@@ -68,7 +68,6 @@ public:
 
     void trySitting(ClientSocket*, quint8);
     void tryStanding(ClientSocket*);
-
 private:
     void sendAvatarChangePacket(ClientSocket*);
 };
