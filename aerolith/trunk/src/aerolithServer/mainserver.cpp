@@ -261,7 +261,8 @@ void MainServer::receiveMessage()
         // the process function will set connData->numBytesInPacket to 0 at the end
         quint8 packetType;
         socket->connData.in >> packetType; // this is the case byte!
-        qDebug() << "Received from sender " << socket->connData.userName << " packet " << (char)packetType;
+        qDebug() << "Received from sender " << socket->connData.userName << " packet " << (char)packetType <<
+                socket->connData.numBytesInPacket;
         socket->connData.minutesInactive = 0;
         if (socket->connData.numBytesInPacket > 10000)
         {

@@ -136,9 +136,10 @@ private:
 
     QVector <quint32> missedArray;
     QVector <quint32> quizArray;
+    bool hostUpload;
 
-    QSet <quint32> quizSet;
-    QSet <quint32> missedSet;
+    quint32 quizSetSize, missedSetSize;
+
 
     quint16 quizIndex;
     QVector <alphagramInfo> *alphaInfo;

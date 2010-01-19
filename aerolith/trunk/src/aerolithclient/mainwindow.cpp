@@ -183,9 +183,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
-    QStringList dbList = dbHandler->checkForDatabases();    // move this to the database handler.. duh
+    existingLocalDBList = dbHandler->checkForDatabases();
 
-    if (dbList.size() == 0)
+    if (existingLocalDBList.size() == 0)
     {
 
         if (QMessageBox::question(this, "Create databases?", "You do not seem to have any lexicon databases created. "
@@ -196,14 +196,14 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     else
     {
         QMenu* rebuildDbMenu = new QMenu(this);
-        foreach (QString str, dbList)
+        foreach (QString str, existingLocalDBList)
         {
             setCheckbox(str);
             rebuildDbMenu->addAction(str);
         }
         uiDatabase.pushButtonRebuildDatabase->setMenu(rebuildDbMenu);
         connect(rebuildDbMenu, SIGNAL(triggered(QAction*)), SLOT(rebuildDatabaseAction(QAction*)));
-        dbHandler->connectToDatabases(true, dbList);
+        dbHandler->connectToDatabases(true, existingLocalDBList);
     }
 
     uiTable.tableWidgetMyLists->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -268,6 +268,8 @@ void MainWindow::setCheckbox(QString lexiconName)
         uiDatabase.checkBoxVolost->setChecked(true);
         uiDatabase.checkBoxVolost->setEnabled(false);
     }
+    if (!existingLocalDBList.contains(lexiconName))
+        existingLocalDBList.append(lexiconName);
 }
 
 void MainWindow::createDatabasesOKClicked()
@@ -666,7 +668,7 @@ void MainWindow::readFromServer()
                 in >> tablenum >> username;
                 if (tablenum == currentTablenum)
                     QMessageBox::information(this, "You have been booted",
-                                         QString("You have been booted from table %1 by %2").arg(tablenum).arg(username));
+                                             QString("You have been booted from table %1 by %2").arg(tablenum).arg(username));
 
 
 
@@ -980,9 +982,40 @@ void MainWindow::createUnscrambleGameTable()
 
     if (uiTable.radioButtonOtherLists->isChecked() && uiTable.listWidgetTopLevelList->currentItem())
     {
+        QString listname = uiTable.listWidgetTopLevelList->currentItem()->text();
 
         out << (quint8)LIST_TYPE_NAMED_LIST;
-        out << uiTable.listWidgetTopLevelList->currentItem()->text();
+        out << listname;
+
+        QSqlQuery query(QSqlDatabase::database(currentLexicon + "DB_client"));
+
+        query.prepare("SELECT probindices from wordlists where listname = ?");
+        query.bindValue(0, listname);
+        query.exec();
+        QByteArray indices;
+        while (query.next())
+        {
+            indices = query.value(0).toByteArray();
+        }
+        QDataStream stream(indices);
+        quint8 type, length;
+        stream >> type >> length;
+        Q_ASSERT(type == 1);        // the named lists are all lists of indices, type = 1
+        quint32 size;
+        stream >> size;
+        QSet <quint32> indexSet;
+        quint32 index;
+        qDebug() << "size! = " << size;
+        for (quint32 i = 0; i < size; i++)
+        {
+            stream >> index;
+            indexSet.insert(index);
+        }
+        SavedUnscrambleGame thisSug;
+        thisSug.initialize(indexSet);
+
+        gameBoardWidget->setCurrentSug(thisSug);
+        gameBoardWidget->setUnmodifiedListName(listname);
 
     }
     else if (uiTable.radioButtonProbability->isChecked())
@@ -1053,38 +1086,38 @@ void MainWindow::createUnscrambleGameTable()
 
         switch (mode)
         {
-            case DatabaseHandler::MODE_RESTART:
-                thisSug.initialize(thisSug.origIndices);
+        case DatabaseHandler::MODE_RESTART:
+            thisSug.initialize(thisSug.origIndices);
 
+            qindices = thisSug.origIndices;
+            mindices.clear();
+
+            break;
+
+        case DatabaseHandler::MODE_FIRSTMISSED:
+            qindices = thisSug.firstMissed;
+            mindices.clear();
+
+            thisSug.curQuizList = thisSug.firstMissed;
+            thisSug.curMissedList.clear();
+            break;
+
+        case DatabaseHandler::MODE_CONTINUE:
+            if (thisSug.brandNew)
+            {
                 qindices = thisSug.origIndices;
                 mindices.clear();
-
-                break;
-
-            case DatabaseHandler::MODE_FIRSTMISSED:
-                qindices = thisSug.firstMissed;
-                mindices.clear();
-
-                thisSug.curQuizList = thisSug.firstMissed;
-                thisSug.curMissedList.clear();
-                break;
-
-            case DatabaseHandler::MODE_CONTINUE:
-                if (thisSug.brandNew)
-                {
-                    qindices = thisSug.origIndices;
-                    mindices.clear();
-                }
-                else
-                {
-                    qindices = thisSug.curQuizList;
-                    mindices = thisSug.curMissedList;
-                }
-                break;
+            }
+            else
+            {
+                qindices = thisSug.curQuizList;
+                mindices = thisSug.curMissedList;
+            }
+            break;
         }
 
         out << si[0]->text().left(32);
-        out << qindices << mindices;
+        out << (quint32)qindices.size() << (quint32)mindices.size();
         gameBoardWidget->setCurrentSug(thisSug);
         gameBoardWidget->setUnmodifiedListName(si[0]->text());
     }
@@ -1103,16 +1136,16 @@ void MainWindow::createUnscrambleGameTable()
 
 void MainWindow::createBonusGameTable()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_NEW_TABLE;
-
-    out << (quint8)GAME_TYPE_BONUS;
-    out << QString("Bonus squares.");
-    out << (quint8)uiTable.playersSpinBox->value();
-
-    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
-    fixHeaderLength();
-    commsSocket->write(block);
+    //    writeHeaderData();
+    //    out << (quint8)CLIENT_NEW_TABLE;
+    //
+    //    out << (quint8)GAME_TYPE_BONUS;
+    //    out << QString("Bonus squares.");
+    //    out << (quint8)uiTable.playersSpinBox->value();
+    //
+    //    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
+    //    fixHeaderLength();
+    //    commsSocket->write(block);
 
 }
 
@@ -1345,11 +1378,13 @@ void MainWindow::handleWordlistsMessage()
     {
         QByteArray lexicon;
         in >> lexicon;
-        uiMainWindow.comboBoxLexicon->addItem(lexicon);
+
+        if (existingLocalDBList.contains(lexicon))
+            uiMainWindow.comboBoxLexicon->addItem(lexicon);
         LexiconLists dummyLists;
         dummyLists.lexicon = lexicon;
         lexiconLists << dummyLists;
-        qDebug() << dummyLists.lexicon;
+
     }
 
 
@@ -1401,9 +1436,20 @@ void MainWindow::handleWordlistsMessage()
 
         }
     }
-    uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
-    lexiconComboBoxIndexChanged(0);
 
+    if (uiMainWindow.comboBoxLexicon->count() > 0)
+    {
+        uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
+        lexiconComboBoxIndexChanged(0);
+    }
+    else
+    {
+        QMessageBox::critical(this, "No Lexicon Databases!", "You have no lexicon databases built. You will not be"
+                              " able to play Aerolith without building a lexicon database. Please select the 'Lexica'"
+                              " option from the menu and build at least one lexicon database, then reconnect to Aerolith.");
+
+
+    }
     /* we connect the signals here instead of earlier in the constructor for some reason having to do with the
        above two lines. the 'disconnect' is earlier in this function */
 

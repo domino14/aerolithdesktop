@@ -171,6 +171,9 @@ private:
     QHash <quint16, tableRepresenter*> tables;
 
     bool savingGameAllowable;
+
+    QStringList existingLocalDBList;
+
 signals:
     void startServerThread();
     void stopServerThread();
