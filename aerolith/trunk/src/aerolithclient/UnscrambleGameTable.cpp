@@ -724,11 +724,6 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                 uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
 
-                if (savingAllowed)
-                {
-                    currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
-                    savedGameModified = true;
-                }
                 if (wrongAnswer)
                 {
                     tableAlphagramItem->setForeground(missedColorBrush);
@@ -739,12 +734,20 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                     if (savingAllowed)
                     {
+                        if (currentSug.brandNew)
+                        {
+                            currentSug.brandNew = false;
+                            currentSug.curQuizList = currentSug.origIndices;
+                        }
+                        Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(i).probIndex));
+                        currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
                         currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
                         if (!currentSug.seenWholeList)
                         {
                             // also put it here if we haven't seen the whole list.
                             currentSug.firstMissed.insert(wordQuestions.at(i).probIndex);
                         }
+                        savedGameModified = true;
                     }
                 }
 

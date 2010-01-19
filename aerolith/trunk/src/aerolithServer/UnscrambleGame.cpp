@@ -39,6 +39,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
 
     wroteToMissedFileThisRound = false;
     listExhausted = false;
+    hostUpload = false;
 
     quint8 tableTimerValMin;
 
@@ -67,9 +68,10 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     else if (listType == LIST_TYPE_MULTIPLE_INDICES)
     {
         table->host->connData.in >> wordList;
-        table->host->connData.in >> quizSet;  /* TODO need some sanity checks on these inputs! */
-        table->host->connData.in >> missedSet;
+        table->host->connData.in >> quizSetSize;
+        table->host->connData.in >> missedSetSize;
         wordList = "(User list) " + wordList;
+
     }
 
     table->host->connData.in >> lexiconName >> cycleState >> tableTimerValMin;
@@ -144,54 +146,6 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
     if (table->peopleInTable.size() == 1 && table->maxPlayers == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES)
     {
         qDebug() << "playerJoined";
-        //        QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
-        //        userQuery.prepare("SELECT saveData from users where username = :username");
-        //        userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
-        //        userQuery.exec();
-        //        while (userQuery.next())
-        //        {
-        //            QByteArray ba = userQuery.value(0).toByteArray();
-        //            QDataStream stream(ba);
-        //            if (ba.size() == 0)
-        //            {
-        //                qDebug() << "there was no save data";
-        //                /* do nothing. this is a new table, and there was no save data. */
-        //            }
-        //            else
-        //            {
-        //                QString savedWordList;
-        //                QVector <quint32> savedMissedArray;
-        //                QVector <quint32> savedQuizArray;
-        //                stream >> savedWordList >> savedMissedArray >> savedQuizArray;
-        //                if (savedQuizArray.size() == 0 && savedMissedArray.size() == 0)
-        //                {
-        //                    qDebug() << "nothing needs to be loaded";
-        //                    /* this data was saved when the user left the table, but after completely exhausting the quiz.
-        //                                                so do nothing, nothing needs to be loaded*/
-        //                }
-        //                else
-        //                {
-        //                    if (savedWordList != wordList)
-        //                    {
-        //                        table->sendTableMessage("You currently have save data for the following word list: " + savedWordList + ". Please "
-        //                                                "exit the table if you don't wish to lose your save data, and select the above list instead. If you click Start, "
-        //                                                "the saved data will be deleted!");
-        //                    }
-        //                    else
-        //                    {
-        //                        quizArray = savedQuizArray;
-        //                        missedArray = savedMissedArray;
-        //                        table->sendTableMessage("You had saved data for this word list, and it has been loaded!");
-        //
-        //                        numRacksSeen = 0;
-        //                        numTotalRacks = savedQuizArray.size();
-        //
-        //                    }
-        //
-        //                }
-        //            }
-        //        }	//while
-
 
 
     }
@@ -205,33 +159,7 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
     if (table->peopleInTable.size() == 1 && table->maxPlayers == 1)
     {
         gameEndRequest(socket);
-//        if (cycleState != TABLE_TYPE_DAILY_CHALLENGES && !listExhausted && !neverStarted)
-//        {
-//            // generate blob for contents of missed file, temp file
-//            // missedFileWriter has written all the necessary words to missedFile, so read the entire file.
-//            QTime timer;
-//            timer.start();
-//
-//            QByteArray ba;
-//            QDataStream stream(&ba, QIODevice::WriteOnly);
-//
-//            stream << wordList;
-//            stream << missedArray;
-//            stream << quizArray.mid(quizIndex);
-//            // now write data to database
-//            QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
-//            userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
-//            userQuery.bindValue(":username", socket->connData.userName.toLower());
-//            userQuery.bindValue(":saveData", ba);
-//            userQuery.exec();
-//
-//            qDebug() << "Saving lists took milliseconds: " << timer.elapsed();
-//
-//        }
-//        else
-//        {
-//
-//        }
+
 
 
         if (socket == table->originalHost)
@@ -289,28 +217,6 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
                     }
                 }
             }
-
-//            if (neverStarted)
-//            {
-//                // this will only be true the very FIRST time this function is called.
-//                // overwrite the save array for this user.
-//
-//                if (table->playerList.size() == 1 && cycleState != TABLE_TYPE_DAILY_CHALLENGES && table->maxPlayers == 1)
-//                {
-//
-//                    // only overwrite the list if this is a single player playing in a non-daily-challenge table.
-//                    QByteArray ba;
-//                    QSqlQuery userQuery(QSqlDatabase::database("usersDB"));
-//                    userQuery.prepare("UPDATE users SET saveData = :saveData where username = :username");
-//                    userQuery.bindValue(":username", table->playerList.at(0)->connData.userName.toLower());
-//                    userQuery.bindValue(":saveData", ba);
-//                    userQuery.exec();
-//                    table->sendTableMessage("If you quit Aerolith or leave this table, "
-//                                            "your progress on this word list -" + wordList + "- will automatically be saved.");
-//                }
-//            }
-//
-//            neverStarted = false;
 
         }
     }
@@ -587,24 +493,30 @@ void UnscrambleGame::generateQuizArray()
         }
         else    // multiple_indices
         {
-            quint32 size = quizSet.size();   // already assigned earlier in initialize()
+            // multiple indices are uploaded by the host right before each round
 
-            QVector <quint32> tempVector;
-            QVector <quint32> indexVector;
-            indexVector.resize(size);
+//
+//            quint32 size = quizSet.size();   // already assigned earlier in initialize()
+//
+//            QVector <quint32> tempVector;
+//            QVector <quint32> indexVector;
+//            indexVector.resize(size);
+//
+//            getUniqueRandomNumbers(tempVector, 0, size-1, size);
+//            QList <quint32> setVals = quizSet.values();
+//            for (quint32 i = 0; i < size; i++)
+//            {
+//                indexVector[tempVector.at(i)] = setVals[i];
+//            }
+//            quizArray.resize(quizSetSize);
+//            for (quint32 i = 0; i < quizSetSize; i++)
+//                quizArray[i] = 0;
+//
+//            missedArray = missedSet.values().toVector();
+//            numTotalRacks = size;
 
-            getUniqueRandomNumbers(tempVector, 0, size-1, size);
-            QList <quint32> setVals = quizSet.values();
-            for (quint32 i = 0; i < size; i++)
-            {
-                indexVector[tempVector.at(i)] = setVals[i];
-            }
-            quizArray.resize(size);
-            for (quint32 i = 0; i < size; i++)
-                quizArray[i] = indexVector.at(i);
-
-            missedArray = missedSet.values().toVector();
-            numTotalRacks = size;
+            hostUpload = true;
+            numTotalRacks = quizSetSize;
 
         }
 
@@ -816,17 +728,6 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
 
 }
 
-//
-//void UnscrambleGame::sendGuessRightPacket(QString username, QString answer, quint8 index)
-//{
-//    writeHeaderData();
-//    out << (quint8) SERVER_TABLE_COMMAND;
-//    out << (quint16) table->tableNumber;
-//    out << (quint8)SERVER_TABLE_GUESS_RIGHT;
-//    out << username << answer << index;
-//    fixHeaderLength();
-//    table->sendGenericPacket();
-//}
 
 /*************** static and utility functions ****************/
 
