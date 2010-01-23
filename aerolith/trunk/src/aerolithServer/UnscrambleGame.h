@@ -23,7 +23,7 @@
 #include "TableGame.h"
 #include "databasehandler.h"
 #include "SavedUnscrambleGame.h"
-
+#include "commonDefs.h"
 
 struct highScoreData
 {
@@ -53,8 +53,6 @@ struct alphagramInfo
         solutions = s;
     }
 };
-
-void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums);
 
 class UnscrambleGame : public TableGame
 {
@@ -91,8 +89,9 @@ private:
 
     static QByteArray wordListDataToSend;
 
-    void prepareTableAlphagrams();
     void prepareTableQuestions();
+    void prepareTableQuestions_hostUploadMode();
+
  //   void sendUserCurrentAlphagrams(ClientSocket*);
     void sendUserCurrentQuestions(ClientSocket*);
     QString lexiconName;
@@ -112,7 +111,6 @@ private:
     QSqlQuery query;
     QString wordList;
     bool neverStarted;
-    bool listExhausted;
     bool wroteToMissedFileThisRound;
     bool gameStarted;
     bool countingDown;
@@ -132,11 +130,22 @@ private:
 //    QHash <QString, QString> gameSolutions;
 //    QHash <QString, quint8> alphagramIndices;
 
+
+    enum HostUploadStates
+    {
+        STATE_QUIZZING_ON_UL_FIRST_SET, STATE_QUIZZING_ON_UL_MISSED_SET, STATE_DONE_UPLOADING
+    };
+
     QList <UnscrambleGameQuestionData> unscrambleGameQuestions;
 
     QVector <quint32> missedArray;
     QVector <quint32> quizArray;
     bool hostUpload;
+    HostUploadStates hostUploadState;
+    bool needNewList;
+    bool doNotRequestIndices;
+
+    QVector <quint32> lastHostUpload;
 
     quint32 quizSetSize, missedSetSize;
 
@@ -162,7 +171,7 @@ private:
     void sendListExhaustedMessage();
     void performSpecificSitActions(ClientSocket*);
     void performSpecificStandActions(ClientSocket*);
-
+    void sendListRequestMessage();
 private slots:
     void updateGameTimer();
     void updateCountdownTimer();

@@ -23,7 +23,8 @@ SOURCES = main.cpp \
     GameTable.cpp \
     BonusGame.cpp \
     databasehandler.cpp \
-    ../aerolithclient/wordfilter.cpp
+    ../aerolithclient/wordfilter.cpp \
+    ../common/commonDefs.cpp
 FORMS = tableCreateForm.ui \
     solutionsForm.ui \
     scoresForm.ui \

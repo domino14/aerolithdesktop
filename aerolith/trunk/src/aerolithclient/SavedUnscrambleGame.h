@@ -1,7 +1,7 @@
 #ifndef SAVEDUNSCRAMBLEGAME_H
 #define SAVEDUNSCRAMBLEGAME_H
 
-
+#include <QtDebug>
 
 struct SavedUnscrambleGame
 {
@@ -79,6 +79,17 @@ struct SavedUnscrambleGame
         {
             baReader >> firstMissed >> seenWholeList >> curQuizList >> curMissedList;
         }
+
+    }
+    void writeToDebug()
+    {
+        qDebug() << "seenWholeList:" << seenWholeList;
+        qDebug() << "brandNew:" << brandNew;
+        qDebug() << "origIndices:" << origIndices;
+        qDebug() << "firstMissed:" << firstMissed;
+        qDebug() << "curQuizList:" << curQuizList;
+        qDebug() << "curMissedList:" << curMissedList;
+
 
     }
 };

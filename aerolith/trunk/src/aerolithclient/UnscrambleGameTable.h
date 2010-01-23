@@ -62,6 +62,18 @@ public:
     void setReadyIndicator(quint8 seat);
     void clearReadyIndicators();
     void setCurrentSug(SavedUnscrambleGame sug);
+
+
+    /* the following are only used when uploading indices to server every round */
+    void setIndices(QSet <quint32>, QSet <quint32>);
+
+    QVector <quint32> randomizedQuizList;
+    QVector <quint32> randomizedMissedList;
+
+
+    /**************/
+
+
     void setSavingAllowed(bool);
     void setUnmodifiedListName(QString u)
     {
@@ -69,7 +81,7 @@ public:
     }
     void setHost(QString hostname);
 
-
+    void listRequest();
 private:
     QString tableHost;
     SavedUnscrambleGame currentSug;
@@ -137,6 +149,7 @@ signals:
 
     void bootFromTable(QString);
 
+    void uploadList(QVector <quint32> indexList);
 
 
         private slots:
