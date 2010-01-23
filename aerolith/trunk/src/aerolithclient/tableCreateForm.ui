@@ -604,6 +604,25 @@
    </widget>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>spinBoxProb1</tabstop>
+  <tabstop>spinBoxProb2</tabstop>
+  <tabstop>spinBoxWL</tabstop>
+  <tabstop>checkBoxAll</tabstop>
+  <tabstop>checkBoxStrictSpelling</tabstop>
+  <tabstop>cycleRbo</tabstop>
+  <tabstop>endlessRbo</tabstop>
+  <tabstop>radioButtonProbability</tabstop>
+  <tabstop>radioButtonOtherLists</tabstop>
+  <tabstop>radioButtonMyLists</tabstop>
+  <tabstop>listWidgetTopLevelList</tabstop>
+  <tabstop>tableWidgetMyLists</tabstop>
+  <tabstop>pushButtonImportList</tabstop>
+  <tabstop>pushButtonDeleteList</tabstop>
+  <tabstop>radioButtonContinueListQuiz</tabstop>
+  <tabstop>radioButtonRestartListQuiz</tabstop>
+  <tabstop>radioButtonQuizFirstMissed</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
