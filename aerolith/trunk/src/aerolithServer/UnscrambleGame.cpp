@@ -38,7 +38,6 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     this->dbHandler = dbHandler;
 
     wroteToMissedFileThisRound = false;
-    listExhausted = false;
     hostUpload = false;
 
     quint8 tableTimerValMin;
@@ -149,15 +148,23 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
 
 
     }
+    if (table->originalHost == client && hostUpload)
+    {
+        /* this should be the very first join */
+        sendListRequestMessage();
+    }
 
 
 }
 
 void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 {
+    if (socket == table->originalHost && hostUpload)
+        doNotRequestIndices = true;
     // if this is the ONLY player, stop game.
     if (table->peopleInTable.size() == 1 && table->maxPlayers == 1)
     {
+
         gameEndRequest(socket);
 
 
@@ -165,12 +172,13 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
         if (socket == table->originalHost)
         {
             if (listType == LIST_TYPE_MULTIPLE_INDICES)
-                {
-                    /* the host is no longer able to send out indices to the table.  inform the players of this */
-                    table->sendTableMessage("The original host of the table has left. "
+            {
+                /* the host is no longer able to send out indices to the table.  inform the players of this */
+                table->sendTableMessage("The original host of the table has left. "
                                         "Since the host was the one to create this list, you cannot quiz on it any longer.");
 
-                }
+
+            }
         }
 
 
@@ -180,6 +188,13 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 void UnscrambleGame::gameStartRequest(ClientSocket* client)
 {
     if (!client->connData.isSitting) return;    // can't request to start the game if you're standing
+
+    if (hostUpload && needNewList)
+    {
+
+        return;  // if we still need a new list, the game can't start yet.
+    }
+
     if (startEnabled == true && gameStarted == false && countingDown == false)
     {
         bool startTheGame = true;
@@ -211,9 +226,9 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
                     {
                         if (challenges.value(wordList).
                             highScores->contains(table->originalHost->connData.userName.toLower()))
-                                table->sendTableMessage(table->originalHost->connData.userName + " has already played this "
-                                                        "challenge. You can play again, "
-                                                        "but only the first game's results count toward today's high scores!");
+                            table->sendTableMessage(table->originalHost->connData.userName + " has already played this "
+                                                    "challenge. You can play again, "
+                                                    "but only the first game's results count toward today's high scores!");
                     }
                 }
             }
@@ -282,8 +297,12 @@ void UnscrambleGame::startGame()
     //2. send to everyone @ the table:
     //    - maxRacks alphagrams
     gameStarted = true;
-    wroteToMissedFileThisRound = false;
-    prepareTableQuestions();
+
+    if (!hostUpload)
+        prepareTableQuestions();
+    else
+        prepareTableQuestions_hostUploadMode();
+
     sendGameStartPacket();
 
     foreach (ClientSocket* socket, table->peopleInTable)
@@ -329,19 +348,32 @@ void UnscrambleGame::endGame()
     // if in cycle mode, update list
     if (cycleState == TABLE_TYPE_CYCLE_MODE)
     {
-        if (!wroteToMissedFileThisRound)
-        {
-            wroteToMissedFileThisRound = true;
-            for (int i = 0; i < numRacksThisRound; i++)
-            {
-                if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
-                {
-                    missedArray << unscrambleGameQuestions.at(i).probIndex;
-                }
 
+        for (int i = 0; i < numRacksThisRound; i++)
+        {
+            if (unscrambleGameQuestions.at(i).numNotYetSolved > 0)
+            {
+                missedArray << unscrambleGameQuestions.at(i).probIndex;
             }
+
         }
+
         qDebug() << "Missed to date:" << missedArray.size() << "racks.";
+
+
+        if (quizIndex == numTotalRacks)
+        {
+            table->sendTableMessage("You have seen all the questions in the main list! You will now quiz on missed list.");
+        }
+
+        // request next 50, or whatever, questions
+        if (hostUpload && !doNotRequestIndices)
+        {
+            needNewList = true;
+            sendListRequestMessage();
+        }
+
+
     }
     else if (cycleState == TABLE_TYPE_DAILY_CHALLENGES) // daily challenges
     {
@@ -349,29 +381,29 @@ void UnscrambleGame::endGame()
         table->sendTableMessage("This challenge is over! To see scores or to try another challenge, exit the table "
                                 "and make the appropriate selections with the Challenges button.");
 
-            // search for player.
-            if (table->originalHost && challenges.contains(wordList))
+        // search for player.
+        if (table->originalHost && challenges.contains(wordList))
+        {
+            if (challenges.value(wordList).highScores->contains(table->originalHost->connData.userName.toLower()))
+                table->sendTableMessage(table->originalHost->connData.userName + " has already played this challenge. "
+                                        "These results will not count towards this day's high scores.");
+            else
             {
-                if (challenges.value(wordList).highScores->contains(table->originalHost->connData.userName.toLower()))
-                    table->sendTableMessage(table->originalHost->connData.userName + " has already played this challenge. "
-                                            "These results will not count towards this day's high scores.");
-                else
+                if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
                 {
-                    if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
-                    {
-                        highScoreData tmp;
-                        tmp.userName = table->originalHost->connData.userName;
-                        tmp.numSolutions = numTotalSolutions;
-                        tmp.numCorrect = numTotalSolvedSoFar;
-                        tmp.timeRemaining = currentTimerVal;
-                        challenges.value(wordList).highScores->insert(table->originalHost->connData.userName.toLower(), tmp);
+                    highScoreData tmp;
+                    tmp.userName = table->originalHost->connData.userName;
+                    tmp.numSolutions = numTotalSolutions;
+                    tmp.numCorrect = numTotalSolvedSoFar;
+                    tmp.timeRemaining = currentTimerVal;
+                    challenges.value(wordList).highScores->insert(table->originalHost->connData.userName.toLower(), tmp);
 
-                    }
-                    else
-                        table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
                 }
-
+                else
+                    table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
             }
+
+        }
 
     }
 }
@@ -495,28 +527,30 @@ void UnscrambleGame::generateQuizArray()
         {
             // multiple indices are uploaded by the host right before each round
 
-//
-//            quint32 size = quizSet.size();   // already assigned earlier in initialize()
-//
-//            QVector <quint32> tempVector;
-//            QVector <quint32> indexVector;
-//            indexVector.resize(size);
-//
-//            getUniqueRandomNumbers(tempVector, 0, size-1, size);
-//            QList <quint32> setVals = quizSet.values();
-//            for (quint32 i = 0; i < size; i++)
-//            {
-//                indexVector[tempVector.at(i)] = setVals[i];
-//            }
-//            quizArray.resize(quizSetSize);
-//            for (quint32 i = 0; i < quizSetSize; i++)
-//                quizArray[i] = 0;
-//
-//            missedArray = missedSet.values().toVector();
-//            numTotalRacks = size;
+            //
+            //            quint32 size = quizSet.size();   // already assigned earlier in initialize()
+            //
+            //            QVector <quint32> tempVector;
+            //            QVector <quint32> indexVector;
+            //            indexVector.resize(size);
+            //
+            //            getUniqueRandomNumbers(tempVector, 0, size-1, size);
+            //            QList <quint32> setVals = quizSet.values();
+            //            for (quint32 i = 0; i < size; i++)
+            //            {
+            //                indexVector[tempVector.at(i)] = setVals[i];
+            //            }
+            //            quizArray.resize(quizSetSize);
+            //            for (quint32 i = 0; i < quizSetSize; i++)
+            //                quizArray[i] = 0;
+            //
+            //            missedArray = missedSet.values().toVector();
+            //            numTotalRacks = size;
 
             hostUpload = true;
             numTotalRacks = quizSetSize;
+
+            hostUploadState = STATE_QUIZZING_ON_UL_FIRST_SET;
 
         }
 
@@ -543,18 +577,113 @@ void UnscrambleGame::generateQuizArray()
 
 }
 
+/* this is a bit of a hack. there are two versions of prepareTableQuestions, depending on whether the host has uploaded
+   questions or not */
+
+void UnscrambleGame::prepareTableQuestions_hostUploadMode()
+{
+    unscrambleGameQuestions.clear();
+    numTotalSolutions = 0;
+    numTotalSolvedSoFar = 0;
+
+    if (cycleState == TABLE_TYPE_CYCLE_MODE)
+    {
+        if (hostUploadState == STATE_QUIZZING_ON_UL_FIRST_SET && quizIndex == quizSetSize)
+        {
+            if (missedSetSize != 0)
+            {
+                hostUploadState = STATE_QUIZZING_ON_UL_MISSED_SET;
+                quizIndex = 0;	// and set the index back at the beginning
+                numRacksSeen = 0;
+                numTotalRacks = missedSetSize;
+                qDebug() << "Now quizzing on UL missed set";
+            }
+            else
+            {
+                hostUploadState = STATE_DONE_UPLOADING;
+                // in this case we are done uploading, so we will just quiz on the actual missed set on the server.
+                hostUpload = false;
+                prepareTableQuestions();
+                qDebug() << "1-Switched to done uploading with no problem!";
+                return;
+
+            }
+
+        }
+        else if (hostUploadState == STATE_QUIZZING_ON_UL_MISSED_SET && quizIndex == missedSetSize)
+        {
+            hostUploadState = STATE_DONE_UPLOADING;
+            // in this case we are done uploading, so we will just quiz on the actual missed set on the server.
+            hostUpload = false;
+            prepareTableQuestions();
+            qDebug() << "2-Switched to done uploading with no problem!";
+            return;
+
+        }
+    }
+
+    QSqlQuery query(QSqlDatabase::database(wordDbConName));
+
+    query.exec("BEGIN TRANSACTION");
+    query.prepare(QString("SELECT words from alphagrams where probability = ?"));
+    numRacksThisRound = 0;
+
+
+    for (quint8 i = 0; i < maxRacks; i++)
+    {
+        if (i >= lastHostUpload.size())
+        {
+            if (i == 0)
+                qDebug() << "THE THING THAT SHOULD NOT BE";
+            break;
+        }
+
+        UnscrambleGameQuestionData thisQuestionData;
+
+        numRacksSeen++;
+        numRacksThisRound++;
+
+
+        quint32 index = lastHostUpload.at(i);
+
+        query.bindValue(0, index);
+        query.exec();
+
+        while (query.next())
+        {
+            QStringList sols = query.value(0).toString().split(" ");
+            int size = sols.size();
+            thisQuestionData.numNotYetSolved = size;
+            thisQuestionData.probIndex = index;
+            for (int k = 0; k < size; k++)
+            {
+                thisQuestionData.notYetSolved.insert(k);
+                numTotalSolutions++;
+            }
+        }
+        quizIndex++;
+        thisQuestionData.exists = true;
+
+        unscrambleGameQuestions.append(thisQuestionData);
+    }
+
+    query.exec("END TRANSACTION");
+
+
+
+}
+
 void UnscrambleGame::prepareTableQuestions()
 {
     unscrambleGameQuestions.clear();
 
     numTotalSolutions = 0;
     numTotalSolvedSoFar = 0;
-    if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == quizArray.size())
+    if (cycleState == TABLE_TYPE_CYCLE_MODE && quizIndex == numTotalRacks)
     {
         quizArray = missedArray;		// copy missedArray to quizArray
         quizIndex = 0;	// and set the index back at the beginning
         missedArray.clear();	// also clear the missed array, cuz we're starting a new one.
-        table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
         sendListExhaustedMessage();
         numRacksSeen = 0;
         numTotalRacks = quizArray.size();
@@ -569,6 +698,7 @@ void UnscrambleGame::prepareTableQuestions()
     query.prepare(QString("SELECT words from alphagrams where probability = ?"));
     numRacksThisRound = 0;
 
+
     for (quint8 i = 0; i < maxRacks; i++)
     {
         UnscrambleGameQuestionData thisQuestionData;
@@ -577,7 +707,6 @@ void UnscrambleGame::prepareTableQuestions()
         {
             if (i == 0)
             {
-                listExhausted = true;
                 if (cycleState != TABLE_TYPE_DAILY_CHALLENGES)
                 {
                     table->sendTableMessage("This list has been completely exhausted. Please exit table and have a nice day.");
@@ -618,6 +747,7 @@ void UnscrambleGame::prepareTableQuestions()
         }
         unscrambleGameQuestions.append(thisQuestionData);
     }
+
     query.exec("END TRANSACTION");
     qDebug() << "finished PrepareTableQuestions, time=" << timer.elapsed();
 
@@ -646,9 +776,22 @@ void UnscrambleGame::sendListExhaustedMessage()
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
     out << table->tableNumber;
-    out << (quint8) SERVER_TABLE_MAIN_QUIZ_DONE;
+    out << (quint8) SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE;
     fixHeaderLength();
     table->sendGenericPacket();
+}
+
+void UnscrambleGame::sendListRequestMessage()
+{
+    qDebug() << "Sent list request message";
+    writeHeaderData();
+    out << (quint8) SERVER_TABLE_COMMAND;
+    out << table->tableNumber;
+    out << (quint8) SERVER_TABLE_UNSCRAMBLEGAME_LIST_REQUEST;
+    fixHeaderLength();
+    if (table->host && table->host == table->originalHost)
+        table->host->write(block);
+
 }
 
 void UnscrambleGame::sendListCompletelyExhaustedMessage()
@@ -656,7 +799,7 @@ void UnscrambleGame::sendListCompletelyExhaustedMessage()
     writeHeaderData();
     out << (quint8) SERVER_TABLE_COMMAND;
     out << table->tableNumber;
-    out << (quint8) SERVER_TABLE_FULL_QUIZ_DONE;
+    out << (quint8) SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE;
     fixHeaderLength();
     table->sendGenericPacket();
 }
@@ -719,6 +862,23 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
 
         }
         break;
+    case CLIENT_TABLE_UNSCRAMBLEGAME_QUESTION_LIST:
+        {
+            quint8 size;
+            socket->connData.in >> size;
+            lastHostUpload.resize(qMin(size, maxRacks));
+            quint32 question;
+            for (int i = 0; i < qMin(size, maxRacks); i++)
+            {
+                socket->connData.in >> question;
+                lastHostUpload[i] = question;
+
+            }
+            needNewList = false;
+
+            qDebug() << "Got questions!" << size;
+        }
+        break;
     default:
         socket->disconnectFromHost();
 
@@ -731,34 +891,7 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
 
 /*************** static and utility functions ****************/
 
-void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums)
-{
-    // takes all the numbers between start and end, including start and end,
-    // randomly shuffles, and returns the first numNums numbers of the shuffled array.
 
-    //  qDebug() << "gurn" << start << end << numNums;
-    int size = end - start + 1;
-    numbers.resize(numNums);
-    if (size < 1) size = start - end + 1;
-    if (numNums > size) return;
-
-    QVector <quint32> pool;
-    pool.resize(size);
-    for (int i = 0; i < pool.size(); i++)
-    {
-        pool[i] = i + start;
-    }
-    int choose, temp;
-    for (int i = 0; i < numbers.size(); i++)
-    {
-        choose = qrand() % size;
-        numbers[i] = pool[choose];
-        size--;
-        temp = pool[choose];
-        pool[choose] = pool[size];
-        pool[size] = temp;
-    }
-}
 
 void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
 {

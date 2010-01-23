@@ -235,7 +235,7 @@ signals:
     void declinedInvite();
 
     void saveGameBA(QByteArray, QString, QString);
-
+    void uploadList(QVector<quint32>);
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
     void on_radioButtonOtherLists_clicked();

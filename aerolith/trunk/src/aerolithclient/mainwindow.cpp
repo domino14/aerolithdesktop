@@ -220,6 +220,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
     connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
     connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
+
+    connect(gameBoardWidget, SIGNAL(uploadList(QVector<quint32>)), SLOT(uploadList(QVector<quint32>)));
+
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -557,7 +560,8 @@ void MainWindow::readFromServer()
                 if (uiMainWindow.checkBoxIgnoreMsgs->isChecked() == false)
                     receivedPM(username, message);
                 else
-                    ;   // TODO inform user that his message didn't go through
+                {
+                }// TODO inform user that his message didn't go through
             }
             break;
         case SERVER_NEW_TABLE:	// New table
@@ -658,7 +662,8 @@ void MainWindow::readFromServer()
                     //TODO watch out for abuses of this! (invite bombs?)
                 }
                 else
-                    ;   // TODO inform user that their invite didn't go through
+                {
+                }   // TODO inform user that their invite didn't go through
             }
             break;
         case SERVER_BOOT_FROM_TABLE:
@@ -1074,7 +1079,6 @@ void MainWindow::createUnscrambleGameTable()
         QSet <quint32> mindices;
 
         DatabaseHandler::UserListQuizModes mode;
-        bool seenWholeList;
 
         if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = DatabaseHandler::MODE_CONTINUE;
         else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = DatabaseHandler::MODE_RESTART;
@@ -1118,7 +1122,9 @@ void MainWindow::createUnscrambleGameTable()
 
         out << si[0]->text().left(32);
         out << (quint32)qindices.size() << (quint32)mindices.size();
+        thisSug.writeToDebug();
         gameBoardWidget->setCurrentSug(thisSug);
+        gameBoardWidget->setIndices(qindices, mindices);
         gameBoardWidget->setUnmodifiedListName(si[0]->text());
     }
 
@@ -1315,11 +1321,15 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
 
         }
         break;
-    case SERVER_TABLE_MAIN_QUIZ_DONE:
+    case SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE:
         gameBoardWidget->mainQuizDone();
         break;
-    case SERVER_TABLE_FULL_QUIZ_DONE:
+    case SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE:
         gameBoardWidget->fullQuizDone();
+        break;
+    case SERVER_TABLE_UNSCRAMBLEGAME_LIST_REQUEST:
+        gameBoardWidget->listRequest();
+
         break;
 
     case SERVER_TABLE_AVATAR_CHANGE:
@@ -2012,6 +2022,23 @@ void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)
     dbHandler->saveGameBA(ba, lex, list);
 
     repopulateMyListsTable();
+}
+
+void MainWindow::uploadList(QVector <quint32> indexList)
+{
+    writeHeaderData();
+    out << (quint8)CLIENT_TABLE_COMMAND;
+    out << (quint16)currentTablenum;
+    out << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_QUESTION_LIST;
+    out << (quint8)indexList.size();
+    for (int i = 0; i < (quint8)indexList.size(); i++)
+    {
+        out << indexList.at(i);
+    }
+
+    fixHeaderLength();
+    commsSocket->write(block);
+
 }
 
 void MainWindow::on_radioButtonProbability_clicked()

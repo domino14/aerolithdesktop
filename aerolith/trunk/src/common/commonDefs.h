@@ -17,6 +17,8 @@
 #ifndef _COMMON_DEFS_H_
 #define _COMMON_DEFS_H_
 
+#include <QtCore>
+
 // this has definitions for client/server constants such as packet types
 
 #define GAME_TYPE_UNSCRAMBLE 0
@@ -71,6 +73,7 @@
 #define CLIENT_TABLE_BOOT '!'
 // misc table subcommands, by game
 #define CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER 'w'
+#define CLIENT_TABLE_UNSCRAMBLEGAME_QUESTION_LIST 'q'
 
 
 #define SERVER_PING '?'
@@ -106,8 +109,12 @@
 #define SERVER_TABLE_AVATAR_CHANGE 'I'
 #define SERVER_TABLE_PRIVACY 'A'
 
-#define SERVER_TABLE_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
-#define SERVER_TABLE_FULL_QUIZ_DONE 'F' // no more questions in missed or current
+// misc sucbommands by game
+#define SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
+#define SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE 'F' // no more questions in missed or current
+#define SERVER_TABLE_UNSCRAMBLEGAME_LIST_REQUEST 'R'
+
+void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums);
 
 
 
