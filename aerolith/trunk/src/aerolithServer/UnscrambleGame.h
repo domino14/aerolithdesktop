@@ -90,8 +90,6 @@ private:
     static QByteArray wordListDataToSend;
 
     void prepareTableQuestions();
-    void prepareTableQuestions_hostUploadMode();
-
  //   void sendUserCurrentAlphagrams(ClientSocket*);
     void sendUserCurrentQuestions(ClientSocket*);
     QString lexiconName;
@@ -130,25 +128,13 @@ private:
 //    QHash <QString, QString> gameSolutions;
 //    QHash <QString, quint8> alphagramIndices;
 
-
-    enum HostUploadStates
-    {
-        STATE_QUIZZING_ON_UL_FIRST_SET, STATE_QUIZZING_ON_UL_MISSED_SET, STATE_DONE_UPLOADING
-    };
-
     QList <UnscrambleGameQuestionData> unscrambleGameQuestions;
 
     QVector <quint32> missedArray;
     QVector <quint32> quizArray;
-    bool hostUpload;
-    HostUploadStates hostUploadState;
-    bool needNewList;
-    bool doNotRequestIndices;
 
-    QVector <quint32> lastHostUpload;
-
-    quint32 quizSetSize, missedSetSize;
-
+    QSet <quint32> quizSet;
+    QSet <quint32> missedSet;
 
     quint16 quizIndex;
     QVector <alphagramInfo> *alphaInfo;
@@ -171,7 +157,7 @@ private:
     void sendListExhaustedMessage();
     void performSpecificSitActions(ClientSocket*);
     void performSpecificStandActions(ClientSocket*);
-    void sendListRequestMessage();
+
 private slots:
     void updateGameTimer();
     void updateCountdownTimer();
