@@ -1,7 +1,8 @@
 TEMPLATE = app
 CONFIG += qt
 QT += network \
-    sql
+    sql \
+    opengl
 TARGET = aerolith
 QMAKE_MAC_SDK = /Developer/SDKs/MacOSX10.5.sdk
 CONFIG += x86 \
@@ -24,7 +25,8 @@ SOURCES = main.cpp \
     BonusGame.cpp \
     databasehandler.cpp \
     ../aerolithclient/wordfilter.cpp \
-    ../common/commonDefs.cpp
+    ../common/commonDefs.cpp \
+    ../aerolithclient/roomglwidget.cpp
 FORMS = tableCreateForm.ui \
     solutionsForm.ui \
     scoresForm.ui \
@@ -56,7 +58,8 @@ HEADERS += mainwindow.h \
     BonusGame.h \
     databasehandler.h \
     ../aerolithclient/SavedUnscrambleGame.h \
-    ../aerolithclient/wordfilter.h
+    ../aerolithclient/wordfilter.h \
+    ../aerolithclient/roomglwidget.h
 RESOURCES = ../../client.qrc
 RC_FILE = ../../client.rc
 HEADERS += mainserver.h \
