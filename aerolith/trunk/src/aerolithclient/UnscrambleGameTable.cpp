@@ -16,7 +16,7 @@
 
 #include "UnscrambleGameTable.h"
 #include "commonDefs.h"
-
+#include <QtOpenGL>
 UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, DatabaseHandler *dbHandler) :
         GameTable(parent, f, 8)
 {
@@ -71,6 +71,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
 
 
     //gfxScene.setSceneRect(0, 0, 980, 720);
+ //   tableUi.graphicsView->setViewport(new QGLWidget);
     tableUi.graphicsView->viewport()->setFocusPolicy(Qt::NoFocus);
     tableUi.graphicsView->setScene(&gfxScene);
     tableUi.graphicsView->setSceneRect(tableUi.graphicsView->contentsRect());
@@ -82,7 +83,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
     tableItem->setZValue(-1);
     tableItem->setAcceptedMouseButtons(0);
-
+    tableItem->setPos(0, 50);
     setWindowIcon(QIcon(":/images/aerolith.png"));
 
     move(0, 0);
@@ -153,11 +154,11 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
 
 
 
-    readyChips.at(0)->setPos(200, 390);
-    readyChips.at(1)->setPos(370, 390);
-    readyChips.at(2)->setPos(540, 390);
-    readyChips.at(3)->setPos(710, 390);
-    readyChips.at(4)->setPos(800, 330);
+    readyChips.at(0)->setPos(200, 360);
+    readyChips.at(1)->setPos(370, 360);
+    readyChips.at(2)->setPos(540, 360);
+    readyChips.at(3)->setPos(710, 360);
+    readyChips.at(4)->setPos(800, 300);
     readyChips.at(5)->setPos(800, 190);
     readyChips.at(6)->setPos(800, 50);
 
@@ -166,15 +167,15 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     for (int i = 0; i < maxPlayers; i++)
         playerWidgets.at(i)->raise();
 
-    playerWidgets.at(0)->move(150, 480);
-    playerWidgets.at(1)->move(320, 480);
-    playerWidgets.at(2)->move(490, 480);
-    playerWidgets.at(3)->move(650, 480);
+    playerWidgets.at(0)->move(150, 380);
+    playerWidgets.at(1)->move(320, 380);
+    playerWidgets.at(2)->move(490, 380);
+    playerWidgets.at(3)->move(650, 380);
     playerWidgets.at(4)->move(880, 320);
     playerWidgets.at(5)->move(880, 180);
     playerWidgets.at(6)->move(880, 40);
 
-    playerWidgets.at(7)->move(820, 450);
+    playerWidgets.at(7)->move(820, 350);
 
 
 
