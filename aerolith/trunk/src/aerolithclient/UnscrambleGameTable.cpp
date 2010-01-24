@@ -621,33 +621,7 @@ void UnscrambleGameTable::gotChat(QString chat)
     tableUi.textEditChat->append(chat);
 }
 
-void UnscrambleGameTable::listRequest()
-{
-    qDebug() << "Received a list request.";
-    QVector <quint32> indexList;
 
-    if (randomizedQuizList.size() > 0)
-    {
-        indexList = randomizedQuizList.mid(0, 50);  // take the left-most 50
-        randomizedQuizList = randomizedQuizList.mid(50);    // and remove them from the list
-
-
-    }
-    else if (randomizedMissedList.size() > 0)
-    {
-        indexList = randomizedMissedList.mid(0, 50);  // take the left-most 50
-        randomizedMissedList = randomizedMissedList.mid(50);    // and remove them from the list
-
-    }
-    else
-    {
-        QMessageBox::critical(this, "!", "Shouldn't have a request!");
-        return;
-    }
-
-
-    emit uploadList(indexList);
-}
 
 
 void UnscrambleGameTable::gotTimerValue(quint16 timerval)
@@ -766,6 +740,8 @@ void UnscrambleGameTable::populateSolutionsTable()
                             currentSug.brandNew = false;
                             currentSug.curQuizList = currentSug.origIndices;
                         }
+                        qDebug() << "Wrong asnwer to " << wordQuestions.at(i).probIndex;
+                        qDebug() << "Quiz list:" << currentSug.curQuizList.size() << currentSug.curQuizList;
                         Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(i).probIndex));
                         currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
                         currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
@@ -988,36 +964,6 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
 
 }
 
-
-void UnscrambleGameTable::setIndices(QSet <quint32> qindices, QSet <quint32> mindices)
-{
-    //
-    //    QVector <quint32> randomizedQuizSet;
-    //    QVector <quint32> randomizedMissedSet;
-    //    int rqindex, rmindex;
-    randomizedQuizList.clear();
-    randomizedMissedList.clear();
-
-    QList <quint32> qindicesList = qindices.toList();
-    QList <quint32> mindicesList = mindices.toList();
-
-    QVector <quint32> indexVector;
-    getUniqueRandomNumbers(indexVector, 0, qindices.size() - 1, qindices.size());
-
-    for (quint32 i = 0; i < qindices.size(); i++)
-        randomizedQuizList << qindicesList.at(indexVector.at(i));
-
-
-    getUniqueRandomNumbers(indexVector, 0, mindices.size() - 1, mindices.size());
-
-    for (quint32 i = 0; i < mindices.size(); i++)
-        randomizedMissedList << mindicesList.at(indexVector.at(i));
-
-    qDebug() << "Setindices";
-    qDebug() << "Quiz" << randomizedQuizList;
-    qDebug() << "Missed" << randomizedMissedList;
-}
-
 void UnscrambleGameTable::mainQuizDone()
 {
     if (savingAllowed)
@@ -1079,7 +1025,10 @@ void UnscrambleGameTable::answeredCorrectly(quint8 seatNumber, quint8 space, qui
                 currentSug.brandNew = false;
                 currentSug.curQuizList = currentSug.origIndices;
             }
-          //  qDebug() << "Answeredcorrectly" << currentSug.curQuizList << currentSug.curMissedList;
+            qDebug() << "Answered correctly" << wordQuestions.at(space).probIndex;
+            qDebug() << currentSug.curQuizList.size() << currentSug.curQuizList;
+            qDebug() << currentSug.curMissedList.size() << currentSug.curMissedList;
+
             Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
             currentSug.curQuizList.remove(wordQuestions.at(space).probIndex);
             savedGameModified = true;
