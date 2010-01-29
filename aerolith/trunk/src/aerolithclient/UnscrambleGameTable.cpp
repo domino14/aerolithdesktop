@@ -83,7 +83,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     tableItem = gfxScene.addPixmap(QPixmap(":/images/table.png"));
     tableItem->setZValue(-1);
     tableItem->setAcceptedMouseButtons(0);
-    tableItem->setPos(0, 50);
+    tableItem->setPos(0, 40);
     setWindowIcon(QIcon(":/images/aerolith.png"));
 
     move(0, 0);
@@ -158,24 +158,24 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     readyChips.at(1)->setPos(370, 360);
     readyChips.at(2)->setPos(540, 360);
     readyChips.at(3)->setPos(710, 360);
-    readyChips.at(4)->setPos(800, 300);
+    readyChips.at(4)->setPos(800, 310);
     readyChips.at(5)->setPos(800, 190);
-    readyChips.at(6)->setPos(800, 50);
+    readyChips.at(6)->setPos(800, 70);
 
-    readyChips.at(7)->setPos(785, 385);
+    readyChips.at(7)->setPos(790, 380);
 
     for (int i = 0; i < maxPlayers; i++)
         playerWidgets.at(i)->raise();
 
-    playerWidgets.at(0)->move(150, 380);
-    playerWidgets.at(1)->move(320, 380);
-    playerWidgets.at(2)->move(490, 380);
-    playerWidgets.at(3)->move(650, 380);
-    playerWidgets.at(4)->move(880, 320);
-    playerWidgets.at(5)->move(880, 180);
-    playerWidgets.at(6)->move(880, 40);
+    playerWidgets.at(0)->move(150, 405);
+    playerWidgets.at(1)->move(320, 405);
+    playerWidgets.at(2)->move(490, 405);
+    playerWidgets.at(3)->move(660, 405);
+    playerWidgets.at(4)->move(860, 290);
+    playerWidgets.at(5)->move(860, 170);
+    playerWidgets.at(6)->move(860, 50);
 
-    playerWidgets.at(7)->move(820, 350);
+    playerWidgets.at(7)->move(830, 405);
 
 
 
@@ -265,6 +265,29 @@ void UnscrambleGameTable::changeTileColors(int option)
         linearGrad.setColorAt(1, this->palette().color(QPalette::Window));
         tileBrush = QBrush(linearGrad);
         break;
+    case 7: // orange
+        linearGrad.setColorAt(0, QColor(255, 150, 0));
+        linearGrad.setColorAt(1, QColor(200, 100, 0));
+        tileBrush = QBrush(linearGrad);
+        break;
+    case 8: // green
+        linearGrad.setColorAt(0, QColor(0, 255, 0));
+        linearGrad.setColorAt(1, QColor(0, 200, 0));
+        tileBrush = QBrush(linearGrad);
+        break;
+
+    case 9: //purple
+        linearGrad.setColorAt(0, QColor(255, 0, 255).lighter(200));
+        linearGrad.setColorAt(1, QColor(200,0, 200).lighter(200));
+        tileBrush = QBrush(linearGrad);
+
+        break;
+    case 10: //yellow
+        linearGrad.setColorAt(0, QColor(255, 255, 0));
+        linearGrad.setColorAt(1, QColor(200, 200, 0));
+        tileBrush = QBrush(linearGrad);
+
+        break;
     }
     QPen edgePen;
     if (uiPreferences.checkBoxTileBorders->isChecked()) edgePen = QPen(Qt::black, 0.4);
@@ -294,6 +317,10 @@ void UnscrambleGameTable::changeFontColors(int option)
     {
         foregroundPen = QPen(Qt::white);
     }
+    else if (option == 2)
+        foregroundPen = QPen(Qt::green);
+    else if (option == 3)
+        foregroundPen = QPen(Qt::yellow);
     foreach (Tile* tile, tiles)
     {
         tile->setForegroundPen(foregroundPen);
@@ -773,6 +800,7 @@ void UnscrambleGameTable::populateSolutionsTable()
         qDebug() << "Database is not open.";
 
     qDebug() << "Time to populate sols" << time.elapsed();
+    answerHash.clear();
 }
 
 void UnscrambleGameTable::alphagrammizeWords()
@@ -879,7 +907,7 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
     {
         //item->setPos(330 + i*(19.0 * scale), 150 + 26*(index-10)+ verticalVariation* (double)qrand()/RAND_MAX);
         x = 255 - tileWidth;
-        y = 46 + 26*(index-12);
+        y = 58 + 26*(index-12);
     }
     else if (index >= 25 && index < 38)
     {
