@@ -1,3 +1,29 @@
+1/29/10
+
+-- Give up works when player is standing? This shouldn't be! (Fix)
+
+
+
+
+
+-- Solving a word just in the nick of time crashes the program!?
+[29.01.10 00:39:14] [D] Received from sender  "mickey"  packet  = 6 
+[29.01.10 00:39:14] [D] cas 48 0 
+[29.01.10 00:39:14] [D]    2 QSet(0, 1) 
+[29.01.10 00:39:14] [D] Packet type  + block length 7 
+[29.01.10 00:39:14] [D] ac 48 0 "EEENRUV" 1 
+[29.01.10 00:39:15] [D] Missed to date: 26 racks. 
+[29.01.10 00:39:15] [D] Packet type  + block length 6 
+[29.01.10 00:39:15] [D] Packet type  + block length 4 
+[29.01.10 00:39:15] [D] Time to populate sols 32 
+[29.01.10 00:39:15] [D] Packet type  + block length 6 
+[29.01.10 00:39:15] [F] ASSERT failure in QList<T>::at: "index out of range", file /usr/include/qt4/QtCore/qlist.h, line 395
+I had just typed UNREEVE?
+
+-- actually, it happens when you type in a word after time runs out!
+
+
+
 12/11/09
 
 - The idea behind a "progress" is flawed! Server randomizes question order, so progress makes no sense! Think

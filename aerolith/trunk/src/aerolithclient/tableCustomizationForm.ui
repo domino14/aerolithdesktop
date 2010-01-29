@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>tableCustomizationForm</class>
- <widget class="QWidget" name="tableCustomizationForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="tableCustomizationForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,23 +10,23 @@
     <height>250</height>
    </rect>
   </property>
-  <property name="minimumSize" >
+  <property name="minimumSize">
    <size>
     <width>450</width>
     <height>250</height>
    </size>
   </property>
-  <property name="maximumSize" >
+  <property name="maximumSize">
    <size>
     <width>450</width>
     <height>250</height>
    </size>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Table Customization</string>
   </property>
-  <widget class="QPushButton" name="pushButtonSavePrefs" >
-   <property name="geometry" >
+  <widget class="QPushButton" name="pushButtonSavePrefs">
+   <property name="geometry">
     <rect>
      <x>370</x>
      <y>220</y>
@@ -33,12 +34,12 @@
      <height>23</height>
     </rect>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Save</string>
    </property>
   </widget>
-  <widget class="QGroupBox" name="groupBoxUseTiles" >
-   <property name="geometry" >
+  <widget class="QGroupBox" name="groupBoxUseTiles">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>0</y>
@@ -46,20 +47,20 @@
      <height>131</height>
     </rect>
    </property>
-   <property name="toolTip" >
-    <string>The "Use Tiles" option uses a tile for each letter. Click the Use Tiles checkbox to toggle this on or off.</string>
+   <property name="toolTip">
+    <string>The &quot;Use Tiles&quot; option uses a tile for each letter. Click the Use Tiles checkbox to toggle this on or off.</string>
    </property>
-   <property name="statusTip" >
+   <property name="statusTip">
     <string/>
    </property>
-   <property name="title" >
+   <property name="title">
     <string>Use tiles</string>
    </property>
-   <property name="checkable" >
+   <property name="checkable">
     <bool>true</bool>
    </property>
-   <widget class="QComboBox" name="comboBoxTileColor" >
-    <property name="geometry" >
+   <widget class="QComboBox" name="comboBoxTileColor">
+    <property name="geometry">
      <rect>
       <x>100</x>
       <y>30</y>
@@ -68,43 +69,63 @@
      </rect>
     </property>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Light blue</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Dark blue</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Pink</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Dark red</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Black</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>White</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Gray</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>Orange</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Green</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Purple</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Yellow</string>
+     </property>
+    </item>
    </widget>
-   <widget class="QCheckBox" name="checkBoxRandomVerticalPositions" >
-    <property name="geometry" >
+   <widget class="QCheckBox" name="checkBoxRandomVerticalPositions">
+    <property name="geometry">
      <rect>
       <x>130</x>
       <y>90</y>
@@ -112,15 +133,15 @@
       <height>18</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Tile randomness</string>
     </property>
-    <property name="checked" >
+    <property name="checked">
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label_4" >
-    <property name="geometry" >
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
      <rect>
       <x>20</x>
       <y>60</y>
@@ -128,12 +149,12 @@
       <height>18</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Font color:</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBoxTileBorders" >
-    <property name="geometry" >
+   <widget class="QCheckBox" name="checkBoxTileBorders">
+    <property name="geometry">
      <rect>
       <x>20</x>
       <y>90</y>
@@ -141,15 +162,15 @@
       <height>18</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Tile borders</string>
     </property>
-    <property name="checked" >
+    <property name="checked">
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBoxTallTiles" >
-    <property name="geometry" >
+   <widget class="QCheckBox" name="checkBoxTallTiles">
+    <property name="geometry">
      <rect>
       <x>130</x>
       <y>110</y>
@@ -157,12 +178,12 @@
       <height>19</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Tall Tiles</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3" >
-    <property name="geometry" >
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
      <rect>
       <x>20</x>
       <y>30</y>
@@ -170,12 +191,12 @@
       <height>18</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Tile color:</string>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboBoxFontColor" >
-    <property name="geometry" >
+   <widget class="QComboBox" name="comboBoxFontColor">
+    <property name="geometry">
      <rect>
       <x>100</x>
       <y>60</y>
@@ -184,18 +205,28 @@
      </rect>
     </property>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>Black</string>
      </property>
     </item>
     <item>
-     <property name="text" >
+     <property name="text">
       <string>White</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>Green</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Yellow</string>
+     </property>
+    </item>
    </widget>
-   <widget class="QCheckBox" name="checkBoxWordBorders" >
-    <property name="geometry" >
+   <widget class="QCheckBox" name="checkBoxWordBorders">
+    <property name="geometry">
      <rect>
       <x>20</x>
       <y>110</y>
@@ -203,16 +234,16 @@
       <height>21</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Word borders</string>
     </property>
    </widget>
   </widget>
-  <widget class="QGroupBox" name="groupBoxUseRectangles" >
-   <property name="enabled" >
+  <widget class="QGroupBox" name="groupBoxUseRectangles">
+   <property name="enabled">
     <bool>false</bool>
    </property>
-   <property name="geometry" >
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>130</y>
@@ -220,17 +251,17 @@
      <height>81</height>
     </rect>
    </property>
-   <property name="title" >
+   <property name="title">
     <string>Use Word Rectangles</string>
    </property>
-   <property name="checkable" >
+   <property name="checkable">
     <bool>false</bool>
    </property>
-   <property name="checked" >
+   <property name="checked">
     <bool>false</bool>
    </property>
-   <widget class="QCheckBox" name="checkBoxUseFixedWidthFont" >
-    <property name="geometry" >
+   <widget class="QCheckBox" name="checkBoxUseFixedWidthFont">
+    <property name="geometry">
      <rect>
       <x>20</x>
       <y>30</y>
@@ -238,13 +269,13 @@
       <height>21</height>
      </rect>
     </property>
-    <property name="text" >
+    <property name="text">
      <string>Use fixed-width font</string>
     </property>
    </widget>
   </widget>
-  <widget class="QComboBox" name="comboBoxBackground" >
-   <property name="geometry" >
+  <widget class="QComboBox" name="comboBoxBackground">
+   <property name="geometry">
     <rect>
      <x>360</x>
      <y>60</y>
@@ -253,33 +284,33 @@
     </rect>
    </property>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>Canvas</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>Gray</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>White</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>Lava</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>Stars</string>
     </property>
    </item>
   </widget>
-  <widget class="QComboBox" name="comboBoxTableStyle" >
-   <property name="geometry" >
+  <widget class="QComboBox" name="comboBoxTableStyle">
+   <property name="geometry">
     <rect>
      <x>360</x>
      <y>90</y>
@@ -288,23 +319,23 @@
     </rect>
    </property>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>Green</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>Light blue</string>
     </property>
    </item>
    <item>
-    <property name="text" >
+    <property name="text">
      <string>No table</string>
     </property>
    </item>
   </widget>
-  <widget class="QLabel" name="label" >
-   <property name="geometry" >
+  <widget class="QLabel" name="label">
+   <property name="geometry">
     <rect>
      <x>280</x>
      <y>60</y>
@@ -312,12 +343,12 @@
      <height>18</height>
     </rect>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Background:</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_5" >
-   <property name="geometry" >
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
     <rect>
      <x>280</x>
      <y>90</y>
@@ -325,7 +356,7 @@
      <height>16</height>
     </rect>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Table style:</string>
    </property>
   </widget>

@@ -135,8 +135,8 @@
   <widget class="QPushButton" name="pushButtonAlphagrams">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>530</y>
+     <x>780</x>
+     <y>540</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -171,8 +171,8 @@ QPushButton:disabled{
   <widget class="QPushButton" name="pushButtonShuffle">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>570</y>
+     <x>780</x>
+     <y>580</y>
      <width>111</width>
      <height>34</height>
     </rect>
@@ -450,9 +450,9 @@ QPushButton:disabled{
   <widget class="QTextEdit" name="textEditGuesses">
    <property name="geometry">
     <rect>
-     <x>650</x>
+     <x>630</x>
      <y>540</y>
-     <width>161</width>
+     <width>141</width>
      <height>71</height>
     </rect>
    </property>
@@ -473,7 +473,7 @@ QPushButton:disabled{
   <widget class="QLabel" name="labelYourGuesses">
    <property name="geometry">
     <rect>
-     <x>650</x>
+     <x>630</x>
      <y>520</y>
      <width>101</width>
      <height>16</height>
@@ -643,8 +643,8 @@ QPushButton:disabled{
   <widget class="QComboBox" name="comboBoxTablePrivacy">
    <property name="geometry">
     <rect>
-     <x>930</x>
-     <y>530</y>
+     <x>940</x>
+     <y>545</y>
      <width>85</width>
      <height>27</height>
     </rect>
@@ -666,9 +666,9 @@ QPushButton:disabled{
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>940</x>
-     <y>510</y>
-     <width>62</width>
+     <x>890</x>
+     <y>550</y>
+     <width>51</width>
      <height>18</height>
     </rect>
    </property>
@@ -679,8 +679,8 @@ QPushButton:disabled{
   <widget class="QPushButton" name="pushButtonInvite">
    <property name="geometry">
     <rect>
-     <x>940</x>
-     <y>560</y>
+     <x>890</x>
+     <y>580</y>
      <width>61</width>
      <height>28</height>
     </rect>
@@ -695,8 +695,8 @@ QPushButton:disabled{
   <widget class="QPushButton" name="pushButtonStand">
    <property name="geometry">
     <rect>
-     <x>61</x>
-     <y>390</y>
+     <x>20</x>
+     <y>410</y>
      <width>71</width>
      <height>28</height>
     </rect>
@@ -711,8 +711,8 @@ QPushButton:disabled{
   <widget class="QPushButton" name="pushButtonBoot">
    <property name="geometry">
     <rect>
-     <x>940</x>
-     <y>590</y>
+     <x>960</x>
+     <y>580</y>
      <width>61</width>
      <height>28</height>
     </rect>
