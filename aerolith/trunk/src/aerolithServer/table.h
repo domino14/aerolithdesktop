@@ -68,6 +68,7 @@ public:
 
     void trySitting(ClientSocket*, quint8);
     void tryStanding(ClientSocket*);
+    void cleanupBeforeDelete();
 private:
     void sendAvatarChangePacket(ClientSocket*);
 };

@@ -24,6 +24,8 @@ const quint8 COUNTDOWN_TIMER_VAL = 3;
 const quint8 maxRacks = 50;
 QHash <QString, challengeInfo> UnscrambleGame::challenges;
 bool UnscrambleGame::midnightSwitchoverToggle;
+int UnscrambleGame::numTotalQuestions = 0;
+
 QByteArray UnscrambleGame::wordListDataToSend;
 //QVector<QVector <QVector<alphagramInfo> > > UnscrambleGame::alphagramData;
 
@@ -150,27 +152,29 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
 
 }
 
+void UnscrambleGame::cleanupBeforeDelete()
+{
+    numTotalQuestions -= thisMaxQuestions;
+}
+
 void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 {
     // if this is the ONLY player, stop game.
     if (table->peopleInTable.size() == 1 && table->maxPlayers == 1)
     {
         gameEndRequest(socket);
+    }
 
-
-        if (socket == table->originalHost)
+    if (socket == table->originalHost)
+    {
+        if (listType == LIST_TYPE_MULTIPLE_INDICES)
         {
-            if (listType == LIST_TYPE_MULTIPLE_INDICES)
-            {
-                /* the host is no longer able to send out indices to the table.  inform the players of this */
-                table->sendTableMessage("The original host of the table has left. "
-                                        "Since the host was the one to create this list, you cannot quiz on it any longer.");
+            /* the host is no longer able to send out indices to the table.  inform the players of this */
+            table->sendTableMessage("The original host of the table has left. "
+                                    "Since the host was the one to create this list, you cannot quiz on it any longer.");
 
 
-            }
         }
-
-
     }
 }
 
@@ -346,29 +350,29 @@ void UnscrambleGame::endGame()
         table->sendTableMessage("This challenge is over! To see scores or to try another challenge, exit the table "
                                 "and make the appropriate selections with the Challenges button.");
 
-            // search for player.
-            if (table->originalHost && challenges.contains(wordList))
+        // search for player.
+        if (table->originalHost && challenges.contains(wordList))
+        {
+            if (challenges.value(wordList).highScores->contains(table->originalHost->connData.userName.toLower()))
+                table->sendTableMessage(table->originalHost->connData.userName + " has already played this challenge. "
+                                        "These results will not count towards this day's high scores.");
+            else
             {
-                if (challenges.value(wordList).highScores->contains(table->originalHost->connData.userName.toLower()))
-                    table->sendTableMessage(table->originalHost->connData.userName + " has already played this challenge. "
-                                            "These results will not count towards this day's high scores.");
-                else
+                if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
                 {
-                    if (midnightSwitchoverToggle == thisTableSwitchoverToggle)
-                    {
-                        highScoreData tmp;
-                        tmp.userName = table->originalHost->connData.userName;
-                        tmp.numSolutions = numTotalSolutions;
-                        tmp.numCorrect = numTotalSolvedSoFar;
-                        tmp.timeRemaining = currentTimerVal;
-                        challenges.value(wordList).highScores->insert(table->originalHost->connData.userName.toLower(), tmp);
+                    highScoreData tmp;
+                    tmp.userName = table->originalHost->connData.userName;
+                    tmp.numSolutions = numTotalSolutions;
+                    tmp.numCorrect = numTotalSolvedSoFar;
+                    tmp.timeRemaining = currentTimerVal;
+                    challenges.value(wordList).highScores->insert(table->originalHost->connData.userName.toLower(), tmp);
 
-                    }
-                    else
-                        table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
                 }
-
+                else
+                    table->sendTableMessage("The daily lists have changed while you were playing. Please try again with the new list!");
             }
+
+        }
 
     }
 }
@@ -530,7 +534,8 @@ void UnscrambleGame::generateQuizArray()
     quizIndex = 0;
 
     neverStarted = true;
-
+    thisMaxQuestions = missedArray.size() + quizArray.size();
+    numTotalQuestions += thisMaxQuestions;
 
 }
 

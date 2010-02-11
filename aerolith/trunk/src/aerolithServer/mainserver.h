@@ -40,7 +40,7 @@ private slots:
     void removeConnection();
     void receiveMessage();
     void checkEveryone();
-    void newDailyChallenges();
+    void midnightUpkeep();
     // void updateTimer();
     // void updateCountdownTimer();
 
@@ -50,6 +50,7 @@ private:
     void incomingConnection(int socketDescriptor); // inherited from QTcpServer
     QSqlDatabase userDb;
     QString aerolithVersion;
+    quint32 numOpenQuestions;
 
     DatabaseHandler* dbHandler;
     enum packetHeaderStatesEnum
@@ -64,7 +65,8 @@ private:
     QHash <QString, ClientSocket*> usernamesHash;
     QHash <quint16, Table*> tables;
 
-
+    QSet <QString> todaysBlacklist;
+    QHash <QString, quint32> todaysBandwidthByUser;
 
     // QHash <QString, QString> wordLists;
 

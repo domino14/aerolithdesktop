@@ -119,6 +119,10 @@ void Table::removePersonFromTable(ClientSocket* socket)
     }
 }
 
+void Table::cleanupBeforeDelete()
+{
+    tableGame->cleanupBeforeDelete();
+}
 
 void Table::sendHostChangePacket(ClientSocket* host)
 {
