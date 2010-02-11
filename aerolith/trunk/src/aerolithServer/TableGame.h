@@ -44,6 +44,8 @@ Q_OBJECT
   virtual void handleMiscPacket(ClientSocket*, quint8 header) = 0;
   // the most generic game packets. the more specific ones go in the specific game classes (like UnscrambleGame gets sendGuessRightPacket)
 
+  virtual void cleanupBeforeDelete() = 0;
+
   void sendReadyBeginPacket(quint8);
   void sendGameStartPacket();
   void sendGameEndPacket();

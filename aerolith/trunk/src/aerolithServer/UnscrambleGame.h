@@ -24,6 +24,7 @@
 #include "databasehandler.h"
 #include "SavedUnscrambleGame.h"
 #include "commonDefs.h"
+#define MAX_NUM_OPEN_QUESTIONS 1000000      // one million questions are allowed to be open, in total. (in unscramble game)
 
 struct highScoreData
 {
@@ -74,6 +75,7 @@ public:
 
     void correctAnswerSent(ClientSocket*, quint8 space, quint8 specificAnswer);
 
+    void cleanupBeforeDelete();
     void endGame();
     void startGame();
 
@@ -84,6 +86,8 @@ public:
 
     static bool midnightSwitchoverToggle;
 
+    static int numTotalQuestions;
+    int thisMaxQuestions;
 private:
 
 

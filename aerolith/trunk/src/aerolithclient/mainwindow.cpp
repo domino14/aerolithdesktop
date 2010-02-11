@@ -65,13 +65,14 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     // commsSocket
 
-    commsSocket = new QTcpSocket;
+    commsSocket = new QTcpSocket(this);
     connect(commsSocket, SIGNAL(readyRead()), this, SLOT(readFromServer()));
     connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(displayError(QAbstractSocket::SocketError)));
     connect(commsSocket, SIGNAL(connected()), this, SLOT(connectedToServer()));
 
     connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
+    connect(commsSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(socketWroteBytes(qint64)));
 
     connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
     connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
@@ -488,6 +489,20 @@ void MainWindow::readFromServer()
                 out << (quint8)CLIENT_PONG;
                 fixHeaderLength();
                 commsSocket->write(block);
+            }
+            break;
+        case SERVER_MAX_BANDWIDTH:
+            {
+                quint32 maxBandwidth;
+                in >> maxBandwidth;
+                uiMainWindow.progressBarBandwidthUsage->setRange(0, maxBandwidth);
+                uiMainWindow.progressBarBandwidthUsage->setValue(0);
+
+            }
+            break;
+        case SERVER_RESET_TODAYS_BANDWIDTH:
+            {
+                uiMainWindow.progressBarBandwidthUsage->setValue(0);
             }
             break;
 
@@ -2072,6 +2087,11 @@ void MainWindow::declinedInvite()
 
 
     p->parent()->deleteLater();
+}
+
+void MainWindow::socketWroteBytes(qint64 num)
+{
+    uiMainWindow.progressBarBandwidthUsage->setValue(uiMainWindow.progressBarBandwidthUsage->value() + num);
 }
 
 

@@ -36,7 +36,10 @@ const QString incompatibleVersionString =
                              "You are using an outdated version of the Aerolith client. However, this version will work with the current server, but you will be missing new features. If you would like to upgrade, please check <a href=""http://www.aerolith.org"">http://www.aerolith.org</a> for the new client.";
 //const QString thisVersion = "0.4.1";
 
+const quint32 userDailyByteLimit = 2000000;
+
 #define MAX_NUM_TABLES 65535
+
 
 MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler) :
         aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
@@ -60,7 +63,7 @@ MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler
     oneMinuteTimer->start(60000);
 
     midnightTimer = new QTimer;
-    connect(midnightTimer, SIGNAL(timeout()), this, SLOT(newDailyChallenges()));
+    connect(midnightTimer, SIGNAL(timeout()), this, SLOT(midnightUpkeep()));
 
     midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
     qDebug() << "there are" << 86400000 + QTime::currentTime().msecsTo(midnight) << "msecs to midnight.";
@@ -91,11 +94,30 @@ MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler
     }
 }
 
-void MainServer::newDailyChallenges()
+void MainServer::midnightUpkeep()
 {
+    /* clear today's blacklist */
+    todaysBlacklist.clear();
+    todaysBandwidthByUser.clear();
+
+    /* set bytes sent today to 0 */
+
+    writeHeaderData();
+    out << (quint8) SERVER_RESET_TODAYS_BANDWIDTH;
+    fixHeaderLength();
+
+    foreach (ClientSocket* socket, connections)
+    {
+        socket->connData.numBytesSentToday = 0;
+        socket->write(block);
+    }
+
+    /* restart midnight timer */
     QTime midnight(0, 0, 0);
     midnightTimer->stop();
     midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
+
+    /* handle daily challenges for Unscramble game */
     UnscrambleGame::generateDailyChallenges(dbHandler);
 
 }
@@ -115,6 +137,7 @@ void MainServer::incomingConnection(int socketDescriptor)
         client->connData.avatarId = 1;
         client->connData.isActive = true; // assume we responded to the last ping
         client->connData.minutesInactive = 0;
+
         connect(client, SIGNAL(disconnected()), this, SLOT(removeConnection()));
         connect(client, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
 
@@ -202,6 +225,8 @@ void MainServer::removeConnection()
 
 
     }
+    // will add the user to the hash if it doesn't exist
+    todaysBandwidthByUser[socket->connData.userName.toLower()] = socket->connData.numBytesSentToday;
 
     connections.removeAll(socket);
     socket->deleteLater();
@@ -255,6 +280,17 @@ void MainServer::receiveMessage()
         if (socket->bytesAvailable() < socket->connData.numBytesInPacket)
             return;
 
+        socket->connData.numBytesSentToday += socket->connData.numBytesInPacket;
+
+        if (socket->connData.numBytesSentToday > userDailyByteLimit)
+        {
+            writeToClient(socket, "You have reached your daily bandwidth limit! Please quiz with large files "
+                          "locally!", S_ERROR); // the user daily limit should happen very rarely.
+            todaysBlacklist.insert(socket->connData.userName.toLower());
+            socket->disconnectFromHost();
+
+        }
+
         // ok, we can now read the WHOLE packet
         // ideally we read the 'case' byte right now, and then call a process function with
         // 'in' (the QDataStream) as a parameter!
@@ -269,6 +305,13 @@ void MainServer::receiveMessage()
             socket->disconnectFromHost();
             return;
         }
+
+        if (packetType != CLIENT_LOGIN && !socket->connData.loggedIn)
+        {
+            socket->disconnectFromHost();
+            return; // cannot do anything before logging in!
+        }
+
         switch(packetType)
         {
         case CLIENT_PONG:
@@ -610,6 +653,7 @@ void MainServer::removePersonFromTable(ClientSocket* socket, quint16 tablenum)
         {
             qDebug() << " need to kill table " << tablenum;
             tables.remove(tablenum);
+            tmp->cleanupBeforeDelete();
             delete tmp; // delete this table data structure -- this should also delete the tablegame
 
             // write to all clients that table has ceased to exist!
@@ -846,6 +890,7 @@ void MainServer::registerNewName(ClientSocket* socket)
 
 void MainServer::processLogin(ClientSocket* socket)
 {
+
     QString username, password;
     socket->connData.in >> username >> password;
     qDebug() << "Login: " << username << password;
@@ -920,6 +965,26 @@ void MainServer::processLogin(ClientSocket* socket)
 
 
     // got here with no error
+
+    if (todaysBlacklist.contains(username.toLower()))
+    {
+        writeToClient(socket, "You cannot log in right now. Please play locally, and try again tomorrow." ,S_ERROR);
+        socket->disconnectFromHost();
+        return;
+    }
+
+    if (todaysBandwidthByUser.contains(username.toLower()))
+        socket->connData.numBytesSentToday = todaysBandwidthByUser.value(username.toLower());
+    else
+        socket->connData.numBytesSentToday = 0;
+
+    writeHeaderData();
+    out << (quint8) SERVER_MAX_BANDWIDTH;
+    out << userDailyByteLimit;
+    fixHeaderLength();
+    socket->write(block);
+
+
     connections.append(socket);
 
     int avatarID = query.value(2).toInt();

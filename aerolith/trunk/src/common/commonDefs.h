@@ -92,6 +92,8 @@
 #define SERVER_TABLE_COMMAND '+'
 #define SERVER_INVITE_TO_TABLE 'I'
 #define SERVER_BOOT_FROM_TABLE 'B'
+#define SERVER_MAX_BANDWIDTH '>'
+#define SERVER_RESET_TODAYS_BANDWIDTH '&'
 //table subcommands
 #define SERVER_TABLE_CHAT 'C'
 #define SERVER_TABLE_MESSAGE 'M'

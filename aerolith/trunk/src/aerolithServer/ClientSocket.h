@@ -41,7 +41,7 @@ public:
         quint8 avatarId;
         bool isActive;
         quint16 minutesInactive;
-
+        quint32 numBytesSentToday;
     };
 
     // this struct will grow for other games. either we will have a separate struct for other games or all in this struct. this is still better than a hash table lookup and having to delete this struct.
