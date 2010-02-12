@@ -35,7 +35,9 @@ public:
     void setOpaqueBG();
     void alphagrammizeText();
     void shuffleText();
+    void setLexiconForMapping(QString);
 private:
+    QString currentLexicon;
     QString originalText;
     QString text;
     bool opaqueBG;
