@@ -40,11 +40,19 @@ const quint32 userDailyByteLimit = 2000000;
 
 #define MAX_NUM_TABLES 65535
 
+QFile bandwidthLogFile("bandwidthLogs.txt");
+QTextStream bandwidthOut(&bandwidthLogFile);
 
 MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler) :
         aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
 {
     qDebug("mainserver constructor");
+
+
+    bandwidthLogFile.open(QIODevice::WriteOnly | QIODevice::Text);
+
+
+
 
     // connect to existing databases
 
@@ -96,7 +104,24 @@ MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler
 
 void MainServer::midnightUpkeep()
 {
-    /* clear today's blacklist */
+    bandwidthOut << "-----------------------\n";
+    bandwidthOut << QDateTime::currentDateTime().toString("ddd MMMM d yy hh:mm:ss\n");
+
+    /* first, update the hash with the new bandwidth counts of anyone who is still logged in. */
+    foreach (ClientSocket* socket, connections)
+    {
+        todaysBandwidthByUser[socket->connData.userName.toLower()] = socket->connData.numBytesSentToday;
+    }
+
+    /* then print out bandwidth content of hash */
+    QHashIterator<QString, quint32> i(todaysBandwidthByUser);
+    while (i.hasNext())
+    {
+        i.next();
+        bandwidthOut << i.key() << ": " << i.value() << endl;
+    }
+
+    /* clear today's blacklist and bandwidth hash*/
     todaysBlacklist.clear();
     todaysBandwidthByUser.clear();
 

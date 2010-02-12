@@ -59,7 +59,10 @@ void WordRectangle::setOpaqueBG()
     opaqueBG = true;
 }
 
-
+void WordRectangle::setLexiconForMapping(QString l)
+{
+    currentLexicon = l;
+}
 
 void WordRectangle::paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget)
 {
@@ -74,6 +77,16 @@ void WordRectangle::paint(QPainter *painter, const QStyleOptionGraphicsItem *ite
 
     if (shouldShowText)
     {
+        QString displayedText = text;
+        if (currentLexicon == "FISE")
+        {
+            /* the text has special symbols */
+            displayedText = displayedText.replace('1', "CH");
+            displayedText = displayedText.replace('2', "LL");
+            displayedText = displayedText.replace('3', "RR");
+            displayedText = displayedText.replace('4', QChar(0x00D1));  // a capital N-tilde character.
+
+        }
         int fontSize = 25;
 
         // find best font size
@@ -87,12 +100,12 @@ void WordRectangle::paint(QPainter *painter, const QStyleOptionGraphicsItem *ite
 
             painter->setFont(font);
 
-            textBoundingRect = painter->boundingRect(QRectF(20, 0, 185, 26), Qt::AlignCenter, text);
+            textBoundingRect = painter->boundingRect(QRectF(20, 0, 185, 26), Qt::AlignCenter, displayedText);
 
         } while (textBoundingRect.width() > 182 || textBoundingRect.height() > 26);
 
 
-        painter->drawText(QRectF(20, 0, 185, 26), Qt::AlignCenter, text);
+        painter->drawText(QRectF(20, 0, 185, 26), Qt::AlignCenter, displayedText);
 
     }
 }

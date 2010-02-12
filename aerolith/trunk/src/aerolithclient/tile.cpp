@@ -50,6 +50,11 @@ void Tile::setWidth(int w, double hscale)
 
 }
 
+void Tile::setLexiconForMapping(QString l)
+{
+    currentLexicon = l;
+}
+
 QRectF Tile::boundingRect() const
 {
     return QRectF(0, 0, width, height);
@@ -117,6 +122,19 @@ void Tile::setEdgePen(QPen &e)
 void Tile::setTileLetter(QString tileLetter)
 {
     this->tileLetter = tileLetter;
+    if (currentLexicon == "FISE")
+    {
+        /* special symbols */
+        if (tileLetter == "1")
+            this->tileLetter = "CH";
+        if (tileLetter == "2")
+            this->tileLetter = "LL";
+        if (tileLetter == "3")
+            this->tileLetter = "RR";
+        if (tileLetter == "4")
+            this->tileLetter = QChar(0x00D1); // capital N-tilde
+
+    }
 
 }
 

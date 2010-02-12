@@ -951,6 +951,7 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
         int tileWidth = getTileWidth(alphagram.length());
         double chipX, chipY;
         getBasePosition(index,  chipX, chipY, tileWidth);	// gets the chip position for index
+        wordRectangles.at(index)->setLexiconForMapping(lexiconName);
         wordRectangles.at(index)->setPos(chipX-5, chipY-5);
         wordRectangles.at(index)->setText(alphagram);
         if (!shouldShowTiles)
@@ -962,6 +963,7 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
         {
 
             Tile* item = tiles.at(index * 15 + i);
+            item->setLexiconForMapping(lexiconName);
             item->resetTransform();
             item->setWidth(tileWidth, heightScale);
             item->setPos(chipX + (i + 1) * (tileWidth),

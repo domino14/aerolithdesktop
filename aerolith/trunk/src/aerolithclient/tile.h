@@ -35,10 +35,11 @@ public:
     QBrush getTileBrush();
     void setWidth(int w, double hscale);
     int getWidth();
+    void setLexiconForMapping(QString);
 private:
     int width;
     int height;
-
+    QString currentLexicon;
     QBrush tileBrush;
     QPen foregroundPen;
     QPen edgePen;
