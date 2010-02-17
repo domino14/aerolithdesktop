@@ -73,23 +73,27 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawLine(1, height-1, width-1, height-1);
     painter->drawLine(width-1, height-1, width-1, 1);
     // Draw text
+    /*   int fontSize = 25;
 
-    int baseFontSize;
-    if (width == height) baseFontSize = 0;
-    else baseFontSize = 2;
-#ifdef Q_WS_MAC
-    QFont font("Courier New", width + 4 + baseFontSize, 75);
-#else
-    QFont font("Courier New", width + baseFontSize, 100);
-#endif
-    //	font.setStyleStrategy(QFont::PreferAntialias);
-    painter->setFont(font);
+        // find best font size
+
+        QRectF textBoundingRect;
+        do
+        {
+            fontSize--;
+            QFont font(fontFamily, fontSize, 100);
+            //	font.setStyleStrategy(QFont::PreferAntialias);
+
+            painter->setFont(font);
+
+            textBoundingRect = painter->boundingRect(QRectF(20, 0, 185, 26), Qt::AlignCenter, displayedText);
+
+        } while (textBoundingRect.width() > 182 || textBoundingRect.height() > 26);*/
+
+    painter->setFont(tileFont);
     painter->setPen(foregroundPen);
-#ifdef Q_WS_MAC
     painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
-#else
-    painter->drawText(QRectF(0, 1, width-1, height-1), Qt::AlignCenter, tileLetter);
-#endif   
+
 }
 
 void Tile::setTileProperties(QBrush& b, QPen& p, QPen &e)
@@ -135,6 +139,27 @@ void Tile::setTileLetter(QString tileLetter)
             this->tileLetter = QChar(0x00D1); // capital N-tilde
 
     }
+
+    int fontSize = 25;
+
+    // find best font size
+
+    QRect textBoundingRect;
+    tileFont.setFamily("Courier New");
+    tileFont.setWeight(100);
+
+
+    do
+    {
+        fontSize--;
+
+        tileFont.setPointSize(fontSize);
+        QFontMetrics fm(tileFont);
+        //	font.setStyleStrategy(QFont::PreferAntialias);
+    //    textBoundingRect = fm.boundingRect(QRect(0, 0, width, height), Qt::AlignCenter, this->tileLetter);
+        textBoundingRect = fm.boundingRect(this->tileLetter);
+        qDebug() << "Letter: " << this->tileLetter << textBoundingRect;
+    } while (textBoundingRect.width() >= width || textBoundingRect.height() >= (double)height*1.3);
 
 }
 

@@ -39,6 +39,7 @@ public:
 private:
     int width;
     int height;
+    QFont tileFont;
     QString currentLexicon;
     QBrush tileBrush;
     QPen foregroundPen;
