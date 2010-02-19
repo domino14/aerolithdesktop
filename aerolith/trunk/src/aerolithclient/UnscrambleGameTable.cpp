@@ -71,7 +71,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
 
 
     //gfxScene.setSceneRect(0, 0, 980, 720);
- //   tableUi.graphicsView->setViewport(new QGLWidget);
+    //   tableUi.graphicsView->setViewport(new QGLWidget);
     tableUi.graphicsView->viewport()->setFocusPolicy(Qt::NoFocus);
     tableUi.graphicsView->setScene(&gfxScene);
     tableUi.graphicsView->setSceneRect(tableUi.graphicsView->contentsRect());
@@ -561,6 +561,13 @@ void UnscrambleGameTable::enteredGuess()
 {
 
     QString guess = tableUi.lineEditSolution->text().simplified().toUpper();
+    tableUi.textEditGuesses->append(guess);
+    if (lexiconName == "FISE")
+    {
+        guess = guess.replace("CH", "1").replace("LL", "2").replace("RR", "3")
+                .replace(QChar(0x00D1), "4");
+
+    }
     if (guess == "") return;
 
 
@@ -574,7 +581,7 @@ void UnscrambleGameTable::enteredGuess()
 
 
 
-    tableUi.textEditGuesses->append(guess);
+
 
     tableUi.lineEditSolution->clear();
 
@@ -690,13 +697,19 @@ void UnscrambleGameTable::populateSolutionsTable()
 
             QStringList theseSols = wordQuestions.at(i).solutions;
             QString alphagram = wordQuestions.at(i).alphagram;
+
             if (alphagram != "") // if alphagram exists.
             {
+                if (lexiconName == "FISE")
+                {
+                    alphagram = alphagram.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                .replace('4', QChar(0x00D1));
 
+                }
                 QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
                 tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
                 int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-                alphagramQuery.bindValue(0, alphagram);
+                alphagramQuery.bindValue(0, wordQuestions.at(i).alphagram);
                 alphagramQuery.exec();
 
                 QString words;
@@ -712,8 +725,8 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                     for (int j = 0; j < theseSols.size(); j++)
                     {
-
-                        wordQuery.bindValue(0, theseSols.at(j));
+                        QString thisWord = theseSols.at(j);
+                        wordQuery.bindValue(0, thisWord);
                         wordQuery.exec();
 
                         while (wordQuery.next())
@@ -723,15 +736,27 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                             uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
 
+                            QString frontHooks = wordQuery.value(2).toString();
+                            QString backHooks = wordQuery.value(3).toString();
+                            if (lexiconName == "FISE")
+                            {
+                                thisWord = thisWord.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                           .replace('4', QChar(0x00D1));
+                                frontHooks = frontHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                             .replace('4', QChar(0x00D1));
+                                backHooks = backHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                            .replace('4', QChar(0x00D1));
+                            }
 
                             uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4,
-                                                                      new QTableWidgetItem(wordQuery.value(3).toString()));
+                                                                      new QTableWidgetItem(backHooks));
                             uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2,
-                                                                      new QTableWidgetItem(wordQuery.value(2).toString()));
+                                                                      new QTableWidgetItem(frontHooks));
                             uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5,
                                                                       new QTableWidgetItem(wordQuery.value(0).toString()));
 
-                            QTableWidgetItem* wordItem = new QTableWidgetItem(theseSols.at(j) +
+
+                            QTableWidgetItem* wordItem = new QTableWidgetItem(thisWord +
                                                                               wordQuery.value(1).toString());
                             if (!rightAnswers.contains(theseSols.at(j)))
                             {
@@ -1072,7 +1097,9 @@ void UnscrambleGameTable::answeredCorrectly(quint8 seatNumber, quint8 space, qui
     rightAnswers.insert(answer);
     gfxScene.update();
     // maybe later color code by username
-
+    if (lexiconName == "FISE")
+        answer = answer.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+        .replace('4', QChar(0x00D1));
     addToPlayerList(seatNumber, answer);
 
 }

@@ -126,40 +126,52 @@ void Tile::setEdgePen(QPen &e)
 void Tile::setTileLetter(QString tileLetter)
 {
     this->tileLetter = tileLetter;
+        int fontSizeModifier = 2;
     if (currentLexicon == "FISE")
     {
         /* special symbols */
         if (tileLetter == "1")
+        {
             this->tileLetter = "CH";
+            fontSizeModifier = -6;
+        }
         if (tileLetter == "2")
+        {
             this->tileLetter = "LL";
+            fontSizeModifier = -6;
+        }
         if (tileLetter == "3")
+        {
             this->tileLetter = "RR";
+            fontSizeModifier = -6;
+        }
         if (tileLetter == "4")
+        {
             this->tileLetter = QChar(0x00D1); // capital N-tilde
-
+            fontSizeModifier = -3;
+        }
     }
 
-    int fontSize = 25;
+
 
     // find best font size
 
     QRect textBoundingRect;
     tileFont.setFamily("Courier New");
     tileFont.setWeight(100);
+    tileFont.setPixelSize(height+fontSizeModifier);
 
-
-    do
-    {
-        fontSize--;
-
-        tileFont.setPointSize(fontSize);
-        QFontMetrics fm(tileFont);
-        //	font.setStyleStrategy(QFont::PreferAntialias);
-    //    textBoundingRect = fm.boundingRect(QRect(0, 0, width, height), Qt::AlignCenter, this->tileLetter);
-        textBoundingRect = fm.boundingRect(this->tileLetter);
-        qDebug() << "Letter: " << this->tileLetter << textBoundingRect;
-    } while (textBoundingRect.width() >= width || textBoundingRect.height() >= (double)height*1.3);
+//    do
+//    {
+//        fontSize--;
+//
+//        tileFont.setPointSize(fontSize);
+//        QFontMetrics fm(tileFont);
+//        //	font.setStyleStrategy(QFont::PreferAntialias);
+//    //    textBoundingRect = fm.boundingRect(QRect(0, 0, width, height), Qt::AlignCenter, this->tileLetter);
+//        textBoundingRect = fm.boundingRect(this->tileLetter);
+//        qDebug() << "Letter: " << this->tileLetter << textBoundingRect;
+//    } while (textBoundingRect.width() >= width || textBoundingRect.height() >= (double)height*1.3);
 
 }
 
