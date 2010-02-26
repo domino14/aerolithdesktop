@@ -59,6 +59,8 @@
 #define CLIENT_TABLE_COMMAND '='
 #define CLIENT_HIGH_SCORE_REQUEST 'h'
 #define CLIENT_REGISTER 'r'
+#define CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD 'u'
+#define CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST 'q'
 // table subcommands
 #define CLIENT_TABLE_READY_BEGIN 'b'
 #define CLIENT_TABLE_CHAT 'c'
@@ -74,7 +76,7 @@
 // misc table subcommands, by game
 #define CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER 'w'
 #define CLIENT_TABLE_UNSCRAMBLEGAME_QUESTION_LIST 'q'
-
+#define CLIENT_TABLE_UNSCRAMBLEGAME_SAVE_REQUEST 'd'
 
 #define SERVER_PING '?'
 #define SERVER_HIGH_SCORES 'H'
@@ -118,6 +120,9 @@
 
 void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums);
 
+// misc defines by game
 
+// unscramble game
+#define REMOTE_LISTSIZE_LIMIT 10000
 
 #endif

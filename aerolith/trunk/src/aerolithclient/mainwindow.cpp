@@ -19,6 +19,7 @@
 #include "databasehandler.h"
 const quint16 MAGIC_NUMBER = 25349;
 
+
 bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
 {
     if (a.numCorrect == b.numCorrect) return (a.timeRemaining > b.timeRemaining);
@@ -1028,10 +1029,12 @@ void MainWindow::createUnscrambleGameTable()
             stream >> index;
             indexSet.insert(index);
         }
-        SavedUnscrambleGame thisSug;
-        thisSug.initialize(indexSet);
+        // TODO delete
+        //        SavedUnscrambleGame thisSug;
+        //        thisSug.initialize(indexSet);
+        //
+        //        gameBoardWidget->setCurrentSug(thisSug);
 
-        gameBoardWidget->setCurrentSug(thisSug);
         gameBoardWidget->setUnmodifiedListName(listname);
 
     }
@@ -1052,10 +1055,11 @@ void MainWindow::createUnscrambleGameTable()
             out << wl << low << high;
 
 
-            SavedUnscrambleGame thisSug;
-            thisSug.initializeWithIndexRange(low, high, wl);
-
-            gameBoardWidget->setCurrentSug(thisSug);
+            // TODO delete
+            //            SavedUnscrambleGame thisSug;
+            //            thisSug.initializeWithIndexRange(low, high, wl);
+            //
+            //            gameBoardWidget->setCurrentSug(thisSug);
             gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
 
         }
@@ -1073,10 +1077,11 @@ void MainWindow::createUnscrambleGameTable()
             low = 1;    // one
             high = dbHandler->getNumWordsByLength(currentLexicon, wl);
 
-            SavedUnscrambleGame thisSug;
-            thisSug.initializeWithIndexRange(low, high, wl);
-
-            gameBoardWidget->setCurrentSug(thisSug);
+            // TODO delete
+            //            SavedUnscrambleGame thisSug;
+            //            thisSug.initializeWithIndexRange(low, high, wl);
+            //
+            //            gameBoardWidget->setCurrentSug(thisSug);
             gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
 
         }
@@ -1095,47 +1100,52 @@ void MainWindow::createUnscrambleGameTable()
         if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = DatabaseHandler::MODE_CONTINUE;
         else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = DatabaseHandler::MODE_RESTART;
         else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = DatabaseHandler::MODE_FIRSTMISSED;
-        QByteArray savedGameBA = dbHandler->getSavedListArray(currentLexicon, si[0]->text());
 
-        SavedUnscrambleGame thisSug;
-        thisSug.populateFromByteArray(savedGameBA);
 
-        switch (mode)
-        {
-        case DatabaseHandler::MODE_RESTART:
-            thisSug.initialize(thisSug.origIndices);
 
-            qindices = thisSug.origIndices;
-            mindices.clear();
 
-            break;
+        //        QByteArray savedGameBA = dbHandler->getSavedListArray(currentLexicon, si[0]->text());
+        // TODO delete
+        //        SavedUnscrambleGame thisSug;
+        //        thisSug.populateFromByteArray(savedGameBA);
 
-        case DatabaseHandler::MODE_FIRSTMISSED:
-            qindices = thisSug.firstMissed;
-            mindices.clear();
-
-            thisSug.curQuizList = thisSug.firstMissed;
-            thisSug.curMissedList.clear();
-            break;
-
-        case DatabaseHandler::MODE_CONTINUE:
-            if (thisSug.brandNew)
-            {
-                qindices = thisSug.origIndices;
-                mindices.clear();
-            }
-            else
-            {
-                qindices = thisSug.curQuizList;
-                mindices = thisSug.curMissedList;
-            }
-            break;
-        }
-
-        out << si[0]->text().left(32);
-        out << qindices << mindices;
-        thisSug.writeToDebug();
-        gameBoardWidget->setCurrentSug(thisSug);
+        // TODO delete , all of these should be moved to server side.
+        //        switch (mode)
+        //        {
+        //        case DatabaseHandler::MODE_RESTART:
+        //            thisSug.initialize(thisSug.origIndices);
+        //
+        //            qindices = thisSug.origIndices;
+        //            mindices.clear();
+        //
+        //            break;
+        //
+        //        case DatabaseHandler::MODE_FIRSTMISSED:
+        //            qindices = thisSug.firstMissed;
+        //            mindices.clear();
+        //
+        //            thisSug.curQuizList = thisSug.firstMissed;
+        //            thisSug.curMissedList.clear();
+        //            break;
+        //
+        //        case DatabaseHandler::MODE_CONTINUE:
+        //            if (thisSug.brandNew)
+        //            {
+        //                qindices = thisSug.origIndices;
+        //                mindices.clear();
+        //            }
+        //            else
+        //            {
+        //                qindices = thisSug.curQuizList;
+        //                mindices = thisSug.curMissedList;
+        //            }
+        //            break;
+        //        }
+        //
+        //        out << si[0]->text().left(32);
+        //        out << qindices << mindices;
+        //        thisSug.writeToDebug();
+        //        gameBoardWidget->setCurrentSug(thisSug);
         gameBoardWidget->setUnmodifiedListName(si[0]->text());
     }
 
@@ -1945,7 +1955,7 @@ void MainWindow::on_pushButtonImportList_clicked()
         }
     }
 
-    QSet <quint32> probIndices;
+    QList <quint32> probIndices;
 
     bool success = dbHandler->getProbIndices(words, currentLexicon, probIndices);
 
@@ -1955,38 +1965,69 @@ void MainWindow::on_pushButtonImportList_clicked()
         return;
     }
 
-    if (probIndices.size() > 500)
+    if (probIndices.size() > REMOTE_LISTSIZE_LIMIT)
     {
-        QMessageBox::warning(this, "List too big", "Your list had more than 500 alphagrams. You can only quiz on 500 "
-                             "at a time. The list has been split up into several parts; you can see these below.");
-    }
-
-    success = dbHandler->saveNewLists(currentLexicon, listName, probIndices);
-    if (!success)
-    {
-        QMessageBox::critical(this, "Error", "Was unable to connect to userlists database! Please inform "
-                              "delsolar@gmail.com about this.");
+        QMessageBox::warning(this, "Error", "This list contains more than " + QString::number(REMOTE_LISTSIZE_LIMIT)
+                             + " alphagrams. If you would like to upload "
+                             "a very large list please do so locally.");
         return;
+
     }
-    repopulateMyListsTable();
+    // split up list into chunks and send one at a time.
+    do
+    {
+
+        writeHeaderData();
+        out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+        out << (quint8)1;   // this means that this list is CONTINUED (i.e. tell the server to wait for more of these packets)
+        out << probIndices.mid(0, 2000);
+        fixHeaderLength();
+        commsSocket->write(block);
+        probIndices = probIndices.mid(2000);
+    } while (probIndices.size() > 2000);
+
+    writeHeaderData();
+    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+    out << (quint8)0;   // this means that this list is DONE
+    out << probIndices;
+    fixHeaderLength();
+    commsSocket->write(block);
+
+    //    success = dbHandler->saveNewLists(currentLexicon, listName, probIndices);
+    //    if (!success)
+    //    {
+    //        QMessageBox::critical(this, "Error", "Was unable to connect to userlists database! Please inform "
+    //                              "delsolar@gmail.com about this.");
+    //        return;
+    //    }
+
+    writeHeaderData();
+    out << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST;
+    fixHeaderLength();
+
+    commsSocket->write(block);
+
+  //  repopulateMyListsTable();
 
 }
 
 void MainWindow::repopulateMyListsTable()
 {
-    uiTable.tableWidgetMyLists->clearContents();
-    uiTable.tableWidgetMyLists->setRowCount(0);
-    QList <QStringList> myListsTableLabels = dbHandler->getListLabels(currentLexicon);
 
-    for (int i = 0; i < myListsTableLabels.size(); i++)
-    {
 
-        uiTable.tableWidgetMyLists->insertRow(0);
-        for (int j = 0; j < myListsTableLabels.at(i).size(); j++)
-            uiTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(myListsTableLabels[i][j]));
-
-    }
-    uiTable.tableWidgetMyLists->resizeColumnsToContents();
+    //    uiTable.tableWidgetMyLists->clearContents();
+    //    uiTable.tableWidgetMyLists->setRowCount(0);
+    //    QList <QStringList> myListsTableLabels = dbHandler->getListLabels(currentLexicon);
+    //
+    //    for (int i = 0; i < myListsTableLabels.size(); i++)
+    //    {
+    //
+    //        uiTable.tableWidgetMyLists->insertRow(0);
+    //        for (int j = 0; j < myListsTableLabels.at(i).size(); j++)
+    //            uiTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(myListsTableLabels[i][j]));
+    //
+    //    }
+    //    uiTable.tableWidgetMyLists->resizeColumnsToContents();
 }
 
 void MainWindow::showInviteDialog()

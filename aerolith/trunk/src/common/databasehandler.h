@@ -99,17 +99,18 @@ public:
     QStringList availableDatabases;
     QMap<QString, LexiconInfo> lexiconMap;
     int getNumWordsByLength(QString lexiconName, int length);
-    bool getProbIndices(QStringList, QString, QSet<quint32>&);
-    QByteArray getSavedListArray(QString, QString);
-    bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
-    QList <QStringList> getListLabels(QString lexiconName);
-    void deleteUserList(QString lexiconName, QString listName);
+    bool getProbIndices(QStringList, QString, QList<quint32>&);
+    QString getSavedListArrayPath(QString, QString, QString);
+         bool saveSingleList(QString lexiconName, QString listName, QString username, QSet <quint32>& probIndices);
+  //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
+    QList <QStringList> getListLabels(QString lexiconName, QString username);
+    void deleteUserList(QString lexiconName, QString listName, QString username);
 
-    void saveGameBA(QByteArray, QString, QString);
+    void saveGameBA(QByteArray, QString, QString, QString);
 
 
 private:
-     bool saveSingleList(QString lexiconName, QString listName, QSet <quint32>& probIndices);
+
     QSqlDatabase userlistsDb;
     enum SqlListMakerQueryTypes
     {

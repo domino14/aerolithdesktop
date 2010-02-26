@@ -95,7 +95,7 @@ MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler
         QSqlQuery query(QSqlDatabase::database("usersDB"));
         query.exec("CREATE TABLE IF NOT EXISTS users(username VARCHAR(16), password VARCHAR(16), avatar INTEGER, "
                    "profile VARCHAR(1000), registeredIP VARCHAR(16), lastIP VARCHAR(16), lastLoggedOut VARCHAR(32), email VARCHAR(40), "
-                   "points INTEGER, picture BLOB, playerID INTEGER, coins INTEGER, saveData BLOB)");
+                   "points INTEGER, picture BLOB, playerID INTEGER, coins INTEGER)");
         query.exec("CREATE UNIQUE INDEX IF NOT EXISTS usernameIndex on users(username)");
         query.exec("CREATE TABLE IF NOT EXISTS playerID_table(playerID INTEGER)");
         query.exec("INSERT INTO playerID_table(playerID) VALUES(1)");

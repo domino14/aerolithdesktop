@@ -210,13 +210,13 @@ void UnscrambleGameTable::setPrivacy(bool p)
     else
         tableUi.comboBoxTablePrivacy->setCurrentIndex(0);
 }
-
+/* TODO DELETE
 void UnscrambleGameTable::setCurrentSug(SavedUnscrambleGame sug)
 {
     currentSug = sug;
     savedGameModified = false;
 }
-
+*/
 void UnscrambleGameTable::setSavingAllowed(bool a)
 {
     savingAllowed = a;
@@ -786,25 +786,27 @@ void UnscrambleGameTable::populateSolutionsTable()
 
                     tableAlphagramItem->setFont(alphFont);
 
-                    if (savingAllowed)
-                    {
-                        if (currentSug.brandNew)
-                        {
-                            currentSug.brandNew = false;
-                            currentSug.curQuizList = currentSug.origIndices;
-                        }
-                        qDebug() << "Wrong asnwer to " << wordQuestions.at(i).probIndex;
-                        qDebug() << "Quiz list:" << currentSug.curQuizList.size() << currentSug.curQuizList;
-                        Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(i).probIndex));
-                        currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
-                        currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
-                        if (!currentSug.seenWholeList)
-                        {
-                            // also put it here if we haven't seen the whole list.
-                            currentSug.firstMissed.insert(wordQuestions.at(i).probIndex);
-                        }
-                        savedGameModified = true;
-                    }
+//                    if (savingAllowed)
+//                    {
+//                        if (currentSug.brandNew)
+//                        {
+//                            currentSug.brandNew = false;
+//                            currentSug.curQuizList = currentSug.origIndices;
+//                        }
+//                        qDebug() << "Wrong asnwer to " << wordQuestions.at(i).probIndex;
+//                        qDebug() << "Quiz list:" << currentSug.curQuizList.size() << currentSug.curQuizList;
+//                        Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(i).probIndex));
+//                        currentSug.curQuizList.remove(wordQuestions.at(i).probIndex);
+//                        currentSug.curMissedList.insert(wordQuestions.at(i).probIndex);
+//                        if (!currentSug.seenWholeList)
+//                        {
+//                            // also put it here if we haven't seen the whole list.
+//                            currentSug.firstMissed.insert(wordQuestions.at(i).probIndex);
+//                        }
+//                        savedGameModified = true;
+//                    }
+                    // TODO delete , move to server side!
+
                 }
 
 
@@ -1022,29 +1024,33 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
 
 void UnscrambleGameTable::mainQuizDone()
 {
-    if (savingAllowed)
-    {
-        /* we are finally done with the main quiz */
-        if (!currentSug.seenWholeList)
-        {
-            currentSug.seenWholeList = true;
-        }
-
-        currentSug.curQuizList = currentSug.curMissedList;
-        currentSug.curMissedList.clear();
-        savedGameModified = true;
-    }
+//    if (savingAllowed)
+//    {
+//        /* we are finally done with the main quiz */
+//        if (!currentSug.seenWholeList)
+//        {
+//            currentSug.seenWholeList = true;
+//        }
+//
+//        currentSug.curQuizList = currentSug.curMissedList;
+//        currentSug.curMissedList.clear();
+//        savedGameModified = true;
+//    }
+    // TODO delete , move to server!
 }
 
 void UnscrambleGameTable::fullQuizDone()
 {
     // we are done with the entire quiz
-    if (savingAllowed)
-    {
-        Q_ASSERT(currentSug.curMissedList.isEmpty());
-        Q_ASSERT(currentSug.curQuizList.isEmpty());
+//    if (savingAllowed)
+//    {
+//        Q_ASSERT(currentSug.curMissedList.isEmpty());
+//        Q_ASSERT(currentSug.curQuizList.isEmpty());
+//
+//    }
 
-    }
+    // TODO delete, move to server!
+
 }
 
 
@@ -1074,21 +1080,22 @@ void UnscrambleGameTable::answeredCorrectly(quint8 seatNumber, quint8 space, qui
 
         wordRectangles.at(space)->setText("");
 
-        if (savingAllowed)
-        {
-            if (currentSug.brandNew)
-            {
-                currentSug.brandNew = false;
-                currentSug.curQuizList = currentSug.origIndices;
-            }
-            qDebug() << "Answered correctly" << wordQuestions.at(space).probIndex;
-            qDebug() << currentSug.curQuizList.size() << currentSug.curQuizList;
-            qDebug() << currentSug.curMissedList.size() << currentSug.curMissedList;
-
-            Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
-            currentSug.curQuizList.remove(wordQuestions.at(space).probIndex);
-            savedGameModified = true;
-        }
+        // TODO delete , move to server!
+//        if (savingAllowed)
+//        {
+//            if (currentSug.brandNew)
+//            {
+//                currentSug.brandNew = false;
+//                currentSug.curQuizList = currentSug.origIndices;
+//            }
+//            qDebug() << "Answered correctly" << wordQuestions.at(space).probIndex;
+//            qDebug() << currentSug.curQuizList.size() << currentSug.curQuizList;
+//            qDebug() << currentSug.curMissedList.size() << currentSug.curMissedList;
+//
+//            Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
+//            currentSug.curQuizList.remove(wordQuestions.at(space).probIndex);
+//            savedGameModified = true;
+//        }
     }
 
     QString answer = wordQuestions[space].solutions.at(specificAnswer);
@@ -1188,12 +1195,13 @@ void UnscrambleGameTable::saveGame()
 {
     if (savingAllowed)
     {
-        QByteArray ba = currentSug.toByteArray();
-        emit saveCurrentGameBA(ba, lexiconName, unmodifiedListName);
-        tableUi.textEditChat->append("<font color=green>Word list was saved!</font>");
-        tableUi.textEditChat->append("<font color=green>To continue this word list in the future, make sure "
-                                     "you select ""My Lists"" when creating a new table!</font>");
-        savedGameModified = false;
+        // TODO delete , move to server!
+//        QByteArray ba = currentSug.toByteArray();
+//        emit saveCurrentGameBA(ba, lexiconName, unmodifiedListName);
+//        tableUi.textEditChat->append("<font color=green>Word list was saved!</font>");
+//        tableUi.textEditChat->append("<font color=green>To continue this word list in the future, make sure "
+//                                     "you select ""My Lists"" when creating a new table!</font>");
+//        savedGameModified = false;
     }
     else
     {

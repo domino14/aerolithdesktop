@@ -61,7 +61,7 @@ public:
 
     void setReadyIndicator(quint8 seat);
     void clearReadyIndicators();
-    void setCurrentSug(SavedUnscrambleGame sug);
+//    void setCurrentSug(SavedUnscrambleGame sug); // TODO delete
     void setSavingAllowed(bool);
     void setUnmodifiedListName(QString u)
     {
@@ -72,7 +72,7 @@ public:
 
 private:
     QString tableHost;
-    SavedUnscrambleGame currentSug;
+  //  SavedUnscrambleGame currentSug; // TODO delete
     bool savingAllowed;
     QGraphicsScene gfxScene;
     Ui::tableForm tableUi;
