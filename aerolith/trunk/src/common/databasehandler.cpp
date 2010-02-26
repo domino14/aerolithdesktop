@@ -20,6 +20,7 @@
 #include "databasehandler.h"
 #include <QTime>
 
+const QString userlistPathPrefix = "~/.aerolith/userlists/";
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
     return a1.combinations > a2.combinations;
@@ -136,7 +137,7 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
 
 
 
-    if (clientCall)
+    if (!clientCall)
     {
         dir = QDir::home();
         if (!dir.exists(".aerolith"))
@@ -151,9 +152,18 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
 
 
         QSqlQuery userListsQuery(userlistsDb);
-        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlists(lexiconName VARCHAR(15), listName VARCHAR(64), "
-                            "lastdateSaved VARCHAR(64), listdata BLOB)");
-        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(listName, lexiconName)");
+        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16), listName VARCHAR(64), "
+                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), wordsInList INTEGER");
+
+        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(username, listName, lexiconName)");
+        // the list itself is saved in a file:
+        // ~/.aerolith/userlists/username/lexiconName/listName
+
+
+        //        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlists(lexiconName VARCHAR(15), listName VARCHAR(64), "
+        //                            "lastdateSaved VARCHAR(64), listdata BLOB)");
+        //        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(listName, lexiconName)");
+
 
     }
 }
@@ -679,7 +689,7 @@ int DatabaseHandler::getNumWordsByLength(QString lexiconName, int length)
     else return 0;
 }
 
-bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QSet<quint32>& probIndices)
+bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QList<quint32>& probIndices)
 {
     if (!lexiconMap.value(lexiconName).db.isOpen()) return false;
 
@@ -700,7 +710,7 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QSe
 
             while (query.next())
             {
-                probIndices.insert((quint32) query.value(0).toInt());
+                probIndices.append((quint32) query.value(0).toInt());
             }
             alphaset.insert(alpha);
         }
@@ -708,212 +718,129 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QSe
     return true;
 }
 
-QByteArray DatabaseHandler::getSavedListArray(QString lexiconName, QString listName)
-{
+QString DatabaseHandler::getSavedListArrayPath(QString lexiconName, QString listName, QString username)
+{     /*   userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16), listName VARCHAR(64), "
+                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), wordsInList INTEGER");
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("SELECT listdata from userlists where lexiconName = ? and listName = ?");
+    userListsQuery.prepare("SELECT listdata from userlistInfo where lexiconName = ? and listName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
+    userListsQuery.bindValue(2, username);
     userListsQuery.exec();
 
     QByteArray ret;
     while (userListsQuery.next())
-        ret = userListsQuery.value(0).toByteArray();
+        ret = userListsQuery.value(0).toByteArray();*/
+
+    QString ret;
+    ret = userlistPathPrefix + username + "/" + lexiconName + "/" + listName;
+
 
     return ret;
 }
 
-void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list)
+void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QString username)
 {
-    // first see if this list exists
+    // assume this list exists
 
     QSqlQuery userListsQuery(userlistsDb);
+    //
+    //    userListsQuery.prepare("SELECT count(*) from userlistInfo WHERE lexiconName = ? and listName = ? and username = ?");
+    //    userListsQuery.bindValue(0, lex);
+    //    userListsQuery.bindValue(1, list);
+    //    userListsQuery.bindValue(2, username);
+    //
+    //    userListsQuery.exec();
+    //
+    //    bool update = false;
+    //
+    //
+    //    while (userListsQuery.next())
+    //    {
+    //        int cnt = userListsQuery.value(0).toInt();
+    //        if (cnt == 1)
+    //        {
+    //            update = true;
+    //        }
+    //        else if (cnt == 0)
+    //        {
+    //            update = false; // doesn't exist
+    //        }
+    //        else
+    //        {
+    //            qCritical() << "SAVE GAME ERROR";
+    //        }
+    //
+    //    }
+    //
+    //
+    //    if (update)
+    //    {
+    userListsQuery.prepare("UPDATE userlists SET lastDateSaved = ? "
+                           "WHERE lexiconName = ? and listName = ? and username = ?");
+    //    }
+    //    else
+    //    {
+    //        userListsQuery.prepare("INSERT into userlists(listData, lastDateSaved, lexiconName, listName) VALUES(?,?,?,?)");
+    //    }
 
-    userListsQuery.prepare("SELECT listName from userlists WHERE lexiconName = ? and listName = ?");
-    userListsQuery.bindValue(0, lex);
-    userListsQuery.bindValue(1, list);
+    userListsQuery.bindValue(0, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+    userListsQuery.bindValue(1, lex);
+    userListsQuery.bindValue(2, list);
+    userListsQuery.bindValue(3, username);
 
     userListsQuery.exec();
 
-    bool update = false;
+    QFile f(userlistPathPrefix + username + "/" + lex + "/" + list);
+    f.open(QIODevice::WriteOnly);
+    f.write(ba);
+    f.close();
 
-    if (userListsQuery.next()) update = true;
-    else update = false;
 
-
-    if (update)
-    {
-        userListsQuery.prepare("UPDATE userlists SET listdata = ?,  lastDateSaved = ? "
-                                "WHERE lexiconName = ? and listName = ?");
-    }
-    else
-    {
-        userListsQuery.prepare("INSERT into userlists(listData, lastDateSaved, lexiconName, listName) VALUES(?,?,?,?)");
-    }
-
-    userListsQuery.bindValue(0, ba);
-    userListsQuery.bindValue(1, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
-    userListsQuery.bindValue(2, lex);
-    userListsQuery.bindValue(3, list);
-
-    userListsQuery.exec();
 }
 
-//bool DatabaseHandler::getProbIndicesFromSavedList(QString lexiconName, QString listName,
-//                                                QList<quint32>& qindices, QList <quint32>& mindices,
-//                                                UserListQuizModes mode, bool& seenWholeList)
+//bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices)
 //{
-//    QSqlQuery userListsQuery(userlistsDb);
-//    userListsQuery.prepare("SELECT listdata from userlists where lexiconName = ? and listName = ?");
-//    userListsQuery.bindValue(0, lexiconName);
-//    userListsQuery.bindValue(1, listName);
-//    userListsQuery.exec();
-//    seenWholeList = false;
-//    while (userListsQuery.next())
+//    if (probIndices.size() <= 500 && probIndices.size() > 0)
 //    {
-//        QByteArray ba = userListsQuery.value(0).toByteArray();
-//        QDataStream baReader(ba);
+//        bool success = saveSingleList(lexiconName, listName, probIndices);
+//        if (!success) return false;
+//    }
+//    else
+//    {
 //
-//        quint16 numAlphas;
-//        baReader >> numAlphas;
+//        bool pIndicesIsEmpty = probIndices.isEmpty();
 //
-//        for (int i = 0; i < numAlphas; i++)
+//        QList <quint32> probIndicesList = probIndices.values();
+//
+//        int listNum = 1;
+//        while (!pIndicesIsEmpty)
 //        {
-//            quint32 index;
-//            baReader >> index;
-//            qindices << index;
+//            QSet <quint32> indices;
 //
-//        }
-//
-//        quint16 sizeFMI;
-//        baReader >> sizeFMI;
-//        for (int i = 0; i < sizeFMI; i++)
-//        {
-//            quint32 index;
-//            baReader >> index;
-//            mindices << index;
-//        }
-//
-//        switch (mode)
-//        {
-//            case MODE_RESTART:
-//                mindices.clear();
-//                // no change to qindices
-//            break;
-//            case MODE_FIRSTMISSED:
-//                qindices = mindices;
-//                mindices.clear();
-//            break;
-//            case MODE_CONTINUE:
+//            for (int i = 0; i < 500; i++)
+//            {
+//                if (!probIndicesList.isEmpty())
+//                    indices.insert(probIndicesList.takeFirst());
+//                else
 //                {
-//
-//                    quint16 progress;
-//                    baReader >> progress;
-//
-//                    if (progress == 0)
-//                    {
-//                        // quiz has never been started; easiest case.
-//                       mindices.clear();
-//                    }
-//                    else if (progress == numAlphas)
-//                    {
-//                        // list has been gone through once already. (at least)
-//                        // there is more data after 'progress'
-//                        seenWholeList = true;
-//                        quint16 sizeCurrentQL;
-//                        baReader >> sizeCurrentQL;
-//                        qindices.clear();
-//                        mindices.clear();
-//
-//                        for (int i = 0; i < sizeCurrentQL; i++)
-//                        {
-//                            quint32 index;
-//                            baReader >> index;
-//                            qindices << index;
-//
-//                        }
-//
-//                        quint16 sizeMissedList;
-//                        baReader >> sizeMissedList;
-//
-//                        for (int i = 0; i < sizeMissedList; i++)
-//                        {
-//                            quint32 index;
-//                            baReader >> index;
-//                            mindices << index;
-//                        }
-//
-//                    }
-//                    else
-//                    {
-//                        // progress is somewhere in between.
-//                        qindices.clear();
-//                        mindices.clear();
-//
-//                        quint16 sizeMissedList;
-//                        baReader >> sizeMissedList;
-//
-//                        for (int i = 0; i < sizeMissedList; i++)
-//                        {
-//                            quint32 index;
-//                            baReader >> index;
-//                            mindices << index;
-//                        }
-//
-//                        qindices = qindices.mid(progress);
-//
-//                    }
-//
+//                    pIndicesIsEmpty = true;
+//                    break;
 //                }
-//            break;
+//            }
+//            if (indices.size() > 0)
+//            {
+//                bool success = saveSingleList(lexiconName, listName + "_" + QString::number(listNum), indices);
+//                listNum++;
+//                if (!success) return false;
+//            }
 //
 //        }
 //    }
 //    return true;
 //}
 
-bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices)
-{
-    if (probIndices.size() <= 500 && probIndices.size() > 0)
-    {
-        bool success = saveSingleList(lexiconName, listName, probIndices);
-        if (!success) return false;
-    }
-    else
-    {
-
-        bool pIndicesIsEmpty = probIndices.isEmpty();
-
-        QList <quint32> probIndicesList = probIndices.values();
-
-        int listNum = 1;
-        while (!pIndicesIsEmpty)
-        {
-            QSet <quint32> indices;
-
-            for (int i = 0; i < 500; i++)
-            {
-                if (!probIndicesList.isEmpty())
-                    indices.insert(probIndicesList.takeFirst());
-                else
-                {
-                    pIndicesIsEmpty = true;
-                    break;
-                }
-            }
-            if (indices.size() > 0)
-            {
-                bool success = saveSingleList(lexiconName, listName + "_" + QString::number(listNum), indices);
-                listNum++;
-                if (!success) return false;
-            }
-
-        }
-    }
-    return true;
-}
-
-bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QSet <quint32>& probIndices)
+bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QSet <quint32>& probIndices)
 {
     if (!userlistsDb.isOpen())
     {
@@ -921,37 +848,52 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QSet
     }
 
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("INSERT INTO userlists(lexiconName, listName, lastdateSaved, listdata) VALUES(?, ?, ?, ?)");
+    userListsQuery.prepare("INSERT INTO userlistInfo(lexiconName, listName, username, lastdateSaved, wordsInList) "
+                           "VALUES(?, ?, ?, ?, ?)");
 
     SavedUnscrambleGame sug;
     sug.initialize(probIndices);
 
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
-    userListsQuery.bindValue(2, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
-    userListsQuery.bindValue(3, sug.toByteArray());
+    userListsQuery.bindValue(2, username);
+    userListsQuery.bindValue(3, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+    userListsQuery.bindValue(4, probIndices.size());
     userListsQuery.exec();
+
+    QFile f(userlistPathPrefix + username + "/" + lexiconName + "/" + listName);
+    f.open(QIODevice::WriteOnly);
+    f.write(sug.toByteArray());
+    f.close();
 
     return true;
 }
 
 
-QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName)
+QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName, QString username)
 {
     QList<QStringList> retList;
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("SELECT listName, lastdateSaved, listdata from userlists where lexiconName = ?");
+    userListsQuery.prepare("SELECT listName, lastdateSaved from userlistInfo where "
+                           "lexiconName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.bindValue(1, username);
     userListsQuery.exec();
 
+    QFile f;
     while (userListsQuery.next())
     {
         SavedUnscrambleGame sug;
 
         QString listName = userListsQuery.value(0).toString();
         QString lastdateSaved = userListsQuery.value(1).toString();
-        QByteArray ba = userListsQuery.value(2).toByteArray();
-        sug.populateFromByteArray(userListsQuery.value(2).toByteArray());
+
+        f.setFileName(userlistPathPrefix + username + "/" + lexiconName + "/" + listName);
+        f.open(QIODevice::ReadOnly);
+        QByteArray ba = f.readAll();
+        f.close();
+
+        sug.populateFromByteArray(ba);
 
         QString totalQs, currentQs, firstMissedQs;
         totalQs = QString::number(sug.origIndices.size());
@@ -978,13 +920,18 @@ QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName)
     return retList;
 }
 
-void DatabaseHandler::deleteUserList(QString lexiconName, QString listName)
+void DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QString username)
 {
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("DELETE from userlists where lexiconName = ? and listName = ?");
+    userListsQuery.prepare("DELETE from userlistInfo where lexiconName = ? and listName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
+    userListsQuery.bindValue(2, username);
     userListsQuery.exec();
+
+    QString filename = userlistPathPrefix + username + "/" + lexiconName + "/" + listName;
+
+    QFile::remove(filename);
 
 }
 

@@ -287,7 +287,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QGroupBox" name="groupBoxProbability">
@@ -599,6 +599,33 @@
      </property>
      <property name="text">
       <string>* indicates all words in this list have been quizzed on at least once.</string>
+     </property>
+    </widget>
+    <widget class="QProgressBar" name="progressBarUsedListSpace">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>15</y>
+       <width>118</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>10</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Used space
+on server</string>
      </property>
     </widget>
    </widget>

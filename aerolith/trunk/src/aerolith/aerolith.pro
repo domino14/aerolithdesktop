@@ -57,7 +57,6 @@ HEADERS += mainwindow.h \
     GameTable.h \
     BonusGame.h \
     databasehandler.h \
-    ../aerolithclient/SavedUnscrambleGame.h \
     ../aerolithclient/wordfilter.h \
     ../aerolithclient/roomglwidget.h
 RESOURCES = ../../client.qrc
@@ -69,7 +68,8 @@ HEADERS += mainserver.h \
     ClientSocket.h \
     ClientWriter.h \
     serverthread.h \
-    dawg.h
+    dawg.h \
+    SavedUnscrambleGame.h
 SOURCES += mainserver.cpp \
     table.cpp \
     TableGame.cpp \
