@@ -53,10 +53,17 @@ public:
     };
 
 
+    struct UnscrambleGameData
+    {
+        QList <quint32> uploadedList;
+        QString uploadedListLexicon;
+        quint32 uploadedListSize;
+        QString uploadedListName;
+    };
 
     ConnectionData connData;
     PlayerData playerData;
-
+    UnscrambleGameData ugData;
 
 
 

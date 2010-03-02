@@ -387,6 +387,16 @@ void MainServer::receiveMessage()
         case CLIENT_REGISTER:
             registerNewName(socket);
             break;
+       /* game specific global commands */
+        case CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD:
+            saveRemoteList(socket);
+            break;
+        case CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST:
+
+            break;
+        case CLIENT_UNSCRAMBLEGAME_DELETE_LIST:
+
+            break;
 
 
         default:
@@ -399,6 +409,60 @@ void MainServer::receiveMessage()
     }
 }
 
+void MainServer::saveRemoteList(ClientSocket* socket)
+{
+    bool saveList = false;
+    quint8 saveCode;
+    socket->connData.in >> saveCode;
+    switch (saveCode)
+    {        
+        case 0:
+        case 1:
+        // list is continued
+        {
+            QList <quint32> listPiece;
+            socket->connData.in >> listPiece;
+            socket->ugData.uploadedList.append(listPiece);
+
+            if (socket->ugData.uploadedList.size() > REMOTE_LISTSIZE_LIMIT)
+            {
+                socket->disconnectFromHost();
+                return;
+            }
+            if (saveCode == 0)
+            {
+                saveList = true;
+            }
+        }
+        break;
+
+        case 2:
+        // list info/start
+            socket->connData.in >> socket->ugData.uploadedListSize;
+            socket->connData.in >> socket->ugData.uploadedListLexicon;
+            socket->connData.in >> socket->ugData.uploadedListName;
+            socket->ugData.uploadedList.clear();
+
+        break;
+
+    }
+
+    if (saveList)
+    {
+        /* actually save the list to the database */
+        bool retVal = dbHandler->saveSingleList(socket->ugData.uploadedListLexicon,
+                                  socket->ugData.uploadedListName.mid(0, 64),
+                                  socket->connData.userName.toLower(),
+                                  socket->ugData.uploadedList);
+
+
+        if (!retVal)
+            writeToClient(socket, "There was a list creation error. "
+                          "Make sure you don't have two lists with the same name.",
+                          S_ERROR);
+
+    }
+}
 
 void MainServer::sendHighScores(ClientSocket* socket)
 {

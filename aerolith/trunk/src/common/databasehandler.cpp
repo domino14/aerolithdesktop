@@ -20,7 +20,7 @@
 #include "databasehandler.h"
 #include <QTime>
 
-const QString userlistPathPrefix = "~/.aerolith/userlists/";
+//const QString userlistPathPrefix = "~/.aerolith/userlists/";
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
     return a1.combinations > a2.combinations;
@@ -150,12 +150,12 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
         userlistsDb.setDatabaseName(dir.absolutePath() + "/userlists.db");
         userlistsDb.open();
 
-
+        qDebug() << "Creating userlistinfo table (if not exists)";
         QSqlQuery userListsQuery(userlistsDb);
         userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16), listName VARCHAR(64), "
-                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), wordsInList INTEGER");
+                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), alphasInList INTEGER)");
 
-        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(username, listName, lexiconName)");
+        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlistInfo(username, listName, lexiconName)");
         // the list itself is saved in a file:
         // ~/.aerolith/userlists/username/lexiconName/listName
 
@@ -720,7 +720,7 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QLi
 
 QString DatabaseHandler::getSavedListArrayPath(QString lexiconName, QString listName, QString username)
 {     /*   userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16), listName VARCHAR(64), "
-                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), wordsInList INTEGER");
+                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), alphasInList INTEGER");
     QSqlQuery userListsQuery(userlistsDb);
     userListsQuery.prepare("SELECT listdata from userlistInfo where lexiconName = ? and listName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
@@ -733,7 +733,7 @@ QString DatabaseHandler::getSavedListArrayPath(QString lexiconName, QString list
         ret = userListsQuery.value(0).toByteArray();*/
 
     QString ret;
-    ret = userlistPathPrefix + username + "/" + lexiconName + "/" + listName;
+   // ret = userlistPathPrefix + username + "/" + lexiconName + "/" + listName;
 
 
     return ret;
@@ -743,6 +743,8 @@ void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QStri
 {
     // assume this list exists
 
+    username = username.toLower();
+    list = list.toLower();
     QSqlQuery userListsQuery(userlistsDb);
     //
     //    userListsQuery.prepare("SELECT count(*) from userlistInfo WHERE lexiconName = ? and listName = ? and username = ?");
@@ -776,7 +778,7 @@ void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QStri
     //
     //    if (update)
     //    {
-    userListsQuery.prepare("UPDATE userlists SET lastDateSaved = ? "
+    userListsQuery.prepare("UPDATE userlistInfo SET lastDateSaved = ? "
                            "WHERE lexiconName = ? and listName = ? and username = ?");
     //    }
     //    else
@@ -791,7 +793,13 @@ void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QStri
 
     userListsQuery.exec();
 
-    QFile f(userlistPathPrefix + username + "/" + lex + "/" + list);
+    QDir dir = QDir::home();
+    dir.cd(".aerolith");
+    dir.cd("userlists");
+    dir.cd(username);
+    dir.cd(lex);
+    QFile f(dir.filePath(list));
+
     f.open(QIODevice::WriteOnly);
     f.write(ba);
     f.close();
@@ -840,15 +848,20 @@ void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QStri
 //    return true;
 //}
 
-bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QSet <quint32>& probIndices)
+bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices)
 {
+    username = username.toLower();
+    listName = listName.toLower();
+
+
+    qDebug() << "saveSingleList called";
     if (!userlistsDb.isOpen())
     {
         return false;
     }
 
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("INSERT INTO userlistInfo(lexiconName, listName, username, lastdateSaved, wordsInList) "
+    userListsQuery.prepare("INSERT INTO userlistInfo(lexiconName, listName, username, lastdateSaved, alphasInList) "
                            "VALUES(?, ?, ?, ?, ?)");
 
     SavedUnscrambleGame sug;
@@ -859,9 +872,28 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(2, username);
     userListsQuery.bindValue(3, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
     userListsQuery.bindValue(4, probIndices.size());
-    userListsQuery.exec();
+    bool retVal = userListsQuery.exec();
 
-    QFile f(userlistPathPrefix + username + "/" + lexiconName + "/" + listName);
+    if (!retVal) return false;
+
+    QDir dir = QDir::home();
+    dir.cd(".aerolith");
+    dir.cd("userlists");
+    // assume the previous two directories exist, because they were created when the server started.
+
+    if (!dir.exists(username))
+    {
+        dir.mkdir(username);
+    }
+    dir.cd(username);
+
+    if (!dir.exists(lexiconName))
+    {
+        dir.mkdir(lexiconName);
+    }
+    dir.cd(lexiconName);
+
+    QFile f(dir.filePath(listName));
     f.open(QIODevice::WriteOnly);
     f.write(sug.toByteArray());
     f.close();
@@ -880,6 +912,7 @@ QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName, QString u
     userListsQuery.bindValue(1, username);
     userListsQuery.exec();
 
+    username = username.toLower();
     QFile f;
     while (userListsQuery.next())
     {
@@ -888,7 +921,14 @@ QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName, QString u
         QString listName = userListsQuery.value(0).toString();
         QString lastdateSaved = userListsQuery.value(1).toString();
 
-        f.setFileName(userlistPathPrefix + username + "/" + lexiconName + "/" + listName);
+
+        QDir dir = QDir::home();
+        dir.cd(".aerolith");
+        dir.cd("userlists");
+        dir.cd(username);
+        dir.cd(lexiconName);
+
+        f.setFileName(dir.filePath(listName));
         f.open(QIODevice::ReadOnly);
         QByteArray ba = f.readAll();
         f.close();
@@ -929,9 +969,15 @@ void DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(2, username);
     userListsQuery.exec();
 
-    QString filename = userlistPathPrefix + username + "/" + lexiconName + "/" + listName;
+    username = username.toLower();
+    listName = listName.toLower();
+    QDir dir = QDir::home();
+    dir.cd(".aerolith");
+    dir.cd("userlists");
+    dir.cd(username);
+    dir.cd(lexiconName);
 
-    QFile::remove(filename);
+    QFile::remove(dir.filePath(listName));
 
 }
 
