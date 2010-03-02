@@ -86,6 +86,7 @@ private:
     void processChatAction(ClientSocket*);
     void processVersionNumber(ClientSocket*);
     void registerNewName(ClientSocket*);
+    void saveRemoteList(ClientSocket*);
     bool isValidUsername(QString);
     bool isValidPassword(QString);
 

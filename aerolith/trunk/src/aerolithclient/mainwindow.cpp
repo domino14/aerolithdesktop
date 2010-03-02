@@ -222,6 +222,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
     connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
     connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
+
+    testFunction(); // used for debugging
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -1974,6 +1976,16 @@ void MainWindow::on_pushButtonImportList_clicked()
 
     }
     // split up list into chunks and send one at a time.
+    qDebug() << "probindices" << probIndices;
+    writeHeaderData();
+    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+    out << (quint8)2;   // this means what follows is the size of the list
+    out << (quint32)probIndices.size();
+    out << currentLexicon;
+    out << listName.mid(0, 64);
+    fixHeaderLength();
+    commsSocket->write(block);
+
     do
     {
 
@@ -1983,6 +1995,7 @@ void MainWindow::on_pushButtonImportList_clicked()
         out << probIndices.mid(0, 2000);
         fixHeaderLength();
         commsSocket->write(block);
+
         probIndices = probIndices.mid(2000);
     } while (probIndices.size() > 2000);
 
@@ -2001,19 +2014,16 @@ void MainWindow::on_pushButtonImportList_clicked()
     //        return;
     //    }
 
+    repopulateMyListsTable();
+}
+
+void MainWindow::repopulateMyListsTable()
+{
     writeHeaderData();
     out << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST;
     fixHeaderLength();
 
     commsSocket->write(block);
-
-  //  repopulateMyListsTable();
-
-}
-
-void MainWindow::repopulateMyListsTable()
-{
-
 
     //    uiTable.tableWidgetMyLists->clearContents();
     //    uiTable.tableWidgetMyLists->setRowCount(0);
@@ -2067,7 +2077,13 @@ void MainWindow::bootFromTable(QString playerToBoot)
 
 void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)
 {
-    dbHandler->saveGameBA(ba, lex, list);
+    //    dbHandler->saveGameBA(ba, lex, list);
+    writeHeaderData();
+    out << (quint8)CLIENT_TABLE_COMMAND;
+    out << (quint16)currentTablenum;
+    out << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_SAVE_REQUEST;
+    fixHeaderLength();
+    commsSocket->write(block);
 
     repopulateMyListsTable();
 }
@@ -2098,7 +2114,15 @@ void MainWindow::on_pushButtonDeleteList_clicked()
                                                  si[0]->text() + "'?",
                                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
-        dbHandler->deleteUserList(currentLexicon, si[0]->text());
+        //       dbHandler->deleteUserList(currentLexicon, si[0]->text());
+
+        writeHeaderData();
+        out << (quint8)CLIENT_UNSCRAMBLEGAME_DELETE_LIST;
+        out << currentLexicon;
+        out << si[0]->text();
+        fixHeaderLength();
+        commsSocket->write(block);
+
         repopulateMyListsTable();
 
 
@@ -2165,4 +2189,13 @@ void PMWidget::closeEvent(QCloseEvent* event)
 {
     event->accept();
     emit shouldDelete();
+}
+
+////////////////////
+/* debug */
+void MainWindow::testFunction()
+{
+    QVector <int> a;
+    a << 1 << 2 << 3;
+    qDebug () << a.mid(4);
 }

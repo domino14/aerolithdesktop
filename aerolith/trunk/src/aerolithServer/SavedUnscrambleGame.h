@@ -12,7 +12,12 @@ struct SavedUnscrambleGame
     QSet <quint32> curQuizList;
     QSet <quint32> curMissedList;
 
-    void initialize(QSet <quint32>& initialQs)
+    void initialize(const QList <quint32>& initialQs)
+    {
+        initialize(initialQs.toSet());
+    }
+
+    void initialize(const QSet <quint32>& initialQs)
     {
         origIndices = initialQs;
         seenWholeList = false;

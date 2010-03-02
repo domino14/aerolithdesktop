@@ -89,7 +89,7 @@ public:
     enum UserListQuizModes
     {
         MODE_CONTINUE, MODE_RESTART, MODE_FIRSTMISSED
-    };
+            };
 
 
     void createLexiconMap(bool);
@@ -101,8 +101,8 @@ public:
     int getNumWordsByLength(QString lexiconName, int length);
     bool getProbIndices(QStringList, QString, QList<quint32>&);
     QString getSavedListArrayPath(QString, QString, QString);
-         bool saveSingleList(QString lexiconName, QString listName, QString username, QSet <quint32>& probIndices);
-  //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
+    bool saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices);
+    //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
     QList <QStringList> getListLabels(QString lexiconName, QString username);
     void deleteUserList(QString lexiconName, QString listName, QString username);
 
@@ -114,8 +114,8 @@ private:
     QSqlDatabase userlistsDb;
     enum SqlListMakerQueryTypes
     {
-      ALPHAGRAM_QUERY, PROBABILITY_QUERY
-    };
+        ALPHAGRAM_QUERY, PROBABILITY_QUERY
+            };
 
     QList<unsigned char> letterList;
     QStringList dbsToCreate;

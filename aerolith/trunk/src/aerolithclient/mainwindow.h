@@ -105,6 +105,7 @@ private:
     void handleTableCommand(quint16 tablenum, quint8 commandByte);
     void handleWordlistsMessage();
 
+    void testFunction();
 
 
     const int PLAYERLIST_ROLE;
