@@ -387,15 +387,15 @@ void MainServer::receiveMessage()
         case CLIENT_REGISTER:
             registerNewName(socket);
             break;
-       /* game specific global commands */
+            /* game specific global commands */
         case CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD:
             saveRemoteList(socket);
             break;
         case CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST:
-
+            listInfoRequest(socket);
             break;
         case CLIENT_UNSCRAMBLEGAME_DELETE_LIST:
-
+            listDeleteRequest(socket);
             break;
 
 
@@ -416,8 +416,8 @@ void MainServer::saveRemoteList(ClientSocket* socket)
     socket->connData.in >> saveCode;
     switch (saveCode)
     {        
-        case 0:
-        case 1:
+    case 0:
+    case 1:
         // list is continued
         {
             QList <quint32> listPiece;
@@ -436,12 +436,12 @@ void MainServer::saveRemoteList(ClientSocket* socket)
         }
         break;
 
-        case 2:
+    case 2:
         // list info/start
-            socket->connData.in >> socket->ugData.uploadedListSize;
-            socket->connData.in >> socket->ugData.uploadedListLexicon;
-            socket->connData.in >> socket->ugData.uploadedListName;
-            socket->ugData.uploadedList.clear();
+        socket->connData.in >> socket->ugData.uploadedListSize;
+        socket->connData.in >> socket->ugData.uploadedListLexicon;
+        socket->connData.in >> socket->ugData.uploadedListName;
+        socket->ugData.uploadedList.clear();
 
         break;
 
@@ -450,18 +450,87 @@ void MainServer::saveRemoteList(ClientSocket* socket)
     if (saveList)
     {
         /* actually save the list to the database */
-        bool retVal = dbHandler->saveSingleList(socket->ugData.uploadedListLexicon,
-                                  socket->ugData.uploadedListName.mid(0, 64),
-                                  socket->connData.userName.toLower(),
-                                  socket->ugData.uploadedList);
+        bool success = dbHandler->saveSingleList(socket->ugData.uploadedListLexicon,
+                                                 socket->ugData.uploadedListName.mid(0, 64),
+                                                 socket->connData.userName.toLower(),
+                                                 socket->ugData.uploadedList);
 
 
-        if (!retVal)
+        if (success)
+        {
+            writeHeaderData();
+            out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE;
+            out << socket->ugData.uploadedListLexicon;
+            QStringList sl;
+            sl << socket->ugData.uploadedListName.mid(0, 64)
+                    << QString::number(socket->ugData.uploadedListSize)
+                    << QString::number(socket->ugData.uploadedListSize)
+                    << "0"
+                    << QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap");
+
+            out << sl;
+
+            fixHeaderLength();
+            socket->write(block);
+
+        }
+        else
+        {
+
             writeToClient(socket, "There was a list creation error. "
                           "Make sure you don't have two lists with the same name.",
                           S_ERROR);
+        }
+    }
+}
+
+void MainServer::listInfoRequest(ClientSocket* socket)
+{
+    QString lex;
+    socket->connData.in >> lex;
+    QList <QStringList> myListsTableLabels = dbHandler->getAllListLabels(lex, socket->connData.userName);
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARALL;
+    fixHeaderLength();
+    socket->write(block);
+
+    foreach (QStringList sl, myListsTableLabels)
+    {
+        writeHeaderData();
+        out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE;
+        out << lex;
+        out << sl;
+        fixHeaderLength();
+        socket->write(block);
+    }
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_DONE;
+    fixHeaderLength();
+    socket->write(block);
+
+}
+
+void MainServer::listDeleteRequest(ClientSocket* socket)
+{
+    QString lex, list;
+    socket->connData.in >> lex >> list;
+
+    bool success = dbHandler->deleteUserList(lex, list, socket->connData.userName);
+
+    if (success)
+    {
+        writeHeaderData();
+        out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE;
+        out << lex;
+        out << list;
+        fixHeaderLength();
+        socket->write(block);
 
     }
+
+
 }
 
 void MainServer::sendHighScores(ClientSocket* socket)

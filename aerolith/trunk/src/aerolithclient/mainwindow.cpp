@@ -776,6 +776,49 @@ void MainWindow::readFromServer()
 
             break;
 
+        case SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARALL:
+            {
+                uiTable.tableWidgetMyLists->clearContents();
+                uiTable.tableWidgetMyLists->setRowCount(0);
+            }
+            break;
+        case SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE:
+            {
+                QString lexicon;
+                QStringList labels;
+                in >> lexicon >> labels;
+                if (lexicon == currentLexicon)
+                {
+                    uiTable.tableWidgetMyLists->insertRow(0);
+                    for (int j = 0; j < labels.size(); j++)
+                        uiTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
+
+                }
+
+            }
+            break;
+        case SERVER_UNSCRAMBLEGAME_LISTDATA_DONE:
+            {
+                uiTable.tableWidgetMyLists->resizeColumnsToContents();
+            }
+            break;
+        case SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE:
+            {
+                QString lexicon, listname;
+                in >> lexicon >> listname;
+                if (lexicon == currentLexicon)
+                {
+                    for (int i = 0; i < uiTable.tableWidgetMyLists->rowCount(); i++)
+                    {
+                        if (uiTable.tableWidgetMyLists->item(i, 0)->text() == listname)
+                        {
+                            uiTable.tableWidgetMyLists->removeRow(i);
+                            break;  // break out of for-loop
+                        }
+                    }
+                }
+            }
+            break;
         default:
             QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
             commsSocket->disconnectFromHost();
@@ -2014,30 +2057,18 @@ void MainWindow::on_pushButtonImportList_clicked()
     //        return;
     //    }
 
-    repopulateMyListsTable();
 }
 
 void MainWindow::repopulateMyListsTable()
 {
     writeHeaderData();
     out << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST;
+    out << currentLexicon;
     fixHeaderLength();
 
     commsSocket->write(block);
 
-    //    uiTable.tableWidgetMyLists->clearContents();
-    //    uiTable.tableWidgetMyLists->setRowCount(0);
-    //    QList <QStringList> myListsTableLabels = dbHandler->getListLabels(currentLexicon);
-    //
-    //    for (int i = 0; i < myListsTableLabels.size(); i++)
-    //    {
-    //
-    //        uiTable.tableWidgetMyLists->insertRow(0);
-    //        for (int j = 0; j < myListsTableLabels.at(i).size(); j++)
-    //            uiTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(myListsTableLabels[i][j]));
-    //
-    //    }
-    //    uiTable.tableWidgetMyLists->resizeColumnsToContents();
+
 }
 
 void MainWindow::showInviteDialog()
@@ -2085,7 +2116,6 @@ void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)
     fixHeaderLength();
     commsSocket->write(block);
 
-    repopulateMyListsTable();
 }
 
 void MainWindow::on_radioButtonProbability_clicked()
@@ -2123,7 +2153,6 @@ void MainWindow::on_pushButtonDeleteList_clicked()
         fixHeaderLength();
         commsSocket->write(block);
 
-        repopulateMyListsTable();
 
 
     }

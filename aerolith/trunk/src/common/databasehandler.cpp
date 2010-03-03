@@ -152,17 +152,16 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
 
         qDebug() << "Creating userlistinfo table (if not exists)";
         QSqlQuery userListsQuery(userlistsDb);
-        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16), listName VARCHAR(64), "
-                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), alphasInList INTEGER)");
+        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16) NOT NULL, "
+                            "listName VARCHAR(64) NOT NULL, "
+                            "lexiconName VARCHAR(15) NOT NULL, "
+                            "lastdateSaved VARCHAR(64), alphasInList INTEGER, "
+                            "PRIMARY KEY(listName, lexiconName, username) )");
 
         userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlistInfo(username, listName, lexiconName)");
         // the list itself is saved in a file:
         // ~/.aerolith/userlists/username/lexiconName/listName
 
-
-        //        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlists(lexiconName VARCHAR(15), listName VARCHAR(64), "
-        //                            "lastdateSaved VARCHAR(64), listdata BLOB)");
-        //        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlists(listName, lexiconName)");
 
 
     }
@@ -902,7 +901,7 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
 }
 
 
-QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName, QString username)
+QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QString username)
 {
     QList<QStringList> retList;
     QSqlQuery userListsQuery(userlistsDb);
@@ -960,14 +959,16 @@ QList<QStringList> DatabaseHandler::getListLabels(QString lexiconName, QString u
     return retList;
 }
 
-void DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QString username)
+bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QString username)
 {
     QSqlQuery userListsQuery(userlistsDb);
     userListsQuery.prepare("DELETE from userlistInfo where lexiconName = ? and listName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
     userListsQuery.bindValue(2, username);
-    userListsQuery.exec();
+    bool retVal = userListsQuery.exec();
+
+    if (!retVal) return false;
 
     username = username.toLower();
     listName = listName.toLower();
@@ -979,6 +980,7 @@ void DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
 
     QFile::remove(dir.filePath(listName));
 
+    return true;
 }
 
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()

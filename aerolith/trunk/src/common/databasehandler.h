@@ -103,8 +103,9 @@ public:
     QString getSavedListArrayPath(QString, QString, QString);
     bool saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices);
     //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
-    QList <QStringList> getListLabels(QString lexiconName, QString username);
-    void deleteUserList(QString lexiconName, QString listName, QString username);
+
+    QList <QStringList> getAllListLabels(QString lexiconName, QString username);
+    bool deleteUserList(QString lexiconName, QString listName, QString username);
 
     void saveGameBA(QByteArray, QString, QString, QString);
 
