@@ -89,7 +89,8 @@ private:
     void saveRemoteList(ClientSocket*);
     bool isValidUsername(QString);
     bool isValidPassword(QString);
-
+    void listInfoRequest(ClientSocket*);
+    void listDeleteRequest(ClientSocket* socket);
 
 };
 
