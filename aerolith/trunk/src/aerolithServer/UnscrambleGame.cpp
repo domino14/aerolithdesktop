@@ -65,7 +65,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     {
         table->host->connData.in >> wordList;
     }
-    else if (listType == LIST_TYPE_MULTIPLE_INDICES)
+    else if (listType == LIST_TYPE_USER_LIST)
     {
         table->host->connData.in >> wordList;
         table->host->connData.in >> quizSet;  /* TODO need some sanity checks on these inputs! */
@@ -167,7 +167,7 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 
     if (socket == table->originalHost)
     {
-        if (listType == LIST_TYPE_MULTIPLE_INDICES)
+        if (listType == LIST_TYPE_USER_LIST)
         {
             /* the host is no longer able to send out indices to the table.  inform the players of this */
             table->sendTableMessage("The original host of the table has left. "
@@ -443,7 +443,7 @@ void UnscrambleGame::generateQuizArray()
             qDebug() << "all" << wordLength << lowProbIndex << highProbIndex;
         }
 
-        if (listType != LIST_TYPE_MULTIPLE_INDICES)
+        if (listType != LIST_TYPE_USER_LIST)
         {
 
             QDataStream stream(indices);

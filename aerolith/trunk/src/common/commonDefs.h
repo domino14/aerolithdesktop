@@ -39,9 +39,14 @@
 /* list type for Unscramble game */
 #define LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH 1
 #define LIST_TYPE_NAMED_LIST 2
-#define LIST_TYPE_MULTIPLE_INDICES 3
+#define LIST_TYPE_USER_LIST 3
 #define LIST_TYPE_ALL_WORD_LENGTH 4
 #define LIST_TYPE_DAILY_CHALLENGE 5
+
+/* game modes for unscramble game (user lists) */
+#define UNSCRAMBLEGAME_MODE_CONTINUE 1
+#define UNSCRAMBLEGAME_MODE_RESTART 2
+#define UNSCRAMBLEGAME_MODE_FIRSTMISSED 3
 
 
 /* network packet headers */
