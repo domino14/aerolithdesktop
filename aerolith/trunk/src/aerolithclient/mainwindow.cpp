@@ -1050,6 +1050,7 @@ void MainWindow::createUnscrambleGameTable()
         out << (quint8)LIST_TYPE_NAMED_LIST;
         out << listname;
 
+        /*
         QSqlQuery query(QSqlDatabase::database(currentLexicon + "DB_client"));
 
         query.prepare("SELECT probindices from wordlists where listname = ?");
@@ -1079,7 +1080,7 @@ void MainWindow::createUnscrambleGameTable()
         //        thisSug.initialize(indexSet);
         //
         //        gameBoardWidget->setCurrentSug(thisSug);
-
+*/
         gameBoardWidget->setUnmodifiedListName(listname);
 
     }
@@ -1133,20 +1134,24 @@ void MainWindow::createUnscrambleGameTable()
     }
     else if (uiTable.radioButtonMyLists->isChecked())
     {
-        out << (quint8)LIST_TYPE_MULTIPLE_INDICES;
+        out << (quint8)LIST_TYPE_USER_LIST;
         QList<QTableWidgetItem*> si = uiTable.tableWidgetMyLists->selectedItems();
         if (si.size() != 5) return;
 
-        QSet <quint32> qindices;
+/*        QSet <quint32> qindices;
         QSet <quint32> mindices;
+*/
+        //DatabaseHandler::UserListQuizModes mode;
 
-        DatabaseHandler::UserListQuizModes mode;
+        quint8 mode;
 
-        if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = DatabaseHandler::MODE_CONTINUE;
-        else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = DatabaseHandler::MODE_RESTART;
-        else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = DatabaseHandler::MODE_FIRSTMISSED;
+        if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = UNSCRAMBLEGAME_MODE_CONTINUE;
+        else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = UNSCRAMBLEGAME_MODE_RESTART;
+        else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = UNSCRAMBLEGAME_MODE_FIRSTMISSED;
 
 
+        out << (quint8)mode;
+        out << si[0]->text();   // list name -- must match list on server
 
 
         //        QByteArray savedGameBA = dbHandler->getSavedListArray(currentLexicon, si[0]->text());
