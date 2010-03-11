@@ -52,7 +52,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->graphicsView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
     ui->graphicsView->viewport()->setFocusPolicy(Qt::NoFocus);
 
-    firstCorner = new QGraphicsPixmapItem();
+    tileRect1 = NULL;
+    tileRect2 = NULL;
+    lastHoverTile = NULL;
+ /*   firstCorner = new QGraphicsPixmapItem();
     secondCorner = new QGraphicsPixmapItem();
 
     QPixmap xhairspix = QPixmap(":/images/resources/crosshairs.png");
@@ -63,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     firstCorner->setZValue(1);
     secondCorner->setZValue(1);
     scene.addItem(firstCorner);
-    scene.addItem(secondCorner);
+    scene.addItem(secondCorner);*/
 
     QPen linePen;
     linePen.setStyle(Qt::DashLine);
@@ -93,10 +96,10 @@ MainWindow::MainWindow(QWidget *parent)
     line3->setVisible(false);
     line4->setVisible(false);
 
-
+/*
     firstCorner->setVisible(false);
     secondCorner->setVisible(false);
-
+*/
 
 
     curTileWidth = 40;
@@ -105,7 +108,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     lastTimerSecs = 0;
 
-    cornerState = BOTH_CORNERS_OFF;
+    clickState = NO_TILES_CLICKED;
+
     qsrand(QDateTime::currentDateTime().toTime_t());
     gameTimer.setInterval(1000);
     curScore = 0;
@@ -139,39 +143,105 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::sceneMouseMoved(double x, double y)
 {
-    switch (cornerState)
+    ui->textEdit->append("Moved!");
+    switch (clickState)
     {
-    case BOTH_CORNERS_OFF:
+    case NO_TILES_CLICKED:
 
         break;
-    case LEFT_CORNER_ON:
+    case FIRST_TILE_CLICKED:
 
-        x2 = qRound(x/curTileWidth);
-        y2 = qRound(y/curTileWidth);
-        if (x2 < 0) x2 = 0;
-        if (y2 < 0) y2 = 0;
-        if (x2 > boardWidth) x2 = boardWidth;
-        if (y2 > boardHeight) y2 = boardHeight;
+        bool modifiedHighlightedSet = false;
+        QGraphicsItem* item = scene.itemAt(x, y);
+        Tile* tile = dynamic_cast<Tile *>(item);
 
-        int lx1 = x1*curTileWidth;
-        int ly1 = y1*curTileWidth;
-        int lx2 = x2*curTileWidth;
-        int ly2 = y2*curTileWidth;
+        if (tile && tile->getTileLetter() != "")
+        {
 
-        secondCorner->setVisible(true);
+            if (lastHoverTile != tile)
+            {
+                modifiedHighlightedSet = true;
+                lastHoverTile = tile;
+            }
+
+            int tempX = tile->tileCoordX;
+            int tempY = tile->tileCoordY;
+
+            if (modifiedHighlightedSet)
+            {
+                QString debugStr = QString("! %1 %2 %3 %4").arg(x1).arg(y1).arg(tempX).arg(tempY);
+                ui->labelDebug->setText(debugStr);
+                highlightedTiles.clear();
+                for (int j = qMin(y1, tempY); j <= qMax(y1, tempY); j++)
+                {
+                    for (int i = qMin(x1, tempX); i <= qMax(x1, tempX); i++)
+                    {
+
+
+                        int index = j*boardWidth + i;
+
+                        if (tiles.at(index) && tiles.at(index)->getTileLetter() != "")
+                        {
+                            //tiles.at(index)->setTileBrush(brushBonusActive);
+
+                            highlightedTiles.insert(tiles.at(index));
+
+
+                        }
+
+
+                    }
+                }
+                foreach (Tile* tile, tiles)
+                {
+                    if (tile->getTileLetter() == "")
+                        if (tile != tileRect1)
+                            tile->setTileBrush(brushSolved);
+                        else
+                            tile->setTileBrush(brushBonusActive);
+                    else
+                    {
+                        if (highlightedTiles.contains(tile))
+                            tile->setTileBrush(brushBonusActive);
+
+                        else
+                            tile->setTileBrush(brushUnsolved);
+                    }
+
+                }
+            }
+
+        }
+
+
+
+
+//        x2 = qRound(x/curTileWidth);
+//        y2 = qRound(y/curTileWidth);
+//        if (x2 < 0) x2 = 0;
+//        if (y2 < 0) y2 = 0;
+//        if (x2 > boardWidth) x2 = boardWidth;
+//        if (y2 > boardHeight) y2 = boardHeight;
+//
+//        int lx1 = x1*curTileWidth;
+//        int ly1 = y1*curTileWidth;
+//        int lx2 = x2*curTileWidth;
+//        int ly2 = y2*curTileWidth;
+
+  /*      secondCorner->setVisible(true);
         secondCorner->setPos(lx2 - crossHairsWidth/2, ly2 - crossHairsWidth/2);
+*/
 
 
 
-
-        line1->setLine(lx1, ly1, lx2, ly1);
-        line2->setLine(lx2, ly1, lx2, ly2);
-        line3->setLine(lx2, ly2, lx1, ly2);
-        line4->setLine(lx1, ly2, lx1, ly1);
-        line1->setVisible(true);
-        line2->setVisible(true);
-        line3->setVisible(true);
-        line4->setVisible(true);
+//        line1->setLine(lx1, ly1, lx2, ly1);
+//        line2->setLine(lx2, ly1, lx2, ly2);
+//        line3->setLine(lx2, ly2, lx1, ly2);
+//        line4->setLine(lx1, ly2, lx1, ly1);
+//        line1->setVisible(true);
+//        line2->setVisible(true);
+//        line3->setVisible(true);
+//        line4->setVisible(true);
         break;
     }
 }
@@ -180,127 +250,144 @@ void MainWindow::sceneMouseClicked(double x, double y)
 {
     if (!gameGoing)
     {
-        cornerState = BOTH_CORNERS_OFF;
+        clickState = NO_TILES_CLICKED;
         return;
     }
-    switch (cornerState)
+    switch (clickState)
     {
 
-    case BONUS_TILE_SELECTED:
+//    case BONUS_TILE_SELECTED:
+//        {
+//            QGraphicsItem* item = scene.itemAt(x, y);
+//            Tile* tile = dynamic_cast<Tile *>(item);
+//            if (tile)
+//            {
+//                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
+//                {
+//                    if (curselBonusTile)
+//                    {
+//                        /* if a current bonus tile is already selected then it gets unselected first */
+//                        curselBonusTile->setTileBrush(brushBonusActive);
+//
+//                        if (curselBonusTile == tile)
+//                        {
+//                            /* if we clicked on the same tile just reset this tile */
+//                            curselBonusTile = NULL;
+//                            cornerState = BOTH_CORNERS_OFF;
+//                            scene.update();
+//                            break;
+//                        }
+//                        else
+//                        {
+//                            curselBonusTile = tile;
+//                            tile->setTileBrush(brushUnsolved);
+//                            cornerState = BONUS_TILE_SELECTED;
+//                            scene.update();
+//                            break;
+//                        }
+//                    }
+//
+//                }
+//                else if (tile->getAddlAttribute() == 0)
+//                {
+//                    /* a regular tile*/
+//                    if (curselBonusTile)
+//                    {
+//                        if (tile->getTileLetter() == "")
+//                        {
+//                            // this tile is solved. just put the letter in it and set requiredBonusTile
+//                            tile->setTileLetter(curselBonusTile->getTileLetter());
+//                            requiredBonusTile = tile;
+//                            tile->setTileBrush(brushBonusActive);
+//                            cornerState = BOTH_CORNERS_OFF;
+//                            scene.update();
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//            cornerState = BOTH_CORNERS_OFF;
+//            scene.update();
+//
+//
+//        }
+//        break;
+
+    case NO_TILES_CLICKED:
         {
             QGraphicsItem* item = scene.itemAt(x, y);
             Tile* tile = dynamic_cast<Tile *>(item);
             if (tile)
             {
-                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
-                {
-                    if (curselBonusTile)
-                    {
-                        /* if a current bonus tile is already selected then it gets unselected first */
-                        curselBonusTile->setTileBrush(brushBonusActive);
+//                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
+//                {
+//                    foreach (Tile* t, bonusTiles)
+//                    {
+//                        t->setTileBrush(brushBonusActive);
+//                    }
+//
+//                    tile->setTileBrush(brushUnsolved);
+//                    curselBonusTile = tile;
+//                    cornerState = BONUS_TILE_SELECTED;
+//
+//                    if (requiredBonusTile)
+//                    {
+//                        requiredBonusTile->setTileLetter("");
+//                        requiredBonusTile->setTileBrush(brushSolved);
+//                        requiredBonusTile = NULL;
+//                    }
+//
+//                    scene.update();
+//                    break; // bonus tile selected!
+//                }
 
-                        if (curselBonusTile == tile)
-                        {
-                            /* if we clicked on the same tile just reset this tile */
-                            curselBonusTile = NULL;
-                            cornerState = BOTH_CORNERS_OFF;
-                            scene.update();
-                            break;
-                        }
-                        else
-                        {
-                            curselBonusTile = tile;
-                            tile->setTileBrush(brushUnsolved);
-                            cornerState = BONUS_TILE_SELECTED;
-                            scene.update();
-                            break;
-                        }
-                    }
-
-                }
-                else if (tile->getAddlAttribute() == 0)
-                {
-                    /* a regular tile*/
-                    if (curselBonusTile)
-                    {
-                        if (tile->getTileLetter() == "")
-                        {
-                            // this tile is solved. just put the letter in it and set requiredBonusTile
-                            tile->setTileLetter(curselBonusTile->getTileLetter());
-                            requiredBonusTile = tile;
-                            tile->setTileBrush(brushBonusActive);
-                            cornerState = BOTH_CORNERS_OFF;
-                            scene.update();
-                            break;
-                        }
-                    }
-                }
-            }
-            cornerState = BOTH_CORNERS_OFF;
-            scene.update();
-
-
-        }
-        break;
-
-    case BOTH_CORNERS_OFF:
-        {
-            QGraphicsItem* item = scene.itemAt(x, y);
-            Tile* tile = dynamic_cast<Tile *>(item);
-            if (tile)
-            {
-                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
-                {
-                    foreach (Tile* t, bonusTiles)
-                    {
-                        t->setTileBrush(brushBonusActive);
-                    }
-
-                    tile->setTileBrush(brushUnsolved);
-                    curselBonusTile = tile;
-                    cornerState = BONUS_TILE_SELECTED;
-
-                    if (requiredBonusTile)
-                    {
-                        requiredBonusTile->setTileLetter("");
-                        requiredBonusTile->setTileBrush(brushSolved);
-                        requiredBonusTile = NULL;
-                    }
-
-                    scene.update();
-                    break; // bonus tile selected!
-                }
+                x1 = tile->tileCoordX;
+                y1 = tile->tileCoordY;
+                clickState = FIRST_TILE_CLICKED;
+                tile->setTileBrush(brushBonusActive);
+                tileRect1 = tile;
             }
 
-            x1 = qRound(x/curTileWidth);
-            y1 = qRound(y/curTileWidth);
-            firstCorner->setVisible(true);
-
-            if (x1 < 0) x1 = 0;
-            if (y1 < 0) y1 = 0;
-            if (x1 > boardWidth) x1 = boardWidth;
-            if (y1 > boardHeight) y1 = boardHeight;
-            firstCorner->setPos(x1*curTileWidth - crossHairsWidth/2, y1*curTileWidth - crossHairsWidth/2);
-            cornerState = LEFT_CORNER_ON;
+//            x1 = qRound(x/curTileWidth);
+//            y1 = qRound(y/curTileWidth);
+//            firstCorner->setVisible(true);
+//
+//            if (x1 < 0) x1 = 0;
+//            if (y1 < 0) y1 = 0;
+//            if (x1 > boardWidth) x1 = boardWidth;
+//            if (y1 > boardHeight) y1 = boardHeight;
+//            firstCorner->setPos(x1*curTileWidth - crossHairsWidth/2, y1*curTileWidth - crossHairsWidth/2);
+//            cornerState = LEFT_CORNER_ON;
             break;
         }
-    case LEFT_CORNER_ON:
-        x2 = qRound(x/curTileWidth);
-        y2 = qRound(y/curTileWidth);
-        if (x2 < 0) x2 = 0;
-        if (y2 < 0) y2 = 0;
-        if (x2 > boardWidth) x2 = boardWidth;
-        if (y2 > boardHeight) y2 = boardHeight;
+    case FIRST_TILE_CLICKED:
 
-        firstCorner->setVisible(false);
-        secondCorner->setVisible(false);
+        QGraphicsItem* item = scene.itemAt(x, y);
+        Tile* tile = dynamic_cast<Tile *>(item);
+        if (tile)
+        {
+            x2 = tile->tileCoordX;
+            y2 = tile->tileCoordY;
+//            x2 = qRound(x/curTileWidth);
+//            y2 = qRound(y/curTileWidth);
+//            if (x2 < 0) x2 = 0;
+//            if (y2 < 0) y2 = 0;
+//            if (x2 > boardWidth) x2 = boardWidth;
+//            if (y2 > boardHeight) y2 = boardHeight;
+//
+//            firstCorner->setVisible(false);
+//            secondCorner->setVisible(false);
+            if (tileRect1 && tileRect1->getTileLetter() != "")
+                tileRect1->setTileBrush(brushUnsolved);
 
-        cornerState = BOTH_CORNERS_OFF;
-        possibleRectangleCheck();
-        line1->setVisible(false);
-        line2->setVisible(false);
-        line3->setVisible(false);
-        line4->setVisible(false);
+            clickState = NO_TILES_CLICKED;
+            possibleRectangleCheck();
+            line1->setVisible(false);
+            line2->setVisible(false);
+            line3->setVisible(false);
+            line4->setVisible(false);
+
+        }
         break;
 
     }
@@ -313,34 +400,34 @@ void MainWindow::keyPressed(int keyCode)
     ui->textEdit->append("Key was pressed: " + QString::number(keyCode));
 }
 
-void MainWindow::tileMouseCornerClicked(int x, int y)
-{
-    if (!gameGoing)
-    {
-        cornerState = BOTH_CORNERS_OFF;
-        return;
-    }
-    switch (cornerState)
-    {
-    case BOTH_CORNERS_OFF:
-        firstCorner->setVisible(true);
-        firstCorner->setPos(x * curTileWidth - crossHairsWidth/2, y * curTileWidth - crossHairsWidth/2);
-        cornerState = LEFT_CORNER_ON;
-        x1 = x; y1 = y;
-        break;
-    case LEFT_CORNER_ON:
-        secondCorner->setVisible(true);
-        secondCorner->setPos(x * curTileWidth - crossHairsWidth/2, y * curTileWidth - crossHairsWidth/2);
-        firstCorner->setVisible(false);
-        secondCorner->setVisible(false);
-        x2 = x; y2 = y;
-        cornerState = BOTH_CORNERS_OFF;
-        possibleRectangleCheck();
-        break;
-
-    }
-
-}
+//void MainWindow::tileMouseCornerClicked(int x, int y)
+//{
+//    if (!gameGoing)
+//    {
+//        clickState = NO_TILES_CLICKED;
+//        return;
+//    }
+//    switch (cornerState)
+//    {
+//    case BOTH_CORNERS_OFF:
+//        firstCorner->setVisible(true);
+//        firstCorner->setPos(x * curTileWidth - crossHairsWidth/2, y * curTileWidth - crossHairsWidth/2);
+//        cornerState = LEFT_CORNER_ON;
+//        x1 = x; y1 = y;
+//        break;
+//    case LEFT_CORNER_ON:
+//        secondCorner->setVisible(true);
+//        secondCorner->setPos(x * curTileWidth - crossHairsWidth/2, y * curTileWidth - crossHairsWidth/2);
+//        firstCorner->setVisible(false);
+//        secondCorner->setVisible(false);
+//        x2 = x; y2 = y;
+//        cornerState = BOTH_CORNERS_OFF;
+//        possibleRectangleCheck();
+//        break;
+//
+//    }
+//
+//}
 
 void MainWindow::possibleRectangleCheck()
 {
@@ -350,22 +437,22 @@ void MainWindow::possibleRectangleCheck()
 
     QString letters;
     bool bonusTileUsed = false;
-    for (int j = qMin(y1, y2); j < qMax(y1, y2); j++)
+    for (int j = qMin(y1, y2); j <= qMax(y1, y2); j++)
     {
-        for (int i = qMin(x1, x2); i < qMax(x1, x2); i++)
+        for (int i = qMin(x1, x2); i <= qMax(x1, x2); i++)
         {
 
             int index = j*boardWidth + i;
             letters += tiles.at(index)->getTileLetter();
-            if (requiredBonusTile)
-                if (tiles.at(index) == requiredBonusTile) bonusTileUsed = true;
+//            if (requiredBonusTile)
+//                if (tiles.at(index) == requiredBonusTile) bonusTileUsed = true;
         }
     }
-    if (requiredBonusTile && !bonusTileUsed) return;    // if a required tile was not in the rectangle just ignore it!
+//    if (requiredBonusTile && !bonusTileUsed) return;    // if a required tile was not in the rectangle just ignore it!
     if (letters.size() < 2) return;
 
-    // QString debugStr = QString("%1 %2 %3 %4 %5").arg(x1).arg(y1).arg(x2).arg(y2).arg(letters);
-    // ui->labelDebug->setText(debugStr);
+     QString debugStr = QString("%1 %2 %3 %4 %5").arg(x1).arg(y1).arg(x2).arg(y2).arg(letters);
+     ui->labelDebug->setText(debugStr);
 
     letters = alphagrammize(letters.toUpper());
 
@@ -375,9 +462,9 @@ void MainWindow::possibleRectangleCheck()
     {
         QString answers = wordStructure->wordStructure.value(letters);
         ui->listWidget->insertItem(0, answers);
-        for (int j = qMin(y1, y2); j < qMax(y1, y2); j++)
+        for (int j = qMin(y1, y2); j <= qMax(y1, y2); j++)
         {
-            for (int i = qMin(x1, x2); i < qMax(x1, x2); i++)
+            for (int i = qMin(x1, x2); i <= qMax(x1, x2); i++)
             {
 
                 int index = j*boardWidth + i;
@@ -393,13 +480,13 @@ void MainWindow::possibleRectangleCheck()
         if (wordLength <= 15)
         {
             int effectiveWordLength = wordLength;
-            if (requiredBonusTile)
-            {
-                numSolvedLetters--; // take away a letter if we used a bonus
-                effectiveWordLength--;
-                if (effectiveWordLength < 2) effectiveWordLength = 2;
-                requiredBonusTile = NULL;
-            }
+//            if (requiredBonusTile)
+//            {
+//                numSolvedLetters--; // take away a letter if we used a bonus
+//                effectiveWordLength--;
+//                if (effectiveWordLength < 2) effectiveWordLength = 2;
+//                requiredBonusTile = NULL;
+//            }
             thisScore = scoresByLength[effectiveWordLength];
             solvedWordsByLength[wordLength]++;
         }
@@ -437,10 +524,10 @@ void MainWindow::possibleRectangleCheck()
             if (!bonusTilesAllowed)
             {
                 bonusTilesAllowed = true;
-                foreach (Tile* tile, bonusTiles)
-                {
-                    tile->setTileBrush(brushBonusActive);
-                }
+//                foreach (Tile* tile, bonusTiles)
+//                {
+//                    tile->setTileBrush(brushBonusActive);
+//                }
             }
         }
         else
@@ -449,10 +536,10 @@ void MainWindow::possibleRectangleCheck()
             {
                 ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
                                      arg(boardWidth*boardHeight - numSolvedLetters));
-                foreach (Tile* tile, bonusTiles)
-                {
-                    tile->setTileBrush(brushBonusInactive);
-                }
+//                foreach (Tile* tile, bonusTiles)
+//                {
+//                    tile->setTileBrush(brushBonusInactive);
+//                }
                 bonusTilesAllowed = false;
             }
         }
@@ -500,11 +587,11 @@ void MainWindow::setTilesPos()
         tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
     }
 
-    foreach (Tile* tile, bonusTiles)
-    {
-
-        tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
-    }
+//    foreach (Tile* tile, bonusTiles)
+//    {
+//
+//        tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
+//    }
 
 
     //    ui->graphicsView->resetTransform();
@@ -590,32 +677,31 @@ void MainWindow::on_pushButtonNewGame_clicked()
         tile->deleteLater();
     tiles.clear();
 
-    foreach (Tile* tile, bonusTiles)
-        tile->deleteLater();
-
-    bonusTiles.clear();
+//    foreach (Tile* tile, bonusTiles)
+//        tile->deleteLater();
+//
+//    bonusTiles.clear();
 
 
     lastGridSize = gridSize;
     boardHeight = gridSize;
     boardWidth = gridSize;
 
-    /* add RETINA tiles */
-    QString bonus = "RETINA";
-    for (int i = 0; i < bonus.length(); i++)
-    {
-        Tile* tile = new Tile();
-        bonusTiles << tile;
-        scene.addItem(tile);
-        tile->setTileCoords(i-3 + boardWidth/2, -2);
-        tile->setWidth(curTileWidth, 1);
-        tile->setTileBrush(brushBonusInactive);
-        tile->setTileLetter(QString(bonus[i]));
-        tile->setAddlAttribute(1);
-    }
+//    QString bonus = "RETINA";
+//    for (int i = 0; i < bonus.length(); i++)
+//    {
+//        Tile* tile = new Tile();
+//        bonusTiles << tile;
+//        scene.addItem(tile);
+//        tile->setTileCoords(i-3 + boardWidth/2, -2);
+//        tile->setWidth(curTileWidth, 1);
+//        tile->setTileBrush(brushBonusInactive);
+//        tile->setTileLetter(QString(bonus[i]));
+//        tile->setAddlAttribute(1);
+//    }
 
     bonusTilesAllowed = false;  // bonus tiles are not allowed right at the beginning
-    requiredBonusTile = NULL;
+//    requiredBonusTile = NULL;
 
 
     for (int j = 0; j < boardHeight; j++)
@@ -752,9 +838,9 @@ void MainWindow::on_toolButtonMinusSize_clicked()
     if (curTileWidth < 5) curTileWidth = 5;
     foreach (Tile* tile, tiles)
         tile->setWidth(curTileWidth, 1);
-
-    foreach (Tile* tile, bonusTiles)
-        tile->setWidth(curTileWidth, 1);
+//
+//    foreach (Tile* tile, bonusTiles)
+//        tile->setWidth(curTileWidth, 1);
 
     setTilesPos();
 }
@@ -765,9 +851,9 @@ void MainWindow::on_toolButtonPlusSize_clicked()
     if (curTileWidth >= 60) curTileWidth = 60;
     foreach (Tile* tile, tiles)
         tile->setWidth(curTileWidth, 1);
-
-    foreach (Tile* tile, bonusTiles)
-        tile->setWidth(curTileWidth, 1);
+//
+//    foreach (Tile* tile, bonusTiles)
+//        tile->setWidth(curTileWidth, 1);
 
     setTilesPos();
 }
@@ -777,9 +863,9 @@ MainWindow::~MainWindow()
     delete ui;
     foreach (Tile* tile, tiles)
         tile->deleteLater();
-
-    foreach (Tile* tile, bonusTiles)
-        tile->deleteLater();
+//
+//    foreach (Tile* tile, bonusTiles)
+//        tile->deleteLater();
 
 
 }

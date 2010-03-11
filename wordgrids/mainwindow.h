@@ -42,7 +42,7 @@ signals:
 };
 
 #define MIN_GRID_SIZE 3
-#define MAX_GRID_SIZE 20
+#define MAX_GRID_SIZE 12
 
 class MainWindow : public QMainWindow
 {
@@ -55,21 +55,26 @@ public:
 
 
 private:
-    enum CornerStates
+    enum ClickStates
     {
-        LEFT_CORNER_ON, BOTH_CORNERS_ON, BOTH_CORNERS_OFF, BONUS_TILE_SELECTED
+        FIRST_TILE_CLICKED, BOTH_TILES_CLICKED, NO_TILES_CLICKED
     };
 
     Ui::MainWindowClass *ui;
     WordgridsScene scene;
     Tile* curselBonusTile;
-    Tile* requiredBonusTile;
+    Tile* lastHoverTile;
+//    Tile* requiredBonusTile;
     bool bonusTilesAllowed;
+
     QVector <Tile*> tiles;
-    QVector <Tile*> bonusTiles;
-    QGraphicsPixmapItem *firstCorner, *secondCorner;
+
+    QSet <Tile*> highlightedTiles;
+
+//    QVector <Tile*> bonusTiles;
+    Tile *tileRect1, *tileRect2;
     QGraphicsLineItem *line1, *line2, *line3, *line4;
-    CornerStates cornerState;
+    ClickStates clickState;
     int crossHairsWidth;
     void setTilesPos();
     QTimer gameTimer;
@@ -103,7 +108,7 @@ private:
     QString gameToLoad;
     QString currentGameCode;
 public slots:
-    void tileMouseCornerClicked(int, int);
+ //   void tileMouseCornerClicked(int, int);
 private slots:
     void on_actionLoad_board_triggered();
     void on_actionSave_board_triggered();

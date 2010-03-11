@@ -127,6 +127,7 @@ void Tile::setTileProperties(QBrush& b, QPen& p, QPen &e)
 void Tile::setTileBrush(QBrush& b)
 {
     tileBrush = b;
+    update();
 }
 
 QBrush Tile::getTileBrush()
@@ -137,41 +138,43 @@ QBrush Tile::getTileBrush()
 void Tile::setForegroundPen(QPen& p)
 {
     foregroundPen = p;
+    update();
 }
 
 void Tile::setEdgePen(QPen &e)
 {
     edgePen = e;
+    update();
 }
 
 void Tile::setTileLetter(QString tileLetter)
 {
     this->tileLetter = tileLetter;
-
+    update();
 }
-
-void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
-{
-    event->ignore();
-    return; // was not return before
-    /* corners
-        1 top left
-        2 top right
-        3 bottom right
-        4 bottom left
-
-       */
-    double x = event->pos().x();
-    double y = event->pos().y();
-    double halfPtX = width / 2;
-    double halfPtY = height / 2;
-
-    if (x < halfPtX && y < halfPtY)
-        emit mousePressedCorner(tileCoordX, tileCoordY);
-    else if (x >= halfPtX && y < halfPtY)
-        emit mousePressedCorner(tileCoordX + 1, tileCoordY);
-    else if (x >= halfPtX && y >= halfPtY)
-        emit mousePressedCorner(tileCoordX + 1, tileCoordY + 1);
-    else if (x < halfPtX && y >= halfPtY)
-        emit mousePressedCorner(tileCoordX, tileCoordY + 1);
-}
+//
+//void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
+//{
+//    event->ignore();
+//    return; // was not return before
+//    /* corners
+//        1 top left
+//        2 top right
+//        3 bottom right
+//        4 bottom left
+//
+//       */
+//    double x = event->pos().x();
+//    double y = event->pos().y();
+//    double halfPtX = width / 2;
+//    double halfPtY = height / 2;
+//
+//    if (x < halfPtX && y < halfPtY)
+//        emit mousePressedCorner(tileCoordX, tileCoordY);
+//    else if (x >= halfPtX && y < halfPtY)
+//        emit mousePressedCorner(tileCoordX + 1, tileCoordY);
+//    else if (x >= halfPtX && y >= halfPtY)
+//        emit mousePressedCorner(tileCoordX + 1, tileCoordY + 1);
+//    else if (x < halfPtX && y >= halfPtY)
+//        emit mousePressedCorner(tileCoordX, tileCoordY + 1);
+//}

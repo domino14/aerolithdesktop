@@ -51,7 +51,7 @@ private:
     QPen foregroundPen;
     QPen edgePen;
     QString tileLetter;
-    void mousePressEvent ( QGraphicsSceneMouseEvent * event);
+  //  void mousePressEvent ( QGraphicsSceneMouseEvent * event);
 
 signals:
     void mousePressedCorner(int x, int y);
