@@ -32,6 +32,16 @@ public:
     void setTileBrush(QBrush& b);
     void setForegroundPen(QPen& p);
     void setEdgePen(QPen& e);
+    void setIsBonusTile(bool b)
+    {
+        isBonus = b;
+    }
+
+    bool isBonusTile()
+    {
+        return isBonus;
+    }
+
     int getAddlAttribute();
     void setAddlAttribute(int a);
     QBrush getTileBrush();
@@ -43,6 +53,7 @@ public:
     int tileCoordX, tileCoordY;
 
 private:
+    bool isBonus;
     int width;
     int height;
     int addlAttribute;
@@ -51,10 +62,14 @@ private:
     QPen foregroundPen;
     QPen edgePen;
     QString tileLetter;
+    void hoverEnterEvent ( QGraphicsSceneHoverEvent * event );
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
   //  void mousePressEvent ( QGraphicsSceneMouseEvent * event);
-
+ //   void keyPressEvent(QKeyEvent* keyEvent);
 signals:
-    void mousePressedCorner(int x, int y);
+    void keyPressed(int);
+    void mouseOverTile();
+    void mouseOutOfTile();
 };
 
 #endif

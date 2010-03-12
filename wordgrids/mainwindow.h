@@ -31,14 +31,17 @@ namespace Ui
 class WordgridsScene : public QGraphicsScene
 {
     Q_OBJECT
+public:
+    WordgridsScene(QObject* parent);
+private:
     void mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent );
-    void mouseMoveEvent (QGraphicsSceneMouseEvent * mouseEvent );
-    void keyPressEvent ( QKeyEvent * keyEvent )  ;
-    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* mouseEvent);
+    void keyPressEvent ( QKeyEvent * event );
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
 signals:
-    void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
+    void sceneMouseClicked(double, double);
     void keyPressed(int);
+
 };
 
 #define MIN_GRID_SIZE 3
@@ -58,20 +61,20 @@ private:
     enum ClickStates
     {
         FIRST_TILE_CLICKED, BOTH_TILES_CLICKED, NO_TILES_CLICKED
-    };
+            };
 
     Ui::MainWindowClass *ui;
-    WordgridsScene scene;
+    WordgridsScene* scene;
     Tile* curselBonusTile;
-    Tile* lastHoverTile;
-//    Tile* requiredBonusTile;
+
+    //    Tile* requiredBonusTile;
     bool bonusTilesAllowed;
 
     QVector <Tile*> tiles;
 
     QSet <Tile*> highlightedTiles;
 
-//    QVector <Tile*> bonusTiles;
+    //    QVector <Tile*> bonusTiles;
     Tile *tileRect1, *tileRect2;
     QGraphicsLineItem *line1, *line2, *line3, *line4;
     ClickStates clickState;
@@ -107,14 +110,19 @@ private:
     bool shouldLoadNextNewGame;
     QString gameToLoad;
     QString currentGameCode;
+
+    void resetTilesHighlightStatus();
+    double mouseX, mouseY;
 public slots:
- //   void tileMouseCornerClicked(int, int);
+    //   void tileMouseCornerClicked(int, int);
 private slots:
     void on_actionLoad_board_triggered();
     void on_actionSave_board_triggered();
     void secPassed();
     void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
+    void mouseOverTile();
+    void mouseOutOfTile();
     void keyPressed(int);
     void on_pushButtonNewGame_clicked();
     void on_pushButtonRetry_clicked();
