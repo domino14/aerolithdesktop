@@ -16,7 +16,11 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QGraphicsView" name="graphicsView"/>
+     <widget class="WordgridsGraphicsView" name="graphicsView">
+      <property name="focusPolicy">
+       <enum>Qt::ClickFocus</enum>
+      </property>
+     </widget>
     </item>
     <item row="1" column="0" colspan="3">
      <widget class="QTextEdit" name="textEdit">
@@ -226,7 +230,7 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuLoad_board">
@@ -251,6 +255,13 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>WordgridsGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>wordgridsgraphicsview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -36,6 +36,9 @@ Tile::Tile()
     height = (double)width;
     //setFlag(QGraphicsItem::ItemIsMovable);
     addlAttribute = 0;
+    setAcceptHoverEvents(true);
+    setFlag(QGraphicsItem::ItemIsFocusable);
+    isBonus = false;
 }
 
 int Tile::getAddlAttribute()
@@ -152,6 +155,30 @@ void Tile::setTileLetter(QString tileLetter)
     this->tileLetter = tileLetter;
     update();
 }
+
+void Tile::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+    Q_UNUSED(event);
+    emit mouseOverTile();
+}
+
+void Tile::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    Q_UNUSED(event);
+    emit mouseOutOfTile();
+}
+//
+//void Tile::keyPressEvent(QKeyEvent* keyEvent)
+//{
+//
+//    emit keyPressed(keyEvent->key());
+//}
+
+//void Tile::hoverMoveEvent ( QGraphicsSceneHoverEvent * event )
+//{
+//    emit mouseOverTile();
+//}
+
 //
 //void Tile::mousePressEvent ( QGraphicsSceneMouseEvent * event)
 //{

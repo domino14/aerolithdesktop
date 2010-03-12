@@ -15,9 +15,11 @@ TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \
     tile.cpp \
-    wordstructure.cpp
+    wordstructure.cpp \
+    wordgridsgraphicsview.cpp
 HEADERS += mainwindow.h \
     tile.h \
-    wordstructure.h
+    wordstructure.h \
+    wordgridsgraphicsview.h
 FORMS += mainwindow.ui
 RESOURCES += wordgrids.qrc
