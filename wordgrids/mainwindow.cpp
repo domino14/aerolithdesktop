@@ -47,6 +47,10 @@ bool isPerfectSquare(int n)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindowClass)
 {
+    preferencesWidget = new QWidget(this, Qt::Window);
+    uiPreferences.setupUi(preferencesWidget);
+
+
     ui->setupUi(this);
     scene = new WordgridsScene(this);
     ui->graphicsView->setScene(scene);
@@ -56,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
     tileRect1 = NULL;
     tileRect2 = NULL;
     curselBonusTile = NULL;
+
     /*   firstCorner = new QGraphicsPixmapItem();
     secondCorner = new QGraphicsPixmapItem();
 
@@ -69,38 +74,51 @@ MainWindow::MainWindow(QWidget *parent)
     scene.addItem(firstCorner);
     scene.addItem(secondCorner);*/
 
-//    QPen linePen;
-//    linePen.setStyle(Qt::DashLine);
-//    linePen.setWidth(1);
-//
-//
-//    line1 = new QGraphicsLineItem();
-//    line2 = new QGraphicsLineItem();
-//    line3 = new QGraphicsLineItem();
-//    line4 = new QGraphicsLineItem();
-//    line1->setPen(linePen);
-//    line2->setPen(linePen);
-//    line3->setPen(linePen);
-//    line4->setPen(linePen);
-//
-//    line1->setZValue(1);
-//    line2->setZValue(1);
-//    line3->setZValue(1);
-//    line4->setZValue(1);
-//    scene.addItem(line1);
-//    scene.addItem(line2);
-//    scene.addItem(line3);
-//    scene.addItem(line4);
-//
-//    line1->setVisible(false);
-//    line2->setVisible(false);
-//    line3->setVisible(false);
-//    line4->setVisible(false);
+    //    QPen linePen;
+    //    linePen.setStyle(Qt::DashLine);
+    //    linePen.setWidth(1);
+    //
+    //
+    //    line1 = new QGraphicsLineItem();
+    //    line2 = new QGraphicsLineItem();
+    //    line3 = new QGraphicsLineItem();
+    //    line4 = new QGraphicsLineItem();
+    //    line1->setPen(linePen);
+    //    line2->setPen(linePen);
+    //    line3->setPen(linePen);
+    //    line4->setPen(linePen);
+    //
+    //    line1->setZValue(1);
+    //    line2->setZValue(1);
+    //    line3->setZValue(1);
+    //    line4->setZValue(1);
+    //    scene.addItem(line1);
+    //    scene.addItem(line2);
+    //    scene.addItem(line3);
+    //    scene.addItem(line4);
+    //
+    //    line1->setVisible(false);
+    //    line2->setVisible(false);
+    //    line3->setVisible(false);
+    //    line4->setVisible(false);
 
     /*
     firstCorner->setVisible(false);
     secondCorner->setVisible(false);
 */
+
+
+    scoreLabel = new QGraphicsSimpleTextItem("Score");
+    gameScore = new QGraphicsSimpleTextItem();
+
+    scene->addItem(scoreLabel);
+    scene->addItem(gameScore);
+    scoreLabel->setFont(QFont("Comic Sans", 18, QFont::Bold));
+    scoreLabel->setPos(-80, 0);
+
+    gameScore->setFont(QFont("Comic Sans", 16, QFont::DemiBold));
+    gameScore->setPos(-60, 40);
+
 
 
     curTileWidth = 40;
@@ -138,6 +156,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     shouldLoadNextNewGame = false;
 
+    scoreLabel->setVisible(false);
 
 }
 
@@ -462,10 +481,10 @@ void MainWindow::sceneMouseClicked(double x, double y)
         */
             clickState = NO_TILES_CLICKED;
             possibleRectangleCheck();
-//            line1->setVisible(false);
-//            line2->setVisible(false);
-//            line3->setVisible(false);
-//            line4->setVisible(false);
+            //            line1->setVisible(false);
+            //            line2->setVisible(false);
+            //            line3->setVisible(false);
+            //            line4->setVisible(false);
             resetTilesHighlightStatus();
 
         }
@@ -497,7 +516,7 @@ void MainWindow::keyPressed(int keyCode)
 
         }
     }
-   // ui->textEdit->append("Key was pressed: " + QString::number(keyCode));
+    // ui->textEdit->append("Key was pressed: " + QString::number(keyCode));
 }
 
 void MainWindow::sceneMouseMoved(double x, double y)
@@ -576,8 +595,9 @@ void MainWindow::possibleRectangleCheck()
 
     if (wordStructure->wordStructure.contains(letters))
     {
+        // this rectangle contains a word!
         QString answers = wordStructure->wordStructure.value(letters);
-        ui->listWidget->insertItem(0, answers);
+        ui->listWidgetWordList->insertItem(0, answers);
         for (int j = qMin(y1, y2); j <= qMax(y1, y2); j++)
         {
             for (int i = qMin(x1, x2); i <= qMax(x1, x2); i++)
@@ -661,7 +681,7 @@ void MainWindow::possibleRectangleCheck()
         }
 
 
-        ui->lcdNumberScore->display(curScore);
+        displayScore(curScore);
 
         scene->update();
         generateFindList();
@@ -678,6 +698,10 @@ void MainWindow::possibleRectangleCheck()
 
 }
 
+void MainWindow::displayScore(int score)
+{
+    gameScore->setText(QString::number(score));
+}
 
 QString MainWindow::alphagrammize(QString word)
 {
@@ -760,10 +784,15 @@ void MainWindow::on_pushButtonNewGame_clicked()
 {
     if (!loadedWordStructure) return;
 
-
-    bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
+    /*
+    bonusTurnoffTiles = ui->spinBoxBonusTurnOff->value();
     minLengthHints = ui->spinBoxMinLengthGen->value();
     maxLengthHints = ui->spinBoxMaxLengthGen->value();
+    */
+    bonusTurnoffTiles = 10;
+
+    minLengthHints = 7;
+    maxLengthHints = 8;
 
 
 
@@ -919,9 +948,9 @@ void MainWindow::on_pushButtonNewGame_clicked()
     }
 
     ui->lcdNumber->display(timerSecs);
-    ui->lcdNumberScore->display(0);
+    displayScore(0);
     gameTimer.start();
-    ui->listWidget->clear();
+    ui->listWidgetWordList->clear();
     gameGoing = true;
     curScore = 0;
     numSolvedLetters = 0;
@@ -934,7 +963,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
 
     //    scene.update();
 
-
+    scoreLabel->setVisible(true);
 }
 
 void MainWindow::secPassed()
@@ -1016,14 +1045,14 @@ void MainWindow::generateFindList()
 
     // ui->textEdit->append(QString("lgs %1 %2").arg(lastGridSize).arg(alphaSet.size()));
 
-    ui->listWidgetWordsToFind->clear();
+    //ui->listWidgetWordsToFind->clear();
 
     foreach (QString alph, alphaSet)
     {
         if (wordStructure->wordStructure.contains(alph))
         {
 
-            ui->listWidgetWordsToFind->insertItem(0, wordStructure->wordStructure.value(alph));
+            //ui->listWidgetWordsToFind->insertItem(0, wordStructure->wordStructure.value(alph));
 
         }
     }
@@ -1108,6 +1137,11 @@ void MainWindow::on_actionSave_board_triggered()
     }
 }
 
+void MainWindow::on_actionEdit_game_preferences_triggered()
+{
+    preferencesWidget->show();
+}
+
 /***********************/
 
 WordgridsScene::WordgridsScene(QObject *parent) : QGraphicsScene(parent)
@@ -1128,13 +1162,13 @@ void WordgridsScene::mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent )
     QGraphicsScene::mousePressEvent(mouseEvent);
     setFocus();
     emit sceneMouseClicked(mouseEvent->scenePos().x(), mouseEvent->scenePos().y());
-  //  mouseEvent->ignore();
-   // qDebug() << "Scene focus" << hasFocus() << focusItem();
+    //  mouseEvent->ignore();
+    // qDebug() << "Scene focus" << hasFocus() << focusItem();
 }
 
 void WordgridsScene::keyPressEvent ( QKeyEvent * keyEvent )
 {
     QGraphicsScene::keyPressEvent(keyEvent);
-  //  qDebug() << "Key pressed: " << keyEvent->key();
+    //  qDebug() << "Key pressed: " << keyEvent->key();
     emit keyPressed(keyEvent->key());
 }

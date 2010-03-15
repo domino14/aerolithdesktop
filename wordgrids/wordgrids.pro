@@ -21,5 +21,6 @@ HEADERS += mainwindow.h \
     tile.h \
     wordstructure.h \
     wordgridsgraphicsview.h
-FORMS += mainwindow.ui
+FORMS += mainwindow.ui \
+    preferences.ui
 RESOURCES += wordgrids.qrc
