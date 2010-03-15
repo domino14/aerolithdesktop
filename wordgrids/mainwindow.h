@@ -23,6 +23,7 @@
 #include "Tile.h"
 
 #include "wordstructure.h"
+#include "ui_preferences.h"
 namespace Ui
 {
     class MainWindowClass;
@@ -64,8 +65,15 @@ private:
             };
 
     Ui::MainWindowClass *ui;
+
+    QWidget* preferencesWidget;
+    Ui::preferencesForm uiPreferences;
+
     WordgridsScene* scene;
     Tile* curselBonusTile;
+
+
+
 
     //    Tile* requiredBonusTile;
     bool bonusTilesAllowed;
@@ -77,6 +85,8 @@ private:
     //    QVector <Tile*> bonusTiles;
     Tile *tileRect1, *tileRect2;
     QGraphicsLineItem *line1, *line2, *line3, *line4;
+    QGraphicsSimpleTextItem* scoreLabel;
+    QGraphicsSimpleTextItem* gameScore;
     ClickStates clickState;
     int crossHairsWidth;
     void setTilesPos();
@@ -113,11 +123,13 @@ private:
 
     void resetTilesHighlightStatus();
     double mouseX, mouseY;
+    void displayScore(int);
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
     void on_actionLoad_board_triggered();
     void on_actionSave_board_triggered();
+    void on_actionEdit_game_preferences_triggered();
     void secPassed();
     void sceneMouseClicked(double, double);
     void sceneMouseMoved(double, double);
