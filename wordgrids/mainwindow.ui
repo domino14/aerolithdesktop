@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>870</width>
-    <height>703</height>
+    <width>1046</width>
+    <height>720</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -163,6 +163,50 @@ p, li { white-space: pre-wrap; }
         </property>
        </spacer>
       </item>
+      <item>
+       <widget class="QLabel" name="labelCurrentGame">
+        <property name="styleSheet">
+         <string notr="true"> QLabel {
+     border: 2px solid gray;
+     border-radius: 2px;
+     padding: 0 8px;
+     background: white;
+     selection-background-color: darkgray;
+	font: bold 12px;
+ }</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonSwitchGame">
+        <property name="styleSheet">
+         <string notr="true"> QPushButton {
+     background-color: rgb(250,200, 0);
+     border-style: outset;
+     border-width: 2px;
+     border-radius: 10px;
+     border-color: beige;
+     font: bold 14px;
+     min-width: 5em;
+     padding: 6px;
+ }
+QPushButton:disabled{
+	background-color: rgb(50, 0, 0);
+	color: rgb(100, 100, 100);
+}
+ QPushButton:pressed {
+     background-color: rgb(100, 0, 0);
+     border-style: inset;
+ } </string>
+        </property>
+        <property name="text">
+         <string>Switch to:</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item row="1" column="0" rowspan="3">
@@ -258,7 +302,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>870</width>
+     <width>1046</width>
      <height>20</height>
     </rect>
    </property>

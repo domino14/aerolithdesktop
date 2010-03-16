@@ -87,6 +87,10 @@ private:
     QGraphicsLineItem *line1, *line2, *line3, *line4;
     QGraphicsSimpleTextItem* scoreLabel;
     QGraphicsSimpleTextItem* gameScore;
+
+    QGraphicsSimpleTextItem* bonusTileLabel;
+    Tile *bonusTile;
+
     ClickStates clickState;
     int crossHairsWidth;
     void setTilesPos();
@@ -106,17 +110,35 @@ private:
     QString alphagrammize(QString);
     QList<unsigned char> letterList;
     QList <QString> thisRoundLetters;
+
+
+
     int numSolvedLetters;
     int lastGridSize;
     int solvedWordsByLength[16];
     char simpleGridRep[MAX_GRID_SIZE][MAX_GRID_SIZE];
 
-    void generateFindList();
+
     void generateSingleFindList(int, int, int, int, QSet<QString>&);
     QString extractStringsFromRectangle(int TLi, int TLj, int BRi, int BRj, int minLength, int maxLength);
     bool loadedWordStructure;
 
-    int minLengthHints, maxLengthHints, bonusTurnoffTiles;
+    /* for Word Struck: */
+    int bonusTurnoffTiles;
+
+    /* for Word Dash: */
+    int minToGenerate;
+    int maxToGenerate;
+    int curGenerating;
+    int curToSolve;
+    int curSolved;
+    QSet <QString> foundAlphaset;
+    void generateFindList();
+    bool populateNextFindList();
+    void markInWordList(QString str);
+
+
+
     bool shouldLoadNextNewGame;
     QString gameToLoad;
     QString currentGameCode;
@@ -124,6 +146,11 @@ private:
     void resetTilesHighlightStatus();
     double mouseX, mouseY;
     void displayScore(int);
+    void closeEvent ( QCloseEvent * event );
+    void quit();
+    void writeSettings();
+    void readSettings();
+    QString currentGameDescription;
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
@@ -143,6 +170,7 @@ private slots:
     void on_toolButtonMinusSize_clicked();
     void on_toolButtonPlusSize_clicked();
     void finishedLoadingWordStructure();
+    void on_pushButtonSwitchGame_clicked();
 
 };
 
