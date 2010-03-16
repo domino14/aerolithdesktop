@@ -59,53 +59,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     tileRect1 = NULL;
     tileRect2 = NULL;
-    curselBonusTile = NULL;
 
-    /*   firstCorner = new QGraphicsPixmapItem();
-    secondCorner = new QGraphicsPixmapItem();
 
-    QPixmap xhairspix = QPixmap(":/images/resources/crosshairs.png");
-    crossHairsWidth = xhairspix.width();
+    curselBonusTile = new Tile();
+    scene->addItem(curselBonusTile);
+    curselBonusTile->setVisible(false);
 
-    firstCorner->setPixmap(xhairspix);
-    secondCorner->setPixmap(xhairspix);
-    firstCorner->setZValue(1);
-    secondCorner->setZValue(1);
-    scene.addItem(firstCorner);
-    scene.addItem(secondCorner);*/
-
-    //    QPen linePen;
-    //    linePen.setStyle(Qt::DashLine);
-    //    linePen.setWidth(1);
-    //
-    //
-    //    line1 = new QGraphicsLineItem();
-    //    line2 = new QGraphicsLineItem();
-    //    line3 = new QGraphicsLineItem();
-    //    line4 = new QGraphicsLineItem();
-    //    line1->setPen(linePen);
-    //    line2->setPen(linePen);
-    //    line3->setPen(linePen);
-    //    line4->setPen(linePen);
-    //
-    //    line1->setZValue(1);
-    //    line2->setZValue(1);
-    //    line3->setZValue(1);
-    //    line4->setZValue(1);
-    //    scene.addItem(line1);
-    //    scene.addItem(line2);
-    //    scene.addItem(line3);
-    //    scene.addItem(line4);
-    //
-    //    line1->setVisible(false);
-    //    line2->setVisible(false);
-    //    line3->setVisible(false);
-    //    line4->setVisible(false);
-
-    /*
-    firstCorner->setVisible(false);
-    secondCorner->setVisible(false);
-*/
+    curselBonusTile->setTileBrush(brushBonusTile);
+    curselBonusTile->setIsBonusTile(true);
+    curselBonusTile->setPos(-60, 250);
 
 
     scoreLabel = new QGraphicsSimpleTextItem("Score");
@@ -118,6 +80,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     gameScore->setFont(QFont("Comic Sans", 16, QFont::DemiBold));
     gameScore->setPos(-60, 40);
+
+    bonusTileLabel = new QGraphicsSimpleTextItem("Bonus");
+    bonusTileLabel->setVisible(false);
+    scene->addItem(bonusTileLabel);
+    bonusTileLabel->setFont(QFont("Comic Sans", 16, QFont::Bold));
+    bonusTileLabel->setPos(-80, 210);
 
 
 
@@ -158,8 +126,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     scoreLabel->setVisible(false);
 
+    readSettings();
 }
 
+void MainWindow::closeEvent ( QCloseEvent * event )
+{
+    quit();
+}
+
+void MainWindow::quit()
+{
+    writeSettings();
+    QCoreApplication::quit();
+}
 
 void MainWindow::mouseOverTile()
 {
@@ -239,112 +218,6 @@ void MainWindow::resetTilesHighlightStatus()
     }
 }
 
-//
-//void MainWindow::sceneMouseMoved(double x, double y)
-//{
-//    ui->textEdit->append("Moved!");
-//    switch (clickState)
-//    {
-//    case NO_TILES_CLICKED:
-//
-//        break;
-//    case FIRST_TILE_CLICKED:
-//
-//        bool modifiedHighlightedSet = false;
-//        QGraphicsItem* item = scene.itemAt(x, y);
-//        Tile* tile = dynamic_cast<Tile *>(item);
-//
-//        if (tile && tile->getTileLetter() != "")
-//        {
-//
-//            if (lastHoverTile != tile)
-//            {
-//                modifiedHighlightedSet = true;
-//                lastHoverTile = tile;
-//            }
-//
-//            int tempX = tile->tileCoordX;
-//            int tempY = tile->tileCoordY;
-//
-//            if (modifiedHighlightedSet)
-//            {
-//                QString debugStr = QString("! %1 %2 %3 %4").arg(x1).arg(y1).arg(tempX).arg(tempY);
-//                ui->labelDebug->setText(debugStr);
-//                highlightedTiles.clear();
-//                for (int j = qMin(y1, tempY); j <= qMax(y1, tempY); j++)
-//                {
-//                    for (int i = qMin(x1, tempX); i <= qMax(x1, tempX); i++)
-//                    {
-//
-//
-//                        int index = j*boardWidth + i;
-//
-//                        if (tiles.at(index) && tiles.at(index)->getTileLetter() != "")
-//                        {
-//                            //tiles.at(index)->setTileBrush(brushBonusActive);
-//
-//                            highlightedTiles.insert(tiles.at(index));
-//
-//
-//                        }
-//
-//
-//                    }
-//                }
-//                foreach (Tile* tile, tiles)
-//                {
-//                    if (tile->getTileLetter() == "")
-//                        if (tile != tileRect1)
-//                            tile->setTileBrush(brushSolved);
-//                        else
-//                            tile->setTileBrush(brushBonusActive);
-//                    else
-//                    {
-//                        if (highlightedTiles.contains(tile))
-//                            tile->setTileBrush(brushBonusActive);
-//
-//                        else
-//                            tile->setTileBrush(brushUnsolved);
-//                    }
-//
-//                }
-//            }
-//
-//        }
-//
-//
-//
-//
-////        x2 = qRound(x/curTileWidth);
-////        y2 = qRound(y/curTileWidth);
-////        if (x2 < 0) x2 = 0;
-////        if (y2 < 0) y2 = 0;
-////        if (x2 > boardWidth) x2 = boardWidth;
-////        if (y2 > boardHeight) y2 = boardHeight;
-////
-////        int lx1 = x1*curTileWidth;
-////        int ly1 = y1*curTileWidth;
-////        int lx2 = x2*curTileWidth;
-////        int ly2 = y2*curTileWidth;
-//
-//  /*      secondCorner->setVisible(true);
-//        secondCorner->setPos(lx2 - crossHairsWidth/2, ly2 - crossHairsWidth/2);
-//*/
-//
-//
-//
-////        line1->setLine(lx1, ly1, lx2, ly1);
-////        line2->setLine(lx2, ly1, lx2, ly2);
-////        line3->setLine(lx2, ly2, lx1, ly2);
-////        line4->setLine(lx1, ly2, lx1, ly1);
-////        line1->setVisible(true);
-////        line2->setVisible(true);
-////        line3->setVisible(true);
-////        line4->setVisible(true);
-//        break;
-//    }
-//}
-
 void MainWindow::sceneMouseClicked(double x, double y)
 {
     if (!gameGoing)
@@ -355,62 +228,6 @@ void MainWindow::sceneMouseClicked(double x, double y)
     switch (clickState)
     {
 
-        //    case BONUS_TILE_SELECTED:
-        //        {
-        //            QGraphicsItem* item = scene.itemAt(x, y);
-        //            Tile* tile = dynamic_cast<Tile *>(item);
-        //            if (tile)
-        //            {
-        //                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
-        //                {
-        //                    if (curselBonusTile)
-        //                    {
-        //                        /* if a current bonus tile is already selected then it gets unselected first */
-        //                        curselBonusTile->setTileBrush(brushBonusActive);
-        //
-        //                        if (curselBonusTile == tile)
-        //                        {
-        //                            /* if we clicked on the same tile just reset this tile */
-        //                            curselBonusTile = NULL;
-        //                            cornerState = BOTH_CORNERS_OFF;
-        //                            scene.update();
-        //                            break;
-        //                        }
-        //                        else
-        //                        {
-        //                            curselBonusTile = tile;
-        //                            tile->setTileBrush(brushUnsolved);
-        //                            cornerState = BONUS_TILE_SELECTED;
-        //                            scene.update();
-        //                            break;
-        //                        }
-        //                    }
-        //
-        //                }
-        //                else if (tile->getAddlAttribute() == 0)
-        //                {
-        //                    /* a regular tile*/
-        //                    if (curselBonusTile)
-        //                    {
-        //                        if (tile->getTileLetter() == "")
-        //                        {
-        //                            // this tile is solved. just put the letter in it and set requiredBonusTile
-        //                            tile->setTileLetter(curselBonusTile->getTileLetter());
-        //                            requiredBonusTile = tile;
-        //                            tile->setTileBrush(brushBonusActive);
-        //                            cornerState = BOTH_CORNERS_OFF;
-        //                            scene.update();
-        //                            break;
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //            cornerState = BOTH_CORNERS_OFF;
-        //            scene.update();
-        //
-        //
-        //        }
-        //        break;
 
     case NO_TILES_CLICKED:
         {
@@ -418,27 +235,7 @@ void MainWindow::sceneMouseClicked(double x, double y)
             Tile* tile = dynamic_cast<Tile *>(item);
             if (tile && !tile->isBonusTile())
             {
-                //                if (tile->getAddlAttribute() == 1 && bonusTilesAllowed)
-                //                {
-                //                    foreach (Tile* t, bonusTiles)
-                //                    {
-                //                        t->setTileBrush(brushBonusActive);
-                //                    }
-                //
-                //                    tile->setTileBrush(brushUnsolved);
-                //                    curselBonusTile = tile;
-                //                    cornerState = BONUS_TILE_SELECTED;
-                //
-                //                    if (requiredBonusTile)
-                //                    {
-                //                        requiredBonusTile->setTileLetter("");
-                //                        requiredBonusTile->setTileBrush(brushSolved);
-                //                        requiredBonusTile = NULL;
-                //                    }
-                //
-                //                    scene.update();
-                //                    break; // bonus tile selected!
-                //                }
+
 
                 x1 = tile->tileCoordX;
                 y1 = tile->tileCoordY;
@@ -447,16 +244,6 @@ void MainWindow::sceneMouseClicked(double x, double y)
                 tileRect1 = tile;
             }
 
-            //            x1 = qRound(x/curTileWidth);
-            //            y1 = qRound(y/curTileWidth);
-            //            firstCorner->setVisible(true);
-            //
-            //            if (x1 < 0) x1 = 0;
-            //            if (y1 < 0) y1 = 0;
-            //            if (x1 > boardWidth) x1 = boardWidth;
-            //            if (y1 > boardHeight) y1 = boardHeight;
-            //            firstCorner->setPos(x1*curTileWidth - crossHairsWidth/2, y1*curTileWidth - crossHairsWidth/2);
-            //            cornerState = LEFT_CORNER_ON;
             break;
         }
     case FIRST_TILE_CLICKED:
@@ -467,24 +254,10 @@ void MainWindow::sceneMouseClicked(double x, double y)
         {
             x2 = tile->tileCoordX;
             y2 = tile->tileCoordY;
-            //            x2 = qRound(x/curTileWidth);
-            //            y2 = qRound(y/curTileWidth);
-            //            if (x2 < 0) x2 = 0;
-            //            if (y2 < 0) y2 = 0;
-            //            if (x2 > boardWidth) x2 = boardWidth;
-            //            if (y2 > boardHeight) y2 = boardHeight;
-            //
-            //            firstCorner->setVisible(false);
-            //            secondCorner->setVisible(false);
-            /*     if (tileRect1 && tileRect1->getTileLetter() != "")
-                tileRect1->setTileBrush(brushUnsolved);
-        */
+
             clickState = NO_TILES_CLICKED;
             possibleRectangleCheck();
-            //            line1->setVisible(false);
-            //            line2->setVisible(false);
-            //            line3->setVisible(false);
-            //            line4->setVisible(false);
+
             resetTilesHighlightStatus();
 
         }
@@ -501,21 +274,23 @@ void MainWindow::keyPressed(int keyCode)
     {
         if (keyCode >= Qt::Key_A && keyCode <= Qt::Key_Z)
         {
-            curselBonusTile->setVisible(true);
             char c = keyCode - Qt::Key_A + 'A';
             if (c != 'Q')
                 curselBonusTile->setTileLetter(QString(c));
             else
                 curselBonusTile->setTileLetter("Qu");
-            curselBonusTile->setPos(mouseX - curTileWidth, mouseY);
         }
-        else if (keyCode == Qt::Key_Escape)
-        {
-            curselBonusTile->setVisible(false);
-            curselBonusTile->setTileLetter("");
 
-        }
     }
+
+    if (keyCode == Qt::Key_Escape)
+    {
+        curselBonusTile->setTileLetter("");
+        clickState = NO_TILES_CLICKED;
+        resetTilesHighlightStatus();
+    }
+
+
     // ui->textEdit->append("Key was pressed: " + QString::number(keyCode));
 }
 
@@ -523,39 +298,10 @@ void MainWindow::sceneMouseMoved(double x, double y)
 {
     mouseX = x;
     mouseY = y;
-    if (curselBonusTile->isVisible())
-        curselBonusTile->setPos(x - curTileWidth, y);
+
 
 }
 
-//void MainWindow::tileMouseCornerClicked(int x, int y)
-//{
-//    if (!gameGoing)
-//    {
-//        clickState = NO_TILES_CLICKED;
-//        return;
-//    }
-//    switch (cornerState)
-//    {
-//    case BOTH_CORNERS_OFF:
-//        firstCorner->setVisible(true);
-//        firstCorner->setPos(x * curTileWidth - crossHairsWidth/2, y * curTileWidth - crossHairsWidth/2);
-//        cornerState = LEFT_CORNER_ON;
-//        x1 = x; y1 = y;
-//        break;
-//    case LEFT_CORNER_ON:
-//        secondCorner->setVisible(true);
-//        secondCorner->setPos(x * curTileWidth - crossHairsWidth/2, y * curTileWidth - crossHairsWidth/2);
-//        firstCorner->setVisible(false);
-//        secondCorner->setVisible(false);
-//        x2 = x; y2 = y;
-//        cornerState = BOTH_CORNERS_OFF;
-//        possibleRectangleCheck();
-//        break;
-//
-//    }
-//
-//}
 
 void MainWindow::possibleRectangleCheck()
 {
@@ -573,128 +319,184 @@ void MainWindow::possibleRectangleCheck()
             int index = j*boardWidth + i;
             letters += tiles.at(index)->getTileLetter();
 
-            //            if (requiredBonusTile)
-            //                if (tiles.at(index) == requiredBonusTile) bonusTileUsed = true;
         }
     }
-    //    if (requiredBonusTile && !bonusTileUsed) return;    // if a required tile was not in the rectangle just ignore it!
     if (letters.size() < 2) return;
 
     QString debugStr = QString("%1 %2 %3 %4 %5").arg(x1).arg(y1).arg(x2).arg(y2).arg(letters);
     // ui->labelDebug->setText(debugStr);
-    if (curselBonusTile && curselBonusTile->getTileLetter() != "")
-        letters += curselBonusTile->getTileLetter();
 
-    curselBonusTile->setVisible(false);
-    curselBonusTile->setTileLetter("");
+    int thisScore = 0;
 
-    letters = alphagrammize(letters.toUpper());
-
-
-    /* look for this string in the db*/
-
-    if (wordStructure->wordStructure.contains(letters))
+    if (currentGameDescription == "WordStruck")
     {
-        // this rectangle contains a word!
-        QString answers = wordStructure->wordStructure.value(letters);
-        ui->listWidgetWordList->insertItem(0, answers);
-        for (int j = qMin(y1, y2); j <= qMax(y1, y2); j++)
+        int numExtraLetters = 0;
+
+        if (curselBonusTile && curselBonusTile->getTileLetter() != "")
         {
-            for (int i = qMin(x1, x2); i <= qMax(x1, x2); i++)
+            letters += curselBonusTile->getTileLetter();
+            numExtraLetters = curselBonusTile->getTileLetter().length();
+
+        }
+        curselBonusTile->setTileLetter("");
+
+        letters = alphagrammize(letters.toUpper());
+
+
+        /* look for this string in the db*/
+
+        if (wordStructure->wordStructure.contains(letters))
+        {
+            // this rectangle contains a word!
+            QString answers = wordStructure->wordStructure.value(letters);
+            ui->listWidgetWordList->insertItem(0, answers);
+            for (int j = qMin(y1, y2); j <= qMax(y1, y2); j++)
+            {
+                for (int i = qMin(x1, x2); i <= qMax(x1, x2); i++)
+                {
+
+                    int index = j*boardWidth + i;
+                    tiles.at(index)->setTileLetter("");
+                    tiles.at(index)->setTileBrush(brushSolved);
+                    simpleGridRep[i][j] = ' ';
+                }
+            }
+
+            int wordLength = letters.size();
+            /* handle special QU case */
+            if (letters.contains("Q")) wordLength--;    // Q only exists with U. this is a dirty hack.
+            if (wordLength <= 15)
+            {
+                int effectiveWordLength = wordLength;
+
+                thisScore = scoresByLength[effectiveWordLength];
+                solvedWordsByLength[wordLength]++;
+            }
+            else
+                thisScore = 400;
+
+
+            numSolvedLetters += (wordLength - numExtraLetters);
+
+            if (wordLength != 2)
+            {
+                ui->textEdit->append(QString("+%1 for %2-letter word!").
+                                     arg(thisScore).arg(wordLength));
+                curScore += thisScore;
+            }   /* do not count 2-letter words in score! */
+
+
+            if (numSolvedLetters == boardWidth * boardHeight)
+            {
+                // cleared whole board
+
+                int clearBonus = boardWidth * boardHeight * 2;
+                curScore += clearBonus;
+                ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
+                int timeBonus = timerSecs;
+                ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+                curScore += timeBonus;
+                timerSecs = 0;
+                gameGoing = false;
+            }
+
+            /* deal with bonus tiles */
+            if (numSolvedLetters > 0 && numSolvedLetters < (boardWidth*boardHeight) - bonusTurnoffTiles)
             {
 
-                int index = j*boardWidth + i;
-                tiles.at(index)->setTileLetter("");
-                tiles.at(index)->setTileBrush(brushSolved);
-                simpleGridRep[i][j] = ' ';
+                if (!bonusTilesAllowed)
+                {
+                    bonusTilesAllowed = true;
+                    curselBonusTile->setVisible(true);
+                    bonusTileLabel->setVisible(true);
+                }
             }
+            else
+            {
+                if (bonusTilesAllowed)      // this makes this message only pop up once
+                {
+                    curselBonusTile->setVisible(false);
+                    bonusTileLabel->setVisible(false);
+                    ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
+                                         arg(boardWidth*boardHeight - numSolvedLetters));
+
+                    bonusTilesAllowed = false;
+                }
+            }
+
+
+            displayScore(curScore);
+
+            scene->update();
+
+
         }
-        int thisScore = 0;
+        else
+        {
+            timerSecs -= 10;
+            ui->textEdit->append("<font color=red>10-second penalty!</font>");
+        }
+
+    }
+    else if (currentGameDescription == "WordDash")
+    {
+        letters = alphagrammize(letters.toUpper());
         int wordLength = letters.size();
-        /* handle special QU case */
-        if (letters.contains("Q")) wordLength--;    // Q only exists with U. this is a dirty hack.
-        if (wordLength <= 15)
+
+        if (foundAlphaset.contains(letters) && wordLength == curGenerating)
         {
-            int effectiveWordLength = wordLength;
-            //            if (requiredBonusTile)
-            //            {
-            //                numSolvedLetters--; // take away a letter if we used a bonus
-            //                effectiveWordLength--;
-            //                if (effectiveWordLength < 2) effectiveWordLength = 2;
-            //                requiredBonusTile = NULL;
-            //            }
-            thisScore = scoresByLength[effectiveWordLength];
             solvedWordsByLength[wordLength]++;
-        }
-        else
-            thisScore = 400;
+            foundAlphaset.remove(letters);
+            if (wordLength <= 15)
+            {
+                thisScore = scoresByLength[wordLength];
+            }
+            else
+                thisScore = 400;
 
-
-        numSolvedLetters += wordLength;
-
-        if (wordLength != 2)
-        {
-            ui->textEdit->append(QString("+%1 for %2-letter word!").
-                                 arg(thisScore).arg(wordLength));
             curScore += thisScore;
-        }   /* do not count 2-letter words in score! */
 
+            markInWordList(wordStructure->wordStructure.value(letters));
+            curSolved++;
 
-        if (numSolvedLetters == boardWidth * boardHeight)
-        {
-            // cleared whole board
-
-            int clearBonus = boardWidth * boardHeight * 2;
-            curScore += clearBonus;
-            ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
-            int timeBonus = timerSecs;
-            ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
-            curScore += timeBonus;
-            timerSecs = 0;
-        }
-
-        /* deal with bonus tiles */
-        if (numSolvedLetters > 0 && numSolvedLetters < (boardWidth*boardHeight) - bonusTurnoffTiles)
-        {
-
-            if (!bonusTilesAllowed)
+            if (curSolved == curToSolve)
             {
-                bonusTilesAllowed = true;
-                //                foreach (Tile* tile, bonusTiles)
-                //                {
-                //                    tile->setTileBrush(brushBonusActive);
-                //                }
+                curSolved = 0;
+                curGenerating++;
+
+                bool retVal = populateNextFindList();
+
+                if (!retVal)
+                {
+                    // game over!
+                    int clearBonus = boardWidth * boardHeight * 2;
+                    curScore += clearBonus;
+                    ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
+                    int timeBonus = timerSecs;
+                    ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+                    curScore += timeBonus;
+                    timerSecs = 0;
+                    gameGoing = false;
+                }
+
             }
+
+            displayScore(curScore);
+            scene->update();
+
+
+        }
+        else if (wordStructure->wordStructure.contains(letters))
+        {
+            // no penalty
+
         }
         else
         {
-            if (bonusTilesAllowed)      // this makes this message only pop up once
-            {
-                ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
-                                     arg(boardWidth*boardHeight - numSolvedLetters));
-                //                foreach (Tile* tile, bonusTiles)
-                //                {
-                //                    tile->setTileBrush(brushBonusInactive);
-                //                }
-                bonusTilesAllowed = false;
-            }
+            timerSecs -= 3;
+            ui->textEdit->append("<font color=red>3-second penalty!</font>");
         }
-
-
-        displayScore(curScore);
-
-        scene->update();
-        generateFindList();
-
     }
-    else
-    {
-        timerSecs -= 10;
-        ui->textEdit->append("<font color=red>10-second penalty!</font>");
-    }
-
-
-
 
 }
 
@@ -727,15 +529,7 @@ void MainWindow::setTilesPos()
         tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
     }
 
-    //    foreach (Tile* tile, bonusTiles)
-    //    {
-    //
-    //        tile->setPos(tile->tileCoordX * curTileWidth, tile->tileCoordY * curTileWidth);
-    //    }
 
-
-    //    ui->graphicsView->resetTransform();
-    //    ui->graphicsView->translate(-100, -100);
     scene->setSceneRect(QRectF(0, 0, curTileWidth*boardWidth, curTileWidth*boardHeight));
 }
 
@@ -749,51 +543,32 @@ void MainWindow::on_pushButtonRetry_clicked()
     shouldLoadNextNewGame = true;
     gameToLoad = currentGameCode;
     ui->pushButtonNewGame->animateClick();
-    //
-    //    if (!loadedWordStructure) return;
-    //
-    //    bonusTurnoffTiles = ui->spinBoxRetinaTurnOff->value();
-    //    minLengthHints = ui->spinBoxMinLengthGen->value();
-    //    maxLengthHints = ui->spinBoxMaxLengthGen->value();
-    //
-    //    int i = 0;
-    //    foreach (Tile* tile, tiles)
-    //    {
-    //        tile->setTileLetter(thisRoundLetters.at(i));
-    //        tile->setTileBrush(brushUnsolved);
-    //        i++;
-    //    }
-    //    timerSecs = lastTimerSecs;
-    //    ui->lcdNumber->display(timerSecs);
-    //    ui->lcdNumberScore->display(0);
-    //    gameTimer.start();
-    //    ui->listWidget->clear();
-    //    gameGoing = true;
-    //    curScore = 0;
-    //    numSolvedLetters = 0;
-    //    ui->textEdit->append("---------------------------------------------");
-    //
-    //    for (int i = 0; i < 16; i++)
-    //        solvedWordsByLength[i] = 0;
-    //
-    //    generateFindList();
-    //    scene.update();
+
 }
 
 void MainWindow::on_pushButtonNewGame_clicked()
 {
     if (!loadedWordStructure) return;
 
-    /*
-    bonusTurnoffTiles = ui->spinBoxBonusTurnOff->value();
-    minLengthHints = ui->spinBoxMinLengthGen->value();
-    maxLengthHints = ui->spinBoxMaxLengthGen->value();
-    */
-    bonusTurnoffTiles = 10;
+    if (currentGameDescription == "WordStruck")
+    {
+        bonusTurnoffTiles = uiPreferences.spinBoxBonusTurnOff->value();
+    }
+    else if (currentGameDescription == "WordDash")
+    {
+        minToGenerate = uiPreferences.spinBoxMinWordLengthToFind->value();
+        maxToGenerate = uiPreferences.spinBoxMaxWordLengthToFind->value();
+        curGenerating = minToGenerate;
 
-    minLengthHints = 7;
-    maxLengthHints = 8;
+        if (minToGenerate > maxToGenerate)
+        {
+            QMessageBox::warning(this, "Can't start!", "Your minimum length for Word Dash "
+                                 "is greater than your maximum length!");
+            return;
 
+        }
+
+    }
 
 
     int gridSize = 0;
@@ -812,43 +587,26 @@ void MainWindow::on_pushButtonNewGame_clicked()
         gridSize = sqrt(gameToLoad.length());
     }
 
-    timerSecs = QInputDialog::getInteger(this, "Timer?", "Please select desired timer (seconds)",
-                                         gridSize*gridSize*3, 1, 5000, 1, &ok);
-    if (!ok) timerSecs = gridSize*gridSize*3;
-    lastTimerSecs = timerSecs;
+    if (currentGameDescription == "WordStruck")
+    {
+        timerSecs = QInputDialog::getInteger(this, "Timer?", "Please select desired timer (seconds)",
+                                             gridSize*gridSize*3, 1, 5000, 1, &ok);
+        if (!ok) timerSecs = gridSize*gridSize*3;
+        lastTimerSecs = timerSecs;
+    }
+
 
     thisRoundLetters.clear();
     foreach (Tile* tile, tiles)
         tile->deleteLater();
     tiles.clear();
 
-    if (curselBonusTile)
-        curselBonusTile->deleteLater();
-    //    foreach (Tile* tile, bonusTiles)
-    //        tile->deleteLater();
-    //
-    //    bonusTiles.clear();
-
-
     lastGridSize = gridSize;
     boardHeight = gridSize;
     boardWidth = gridSize;
 
-    //    QString bonus = "RETINA";
-    //    for (int i = 0; i < bonus.length(); i++)
-    //    {
-    //        Tile* tile = new Tile();
-    //        bonusTiles << tile;
-    //        scene.addItem(tile);
-    //        tile->setTileCoords(i-3 + boardWidth/2, -2);
-    //        tile->setWidth(curTileWidth, 1);
-    //        tile->setTileBrush(brushBonusInactive);
-    //        tile->setTileLetter(QString(bonus[i]));
-    //        tile->setAddlAttribute(1);
-    //    }
 
     bonusTilesAllowed = false;  // bonus tiles are not allowed right at the beginning
-    //    requiredBonusTile = NULL;
 
 
     for (int j = 0; j < boardHeight; j++)
@@ -868,7 +626,8 @@ void MainWindow::on_pushButtonNewGame_clicked()
         }
     }
     setTilesPos();
-
+    curselBonusTile->setWidth(curTileWidth, 1);
+    curselBonusTile->setVisible(false);
     int index = 0;
 
     if (!shouldLoadNextNewGame)
@@ -930,13 +689,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
         currentGameCode = gameToLoad;
     }
 
-    curselBonusTile = new Tile();
-    scene->addItem(curselBonusTile);
-    curselBonusTile->setVisible(false);
-    curselBonusTile->setTileCoords(0, 0);
-    curselBonusTile->setWidth((int) ((double)curTileWidth/1.5), 1);
-    curselBonusTile->setTileBrush(brushBonusTile);
-    curselBonusTile->setIsBonusTile(true);
+
     for (int j = 0; j < boardHeight; j++)
     {
         QString line;
@@ -947,9 +700,18 @@ void MainWindow::on_pushButtonNewGame_clicked()
         qDebug() << line;
     }
 
+    if (currentGameDescription == "WordDash")
+    {
+        generateFindList();
+        timerSecs = qMax(foundAlphaset.size() * uiPreferences.spinBoxSecondsPerWord->value(), 1);
+    }
+
+
+
     ui->lcdNumber->display(timerSecs);
     displayScore(0);
     gameTimer.start();
+
     ui->listWidgetWordList->clear();
     gameGoing = true;
     curScore = 0;
@@ -959,9 +721,12 @@ void MainWindow::on_pushButtonNewGame_clicked()
     for (int i = 0; i < 16; i++)
         solvedWordsByLength[i] = 0;
 
-    generateFindList();
 
     //    scene.update();
+
+
+    if (currentGameDescription == "WordDash")
+        populateNextFindList();
 
     scoreLabel->setVisible(true);
 }
@@ -1025,6 +790,19 @@ MainWindow::~MainWindow()
 
 }
 
+void MainWindow::markInWordList(QString str)
+{
+    QList<QListWidgetItem *> list = ui->listWidgetWordList->findItems (str, Qt::MatchExactly);
+    if (list.size() != 1)
+    {
+        ui->textEdit->append("Unexpected error!!");
+        return;
+    }
+
+    list[0]->setBackgroundColor(Qt::blue);
+
+}
+
 void MainWindow::generateFindList()
 {
     QTime t;
@@ -1032,31 +810,57 @@ void MainWindow::generateFindList()
     /* here generate all possible rectangles with words of certain sizes */
 
 
-    QSet <QString>alphaSet;
+    foundAlphaset.clear();
     for (int i = 0; i < lastGridSize; i++)
     {
         for (int j = 0; j < lastGridSize; j++)
         {
             // qDebug() << "i j" << i << j;
-            generateSingleFindList(minLengthHints, maxLengthHints, i, j, alphaSet);
+            generateSingleFindList(minToGenerate, maxToGenerate, i, j, foundAlphaset);
         }
     }
     qDebug() << "Rectangle generation:" << t.elapsed();
 
     // ui->textEdit->append(QString("lgs %1 %2").arg(lastGridSize).arg(alphaSet.size()));
 
-    //ui->listWidgetWordsToFind->clear();
-
-    foreach (QString alph, alphaSet)
+    foreach (QString alph, foundAlphaset)
     {
-        if (wordStructure->wordStructure.contains(alph))
-        {
-
-            //ui->listWidgetWordsToFind->insertItem(0, wordStructure->wordStructure.value(alph));
-
-        }
+        if (!wordStructure->wordStructure.contains(alph))
+            foundAlphaset.remove(alph);
     }
-    qDebug() << "All words: " << t.elapsed();
+
+}
+
+bool MainWindow::populateNextFindList()
+{
+    ui->listWidgetWordList->clear();
+
+    qDebug() << "in populate" << curGenerating << foundAlphaset;
+    while (true)
+    {
+
+        curToSolve = 0;
+        foreach (QString alph, foundAlphaset)
+        {
+            if (wordStructure->wordStructure.contains(alph) && alph.length() == curGenerating)
+            {
+
+                ui->listWidgetWordList->insertItem(0, wordStructure->wordStructure.value(alph));
+                curToSolve++;
+            }
+        }
+        qDebug() << "Cur:" << curGenerating << "to solve:" << curToSolve;
+        if (curToSolve == 0)
+        {
+            curGenerating++;
+            qDebug() << "It was 0 " << curGenerating << maxToGenerate;
+            if (curGenerating > maxToGenerate) return false;
+        }
+        else break;
+    }
+
+    curSolved = 0;
+    return true;
 }
 
 QString MainWindow::extractStringsFromRectangle(int TLi, int TLj, int BRi, int BRj, int minLength, int maxLength)
@@ -1140,6 +944,79 @@ void MainWindow::on_actionSave_board_triggered()
 void MainWindow::on_actionEdit_game_preferences_triggered()
 {
     preferencesWidget->show();
+}
+
+void MainWindow::writeSettings()
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+
+    settings.beginGroup("WordDash");
+    settings.setValue("SecondsPerWord", uiPreferences.spinBoxSecondsPerWord->value());
+    settings.setValue("MinWordLengthToFind", uiPreferences.spinBoxMinWordLengthToFind->value());
+    settings.setValue("MaxWordLengthToFind", uiPreferences.spinBoxMaxWordLengthToFind->value());
+    settings.endGroup();
+
+    settings.beginGroup("WordStruck");
+    settings.setValue("BonusTileTurnoff", uiPreferences.spinBoxBonusTurnOff->value());
+
+    settings.endGroup();
+
+    settings.beginGroup("GeneralSettings");
+    settings.setValue("DefaultGame", currentGameDescription);
+    settings.endGroup();
+}
+
+void MainWindow::readSettings()
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+
+    settings.beginGroup("WordDash");
+    uiPreferences.spinBoxSecondsPerWord->setValue(settings.value("SecondsPerWord", 5).toInt());
+    uiPreferences.spinBoxMaxWordLengthToFind->setValue(settings.value("MaxWordLengthToFind", 9).toInt());
+    uiPreferences.spinBoxMinWordLengthToFind->setValue(settings.value("MinWordLengthToFind",6).toInt());
+    settings.endGroup();
+
+    settings.beginGroup("WordStruck");
+    uiPreferences.spinBoxBonusTurnOff->setValue(settings.value("BonusTileTurnoff", 10).toInt());
+    settings.endGroup();
+
+    settings.beginGroup("GeneralSettings");
+    currentGameDescription = settings.value("DefaultGame", "WordStruck").toString();
+    settings.endGroup();
+
+    QString switchStr;
+    if (currentGameDescription == "WordStruck") switchStr = "WordDash";
+    else if (currentGameDescription == "WordDash") switchStr = "WordStruck";
+
+    ui->pushButtonSwitchGame->setText("Switch to: " + switchStr);
+    ui->labelCurrentGame->setText(currentGameDescription);
+
+}
+
+void MainWindow::on_pushButtonSwitchGame_clicked()
+{
+    if (gameGoing)
+        QMessageBox::information(this, "Can't switch", "Your current game must end before you can switch games!");
+    else
+    {
+
+        QString switchStr;
+        if (currentGameDescription == "WordStruck")
+        {
+            currentGameDescription = "WordDash";
+            switchStr = "WordStruck";
+        }
+        else if (currentGameDescription == "WordDash")
+        {
+            currentGameDescription = "WordStruck";
+            switchStr = "WordDash";
+
+        }
+        ui->pushButtonSwitchGame->setText("Switch to: " + switchStr);
+
+        ui->labelCurrentGame->setText(currentGameDescription);
+    }
+
 }
 
 /***********************/
