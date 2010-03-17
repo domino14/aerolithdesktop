@@ -1050,37 +1050,6 @@ void MainWindow::createUnscrambleGameTable()
         out << (quint8)LIST_TYPE_NAMED_LIST;
         out << listname;
 
-        /*
-        QSqlQuery query(QSqlDatabase::database(currentLexicon + "DB_client"));
-
-        query.prepare("SELECT probindices from wordlists where listname = ?");
-        query.bindValue(0, listname);
-        query.exec();
-        QByteArray indices;
-        while (query.next())
-        {
-            indices = query.value(0).toByteArray();
-        }
-        QDataStream stream(indices);
-        quint8 type, length;
-        stream >> type >> length;
-        Q_ASSERT(type == 1);        // the named lists are all lists of indices, type = 1
-        quint32 size;
-        stream >> size;
-        QSet <quint32> indexSet;
-        quint32 index;
-        qDebug() << "size! = " << size;
-        for (quint32 i = 0; i < size; i++)
-        {
-            stream >> index;
-            indexSet.insert(index);
-        }
-        // TODO delete
-        //        SavedUnscrambleGame thisSug;
-        //        thisSug.initialize(indexSet);
-        //
-        //        gameBoardWidget->setCurrentSug(thisSug);
-*/
         gameBoardWidget->setUnmodifiedListName(listname);
 
     }
