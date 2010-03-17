@@ -112,6 +112,7 @@ private:
     QString wordDbConName;
     QSqlQuery query;
     QString wordList;
+    QString wordListOriginal;
     bool neverStarted;
     bool wroteToMissedFileThisRound;
     bool gameStarted;
@@ -162,6 +163,7 @@ private:
     void performSpecificSitActions(ClientSocket*);
     void performSpecificStandActions(ClientSocket*);
 
+    quint8 userlistMode;
 private slots:
     void updateGameTimer();
     void updateCountdownTimer();
