@@ -138,8 +138,6 @@ private:
     QVector <quint32> missedArray;
     QVector <quint32> quizArray;
 
-    QSet <quint32> quizSet;
-    QSet <quint32> missedSet;
 
     quint16 quizIndex;
     QVector <alphagramInfo> *alphaInfo;
