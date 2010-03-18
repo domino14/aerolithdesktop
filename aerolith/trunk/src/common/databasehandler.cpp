@@ -731,11 +731,14 @@ QString DatabaseHandler::getSavedListArrayPath(QString lexiconName, QString list
     while (userListsQuery.next())
         ret = userListsQuery.value(0).toByteArray();*/
 
-    QString ret;
-   // ret = userlistPathPrefix + username + "/" + lexiconName + "/" + listName;
 
+    QDir dir = QDir::home();
+    dir.cd(".aerolith");
+    dir.cd("userlists");
+    dir.cd(username);
+    dir.cd(lexiconName);
+    return dir.filePath(listName);
 
-    return ret;
 }
 
 void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QString username)

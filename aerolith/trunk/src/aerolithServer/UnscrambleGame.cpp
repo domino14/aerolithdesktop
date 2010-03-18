@@ -524,8 +524,56 @@ void UnscrambleGame::generateQuizArray()
             qDebug() << " array size" << quizArray.size();
             //qDebug() << quizArray;
         }
-        else    // multiple_indices
+        else    // USER LIST
         {
+            QString pathName = dbHandler->getSavedListArrayPath(currentLexicon, wordListOriginal,
+                                                                      table->originalHost->connData.userName);
+
+            QFile f(pathName);
+            f.open(QIODevice::ReadOnly);
+            QByteArray ba = f.readAll();
+
+            //        SavedUnscrambleGame thisSug;
+            //        thisSug.populateFromByteArray(savedGameBA);
+
+
+            //        switch (mode)
+            //        {
+            //        case DatabaseHandler::MODE_RESTART:
+            //            thisSug.initialize(thisSug.origIndices);
+            //
+            //            qindices = thisSug.origIndices;
+            //            mindices.clear();
+            //
+            //            break;
+            //
+            //        case DatabaseHandler::MODE_FIRSTMISSED:
+            //            qindices = thisSug.firstMissed;
+            //            mindices.clear();
+            //
+            //            thisSug.curQuizList = thisSug.firstMissed;
+            //            thisSug.curMissedList.clear();
+            //            break;
+            //
+            //        case DatabaseHandler::MODE_CONTINUE:
+            //            if (thisSug.brandNew)
+            //            {
+            //                qindices = thisSug.origIndices;
+            //                mindices.clear();
+            //            }
+            //            else
+            //            {
+            //                qindices = thisSug.curQuizList;
+            //                mindices = thisSug.curMissedList;
+            //            }
+            //            break;
+            //        }
+            //
+            //        out << si[0]->text().left(32);
+            //        out << qindices << mindices;
+            //        thisSug.writeToDebug();
+            //        gameBoardWidget->setCurrentSug(thisSug);
+            /*
             quint32 size = quizSet.size();   // already assigned earlier in initialize()
 
             QVector <quint32> tempVector;
@@ -544,7 +592,7 @@ void UnscrambleGame::generateQuizArray()
 
             missedArray = missedSet.values().toVector();
             numTotalRacks = size;
-
+*/
         }
 
     }
