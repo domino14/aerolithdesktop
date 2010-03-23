@@ -95,9 +95,8 @@ void Tile::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // Draw text
 
     int baseFontSize;
-    QString fontName = "Courier";
-    if (width == height) baseFontSize = 0;
-    else baseFontSize = 2;
+    QString fontName = "Arial";
+    baseFontSize = -7;
     /* figure out if there's a way to make the text skinny */
     if (tileLetter.size() == 2)
     {
