@@ -37,9 +37,7 @@ public:
 private:
     void mousePressEvent ( QGraphicsSceneMouseEvent * mouseEvent );
     void keyPressEvent ( QKeyEvent * event );
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
 signals:
-    void sceneMouseMoved(double, double);
     void sceneMouseClicked(double, double);
     void keyPressed(int);
 
@@ -89,6 +87,10 @@ private:
     QGraphicsSimpleTextItem* gameScore;
 
     QGraphicsSimpleTextItem* bonusTileLabel;
+    QGraphicsSimpleTextItem* dashInstructionsLabel;
+
+    QGraphicsSimpleTextItem* thisScoreLabel;
+
     Tile *bonusTile;
 
     ClickStates clickState;
@@ -133,6 +135,7 @@ private:
     int curToSolve;
     int curSolved;
     QSet <QString> foundAlphaset;
+    QSet <QString> solvedAlphaset;
     void generateFindList();
     bool populateNextFindList();
     void markInWordList(QString str);
@@ -146,11 +149,13 @@ private:
     void resetTilesHighlightStatus();
     double mouseX, mouseY;
     void displayScore(int);
+    void showSingleScore(int score, int x1, int x2, int y1, int y2,bool penalty = false);
     void closeEvent ( QCloseEvent * event );
     void quit();
     void writeSettings();
     void readSettings();
     QString currentGameDescription;
+    QTimer* scoreTimer;
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
@@ -159,7 +164,6 @@ private slots:
     void on_actionEdit_game_preferences_triggered();
     void secPassed();
     void sceneMouseClicked(double, double);
-    void sceneMouseMoved(double, double);
     void mouseOverTile();
     void mouseOutOfTile();
     void keyPressed(int);
@@ -171,6 +175,8 @@ private slots:
     void on_toolButtonPlusSize_clicked();
     void finishedLoadingWordStructure();
     void on_pushButtonSwitchGame_clicked();
+
+    void hideSingleScore();
 
 };
 
