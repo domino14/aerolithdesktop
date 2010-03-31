@@ -86,12 +86,6 @@ public:
     {
     }
 
-    enum UserListQuizModes
-    {
-        MODE_CONTINUE, MODE_RESTART, MODE_FIRSTMISSED
-            };
-
-
     void createLexiconMap(bool);
     void connectToDatabases(bool clientCall, QStringList dbList);
     void createLexiconDatabases(QStringList);
@@ -103,11 +97,11 @@ public:
     QString getSavedListArrayPath(QString, QString, QString);
     bool saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices);
     //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
-
+    QStringList getSingleListLabels(QString lexiconName, QString username, QString listname);
     QList <QStringList> getAllListLabels(QString lexiconName, QString username);
     bool deleteUserList(QString lexiconName, QString listName, QString username);
 
-    void saveGameBA(QByteArray, QString, QString, QString);
+    bool saveGame(SavedUnscrambleGame, QString, QString, QString);
 
 
 private:

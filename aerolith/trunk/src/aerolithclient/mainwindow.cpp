@@ -212,10 +212,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     uiTable.tableWidgetMyLists->setSelectionBehavior(QAbstractItemView::SelectRows);
     uiTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    savingGameAllowable = false;
 
-    connect(gameBoardWidget, SIGNAL(saveCurrentGameBA(QByteArray,QString,QString)),
-            SLOT(saveGameBA(QByteArray, QString, QString)));
+    connect(gameBoardWidget, SIGNAL(saveCurrentGame()),
+            SLOT(saveGame()));
 
     connect(gameBoardWidget, SIGNAL(sitDown(quint8)), SLOT(trySitting(quint8)));
     connect(gameBoardWidget, SIGNAL(standUp()), SLOT(standUp()));
@@ -623,7 +622,6 @@ void MainWindow::readFromServer()
                     gameBoardWidget->setPrivacy(t->isPrivate);
 
                     uiMainWindow.comboBoxLexicon->setEnabled(false);
-                    gameBoardWidget->setSavingAllowed(savingGameAllowable);
 
                 }
                 if (currentTablenum == tablenum)
@@ -890,7 +888,6 @@ void MainWindow::toggleConnectToServer()
 
 void MainWindow::serverDisconnection()
 {
-    savingGameAllowable = false;
     uiLogin.connectStatusLabel->setText("You are disconnected.");
     uiMainWindow.listWidgetPeopleConnected->clear();
     peopleLoggedIn.clear();
@@ -946,7 +943,6 @@ void MainWindow::connectedToServer()
         fixHeaderLength();
         commsSocket->write(block);
     }
-    savingGameAllowable = false;
 }
 
 void MainWindow::sendPM(QString person)
@@ -1032,16 +1028,6 @@ void MainWindow::createUnscrambleGameTable()
 
     out << numPlayers;
 
-    if (numPlayers == 1)
-    {
-        // we are creating a 1-player table. these are the only conditions in which it is allowable to
-        // save the game.
-        savingGameAllowable = true;
-
-    }
-    else
-        savingGameAllowable = false;
-
 
     if (uiTable.radioButtonOtherLists->isChecked() && uiTable.listWidgetTopLevelList->currentItem())
     {
@@ -1114,12 +1100,12 @@ void MainWindow::createUnscrambleGameTable()
 
         quint8 mode;
 
-        if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = UNSCRAMBLEGAME_MODE_CONTINUE;
-        else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = UNSCRAMBLEGAME_MODE_RESTART;
-        else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = UNSCRAMBLEGAME_MODE_FIRSTMISSED;
+        if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE;
+        else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_RESTART;
+        else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED;
 
 
-        out << (quint8)mode;
+        out << mode;
         out << si[0]->text();   // list name -- must match list on server
 
 
@@ -1227,7 +1213,6 @@ void MainWindow::leaveThisTable()
     out << (quint16)currentTablenum;
     fixHeaderLength();
     commsSocket->write(block);
-    savingGameAllowable = false;
 }
 
 
@@ -1367,7 +1352,13 @@ void MainWindow::handleTableCommand(quint16 tablenum, quint8 commandByte)
     case SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE:
         gameBoardWidget->fullQuizDone();
         break;
-
+    case SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED:
+        {
+            bool allowed;
+            in >> allowed;
+            gameBoardWidget->setSavingAllowed(allowed);
+        }
+        break;
     case SERVER_TABLE_AVATAR_CHANGE:
         // avatar id
         {
@@ -2080,9 +2071,8 @@ void MainWindow::bootFromTable(QString playerToBoot)
     commsSocket->write(block);
 }
 
-void MainWindow::saveGameBA(QByteArray ba, QString lex, QString list)
+void MainWindow::saveGame()
 {
-    //    dbHandler->saveGameBA(ba, lex, list);
     writeHeaderData();
     out << (quint8)CLIENT_TABLE_COMMAND;
     out << (quint16)currentTablenum;

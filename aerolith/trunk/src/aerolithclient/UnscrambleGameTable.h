@@ -131,7 +131,7 @@ signals:
     void sendPM(QString);
     void exitThisTable();
     void viewProfile(QString);
-    void saveCurrentGameBA(QByteArray, QString, QString);
+    void saveCurrentGame();
     void setTablePrivate(bool);
     void showInviteDialog();
 

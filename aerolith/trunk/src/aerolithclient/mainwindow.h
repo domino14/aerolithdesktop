@@ -171,8 +171,6 @@ private:
 
     QHash <quint16, tableRepresenter*> tables;
 
-    bool savingGameAllowable;
-
     QStringList existingLocalDBList;
 
 signals:
@@ -235,7 +233,7 @@ signals:
     void acceptedInvite();
     void declinedInvite();
 
-    void saveGameBA(QByteArray, QString, QString);
+    void saveGame();
     void socketWroteBytes(qint64);
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();

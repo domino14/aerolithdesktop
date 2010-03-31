@@ -9,8 +9,8 @@ struct SavedUnscrambleGame
     QSet <quint32> firstMissed;
     bool seenWholeList;
     bool brandNew;
-    QSet <quint32> curQuizList;
-    QSet <quint32> curMissedList;
+    QSet <quint32> curQuizSet;
+    QSet <quint32> curMissedSet;
 
     void initialize(const QList <quint32>& initialQs)
     {
@@ -22,19 +22,14 @@ struct SavedUnscrambleGame
         origIndices = initialQs;
         seenWholeList = false;
         brandNew = true;
-        curQuizList.clear();
-        curMissedList.clear();
+        curQuizSet.clear();
+        curMissedSet.clear();
         firstMissed.clear();
 
     }
 
-    void initializeWithIndexRange(quint32 low, quint32 high, quint8 wordLength)
+    void initializeWithIndexRange(quint32 low, quint32 high)
     {
-        // use index mangling formula in databasehandler.cpp : probindex = oldindex + (wordlength << 24)
-        // TODO should have a file for formulas like this to avoid hardcoding
-        low = low + (wordLength << 24);
-        high = high + (wordLength << 24);
-
         QSet <quint32> set;
         for (quint32 i = low; i <= high; i++)
             set.insert(i);
@@ -58,8 +53,8 @@ struct SavedUnscrambleGame
             baWriter << (quint8)0; // not brand-new
             baWriter << firstMissed;
             baWriter << seenWholeList;
-            baWriter << curQuizList;
-            baWriter << curMissedList;
+            baWriter << curQuizSet;
+            baWriter << curMissedSet;
         }
         return ba;
     }
@@ -70,8 +65,8 @@ struct SavedUnscrambleGame
         firstMissed.clear();
         seenWholeList = false;
         brandNew = false;
-        curQuizList.clear();
-        curMissedList.clear();
+        curQuizSet.clear();
+        curMissedSet.clear();
 
         QDataStream baReader(ba);
 
@@ -82,7 +77,7 @@ struct SavedUnscrambleGame
             return;
         else
         {
-            baReader >> firstMissed >> seenWholeList >> curQuizList >> curMissedList;
+            baReader >> firstMissed >> seenWholeList >> curQuizSet >> curMissedSet;
         }
 
     }
@@ -92,8 +87,8 @@ struct SavedUnscrambleGame
         qDebug() << "brandNew:" << brandNew;
         qDebug() << "origIndices:" << origIndices;
         qDebug() << "firstMissed:" << firstMissed;
-        qDebug() << "curQuizList:" << curQuizList;
-        qDebug() << "curMissedList:" << curMissedList;
+        qDebug() << "curQuizList:" << curQuizSet;
+        qDebug() << "curMissedList:" << curMissedSet;
 
 
     }
