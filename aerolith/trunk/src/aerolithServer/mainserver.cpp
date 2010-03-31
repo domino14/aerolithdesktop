@@ -219,11 +219,10 @@ void MainServer::removeConnection()
     qDebug("remove connection");
     ClientSocket* socket = static_cast<ClientSocket*> (sender()); // sender violates modularity
     // but many signals are connected to this slot
-    //  connectionData* connData = connectionParameters.value(socket);
+
     QString username = socket->connData.userName;
     if (username != "")
     {
-        //      quint16 tablenum = playerDataHash.value(username).tablenum;
         quint16 tableNum = socket->connData.tableNum;
         if (tableNum != 0)
         {

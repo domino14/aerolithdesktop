@@ -38,7 +38,7 @@ struct challengeInfo
 {
     QHash <QString, highScoreData> *highScores;
     quint8 wordLength;
-    QVector <quint32> dbIndices;
+    QList <quint32> dbIndices;
 };
 
 struct alphagramInfo
@@ -88,8 +88,13 @@ public:
 
     static int numTotalQuestions;
     int thisMaxQuestions;
+
+    bool savingAllowed;
 private:
 
+    SavedUnscrambleGame sug;
+
+    bool autosaveOnQuit;
 
     static QByteArray wordListDataToSend;
 
@@ -135,8 +140,8 @@ private:
 
     QList <UnscrambleGameQuestionData> unscrambleGameQuestions;
 
-    QVector <quint32> missedArray;
-    QVector <quint32> quizArray;
+    QList <quint32> missedArray;
+    QList <quint32> quizArray;
 
 
     quint16 quizIndex;
@@ -145,6 +150,7 @@ private:
     quint8 wordLength; // the word length of this list , not used for "named list" type (see commonDefs.h for list types)
     quint32 lowProbIndex, highProbIndex;    // not used for "named list" type
 
+    void setQuizArrayRange(quint32 low, quint32 high);
     bool thisTableSwitchoverToggle;
 
     quint16 numTotalRacks;
@@ -161,6 +167,7 @@ private:
     void performSpecificSitActions(ClientSocket*);
     void performSpecificStandActions(ClientSocket*);
 
+    void sendSavingAllowed(ClientSocket* client);
     quint8 userlistMode;
 private slots:
     void updateGameTimer();

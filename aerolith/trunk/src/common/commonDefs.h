@@ -44,9 +44,9 @@
 #define LIST_TYPE_DAILY_CHALLENGE 5
 
 /* game modes for unscramble game (user lists) */
-#define UNSCRAMBLEGAME_MODE_CONTINUE 1
-#define UNSCRAMBLEGAME_MODE_RESTART 2
-#define UNSCRAMBLEGAME_MODE_FIRSTMISSED 3
+#define UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE 1
+#define UNSCRAMBLEGAME_USERLIST_MODE_RESTART 2
+#define UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED 3
 
 
 /* network packet headers */
@@ -130,8 +130,9 @@
 #define SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE 'D' // the transition from current questions to loading missed questions
 #define SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE 'F' // no more questions in missed or current
 #define SERVER_TABLE_UNSCRAMBLEGAME_LIST_REQUEST 'R'
+#define SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED 'W'
 
-void getUniqueRandomNumbers(QVector<quint32>&numbers, quint32 start, quint32 end, int numNums);
+void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums);
 
 // misc defines by game
 

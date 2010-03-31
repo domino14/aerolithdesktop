@@ -741,114 +741,79 @@ QString DatabaseHandler::getSavedListArrayPath(QString lexiconName, QString list
 
 }
 
-void DatabaseHandler::saveGameBA(QByteArray ba, QString lex, QString list, QString username)
+bool DatabaseHandler::saveGame(SavedUnscrambleGame sug, QString lex, QString list, QString username)
 {
-    // assume this list exists
 
+    QByteArray ba = sug.toByteArray();
     username = username.toLower();
     list = list.toLower();
     QSqlQuery userListsQuery(userlistsDb);
-    //
-    //    userListsQuery.prepare("SELECT count(*) from userlistInfo WHERE lexiconName = ? and listName = ? and username = ?");
-    //    userListsQuery.bindValue(0, lex);
-    //    userListsQuery.bindValue(1, list);
-    //    userListsQuery.bindValue(2, username);
-    //
-    //    userListsQuery.exec();
-    //
-    //    bool update = false;
-    //
-    //
-    //    while (userListsQuery.next())
-    //    {
-    //        int cnt = userListsQuery.value(0).toInt();
-    //        if (cnt == 1)
-    //        {
-    //            update = true;
-    //        }
-    //        else if (cnt == 0)
-    //        {
-    //            update = false; // doesn't exist
-    //        }
-    //        else
-    //        {
-    //            qCritical() << "SAVE GAME ERROR";
-    //        }
-    //
-    //    }
-    //
-    //
-    //    if (update)
-    //    {
-    userListsQuery.prepare("UPDATE userlistInfo SET lastDateSaved = ? "
-                           "WHERE lexiconName = ? and listName = ? and username = ?");
-    //    }
-    //    else
-    //    {
-    //        userListsQuery.prepare("INSERT into userlists(listData, lastDateSaved, lexiconName, listName) VALUES(?,?,?,?)");
-    //    }
 
-    userListsQuery.bindValue(0, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
-    userListsQuery.bindValue(1, lex);
-    userListsQuery.bindValue(2, list);
-    userListsQuery.bindValue(3, username);
+    userListsQuery.exec("BEGIN TRANSACTION");
+    userListsQuery.prepare("SELECT count(*) from userlistInfo WHERE lexiconName = ? and "
+                           "listName = ? and username = ?");
+
+    userListsQuery.bindValue(0, lex);
+    userListsQuery.bindValue(1, list);
+    userListsQuery.bindValue(2, username);
 
     userListsQuery.exec();
+    bool update = false;
+    while (userListsQuery.next())
+    {
+        int count = userListsQuery.value(0).toInt();
+        qDebug() << "Count: " << count;
+        if (count == 1)
+        {
+            update = true;
+        }
+    }
 
-    QDir dir = QDir::home();
-    dir.cd(".aerolith");
-    dir.cd("userlists");
-    dir.cd(username);
-    dir.cd(lex);
-    QFile f(dir.filePath(list));
+    bool resultSuccess = false;
 
-    f.open(QIODevice::WriteOnly);
-    f.write(ba);
-    f.close();
+    if (!update)
+    {
+
+        userListsQuery.prepare("INSERT INTO userlistInfo (lexiconName, listName, username, lastdateSaved, "
+                               "alphasInList) VALUES (?, ?, ?, ?, ?)");
 
 
+        userListsQuery.bindValue(0, lex);
+        userListsQuery.bindValue(1, list);
+        userListsQuery.bindValue(2, username);
+        userListsQuery.bindValue(3, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+        userListsQuery.bindValue(4, sug.origIndices.size());
+        resultSuccess = userListsQuery.exec();
+    }
+    else
+    {
+        userListsQuery.prepare("UPDATE userlistInfo SET lastDateSaved = ? "
+                               "WHERE lexiconName = ? and listName = ? and username = ?");
+
+        userListsQuery.bindValue(0, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+        userListsQuery.bindValue(1, lex);
+        userListsQuery.bindValue(2, list);
+        userListsQuery.bindValue(3, username);
+        resultSuccess = userListsQuery.exec();
+
+    }
+    if (resultSuccess)
+    {
+        QDir dir = QDir::home();
+        dir.cd(".aerolith");
+        dir.cd("userlists");
+        dir.cd(username);
+        dir.cd(lex);
+        QFile f(dir.filePath(list));
+
+        f.open(QIODevice::WriteOnly);
+        f.write(ba);
+        f.close();
+
+    }
+    userListsQuery.exec("END TRANSACTION");
+    return resultSuccess;
 }
-
-//bool DatabaseHandler::saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices)
-//{
-//    if (probIndices.size() <= 500 && probIndices.size() > 0)
-//    {
-//        bool success = saveSingleList(lexiconName, listName, probIndices);
-//        if (!success) return false;
-//    }
-//    else
-//    {
-//
-//        bool pIndicesIsEmpty = probIndices.isEmpty();
-//
-//        QList <quint32> probIndicesList = probIndices.values();
-//
-//        int listNum = 1;
-//        while (!pIndicesIsEmpty)
-//        {
-//            QSet <quint32> indices;
-//
-//            for (int i = 0; i < 500; i++)
-//            {
-//                if (!probIndicesList.isEmpty())
-//                    indices.insert(probIndicesList.takeFirst());
-//                else
-//                {
-//                    pIndicesIsEmpty = true;
-//                    break;
-//                }
-//            }
-//            if (indices.size() > 0)
-//            {
-//                bool success = saveSingleList(lexiconName, listName + "_" + QString::number(listNum), indices);
-//                listNum++;
-//                if (!success) return false;
-//            }
-//
-//        }
-//    }
-//    return true;
-//}
 
 bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices)
 {
@@ -903,10 +868,67 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     return true;
 }
 
+QStringList DatabaseHandler::getSingleListLabels(QString lexiconName, QString username, QString listname)
+{
+    username = username.toLower();
+    listname = listname.toLower();
+    QStringList retList;
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("SELECT lastdateSaved from userlistInfo where "
+                           "lexiconName = ? and username = ? and listName = ?");
+    userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.bindValue(1, username);
+    userListsQuery.bindValue(2, listname);
+    userListsQuery.exec();
+
+
+    QFile f;
+    while (userListsQuery.next())
+    {
+
+        SavedUnscrambleGame sug;
+        QString lastdateSaved = userListsQuery.value(0).toString();
+
+        QDir dir = QDir::home();
+        dir.cd(".aerolith");
+        dir.cd("userlists");
+        dir.cd(username);
+        dir.cd(lexiconName);
+        f.setFileName(dir.filePath(listname));
+        f.open(QIODevice::ReadOnly);
+        QByteArray ba = f.readAll();
+        f.close();
+
+        sug.populateFromByteArray(ba);
+
+        QString totalQs, currentQs, firstMissedQs;
+        totalQs = QString::number(sug.origIndices.size());
+        firstMissedQs = QString::number(sug.firstMissed.size());
+
+        if (sug.brandNew)
+        {
+            // list was never started
+            currentQs = totalQs;
+        }
+        else
+            currentQs = QString::number(sug.curQuizSet.size() + sug.curMissedSet.size());
+
+        if (sug.seenWholeList)
+        {
+            // list has been gone through once already. (at least)
+            totalQs += " *";    // to mark that this list has been gone through once already
+        }
+
+        retList << listname << totalQs << currentQs <<  firstMissedQs << lastdateSaved;
+    }
+    return retList;
+}
 
 QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QString username)
 {
     QList<QStringList> retList;
+    username = username.toLower();
+
     QSqlQuery userListsQuery(userlistsDb);
     userListsQuery.prepare("SELECT listName, lastdateSaved from userlistInfo where "
                            "lexiconName = ? and username = ?");
@@ -914,7 +936,6 @@ QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QStrin
     userListsQuery.bindValue(1, username);
     userListsQuery.exec();
 
-    username = username.toLower();
     QFile f;
     while (userListsQuery.next())
     {
@@ -947,7 +968,7 @@ QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QStrin
             currentQs = totalQs;
         }
         else
-            currentQs = QString::number(sug.curQuizList.size() + sug.curMissedList.size());
+            currentQs = QString::number(sug.curQuizSet.size() + sug.curMissedSet.size());
 
         if (sug.seenWholeList)
         {
