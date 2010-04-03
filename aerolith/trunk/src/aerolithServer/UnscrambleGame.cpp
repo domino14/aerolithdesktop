@@ -619,7 +619,7 @@ void UnscrambleGame::generateQuizArray()
                     qindices = sug.curQuizSet.toList();
                     mindices = sug.curMissedSet.toList();
                 }
-                qDebug() << "Index:" << qindices.at(0);
+             //   qDebug() << "Index:" << qindices.at(0);
                 break;
             }
 
