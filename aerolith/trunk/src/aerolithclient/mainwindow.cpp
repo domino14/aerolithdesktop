@@ -17,6 +17,7 @@
 #include "mainwindow.h"
 #include "commonDefs.h"
 #include "databasehandler.h"
+
 const quint16 MAGIC_NUMBER = 25349;
 
 
@@ -136,6 +137,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(uiMainWindow.actionConnect_to_Aerolith, SIGNAL(triggered()), loginDialog, SLOT(show()));
     connect(uiMainWindow.actionAcknowledgements, SIGNAL(triggered()), this, SLOT(aerolithAcknowledgementsDialog()));
     connect(uiMainWindow.actionAbout_Qt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
+    connect(uiMainWindow.actionPaypal_Donation, SIGNAL(triggered()), this, SLOT(showDonationPage()));
 
 
     gameTimer = new QTimer();
@@ -165,7 +167,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(uiDatabase.pushButtonCreateDatabases, SIGNAL(clicked()), SLOT(createDatabasesOKClicked()));
 
     connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
-    connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
+     connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
     connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
     connect(dbHandler, SIGNAL(enableClose(bool)), SLOT(dbDialogEnableClose(bool)));
     connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
@@ -189,11 +191,12 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     if (existingLocalDBList.size() == 0)
     {
-
+        uiLogin.pushButtonStartOwnServer->setEnabled(false);
         if (QMessageBox::question(this, "Create databases?", "You do not seem to have any lexicon databases created. "
                                   "Creating a lexicon database is necessary to use Aerolith!",
                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             databaseDialog->show();
+
     }
     else
     {
@@ -223,6 +226,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
 
     testFunction(); // used for debugging
+
+     uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -234,6 +239,7 @@ void MainWindow::dbDialogEnableClose(bool e)
         uiMainWindow.chatText->append("<font color=red>Lexicon databases were successfully created!</font>");
         QStringList dbList = dbHandler->checkForDatabases();
         dbHandler->connectToDatabases(true, dbList);
+        uiLogin.pushButtonStartOwnServer->setEnabled(true);
     }
 }
 
@@ -497,14 +503,14 @@ void MainWindow::readFromServer()
             {
                 quint32 maxBandwidth;
                 in >> maxBandwidth;
-                uiMainWindow.progressBarBandwidthUsage->setRange(0, maxBandwidth);
-                uiMainWindow.progressBarBandwidthUsage->setValue(0);
+           //     uiMainWindow.progressBarBandwidthUsage->setRange(0, maxBandwidth);
+            //    uiMainWindow.progressBarBandwidthUsage->setValue(0);
 
             }
             break;
         case SERVER_RESET_TODAYS_BANDWIDTH:
             {
-                uiMainWindow.progressBarBandwidthUsage->setValue(0);
+              //  uiMainWindow.progressBarBandwidthUsage->setValue(0);
             }
             break;
 
@@ -817,6 +823,15 @@ void MainWindow::readFromServer()
                 }
             }
             break;
+        case SERVER_UNSCRAMBLEGAME_LISTSPACEUSAGE:
+            {
+                quint32 usage, max;
+                in >> usage >> max;
+                uiTable.progressBarUsedListSpace->setRange(0, max);
+                uiTable.progressBarUsedListSpace->setValue(usage);
+
+            }
+            break;
         default:
             QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
             commsSocket->disconnectFromHost();
@@ -1109,48 +1124,7 @@ void MainWindow::createUnscrambleGameTable()
         out << si[0]->text();   // list name -- must match list on server
 
 
-        //        QByteArray savedGameBA = dbHandler->getSavedListArray(currentLexicon, si[0]->text());
-        // TODO delete
-        //        SavedUnscrambleGame thisSug;
-        //        thisSug.populateFromByteArray(savedGameBA);
 
-        // TODO delete , all of these should be moved to server side.
-        //        switch (mode)
-        //        {
-        //        case DatabaseHandler::MODE_RESTART:
-        //            thisSug.initialize(thisSug.origIndices);
-        //
-        //            qindices = thisSug.origIndices;
-        //            mindices.clear();
-        //
-        //            break;
-        //
-        //        case DatabaseHandler::MODE_FIRSTMISSED:
-        //            qindices = thisSug.firstMissed;
-        //            mindices.clear();
-        //
-        //            thisSug.curQuizList = thisSug.firstMissed;
-        //            thisSug.curMissedList.clear();
-        //            break;
-        //
-        //        case DatabaseHandler::MODE_CONTINUE:
-        //            if (thisSug.brandNew)
-        //            {
-        //                qindices = thisSug.origIndices;
-        //                mindices.clear();
-        //            }
-        //            else
-        //            {
-        //                qindices = thisSug.curQuizList;
-        //                mindices = thisSug.curMissedList;
-        //            }
-        //            break;
-        //        }
-        //
-        //        out << si[0]->text().left(32);
-        //        out << qindices << mindices;
-        //        thisSug.writeToDebug();
-        //        gameBoardWidget->setCurrentSug(thisSug);
         gameBoardWidget->setUnmodifiedListName(si[0]->text());
     }
 
@@ -1924,20 +1898,20 @@ void MainWindow::serverThreadHasStarted()
 {
     uiLogin.pushButtonStartOwnServer->setEnabled(true);
     uiLogin.loginPushButton->setEnabled(true);
-    uiLogin.connectStatusLabel->setText("Server thread has started! Log in now.");
+    uiLogin.connectStatusLabel->setText("You can now play locally! Log in now.");
     uiLogin.pushButtonStartOwnServer->setText("Stop Server");
     uiLogin.serverLE->setText("localhost");
-    uiLogin.portLE->setText("1988");
+    uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
 }
 
 void MainWindow::serverThreadHasFinished()
 {
 
-    uiLogin.connectStatusLabel->setText("Server thread has stopped!");
+    uiLogin.connectStatusLabel->setText("Local server has stopped!");
     uiLogin.pushButtonStartOwnServer->setText("Start Own Server");
 
     uiLogin.serverLE->setText("aerolith.org");
-    uiLogin.portLE->setText("1988");
+    uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
     uiLogin.loginPushButton->setEnabled(true);
 
 }
@@ -2108,7 +2082,7 @@ void MainWindow::on_pushButtonDeleteList_clicked()
                                                  si[0]->text() + "'?",
                                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
-        //       dbHandler->deleteUserList(currentLexicon, si[0]->text());
+
 
         writeHeaderData();
         out << (quint8)CLIENT_UNSCRAMBLEGAME_DELETE_LIST;
@@ -2149,7 +2123,33 @@ void MainWindow::declinedInvite()
 
 void MainWindow::socketWroteBytes(qint64 num)
 {
-    uiMainWindow.progressBarBandwidthUsage->setValue(uiMainWindow.progressBarBandwidthUsage->value() + num);
+  //  uiMainWindow.progressBarBandwidthUsage->setValue(uiMainWindow.progressBarBandwidthUsage->value() + num);
+}
+
+void MainWindow::showDonationPage()
+{
+
+    QString donationUrl = "https://www.paypal.com/us/cgi-bin/webscr?cmd=_flow&SESSION=HAV_kL7GVkuKQpwAI-"
+                          "OnlVT3eB8uvWuz4wOzWMlMSSfn7NwCnQjZ-Uko92u&dispatch=50a222a57771920b6a3d7b60623"
+                          "9e4d529b525e0b7e69bf0224adecfb0124e9b5efedb82468478c6e115945fd0658595b0be0417af"
+                          "d2208f";
+
+    QDesktopServices::openUrl(QUrl(donationUrl));
+}
+
+void MainWindow::on_actionSubmitSuggestion_triggered()
+{
+ //   QMessageBox::warning(this, "woo", "a suggestion to submit!");
+    QString text =  QInputDialog::getText(this, "Suggestion/Bug report", "Enter your suggestion or bug report. Please "
+                          "be detailed and try to remember what triggered a bug.");
+
+    writeHeaderData();
+    out << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT;
+    out << text.left(1000);
+    fixHeaderLength();
+    commsSocket->write(block);
+
+    QMessageBox::information(this, "Thank you", "Thank you for your input!");
 }
 
 

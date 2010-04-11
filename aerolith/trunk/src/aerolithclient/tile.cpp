@@ -158,7 +158,7 @@ void Tile::setTileLetter(QString tileLetter)
 
     QRect textBoundingRect;
     tileFont.setFamily("Courier New");
-    tileFont.setWeight(100);
+    tileFont.setWeight(99);
     tileFont.setPixelSize(height+fontSizeModifier);
 
 //    do

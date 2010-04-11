@@ -67,6 +67,7 @@
 #define CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD 'u'
 #define CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST 'q'
 #define CLIENT_UNSCRAMBLEGAME_DELETE_LIST 'x'
+#define CLIENT_SUGGESTION_OR_BUG_REPORT 'k'
 
 // table subcommands
 #define CLIENT_TABLE_READY_BEGIN 'b'
@@ -109,6 +110,7 @@
 #define SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE '@'
 #define SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE '#'
 #define SERVER_UNSCRAMBLEGAME_LISTDATA_DONE '%'
+#define SERVER_UNSCRAMBLEGAME_LISTSPACEUSAGE '*'
 //table subcommands
 #define SERVER_TABLE_CHAT 'C'
 #define SERVER_TABLE_MESSAGE 'M'
@@ -138,5 +140,9 @@ void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, 
 
 // unscramble game
 #define REMOTE_LISTSIZE_LIMIT 10000
+
+//////////////
+// other important defines
+#define DEFAULT_PORT 2001
 
 #endif

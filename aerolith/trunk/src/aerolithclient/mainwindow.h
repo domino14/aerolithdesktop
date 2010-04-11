@@ -235,6 +235,10 @@ signals:
 
     void saveGame();
     void socketWroteBytes(qint64);
+    void showDonationPage();
+
+    void on_actionSubmitSuggestion_triggered();
+
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
     void on_radioButtonOtherLists_clicked();

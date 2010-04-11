@@ -37,6 +37,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
     connect(tableUi.comboBoxTablePrivacy, SIGNAL(currentIndexChanged(int)), this, SLOT(changeTablePrivacy(int)));
     connect(tableUi.pushButtonInvite, SIGNAL(clicked()), SIGNAL(showInviteDialog()));
     connect(tableUi.pushButtonBoot, SIGNAL(clicked()), SLOT(showBootDialog()));
+    connect(tableUi.toolButtonFullScreen, SIGNAL(clicked()), SLOT(toggleFullScreen()));
 
     preferencesWidget = new QWidget(this);
     uiPreferences.setupUi(preferencesWidget);
@@ -1199,6 +1200,7 @@ void UnscrambleGameTable::showBootDialog()
 
 void UnscrambleGameTable::exitButtonPressed()
 {
+    /*
     if (savedGameModified && savingAllowed)
     {
         QMessageBox::StandardButton b = QMessageBox::warning(this, "Save game?", "Your list has been modified."
@@ -1218,7 +1220,13 @@ void UnscrambleGameTable::exitButtonPressed()
             return;
         }
 
-    }
+    }*/
     emit exitThisTable();
 
+}
+
+void UnscrambleGameTable::toggleFullScreen()
+{
+
+    setWindowState(windowState() ^ Qt::WindowFullScreen);
 }

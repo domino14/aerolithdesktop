@@ -224,9 +224,9 @@
    <widget class="QRadioButton" name="radioButtonProbability">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>10</x>
       <y>30</y>
-      <width>101</width>
+      <width>81</width>
       <height>21</height>
      </rect>
     </property>
@@ -240,9 +240,9 @@
    <widget class="QRadioButton" name="radioButtonOtherLists">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>10</x>
       <y>50</y>
-      <width>101</width>
+      <width>71</width>
       <height>21</height>
      </rect>
     </property>
@@ -253,9 +253,9 @@
    <widget class="QRadioButton" name="radioButtonMyLists">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>10</x>
       <y>70</y>
-      <width>108</width>
+      <width>71</width>
       <height>23</height>
      </rect>
     </property>
@@ -296,7 +296,7 @@
        <x>10</x>
        <y>20</y>
        <width>321</width>
-       <height>111</height>
+       <height>91</height>
       </rect>
      </property>
      <property name="title">
@@ -423,25 +423,6 @@
        <string>All</string>
       </property>
      </widget>
-     <widget class="QLabel" name="labelWordsPerWL">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>90</y>
-        <width>151</width>
-        <height>17</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Panel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
     </widget>
    </widget>
    <widget class="QWidget" name="page_2">
@@ -488,6 +469,9 @@
        <height>241</height>
       </rect>
      </property>
+     <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+      <bool>false</bool>
+     </attribute>
      <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
       <bool>false</bool>
      </attribute>

@@ -21,9 +21,7 @@
 #include "serverthread.h"
 QTextStream *outFile = 0;
 
-
-static const quint16 DEFAULT_PORT = 1988;
-const QString aerolithVersion = "1.0";
+const QString aerolithVersion = "0.9";
 void myMessageOutput(QtMsgType type, const char *msg)
 {
     QString debugdate =
@@ -116,7 +114,7 @@ int main(int argc, char *argv[])
             }
 
             DatabaseHandler databaseHandler;
-            databaseHandler.createLexiconMap(true); // create DAWGs
+            DatabaseHandler::createLexiconMap();
             MainServer mainServer(aerolithVersion, &databaseHandler);
             mainServer.listen(QHostAddress::Any, port);
             qDebug() << "listening on port " << port;
@@ -135,9 +133,9 @@ int main(int argc, char *argv[])
     else delete log;
 
     DatabaseHandler databaseHandlerClient;
-    databaseHandlerClient.createLexiconMap(true);    //  create DAWG for client side
     DatabaseHandler databaseHandlerServer;
-    databaseHandlerServer.createLexiconMap(false); // don't create DAWG for server
+
+    DatabaseHandler::createLexiconMap();
 
     ServerThread serverThread(aerolithVersion, &databaseHandlerServer);
     MainWindow mainWin(aerolithVersion, &databaseHandlerClient);

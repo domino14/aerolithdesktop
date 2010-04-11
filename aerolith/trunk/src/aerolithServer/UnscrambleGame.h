@@ -82,6 +82,7 @@ public:
     static void generateDailyChallenges(DatabaseHandler* dbHandler);
     static void loadWordLists(DatabaseHandler* dbHandler);
     static void sendLists(ClientSocket*);
+    static void writeListSpaceUsage(ClientSocket* socket, DatabaseHandler* dbHandler);
     static QHash <QString, challengeInfo> challenges;
 
     static bool midnightSwitchoverToggle;
@@ -169,6 +170,9 @@ private:
 
     void sendSavingAllowed(ClientSocket* client);
     quint8 userlistMode;
+
+    void saveProgress(ClientSocket* client);
+
 private slots:
     void updateGameTimer();
     void updateCountdownTimer();

@@ -330,10 +330,11 @@ void MainServer::receiveMessage()
             return;
         }
 
-        if (packetType != CLIENT_LOGIN && !socket->connData.loggedIn)
+        if  ((packetType != CLIENT_LOGIN && packetType != CLIENT_REGISTER)
+                && !socket->connData.loggedIn)
         {
             socket->disconnectFromHost();
-            return; // cannot do anything before logging in!
+            return; // cannot do anything before logging in! (or registering)
         }
 
         switch(packetType)
@@ -396,7 +397,9 @@ void MainServer::receiveMessage()
         case CLIENT_UNSCRAMBLEGAME_DELETE_LIST:
             listDeleteRequest(socket);
             break;
-
+        case CLIENT_SUGGESTION_OR_BUG_REPORT:
+            suggestionOrBugReport(socket);
+            break;
 
         default:
             socket->disconnectFromHost(); // possibly a malicious packet
@@ -472,6 +475,7 @@ void MainServer::saveRemoteList(ClientSocket* socket)
             fixHeaderLength();
             socket->write(block);
 
+            UnscrambleGame::writeListSpaceUsage(socket, dbHandler);
         }
         else
         {
@@ -509,6 +513,7 @@ void MainServer::listInfoRequest(ClientSocket* socket)
     fixHeaderLength();
     socket->write(block);
 
+    UnscrambleGame::writeListSpaceUsage(socket, dbHandler);
 }
 
 void MainServer::listDeleteRequest(ClientSocket* socket)
@@ -527,10 +532,14 @@ void MainServer::listDeleteRequest(ClientSocket* socket)
         fixHeaderLength();
         socket->write(block);
 
+        UnscrambleGame::writeListSpaceUsage(socket, dbHandler);
+
     }
 
 
 }
+
+
 
 void MainServer::sendHighScores(ClientSocket* socket)
 {
@@ -1025,6 +1034,7 @@ void MainServer::registerNewName(ClientSocket* socket)
         {
             playerID = query.value(0).toInt();
         }
+        qDebug() << "Inserting new user into table; player ID:" << playerID;
         QString toExecute;
         toExecute = "INSERT INTO users(username, password, avatar, registeredIP, playerID) VALUES(:username, :password, :avatar, :registeredIP, :playerID)";
         query.prepare(toExecute);
@@ -1298,3 +1308,18 @@ bool MainServer::isValidPassword(QString password)
 
 
 
+void MainServer::suggestionOrBugReport(ClientSocket* socket)
+{
+    QString text;
+    socket->connData.in >> text;
+    QFile f("suggestions.txt");
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
+        QTextStream stream(&f);
+        stream << "---------------" << endl;
+        stream << "From " << socket->connData.userName << ":" << endl;
+        stream << text << endl;
+    }
+    f.close();
+
+}

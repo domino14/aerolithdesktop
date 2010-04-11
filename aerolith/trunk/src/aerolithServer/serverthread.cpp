@@ -16,6 +16,7 @@
 
 #include "serverthread.h"
 
+
 ServerThread::ServerThread(QString version, DatabaseHandler* databaseHandler)
 {
   //  shouldQuitThread = false;
@@ -46,7 +47,7 @@ void ServerThread::run()
   mainServer = new MainServer(version, dbHandler);
   
   shouldQuitThread = false;
-  mainServer->listen(QHostAddress::Any, 1988);
+  mainServer->listen(QHostAddress::Any, DEFAULT_PORT);
   emit readyToConnect();
   exec(); // enter event loop
 	
