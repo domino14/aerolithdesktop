@@ -121,6 +121,7 @@ private:
 
     QString unmodifiedListName;
     bool savedGameModified;
+
 protected:
     virtual void closeEvent(QCloseEvent*);
 signals:
@@ -167,6 +168,7 @@ signals:
     void showBootDialog();
 
     void changeTablePrivacy(int);
+        void toggleFullScreen();
 
 
 };

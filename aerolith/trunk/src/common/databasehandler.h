@@ -47,7 +47,8 @@ struct LexiconInfo
     QMap<unsigned char, int> letterDist;
     QString dawgFilename, dawgRFilename;
     Dawg dawg, reverseDawg;
-    QSqlDatabase db;
+    QSqlDatabase db_client;
+    QSqlDatabase db_server;
     QVector <int> alphagramsPerLength;
     QList <double> fullChooseCombos;    // copied from Zyzzyva
     QList<QList<double> > subChooseCombos; // ditto
@@ -86,15 +87,20 @@ public:
     {
     }
 
-    void createLexiconMap(bool);
+    static void createLexiconMap();
+    static QMap<QString, LexiconInfo> lexiconMap;
+    static QMap <unsigned char, int> getEnglishDist();
+    static QMap <unsigned char, int> getSpanishDist();
+
     void connectToDatabases(bool clientCall, QStringList dbList);
     void createLexiconDatabases(QStringList);
     QStringList checkForDatabases();
     QStringList availableDatabases;
-    QMap<QString, LexiconInfo> lexiconMap;
+
     int getNumWordsByLength(QString lexiconName, int length);
     bool getProbIndices(QStringList, QString, QList<quint32>&);
-    QString getSavedListArrayPath(QString, QString, QString);
+    QString getSavedListRelativePath(QString, QString, QString);
+    QString getSavedListAbsolutePath(QString, QString, QString);
     bool saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices);
     //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
     QStringList getSingleListLabels(QString lexiconName, QString username, QString listname);
@@ -103,7 +109,8 @@ public:
 
     bool saveGame(SavedUnscrambleGame, QString, QString, QString);
 
-
+    bool savedListExists(QString lexicon, QString listName, QString username);
+    void getListSpaceUsage(QString username, quint32& usage, quint32& max);
 private:
 
     QSqlDatabase userlistsDb;
@@ -126,8 +133,7 @@ private:
     int fact(int n);
     int nCr(int n, int r);
 
-    QMap <unsigned char, int> getEnglishDist();
-    QMap <unsigned char, int> getSpanishDist();
+
     void updateDefinitions(QHash<QString, QString>&, int, QSqlDatabase& db);
     QString followDefinitionLinks(QString, QHash<QString, QString>&, bool useFollow, int maxDepth);
     QString getSubDefinition(const QString& word, const QString& pos, QHash<QString, QString> &defHash);
@@ -138,6 +144,9 @@ signals:
     void setProgressRange(int, int);
     void enableClose(bool);
     void createdDatabase(QString);
+
+    void setMaxListSpaceUsage(int);
+    void setCurListSpaceUsage(int);
 };
 
 

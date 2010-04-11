@@ -41,7 +41,7 @@ public:
     void setLexicon(QString name)
     {
         lexiconName = name;
-        wordDb = dbHandler->lexiconMap.value(lexiconName).db;
+        wordDb = DatabaseHandler::lexiconMap.value(lexiconName).db_client;
     }
 
     void setTableCapacity(quint8 tc)

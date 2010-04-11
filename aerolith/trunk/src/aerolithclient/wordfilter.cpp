@@ -15,9 +15,9 @@ void WordFilter::showWidget()
     if (lexiconChanged)
     {
         currentWordList.clear();
-        if (dbHandler->lexiconMap.value(currentLexicon).db.isOpen())
+        if (DatabaseHandler::lexiconMap.value(currentLexicon).db_client.isOpen())
         {
-            QSqlQuery query(dbHandler->lexiconMap.value(currentLexicon).db);
+            QSqlQuery query(DatabaseHandler::lexiconMap.value(currentLexicon).db_client);
             query.exec("BEGIN TRANSACTION");
             query.exec("SELECT word, front_hooks, back_hooks from words");
             while (query.next())

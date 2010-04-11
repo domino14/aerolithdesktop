@@ -1,13 +1,14 @@
 <project>
     <shortName>aerolith</shortName>
     <fullName>Aerolith</fullName>
-    <version>0.4.1</version>
-    <installerFilename></installerFilename>
-    <licenseFile>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/LICENSE.txt</licenseFile>
-    <leftImage>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/images/aerolithLarge.png</leftImage>
-    <logoImage>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/images/aerolithLarge.png</logoImage>
-    <splashImage>C:/Documents and Settings/Cesar/Desktop/Play/aerolithCode/client/images/aerolithLarge.png</splashImage>
+    <version>0.9</version>
+    <licenseFile>C:/Users/Cesar/Desktop/Aerolith Code/COPYING</licenseFile>
+    <leftImage>C:/Users/Cesar/Desktop/Aerolith Code/images/aerolithLarge.png</leftImage>
+    <logoImage>C:/Users/Cesar/Desktop/Aerolith Code/images/aerolithLarge.png</logoImage>
+    <splashImage>C:/Users/Cesar/Desktop/Aerolith Code/images/aerolithLarge.png</splashImage>
     <enableRollback>1</enableRollback>
+    <enableTimestamp>1</enableTimestamp>
+    <vendor>Cesarware</vendor>
     <componentList>
         <component>
             <name>default</name>
@@ -50,25 +51,34 @@
                     <platforms>windows</platforms>
                     <distributionFileList>
                         <distributionFile>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/aerolith.exe</origin>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/aerolith.exe</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/mingwm10.dll</origin>
+                            <origin>C:/Qt/2010.02.1/qt/bin/libgcc_s_dw2-1.dll</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/QtCore4.dll</origin>
+                            <origin>C:/Qt/2010.02.1/qt/bin/mingwm10.dll</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/QtGui4.dll</origin>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtCore4.dll</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/QtNetwork4.dll</origin>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtGui4.dll</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/QtSql4.dll</origin>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtOpenGL4.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtSql4.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtNetwork4.dll</origin>
                         </distributionFile>
                         <distributionDirectory>
-                            <origin>C:/Documents and Settings/Cesar/Desktop/Play/aerolith/sqldrivers</origin>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/sqldrivers</origin>
+                        </distributionDirectory>
+                        <distributionDirectory>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/words - Copy</origin>
                         </distributionDirectory>
                     </distributionFileList>
                 </folder>

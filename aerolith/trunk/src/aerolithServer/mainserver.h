@@ -91,7 +91,7 @@ private:
     bool isValidPassword(QString);
     void listInfoRequest(ClientSocket*);
     void listDeleteRequest(ClientSocket* socket);
-
+    void suggestionOrBugReport(ClientSocket* socket);
 };
 
 #endif

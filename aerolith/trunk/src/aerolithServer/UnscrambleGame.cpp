@@ -80,7 +80,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
         table->host->connData.in >> wordListOriginal;
 
         wordList = wordListOriginal;
-        //      autosaveOnQuit = true;
+        autosaveOnQuit = true;
         if (onePlayerTable) savingAllowed = true;
     }
 
@@ -161,16 +161,32 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
     //
     //    }
 
-    //    if (table->originalHost == client)
-    //    {
-    //        if (autosaveOnQuit)
-    //            table->sendTableMessage("Autosave on quit is now on. If you are disconnected, your game "
-    //                                    "will be automatically saved.");
-    //        else
-    //            table->sendTableMessage("Autosave on quit is off. To turn it on, you must click the Save button"
-    //                                    " to save your current progress. If you are disconnected, the game will "
-    //                                    "then be automatically saved.");
-    //    }
+        if (table->originalHost == client && savingAllowed)
+        {
+            if (autosaveOnQuit)
+                table->sendTableMessage("Autosave on quit is now on. If you are disconnected, your game "
+                                        "will be automatically saved.");
+            else
+            {
+
+
+                if (dbHandler->savedListExists(lexiconName, wordList, client->connData.userName))
+                {
+                    table->sendTableMessage("You already have a saved list named: " + wordList + ". If you "
+                                            "click Save, you will overwrite this list! If you do not wish "
+                                            "to do this, please select your saved list from 'My Lists' when "
+                                            "creating a new table.");
+
+
+                }
+                else
+                    table->sendTableMessage("Autosave on quit is off. To turn it on, you must click the Save button"
+                                            " to save your current progress. If you are disconnected, the game will "
+                                            "then be automatically saved.");
+
+            }
+
+        }
 
 }
 
@@ -191,7 +207,7 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
     {
         table->sendTableMessage("Auto-saving progress...");
         // probably no one will see this unless there was someone in the table.
-        dbHandler->saveGame(sug, lexiconName, wordList, socket->connData.userName);
+        saveProgress(socket);
 
     }
 
@@ -567,7 +583,7 @@ void UnscrambleGame::generateQuizArray()
         {
             lowProbIndex = 1 + (wordLength << 24);  // probability 1 is the first
             if (wordLength >=2 && wordLength <= 15)
-                highProbIndex = dbHandler->lexiconMap.value(lexiconName).alphagramsPerLength[wordLength]
+                highProbIndex = DatabaseHandler::lexiconMap.value(lexiconName).alphagramsPerLength[wordLength]
                                 + (wordLength << 24);
 
             setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks also set in this function
@@ -579,7 +595,7 @@ void UnscrambleGame::generateQuizArray()
         }
     case LIST_TYPE_USER_LIST:
         {
-            QString pathName = dbHandler->getSavedListArrayPath(lexiconName, wordListOriginal,
+            QString pathName = dbHandler->getSavedListAbsolutePath(lexiconName, wordListOriginal,
                                                                 table->originalHost->connData.userName);
 
             QFile f(pathName);
@@ -911,41 +927,12 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
             if (savingAllowed && socket == table->originalHost)
             {
                 // perform save
-                bool result =
-                        dbHandler->saveGame(sug, lexiconName, wordList, socket->connData.userName);
-                if (result)
-                    table->sendTableMessage("Saved " + table->originalHost->connData.userName + "'s game!");
-                else
-                {
-                    table->sendTableMessage("Was unable to save game! This is not a normal scenario; "
-                                            "please inform Cesar");
-                    qDebug() << "Unable to save game!" << lexiconName << wordList << socket->connData.userName;
-                    break;
-                }
+                saveProgress(socket);
                 if (autosaveOnQuit == false)
                 {
                     autosaveOnQuit = true;
                     table->sendTableMessage("Autosave on quit is now on.");
                 }
-
-                // and send information about saved game back to client.
-                QStringList sl = dbHandler->getSingleListLabels(lexiconName, socket->connData.userName,
-                                                                wordList);
-                qDebug() << "SLL" << sl;
-
-                writeHeaderData();
-                out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE;
-                out << lexiconName;
-                out << wordList;
-                fixHeaderLength();
-                socket->write(block);
-
-                writeHeaderData();
-                out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE;
-                out << lexiconName;
-                out << sl;
-                fixHeaderLength();
-                socket->write(block);
             }
         }
         break;
@@ -958,6 +945,45 @@ void UnscrambleGame::handleMiscPacket(ClientSocket* socket, quint8 header)
 
 }
 
+void UnscrambleGame::saveProgress(ClientSocket* socket)
+{
+    bool result =
+            dbHandler->saveGame(sug, lexiconName, wordList, socket->connData.userName);
+    if (result)
+        table->sendTableMessage("Saved " + table->originalHost->connData.userName + "'s game!");
+    else
+    {
+        table->sendTableMessage("Was unable to save game! You may be over quota!");
+        qDebug() << "Unable to save game!" << lexiconName << wordList << socket->connData.userName;
+        return;
+    }
+
+
+    // and send information about saved game back to client.
+    QStringList sl = dbHandler->getSingleListLabels(lexiconName, socket->connData.userName,
+                                                    wordList);
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE;
+    out << lexiconName;
+    out << wordList;
+    fixHeaderLength();
+    socket->write(block);
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE;
+    out << lexiconName;
+    out << sl;
+    fixHeaderLength();
+    socket->write(block);
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_DONE;
+    fixHeaderLength();
+    socket->write(block);       // to get it to resize columns
+
+    writeListSpaceUsage(socket, dbHandler);
+}
 
 /*************** static and utility functions ****************/
 
@@ -977,7 +1003,7 @@ void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
 
     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
-        QSqlQuery query(dbHandler->lexiconMap.value(dbHandler->availableDatabases[i]).db);
+        QSqlQuery query(DatabaseHandler::lexiconMap.value(dbHandler->availableDatabases[i]).db_server);
         query.exec("SELECT listname from wordlists");
         QStringList wordLists;
         while (query.next())
@@ -1051,7 +1077,7 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
 
     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
-        QSqlQuery query(dbHandler->lexiconMap.value(dbHandler->availableDatabases[i]).db);
+        QSqlQuery query(DatabaseHandler::lexiconMap.value(dbHandler->availableDatabases[i]).db_server);
         query.exec("BEGIN TRANSACTION");
         for (int j = 2; j <= 15; j++)
         {
@@ -1079,3 +1105,15 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
 }
 
 
+void UnscrambleGame::writeListSpaceUsage(ClientSocket* socket, DatabaseHandler* dbHandler)
+{
+    quint32 usage, max;
+    dbHandler->getListSpaceUsage(socket->connData.userName, usage, max);
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTSPACEUSAGE;
+    out << usage << max;
+    fixHeaderLength();
+    socket->write(block);
+
+}

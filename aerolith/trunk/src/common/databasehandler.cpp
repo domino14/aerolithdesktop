@@ -21,12 +21,17 @@
 #include <QTime>
 
 //const QString userlistPathPrefix = "~/.aerolith/userlists/";
+
+const int remoteNumQsQuota = 500000;
+
+QMap <QString, LexiconInfo> DatabaseHandler::lexiconMap;
+
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
     return a1.combinations > a2.combinations;
 }
 
-void DatabaseHandler::createLexiconMap(bool createDawgs)
+void DatabaseHandler::createLexiconMap()
 {
     /* this function is called right when the Aerolith program starts executing, either in stand-alone server mode
        or in server-client mode*/
@@ -41,13 +46,10 @@ void DatabaseHandler::createLexiconMap(bool createDawgs)
     lexiconMap.insert("Volost", LexiconInfo("Volost", "volost.txt", englishLetterDist, "volost.dwg", "volost-r.dwg"));
     lexiconMap.insert("FISE", LexiconInfo("FISE", "fise.txt", spanishLetterDist, "fise.dwg", "fise-r.dwg"));
 
-    if (createDawgs)
+    foreach (QString key, lexiconMap.keys())
     {
-        foreach (QString key, lexiconMap.keys())
-        {
-            lexiconMap[key].dawg.readDawg("words/" + lexiconMap[key].dawgFilename);
-            lexiconMap[key].reverseDawg.readDawg("words/" + lexiconMap[key].dawgRFilename);
-        }
+        lexiconMap[key].dawg.readDawg("words/" + lexiconMap[key].dawgFilename);
+        lexiconMap[key].reverseDawg.readDawg("words/" + lexiconMap[key].dawgRFilename);
     }
 
 }
@@ -56,7 +58,7 @@ QStringList DatabaseHandler::checkForDatabases()
 {
     QStringList dbList;
     QDir dir = QDir::home();
-    bool databasesExist = true;
+
     if (dir.exists(".aerolith"))
     {
         dir.cd(".aerolith");
@@ -101,22 +103,25 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
         {
             LexiconInfo* lexInfo = &(lexiconMap[key]);
             qDebug() << "Name:" << lexInfo->lexiconName;
+            QSqlDatabase* db = NULL;
             if (clientCall)
             {
 
-                lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
-                lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
-                lexInfo->db.open();
+                lexInfo->db_client =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
+                lexInfo->db_client.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
+                lexInfo->db_client.open();
+                db = &(lexInfo->db_client);
             }
             else
             {
-                lexInfo->db =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
-                lexInfo->db.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
-                lexInfo->db.open();
+                lexInfo->db_server =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
+                lexInfo->db_server.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
+                lexInfo->db_server.open();
+                db = &(lexInfo->db_server);
             }
             // make sure to populate word length in lexInfo!
 
-            QSqlQuery query(lexInfo->db);
+            QSqlQuery query(*db);
             query.exec("BEGIN TRANSACTION");
             query.prepare("SELECT numalphagrams from lengthcounts where length = ?");
             for (int i = 0; i < 16; i++)
@@ -126,7 +131,7 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
                 while (query.next())
                 {
                     lexInfo->alphagramsPerLength[i] = query.value(0).toInt();
-                    qDebug() << "lengths " << i << lexInfo->alphagramsPerLength[i];
+                    qDebug() << "lengths " << i << lexInfo->alphagramsPerLength[i] << clientCall;
                 }
             }
             query.exec("END TRANSACTION");
@@ -156,11 +161,16 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
                             "listName VARCHAR(64) NOT NULL, "
                             "lexiconName VARCHAR(15) NOT NULL, "
                             "lastdateSaved VARCHAR(64), alphasInList INTEGER, "
+                            "path VARCHAR(64) NOT NULL, "
                             "PRIMARY KEY(listName, lexiconName, username) )");
 
         userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlistInfo(username, listName, lexiconName)");
+
+        userListsQuery.exec("CREATE TABLE IF NOT EXISTS numQsByUsername(username VARCHAR(16) NOT NULL, "
+                            "numQs INTEGER)");
+
         // the list itself is saved in a file:
-        // ~/.aerolith/userlists/username/lexiconName/listName
+        // ~/.aerolith/userlists/username/lexiconName/path
 
 
 
@@ -594,7 +604,7 @@ QString DatabaseHandler::followDefinitionLinks(QString definition, QHash<QString
     int lowerMaxDepth = useFollow ? maxDepth - 1 : maxDepth;
     QString newDefinition = maxDepth
         ? followDefinitionLinks(modified, defHash, useFollow, lowerMaxDepth)
-        : modified;
+            : modified;
     return newDefinition;
 }
 
@@ -690,13 +700,14 @@ int DatabaseHandler::getNumWordsByLength(QString lexiconName, int length)
 
 bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QList<quint32>& probIndices)
 {
-    if (!lexiconMap.value(lexiconName).db.isOpen()) return false;
+// client always calls this function as it is used to upload lists to server
+    if (!lexiconMap.value(lexiconName).db_client.isOpen()) return false;
 
     LessThans lessThan;
     if (lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
     else lessThan = ENGLISH_LESS_THAN;
 
-    QSqlQuery query(lexiconMap.value(lexiconName).db);
+    QSqlQuery query(lexiconMap.value(lexiconName).db_client);
     query.prepare("SELECT probability from alphagrams where alphagram = ?");
     QSet <QString> alphaset;
     foreach (QString word, words)
@@ -717,27 +728,62 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QLi
     return true;
 }
 
-QString DatabaseHandler::getSavedListArrayPath(QString lexiconName, QString listName, QString username)
-{     /*   userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16), listName VARCHAR(64), "
-                            "lexiconName VARCHAR(15), lastdateSaved VARCHAR(64), alphasInList INTEGER");
+QString DatabaseHandler::getSavedListRelativePath(QString lexiconName, QString listName, QString username)
+{
+    username = username.toLower();
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("SELECT listdata from userlistInfo where lexiconName = ? and listName = ? and username = ?");
+    userListsQuery.prepare("SELECT path from userlistInfo where lexiconName = ? and listName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
     userListsQuery.bindValue(2, username);
     userListsQuery.exec();
 
-    QByteArray ret;
+    QString path;
     while (userListsQuery.next())
-        ret = userListsQuery.value(0).toByteArray();*/
+        path = userListsQuery.value(0).toString();
 
 
+    return path;
+
+}
+
+QString DatabaseHandler::getSavedListAbsolutePath(QString lex, QString list, QString username)
+{
     QDir dir = QDir::home();
     dir.cd(".aerolith");
     dir.cd("userlists");
     dir.cd(username);
-    dir.cd(lexiconName);
-    return dir.filePath(listName);
+    dir.cd(lex);
+    return dir.filePath(getSavedListRelativePath(lex, list, username));
+
+}
+
+bool DatabaseHandler::savedListExists(QString lexicon, QString listName, QString username)
+{
+    username = username.toLower();
+    QSqlQuery userListsQuery(userlistsDb);
+
+    userListsQuery.exec("BEGIN TRANSACTION");
+    userListsQuery.prepare("SELECT count(*) from userlistInfo WHERE lexiconName = ? and "
+                           "listName = ? and username = ?");
+
+    userListsQuery.bindValue(0, lexicon);
+    userListsQuery.bindValue(1, listName);
+    userListsQuery.bindValue(2, username);
+
+    userListsQuery.exec();
+    bool exists = false;
+    while (userListsQuery.next())
+    {
+        int count = userListsQuery.value(0).toInt();
+        if (count == 1)
+        {
+            exists = true;
+        }
+    }
+    userListsQuery.exec("END TRANSACTION");
+
+    return exists;
 
 }
 
@@ -746,44 +792,66 @@ bool DatabaseHandler::saveGame(SavedUnscrambleGame sug, QString lex, QString lis
 
     QByteArray ba = sug.toByteArray();
     username = username.toLower();
-    list = list.toLower();
-    QSqlQuery userListsQuery(userlistsDb);
 
-    userListsQuery.exec("BEGIN TRANSACTION");
-    userListsQuery.prepare("SELECT count(*) from userlistInfo WHERE lexiconName = ? and "
-                           "listName = ? and username = ?");
-
-    userListsQuery.bindValue(0, lex);
-    userListsQuery.bindValue(1, list);
-    userListsQuery.bindValue(2, username);
-
-    userListsQuery.exec();
-    bool update = false;
-    while (userListsQuery.next())
-    {
-        int count = userListsQuery.value(0).toInt();
-        qDebug() << "Count: " << count;
-        if (count == 1)
-        {
-            update = true;
-        }
-    }
-
+    bool update = savedListExists(lex, list, username);
+    qDebug() << "--Save Game--";
+    qDebug() << "Update =" << update;
     bool resultSuccess = false;
 
+    QDateTime curDT = QDateTime::currentDateTime();
+    QString pathIfNew;
+
+    QSqlQuery userListsQuery(userlistsDb);
     if (!update)
     {
+        /* check we're not over quota */
+        userListsQuery.prepare("SELECT numQs from numQsByUsername where username = ?");
+        userListsQuery.bindValue(0, username);
+        userListsQuery.exec();
+        bool foundUsername = userListsQuery.next();
+        qDebug() << "Found username=" << foundUsername;
+        int numQs = 0;
+        if (foundUsername)
+            numQs = userListsQuery.value(0).toInt();
+
+        if (numQs + sug.origIndices.size() > remoteNumQsQuota)
+            return false;   // over quota, don't allow saving.
+
+        pathIfNew = QString::number(curDT.toTime_t()) + "_" + curDT.toString("zzz");
 
         userListsQuery.prepare("INSERT INTO userlistInfo (lexiconName, listName, username, lastdateSaved, "
-                               "alphasInList) VALUES (?, ?, ?, ?, ?)");
+                               "alphasInList, path) VALUES (?, ?, ?, ?, ?, ?)");
 
 
         userListsQuery.bindValue(0, lex);
         userListsQuery.bindValue(1, list);
         userListsQuery.bindValue(2, username);
-        userListsQuery.bindValue(3, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+        userListsQuery.bindValue(3, curDT.toString("MMM d, yy h:mm:ss ap"));
         userListsQuery.bindValue(4, sug.origIndices.size());
+        userListsQuery.bindValue(5, pathIfNew);
         resultSuccess = userListsQuery.exec();
+        qDebug() << "Result success" << resultSuccess;
+        if (resultSuccess)
+        {
+            numQs += sug.origIndices.size();
+            if (!foundUsername)
+            {
+                userListsQuery.prepare("INSERT INTO numQsByUsername (numQs, username) VALUES (?, ?)");
+
+            }
+            else
+            {
+                userListsQuery.prepare("UPDATE numQsByUsername SET numQs = ? WHERE username = ?");
+            }
+            userListsQuery.bindValue(0, numQs);
+            userListsQuery.bindValue(1, username);
+            userListsQuery.exec();
+            qDebug() << username << numQs;
+        }
+        else
+            qCritical() << "Unexpected error saving list." << lex << list << username;
+
+
     }
     else
     {
@@ -799,37 +867,60 @@ bool DatabaseHandler::saveGame(SavedUnscrambleGame sug, QString lex, QString lis
     }
     if (resultSuccess)
     {
+        qDebug() << "Writing to file";
         QDir dir = QDir::home();
         dir.cd(".aerolith");
         dir.cd("userlists");
+        if (!dir.exists(username))
+        {
+            dir.mkdir(username);
+        }
         dir.cd(username);
+
+        if (!dir.exists(lex))
+        {
+            dir.mkdir(lex);
+        }
+
         dir.cd(lex);
-        QFile f(dir.filePath(list));
+        QFile f(dir.filePath(update ? getSavedListRelativePath(lex, list, username) : pathIfNew));
 
         f.open(QIODevice::WriteOnly);
         f.write(ba);
         f.close();
 
     }
-    userListsQuery.exec("END TRANSACTION");
     return resultSuccess;
 }
 
 bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices)
 {
     username = username.toLower();
-    listName = listName.toLower();
-
 
     qDebug() << "saveSingleList called";
     if (!userlistsDb.isOpen())
     {
         return false;
     }
-
     QSqlQuery userListsQuery(userlistsDb);
-    userListsQuery.prepare("INSERT INTO userlistInfo(lexiconName, listName, username, lastdateSaved, alphasInList) "
-                           "VALUES(?, ?, ?, ?, ?)");
+    userListsQuery.prepare("SELECT numQs from numQsByUsername where username = ?");
+    userListsQuery.bindValue(0, username);
+    userListsQuery.exec();
+    bool foundUsername = userListsQuery.next();
+    qDebug() << "In SLL. Found" << username << foundUsername;
+    int numQs = 0;
+    if (foundUsername)
+        numQs = userListsQuery.value(0).toInt();
+
+    if (numQs + probIndices.size() > remoteNumQsQuota)
+        return false;   // over quota, don't allow saving.
+
+    QDateTime curDT = QDateTime::currentDateTime();
+    QString path = QString::number(curDT.toTime_t()) + "_" + curDT.toString("zzz");
+
+    userListsQuery.prepare("INSERT INTO userlistInfo(lexiconName, listName, username, lastdateSaved, "
+                            "alphasInList, path) "
+                           "VALUES(?, ?, ?, ?, ?, ?)");
 
     SavedUnscrambleGame sug;
     sug.initialize(probIndices);
@@ -837,11 +928,27 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
     userListsQuery.bindValue(2, username);
-    userListsQuery.bindValue(3, QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap"));
+    userListsQuery.bindValue(3, curDT.toString("MMM d, yy h:mm:ss ap"));
     userListsQuery.bindValue(4, probIndices.size());
+    userListsQuery.bindValue(5, path);
     bool retVal = userListsQuery.exec();
 
     if (!retVal) return false;
+
+    numQs += probIndices.size();
+    if (foundUsername)
+    {
+        userListsQuery.prepare("INSERT INTO numQsByUsername (numQs, username) VALUES (?, ?)");
+
+    }
+    else
+    {
+        userListsQuery.prepare("UPDATE numQsByUsername SET numQs = ? WHERE username = ?");
+    }
+    userListsQuery.bindValue(0, numQs);
+    userListsQuery.bindValue(1, username);
+    userListsQuery.exec();
+
 
     QDir dir = QDir::home();
     dir.cd(".aerolith");
@@ -860,7 +967,7 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     }
     dir.cd(lexiconName);
 
-    QFile f(dir.filePath(listName));
+    QFile f(dir.filePath(path));
     f.open(QIODevice::WriteOnly);
     f.write(sug.toByteArray());
     f.close();
@@ -871,7 +978,6 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
 QStringList DatabaseHandler::getSingleListLabels(QString lexiconName, QString username, QString listname)
 {
     username = username.toLower();
-    listname = listname.toLower();
     QStringList retList;
     QSqlQuery userListsQuery(userlistsDb);
     userListsQuery.prepare("SELECT lastdateSaved from userlistInfo where "
@@ -889,12 +995,7 @@ QStringList DatabaseHandler::getSingleListLabels(QString lexiconName, QString us
         SavedUnscrambleGame sug;
         QString lastdateSaved = userListsQuery.value(0).toString();
 
-        QDir dir = QDir::home();
-        dir.cd(".aerolith");
-        dir.cd("userlists");
-        dir.cd(username);
-        dir.cd(lexiconName);
-        f.setFileName(dir.filePath(listname));
+        f.setFileName(getSavedListAbsolutePath(lexiconName, listname, username));
         f.open(QIODevice::ReadOnly);
         QByteArray ba = f.readAll();
         f.close();
@@ -945,13 +1046,7 @@ QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QStrin
         QString lastdateSaved = userListsQuery.value(1).toString();
 
 
-        QDir dir = QDir::home();
-        dir.cd(".aerolith");
-        dir.cd("userlists");
-        dir.cd(username);
-        dir.cd(lexiconName);
-
-        f.setFileName(dir.filePath(listName));
+        f.setFileName(getSavedListAbsolutePath(lexiconName, listName, username));
         f.open(QIODevice::ReadOnly);
         QByteArray ba = f.readAll();
         f.close();
@@ -985,7 +1080,23 @@ QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QStrin
 
 bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QString username)
 {
+    username = username.toLower();
+
+    QString path = getSavedListRelativePath(lexiconName, listName, username);
     QSqlQuery userListsQuery(userlistsDb);
+
+    userListsQuery.prepare("SELECT alphasInList from userlistInfo where lexiconName = ? and listName = ? "
+                           "and username = ?");
+    userListsQuery.bindValue(0, lexiconName);
+    userListsQuery.bindValue(1, listName);
+    userListsQuery.bindValue(2, username);
+    userListsQuery.exec();
+    bool exists = userListsQuery.next();
+    if (!exists) return false;
+
+    int thisNumQs= userListsQuery.value(0).toInt();
+
+
     userListsQuery.prepare("DELETE from userlistInfo where lexiconName = ? and listName = ? and username = ?");
     userListsQuery.bindValue(0, lexiconName);
     userListsQuery.bindValue(1, listName);
@@ -994,17 +1105,55 @@ bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
 
     if (!retVal) return false;
 
-    username = username.toLower();
-    listName = listName.toLower();
     QDir dir = QDir::home();
     dir.cd(".aerolith");
     dir.cd("userlists");
     dir.cd(username);
     dir.cd(lexiconName);
 
-    QFile::remove(dir.filePath(listName));
+    QFile::remove(dir.filePath(path));
 
+    userListsQuery.prepare("SELECT numQs from numQsByUsername where username = ?");
+    userListsQuery.bindValue(0, username);
+    userListsQuery.exec();
+    bool foundUsername = userListsQuery.next();
+
+    int numQs = 0;
+    if (foundUsername)
+    {
+        numQs = userListsQuery.value(0).toInt();
+        qDebug() << "In Delete. Found" << username << foundUsername << numQs;
+    }
+    else
+    {
+        qCritical() << "Trying to delete a non existing list! Error!";
+        return false;
+    }
+
+    numQs -= thisNumQs;
+
+
+    userListsQuery.prepare("UPDATE numQsByUsername SET numQs = ? WHERE username = ?");
+    userListsQuery.bindValue(0, numQs);
+    userListsQuery.bindValue(1, username);
+    userListsQuery.exec();
     return true;
+}
+
+void DatabaseHandler::getListSpaceUsage(QString username, quint32 &usage, quint32 &max)
+{
+    username = username.toLower();
+    usage = 0;
+    max = remoteNumQsQuota;
+
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.prepare("SELECT numQs from numQsByUsername WHERE username = ?");
+    userListsQuery.bindValue(0, username);
+    userListsQuery.exec();
+    if (userListsQuery.next())
+    {
+        usage = userListsQuery.value(0).toInt();
+    }
 }
 
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()
