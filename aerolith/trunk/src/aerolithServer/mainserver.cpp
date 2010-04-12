@@ -162,6 +162,7 @@ void MainServer::incomingConnection(int socketDescriptor)
         client->connData.avatarId = 1;
         client->connData.isActive = true; // assume we responded to the last ping
         client->connData.minutesInactive = 0;
+	client->connData.numBytesSentToday = 0;
 
         connect(client, SIGNAL(disconnected()), this, SLOT(removeConnection()));
         connect(client, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
@@ -308,6 +309,7 @@ void MainServer::receiveMessage()
 
         if (socket->connData.numBytesSentToday > userDailyByteLimit)
         {
+	  qDebug() << "Bandwidth limit!" << socket->connData.numBytesSentToday << userDailyByteLimit;
             writeToClient(socket, "You have reached your daily bandwidth limit! Please quiz with large files "
                           "locally!", S_ERROR); // the user daily limit should happen very rarely.
             todaysBlacklist.insert(socket->connData.userName.toLower());
@@ -1148,6 +1150,8 @@ void MainServer::processLogin(ClientSocket* socket)
         socket->connData.numBytesSentToday = todaysBandwidthByUser.value(username.toLower());
     else
         socket->connData.numBytesSentToday = 0;
+
+    qDebug() << "This user's num bytes sent:" << socket->connData.numBytesSentToday;
 
     writeHeaderData();
     out << (quint8) SERVER_MAX_BANDWIDTH;
