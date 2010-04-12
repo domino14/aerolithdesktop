@@ -2139,6 +2139,13 @@ void MainWindow::showDonationPage()
 
 void MainWindow::on_actionSubmitSuggestion_triggered()
 {
+    if (commsSocket->state() != QAbstractSocket::ConnectedState ||
+        uiLogin.serverLE->text() == "localhost")
+    {
+        QMessageBox::warning(this, "Log in", "Please log in to the main Aerolith server and then try "
+                             "again.");
+        return;
+    }
  //   QMessageBox::warning(this, "woo", "a suggestion to submit!");
     QString text =  QInputDialog::getText(this, "Suggestion/Bug report", "Enter your suggestion or bug report. Please "
                           "be detailed and try to remember what triggered a bug.");
