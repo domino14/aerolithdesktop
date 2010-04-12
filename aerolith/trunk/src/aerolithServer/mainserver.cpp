@@ -424,8 +424,12 @@ void MainServer::saveRemoteList(ClientSocket* socket)
         {
             QList <quint32> listPiece;
             socket->connData.in >> listPiece;
+	    #if QT_VERSION >= 0x040500
             socket->ugData.uploadedList.append(listPiece);
-
+	    #else
+	    foreach (quint32 p, listPiece)
+	      socket->ugData.uploadedList.append(p);
+	    #endif
             if (socket->ugData.uploadedList.size() > REMOTE_LISTSIZE_LIMIT)
             {
                 socket->disconnectFromHost();
