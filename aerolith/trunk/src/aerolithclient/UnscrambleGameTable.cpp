@@ -620,7 +620,13 @@ void UnscrambleGameTable::leaveTable()
 void UnscrambleGameTable::addPlayers(QStringList plist)
 {
     tableUi.listWidgetPeopleInRoom->addItems(plist);
+#if QT_VERSION >= 0x040500
     peopleInTable.append(plist);
+#else
+    foreach (QString p, plist)
+      peopleInTable.append(p);
+#endif
+
     //    addPlayersToWidgets(plist);
 }
 

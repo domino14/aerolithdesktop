@@ -454,9 +454,12 @@ void UnscrambleGame::endGame()
         }
 
     }
-
+#if QT_VERSION >= 0x040500
     missedArray.append(missedThisRound);
-
+#else
+    foreach (quint32 p, missedThisRound)
+      missedArray.append(p);
+#endif
     if (savingAllowed)
     {
         if (sug.brandNew)
