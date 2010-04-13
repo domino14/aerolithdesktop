@@ -94,7 +94,7 @@ private:
         }
     };
 
-    QList <LexiconLists> lexiconLists;
+    QHash <QString, LexiconLists> lexiconListsHash;
 
 
     void handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName, QString wordListDescriptor,
@@ -220,7 +220,7 @@ signals:
     void rebuildDatabaseAction(QAction*);
     void createUnscrambleGameTable();
     void createBonusGameTable();
-    void lexiconComboBoxIndexChanged(int);
+    void lexiconComboBoxIndexChanged(QString);
     void dbDialogEnableClose(bool);
     void spinBoxWordLengthChange(int);
     void standUp();

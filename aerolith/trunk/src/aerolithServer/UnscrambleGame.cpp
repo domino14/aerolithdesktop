@@ -1031,8 +1031,8 @@ void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
         else
         {
             out << (quint16)2;
+            out << QString("Today's Volost 6s").toAscii();
             out << QString("Today's Volost 7s").toAscii();
-            out << QString("Today's Volost 8s").toAscii();
         }
     }
     fixHeaderLength();
