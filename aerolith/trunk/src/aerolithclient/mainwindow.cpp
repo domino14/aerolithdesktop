@@ -1381,20 +1381,24 @@ void MainWindow::handleWordlistsMessage()
 
     quint8 numLexica;
     in >> numLexica;
-    disconnect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(int)), 0, 0);
+    disconnect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)), 0, 0);
     uiMainWindow.comboBoxLexicon->clear();
-    lexiconLists.clear();
+    lexiconListsHash.clear();
     qDebug() << "Got" << numLexica << "lexica.";
+
+    QHash <int, QString> localLexHash;
+
     for (int i = 0; i < numLexica; i++)
     {
         QByteArray lexicon;
         in >> lexicon;
+        localLexHash.insert(i, QString(lexicon));
 
         if (existingLocalDBList.contains(lexicon))
             uiMainWindow.comboBoxLexicon->addItem(lexicon);
         LexiconLists dummyLists;
         dummyLists.lexicon = lexicon;
-        lexiconLists << dummyLists;
+        lexiconListsHash.insert(QString(lexicon), dummyLists);
 
     }
 
@@ -1416,11 +1420,12 @@ void MainWindow::handleWordlistsMessage()
                     quint16 numLists;
                     in >> lexiconIndex >> numLists;
 
+                    QString lexicon = localLexHash.value(lexiconIndex);
                     for (int k = 0; k < numLists; k++)
                     {
                         QByteArray listTitle;
                         in >> listTitle;
-                        lexiconLists[lexiconIndex].regularWordLists << listTitle;
+                        lexiconListsHash[lexicon].regularWordLists << listTitle;
                     }
                 }
             }
@@ -1435,11 +1440,13 @@ void MainWindow::handleWordlistsMessage()
                     quint16 numLists;
                     in >> lexiconIndex >> numLists;
 
+                    QString lexicon = localLexHash.value(lexiconIndex);
+
                     for (int k = 0; k < numLists; k++)
                     {
                         QByteArray listTitle;
                         in >> listTitle;
-                        lexiconLists[lexiconIndex].dailyWordLists << listTitle;
+                        lexiconListsHash[lexicon].dailyWordLists << listTitle;
                     }
                 }
             }
@@ -1451,7 +1458,7 @@ void MainWindow::handleWordlistsMessage()
     if (uiMainWindow.comboBoxLexicon->count() > 0)
     {
         uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
-        lexiconComboBoxIndexChanged(0);
+        lexiconComboBoxIndexChanged(uiMainWindow.comboBoxLexicon->currentText());
     }
     else
     {
@@ -1465,37 +1472,33 @@ void MainWindow::handleWordlistsMessage()
        above two lines. the 'disconnect' is earlier in this function */
 
 
-    connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(int)),
-            SLOT(lexiconComboBoxIndexChanged(int)));
+    connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)),
+            SLOT(lexiconComboBoxIndexChanged(QString)));
 
     spinBoxWordLengthChange(uiTable.spinBoxWL->value());
 
 
 }
 
-void MainWindow::lexiconComboBoxIndexChanged(int index)
+void MainWindow::lexiconComboBoxIndexChanged(QString lex)
 {
-    qDebug() << "Changed lexicon to" << index;
-
-    qDebug() << lexiconLists.at(index).regularWordLists.size();
-    qDebug() << lexiconLists.at(index).dailyWordLists.size();
     uiTable.listWidgetTopLevelList->clear();
     challengesMenu->clear();
     uiScores.comboBoxChallenges->clear();
 
-    for (int i = 0; i < lexiconLists.at(index).regularWordLists.size(); i++)
+    for (int i = 0; i < lexiconListsHash[lex].regularWordLists.size(); i++)
     {
-        uiTable.listWidgetTopLevelList->addItem(lexiconLists.at(index).regularWordLists.at(i));
+        uiTable.listWidgetTopLevelList->addItem(lexiconListsHash[lex].regularWordLists.at(i));
     }
-    for (int i = 0; i < lexiconLists.at(index).dailyWordLists.size(); i++)
+    for (int i = 0; i < lexiconListsHash[lex].dailyWordLists.size(); i++)
     {
-        challengesMenu->addAction(lexiconLists.at(index).dailyWordLists.at(i));
-        uiScores.comboBoxChallenges->addItem(lexiconLists.at(index).dailyWordLists.at(i));
+        challengesMenu->addAction(lexiconListsHash[lex].dailyWordLists.at(i));
+        uiScores.comboBoxChallenges->addItem(lexiconListsHash[lex].dailyWordLists.at(i));
     }
     challengesMenu->addAction("Get today's scores");
     // gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
-    gameBoardWidget->setLexicon(lexiconLists.at(index).lexicon);
-    currentLexicon = lexiconLists.at(index).lexicon;
+    gameBoardWidget->setLexicon(lex);
+    currentLexicon = lex;
     uiTable.labelLexiconName->setText(currentLexicon);
     wordFilter->setCurrentLexicon(currentLexicon);
     repopulateMyListsTable();
