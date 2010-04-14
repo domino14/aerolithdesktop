@@ -145,4 +145,16 @@ void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, 
 // other important defines
 #define DEFAULT_PORT 2001
 
+
+// utilities class
+class Utilities
+{
+public:
+    static QString getRootDir();
+
+
+};
+
+
+
 #endif

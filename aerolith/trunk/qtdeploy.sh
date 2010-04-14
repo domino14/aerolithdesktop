@@ -161,6 +161,20 @@ install_name_tool -change QtCore.framework/Versions/4/QtCore \
     @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
     $BUNDLE/Contents/plugins/sqldrivers/libqsqlite.dylib
 
+# following two from http://www.zyzzyva.net
+
+## copy aerolith.top into bundle ##
+if [ ! -e $BUNDLE/Contents/MacOS/aerolith.top ]; then
+    echo "Copying aerolith.top into bundle..."
+    cp aerolith.top $BUNDLE/Contents/MacOS
+fi
+
+# Copy data directory into bundle unless it's already there
+if [ ! -e $BUNDLE/Contents/MacOS/words ]; then
+    echo "Copying data directory into bundle..."
+    cp -r words $BUNDLE/Contents/MacOS
+    find $BUNDLE -type d -name '.svn' -print0 | xargs -0 rm -rf
+fi
 
 ### misc cleanup ###############################################
 
