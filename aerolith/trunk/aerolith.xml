@@ -80,6 +80,9 @@
                         <distributionDirectory>
                             <origin>C:/Users/Cesar/Desktop/Aerolith Code/For installer/words</origin>
                         </distributionDirectory>
+                        <distributionFile>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/aerolith.top</origin>
+                        </distributionFile>
                     </distributionFileList>
                 </folder>
             </folderList>

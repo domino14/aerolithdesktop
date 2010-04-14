@@ -1,3 +1,3 @@
 Special thanks to the following people who have helped me in the development of Aerolith in some way, and to anyone else I may have forgotten:<BR>
 Joseph Bihlmeyer, Brian Bowman, Doug Brockmeier, Benjamin Dweck, Monique Kornell, Jean McArthur, Danny McMullan, Lisa Odom, Steve Pellinen, Geoff Thevenot, David Wiegand, Gabriel Wong, Joanna Zhou,
-Aaron Bader, Maria Ho, Elana Lehrer, James Leong, Seth Lipkin, Kenji Matsumoto, Michael Thelen.
+Aaron Bader, Maria Ho, Elana Lehrer, James Leong, Seth Lipkin, Kenji Matsumoto, John O'Laughlin, Michael Thelen.

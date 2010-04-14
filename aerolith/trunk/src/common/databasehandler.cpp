@@ -21,7 +21,7 @@
 #include <QTime>
 
 //const QString userlistPathPrefix = "~/.aerolith/userlists/";
-
+#include "commonDefs.h"
 const int remoteNumQsQuota = 500000;
 
 QMap <QString, LexiconInfo> DatabaseHandler::lexiconMap;
@@ -48,8 +48,8 @@ void DatabaseHandler::createLexiconMap()
 
     foreach (QString key, lexiconMap.keys())
     {
-        lexiconMap[key].dawg.readDawg("words/" + lexiconMap[key].dawgFilename);
-        lexiconMap[key].reverseDawg.readDawg("words/" + lexiconMap[key].dawgRFilename);
+        lexiconMap[key].dawg.readDawg(Utilities::getRootDir() + "/words/" + lexiconMap[key].dawgFilename);
+        lexiconMap[key].reverseDawg.readDawg(Utilities::getRootDir() + "/words/" + lexiconMap[key].dawgRFilename);
     }
 
 }
@@ -263,15 +263,15 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
     time.start();
     qDebug() << "Create" << lexiconName;
     LexiconInfo* lexInfo = &(lexiconMap[lexiconName]);
-    lexInfo->dawg.readDawg("words/" + lexInfo->dawgFilename);
-    lexInfo->reverseDawg.readDawg("words/" + lexInfo->dawgRFilename);
+    lexInfo->dawg.readDawg(Utilities::getRootDir() + "/words/" + lexInfo->dawgFilename);
+    lexInfo->reverseDawg.readDawg(Utilities::getRootDir() + "/words/" + lexInfo->dawgRFilename);
 
     lexInfo->resetLetterDistributionVariables();
     emit setProgressMessage(lexiconName + ": Reading in dictionary.");
 
     QHash <QString, Alph> alphagramsHash;
 
-    QFile file("words/" + lexInfo->wordsFilename);
+    QFile file(Utilities::getRootDir() + "/words/" + lexInfo->wordsFilename);
     if (!file.open(QIODevice::ReadOnly)) return;
     QSqlDatabase db =  QSqlDatabase::addDatabase("QSQLITE", lexiconName + "DB");
     db.setDatabaseName(dir.absolutePath() + "/" + lexiconName + ".db");
