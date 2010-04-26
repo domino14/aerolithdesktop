@@ -51,7 +51,7 @@ QPushButton:disabled{
       </property>
      </widget>
     </item>
-    <item row="0" column="1" rowspan="7">
+    <item row="0" column="1" rowspan="10">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
        <number>0</number>
@@ -253,21 +253,21 @@ QPushButton:disabled{
       </property>
      </spacer>
     </item>
-    <item row="3" column="0">
+    <item row="6" column="0">
      <widget class="QLabel" name="label_5">
       <property name="text">
        <string>Lexicon</string>
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
+    <item row="7" column="0">
      <widget class="QComboBox" name="comboBoxLexicon">
       <property name="focusPolicy">
        <enum>Qt::NoFocus</enum>
       </property>
      </widget>
     </item>
-    <item row="5" column="0">
+    <item row="8" column="0">
      <spacer name="verticalSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
@@ -280,7 +280,7 @@ QPushButton:disabled{
       </property>
      </spacer>
     </item>
-    <item row="6" column="0">
+    <item row="9" column="0">
      <widget class="QGroupBox" name="groupBox">
       <property name="title">
        <string>Options</string>
@@ -326,6 +326,58 @@ QPushButton:disabled{
        </item>
       </layout>
      </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Game Type</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QComboBox" name="comboBoxGameType">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <item>
+       <property name="text">
+        <string>WordScramble</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Taxes Hold Me</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Edley's Bonuses</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Anagrams</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Edley's WordScreens</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <spacer name="verticalSpacer_3">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
     </item>
    </layout>
   </widget>
