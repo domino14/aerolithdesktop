@@ -21,7 +21,7 @@
 #include <QtNetwork>
 #include <QtSql>
 #include "ui_tableCreateForm.h"
-
+#include "ui_createTaxesTableForm.h"
 #include "ui_scoresForm.h"
 #include "ui_loginForm.h"
 #include "ui_pmForm.h"
@@ -117,7 +117,8 @@ private:
     UnscrambleGameTable *gameBoardWidget;
 
     bool gameStarted;
-    QDialog *createTableDialog;
+    QDialog *createScrambleTableDialog;
+    QDialog *createTaxesTableDialog;
     QDialog *helpDialog;
     QDialog *scoresDialog;
     QDialog *loginDialog;
@@ -126,11 +127,12 @@ private:
     QMenu *challengesMenu;
 
     Ui::MainWindow uiMainWindow;
-    Ui::tableCreateForm uiTable;
+    Ui::tableCreateForm uiScrambleTable;
     Ui::scoresForm uiScores;
     Ui::loginForm uiLogin;
     Ui::dialogCreateDatabases uiDatabase;
 
+    Ui::createTaxesTableForm uiTaxesTable;
 
 
     QWidget *setProfileWidget;
@@ -238,6 +240,10 @@ signals:
     void showDonationPage();
 
     void on_actionSubmitSuggestion_triggered();
+
+    void on_comboBoxGameType_currentIndexChanged(QString);
+
+
 
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();

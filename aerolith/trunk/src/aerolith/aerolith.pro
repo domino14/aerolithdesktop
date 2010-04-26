@@ -40,7 +40,8 @@ FORMS = tableCreateForm.ui \
     mainwindow.ui \
     databaseDialog.ui \
     ../aerolithclient/inviteForm.ui \
-    ../aerolithclient/wordFilterForm.ui
+    ../aerolithclient/wordFilterForm.ui \
+    ../aerolithclient/createTaxesTableForm.ui
 SOURCES += mainwindow.cpp \
     UnscrambleGameTable.cpp \
     avatarLabel.cpp \

@@ -34,8 +34,11 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
 
 
-    createTableDialog = new QDialog(this);
-    uiTable.setupUi(createTableDialog);
+    createScrambleTableDialog = new QDialog(this);
+    uiScrambleTable.setupUi(createScrambleTableDialog);
+
+    createTaxesTableDialog = new QDialog(this);
+    uiTaxesTable.setupUi(createTaxesTableDialog);
 
 
     uiMainWindow.setupUi(this);
@@ -76,10 +79,10 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
     connect(commsSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(socketWroteBytes(qint64)));
 
-    connect(uiTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
-    connect(uiTable.buttonBox, SIGNAL(rejected()), createTableDialog, SLOT(hide()));
+    connect(uiScrambleTable.buttonBox, SIGNAL(accepted()), SLOT(createUnscrambleGameTable()));
+    connect(uiScrambleTable.buttonBox, SIGNAL(rejected()), createScrambleTableDialog, SLOT(hide()));
 
-    connect(uiTable.spinBoxWL, SIGNAL(valueChanged(int)), SLOT(spinBoxWordLengthChange(int)));
+    connect(uiScrambleTable.spinBoxWL, SIGNAL(valueChanged(int)), SLOT(spinBoxWordLengthChange(int)));
 
     scoresDialog = new QDialog(this);
     uiScores.setupUi(scoresDialog);
@@ -211,9 +214,9 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
         dbHandler->connectToDatabases(true, existingLocalDBList);
     }
 
-    uiTable.tableWidgetMyLists->setSelectionMode(QAbstractItemView::SingleSelection);
-    uiTable.tableWidgetMyLists->setSelectionBehavior(QAbstractItemView::SelectRows);
-    uiTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    uiScrambleTable.tableWidgetMyLists->setSelectionMode(QAbstractItemView::SingleSelection);
+    uiScrambleTable.tableWidgetMyLists->setSelectionBehavior(QAbstractItemView::SelectRows);
+    uiScrambleTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 
     connect(gameBoardWidget, SIGNAL(saveCurrentGame()),
@@ -782,8 +785,8 @@ void MainWindow::readFromServer()
 
         case SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARALL:
             {
-                uiTable.tableWidgetMyLists->clearContents();
-                uiTable.tableWidgetMyLists->setRowCount(0);
+                uiScrambleTable.tableWidgetMyLists->clearContents();
+                uiScrambleTable.tableWidgetMyLists->setRowCount(0);
             }
             break;
         case SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE:
@@ -793,9 +796,9 @@ void MainWindow::readFromServer()
                 in >> lexicon >> labels;
                 if (lexicon == currentLexicon)
                 {
-                    uiTable.tableWidgetMyLists->insertRow(0);
+                    uiScrambleTable.tableWidgetMyLists->insertRow(0);
                     for (int j = 0; j < labels.size(); j++)
-                        uiTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
+                        uiScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
 
                 }
 
@@ -803,7 +806,7 @@ void MainWindow::readFromServer()
             break;
         case SERVER_UNSCRAMBLEGAME_LISTDATA_DONE:
             {
-                uiTable.tableWidgetMyLists->resizeColumnsToContents();
+                uiScrambleTable.tableWidgetMyLists->resizeColumnsToContents();
             }
             break;
         case SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE:
@@ -812,11 +815,11 @@ void MainWindow::readFromServer()
                 in >> lexicon >> listname;
                 if (lexicon == currentLexicon)
                 {
-                    for (int i = 0; i < uiTable.tableWidgetMyLists->rowCount(); i++)
+                    for (int i = 0; i < uiScrambleTable.tableWidgetMyLists->rowCount(); i++)
                     {
-                        if (uiTable.tableWidgetMyLists->item(i, 0)->text() == listname)
+                        if (uiScrambleTable.tableWidgetMyLists->item(i, 0)->text() == listname)
                         {
-                            uiTable.tableWidgetMyLists->removeRow(i);
+                            uiScrambleTable.tableWidgetMyLists->removeRow(i);
                             break;  // break out of for-loop
                         }
                     }
@@ -827,8 +830,8 @@ void MainWindow::readFromServer()
             {
                 quint32 usage, max;
                 in >> usage >> max;
-                uiTable.progressBarUsedListSpace->setRange(0, max);
-                uiTable.progressBarUsedListSpace->setValue(usage);
+                uiScrambleTable.progressBarUsedListSpace->setRange(0, max);
+                uiScrambleTable.progressBarUsedListSpace->setValue(usage);
 
             }
             break;
@@ -1033,20 +1036,20 @@ void MainWindow::shouldDeletePMWidget()
 
 void MainWindow::createUnscrambleGameTable()
 {
-    if (uiTable.radioButtonMyLists->isChecked() && uiTable.tableWidgetMyLists->selectedItems().size() == 0) return;
+    if (uiScrambleTable.radioButtonMyLists->isChecked() && uiScrambleTable.tableWidgetMyLists->selectedItems().size() == 0) return;
 
     writeHeaderData();
     out << (quint8)CLIENT_NEW_TABLE;
     out << (quint8)GAME_TYPE_UNSCRAMBLE;
 
-    quint8 numPlayers = uiTable.playersSpinBox->value();
+    quint8 numPlayers = uiScrambleTable.playersSpinBox->value();
 
     out << numPlayers;
 
 
-    if (uiTable.radioButtonOtherLists->isChecked() && uiTable.listWidgetTopLevelList->currentItem())
+    if (uiScrambleTable.radioButtonOtherLists->isChecked() && uiScrambleTable.listWidgetTopLevelList->currentItem())
     {
-        QString listname = uiTable.listWidgetTopLevelList->currentItem()->text();
+        QString listname = uiScrambleTable.listWidgetTopLevelList->currentItem()->text();
 
         out << (quint8)LIST_TYPE_NAMED_LIST;
         out << listname;
@@ -1054,28 +1057,22 @@ void MainWindow::createUnscrambleGameTable()
         gameBoardWidget->setUnmodifiedListName(listname);
 
     }
-    else if (uiTable.radioButtonProbability->isChecked())
+    else if (uiScrambleTable.radioButtonProbability->isChecked())
     {
-        if (!uiTable.checkBoxAll->isChecked())
+        if (!uiScrambleTable.checkBoxAll->isChecked())
         {
             out << (quint8)LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH;
-            if (uiTable.spinBoxProb2->value() <= uiTable.spinBoxProb1->value()) return;   // don't send any data, this table is invalid
+            if (uiScrambleTable.spinBoxProb2->value() <= uiScrambleTable.spinBoxProb1->value()) return;   // don't send any data, this table is invalid
 
             quint8 wl;
             quint32 low, high;
 
-            wl = uiTable.spinBoxWL->value();
-            low = uiTable.spinBoxProb1->value();
-            high = uiTable.spinBoxProb2->value();
+            wl = uiScrambleTable.spinBoxWL->value();
+            low = uiScrambleTable.spinBoxProb1->value();
+            high = uiScrambleTable.spinBoxProb2->value();
 
             out << wl << low << high;
 
-
-            // TODO delete
-            //            SavedUnscrambleGame thisSug;
-            //            thisSug.initializeWithIndexRange(low, high, wl);
-            //
-            //            gameBoardWidget->setCurrentSug(thisSug);
             gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
 
         }
@@ -1086,38 +1083,28 @@ void MainWindow::createUnscrambleGameTable()
             quint8 wl;
             quint32 low, high;
 
-            wl = uiTable.spinBoxWL->value();
+            wl = uiScrambleTable.spinBoxWL->value();
 
             out << wl;   // special values mean the entire range.
 
             low = 1;    // one
             high = dbHandler->getNumWordsByLength(currentLexicon, wl);
 
-            // TODO delete
-            //            SavedUnscrambleGame thisSug;
-            //            thisSug.initializeWithIndexRange(low, high, wl);
-            //
-            //            gameBoardWidget->setCurrentSug(thisSug);
             gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
 
         }
     }
-    else if (uiTable.radioButtonMyLists->isChecked())
+    else if (uiScrambleTable.radioButtonMyLists->isChecked())
     {
         out << (quint8)LIST_TYPE_USER_LIST;
-        QList<QTableWidgetItem*> si = uiTable.tableWidgetMyLists->selectedItems();
+        QList<QTableWidgetItem*> si = uiScrambleTable.tableWidgetMyLists->selectedItems();
         if (si.size() != 5) return;
-
-/*        QSet <quint32> qindices;
-        QSet <quint32> mindices;
-*/
-        //DatabaseHandler::UserListQuizModes mode;
 
         quint8 mode;
 
-        if (uiTable.radioButtonContinueListQuiz->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE;
-        else if (uiTable.radioButtonRestartListQuiz->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_RESTART;
-        else if (uiTable.radioButtonQuizFirstMissed->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED;
+        if (uiScrambleTable.radioButtonContinueListQuiz->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE;
+        else if (uiScrambleTable.radioButtonRestartListQuiz->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_RESTART;
+        else if (uiScrambleTable.radioButtonQuizFirstMissed->isChecked()) mode = UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED;
 
 
         out << mode;
@@ -1129,25 +1116,25 @@ void MainWindow::createUnscrambleGameTable()
     }
 
 
-    out << uiMainWindow.comboBoxLexicon->currentText();
 
-    if (uiTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
-    else if (uiTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
+
+    if (uiScrambleTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
+    else if (uiScrambleTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
     //else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
 
-    out << (quint8)uiTable.timerSpinBox->value();
+    out << (quint8)uiScrambleTable.timerSpinBox->value();
     fixHeaderLength();
     commsSocket->write(block);
 }
 
 void MainWindow::createBonusGameTable()
 {
-    //    writeHeaderData();
-    //    out << (quint8)CLIENT_NEW_TABLE;
-    //
-    //    out << (quint8)GAME_TYPE_BONUS;
-    //    out << QString("Bonus squares.");
-    //    out << (quint8)uiTable.playersSpinBox->value();
+        writeHeaderData();
+        out << (quint8)CLIENT_NEW_TABLE;
+
+        out << (quint8)GAME_TYPE_BONUS;
+   //     out << (quint8)uiTable.playersSpinBox->value();
+            out << uiMainWindow.comboBoxLexicon->currentText();
     //
     //    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
     //    fixHeaderLength();
@@ -1159,12 +1146,12 @@ void MainWindow::createNewRoom()
 {
 
     // reset dialog to defaults first.
-    uiTable.cycleRbo->setChecked(true);
+    uiScrambleTable.cycleRbo->setChecked(true);
 
-    uiTable.playersSpinBox->setValue(1);
-    uiTable.timerSpinBox->setValue(4);
+    uiScrambleTable.playersSpinBox->setValue(1);
+    uiScrambleTable.timerSpinBox->setValue(4);
 
-    createTableDialog->show();
+    createScrambleTableDialog->show();
 }
 
 void MainWindow::joinTable()
@@ -1475,20 +1462,20 @@ void MainWindow::handleWordlistsMessage()
     connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)),
             SLOT(lexiconComboBoxIndexChanged(QString)));
 
-    spinBoxWordLengthChange(uiTable.spinBoxWL->value());
+    spinBoxWordLengthChange(uiScrambleTable.spinBoxWL->value());
 
 
 }
 
 void MainWindow::lexiconComboBoxIndexChanged(QString lex)
 {
-    uiTable.listWidgetTopLevelList->clear();
+    uiScrambleTable.listWidgetTopLevelList->clear();
     challengesMenu->clear();
     uiScores.comboBoxChallenges->clear();
 
     for (int i = 0; i < lexiconListsHash[lex].regularWordLists.size(); i++)
     {
-        uiTable.listWidgetTopLevelList->addItem(lexiconListsHash[lex].regularWordLists.at(i));
+        uiScrambleTable.listWidgetTopLevelList->addItem(lexiconListsHash[lex].regularWordLists.at(i));
     }
     for (int i = 0; i < lexiconListsHash[lex].dailyWordLists.size(); i++)
     {
@@ -1499,7 +1486,7 @@ void MainWindow::lexiconComboBoxIndexChanged(QString lex)
     // gameBoardWidget->setDatabase(lexiconLists.at(index).lexicon);
     gameBoardWidget->setLexicon(lex);
     currentLexicon = lex;
-    uiTable.labelLexiconName->setText(currentLexicon);
+    uiScrambleTable.labelLexiconName->setText(currentLexicon);
     wordFilter->setCurrentLexicon(currentLexicon);
     repopulateMyListsTable();
 
@@ -1876,7 +1863,7 @@ void MainWindow::spinBoxWordLengthChange(int length)
 {
     int max = dbHandler->getNumWordsByLength(currentLexicon, length);
     if (max != 0)
-        uiTable.spinBoxProb2->setMaximum(max);
+        uiScrambleTable.spinBoxProb2->setMaximum(max);
 }
 
 void MainWindow::startOwnServer()
@@ -2061,24 +2048,24 @@ void MainWindow::saveGame()
 
 void MainWindow::on_radioButtonProbability_clicked()
 {
-    uiTable.stackedWidget->setCurrentIndex(0);
+    uiScrambleTable.stackedWidget->setCurrentIndex(0);
 }
 
 void MainWindow::on_radioButtonOtherLists_clicked()
 {
-    uiTable.stackedWidget->setCurrentIndex(1);
+    uiScrambleTable.stackedWidget->setCurrentIndex(1);
 }
 
 void MainWindow::on_radioButtonMyLists_clicked()
 {
-    uiTable.stackedWidget->setCurrentIndex(2);
-    uiTable.radioButtonContinueListQuiz->setChecked(true);
+    uiScrambleTable.stackedWidget->setCurrentIndex(2);
+    uiScrambleTable.radioButtonContinueListQuiz->setChecked(true);
 
 }
 
 void MainWindow::on_pushButtonDeleteList_clicked()
 {
-    QList<QTableWidgetItem*> si = uiTable.tableWidgetMyLists->selectedItems();
+    QList<QTableWidgetItem*> si = uiScrambleTable.tableWidgetMyLists->selectedItems();
     if (si.size() != 5) return;
 
     if (QMessageBox::Yes == QMessageBox::warning(this, "Are you sure?", "Are you sure you wish to delete '" +
@@ -2149,19 +2136,38 @@ void MainWindow::on_actionSubmitSuggestion_triggered()
                              "again.");
         return;
     }
+    bool ok;
  //   QMessageBox::warning(this, "woo", "a suggestion to submit!");
-    QString text =  QInputDialog::getText(this, "Suggestion/Bug report", "Enter your suggestion or bug report. Please "
-                          "be detailed and try to remember what triggered a bug.");
+    QString text =  QInputDialog::getText(this, "Suggestion/Bug report",
+                                          "Enter your suggestion or bug report. Please "
+                                          "be detailed and try to remember what triggered a bug.",
+                                          QLineEdit::Normal,
+                                          "",
+                                          &ok);
 
-    writeHeaderData();
-    out << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT;
-    out << text.left(1000);
-    fixHeaderLength();
-    commsSocket->write(block);
 
-    QMessageBox::information(this, "Thank you", "Thank you for your input!");
+    if (ok)
+    {
+        writeHeaderData();
+        out << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT;
+        out << text.left(1000);
+        fixHeaderLength();
+        commsSocket->write(block);
+
+        QMessageBox::information(this, "Thank you", "Thank you for your input!");
+    }
 }
 
+void MainWindow::on_comboBoxGameType_currentIndexChanged(QString text)
+{
+    if (text == "WordScramble")
+    {
+        uiMainWindow.pushButtonChallenges->setVisible(true);
+    }
+    else
+        uiMainWindow.pushButtonChallenges->setVisible(false);
+
+}
 
 /////////////////////////////////////////////////////
 
