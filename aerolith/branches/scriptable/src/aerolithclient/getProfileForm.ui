@@ -1,0 +1,46 @@
+<ui version="4.0" >
+ <class>getProfileForm</class>
+ <widget class="QWidget" name="getProfileForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>300</width>
+    <height>225</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>300</width>
+    <height>225</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string>Get a user's profile</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QLineEdit" name="lineEditUsername" />
+   </item>
+   <item row="0" column="1" >
+    <widget class="QPushButton" name="pushButtonGetProfile" >
+     <property name="text" >
+      <string>Get Profile</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2" >
+    <widget class="QTextEdit" name="textEditProfile" >
+     <property name="readOnly" >
+      <bool>true</bool>
+     </property>
+     <property name="textInteractionFlags" >
+      <set>Qt::LinksAccessibleByMouse|Qt::NoTextInteraction|Qt::TextSelectableByMouse</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

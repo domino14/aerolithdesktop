@@ -1,0 +1,138 @@
+<project>
+    <shortName>aerolith</shortName>
+    <fullName>Aerolith</fullName>
+    <version>0.9</version>
+    <licenseFile>C:/Users/Cesar/Desktop/Aerolith Code/COPYING</licenseFile>
+    <leftImage>C:/Users/Cesar/Desktop/Aerolith Code/images/aerolithLarge.png</leftImage>
+    <logoImage>C:/Users/Cesar/Desktop/Aerolith Code/images/aerolithLarge.png</logoImage>
+    <splashImage>C:/Users/Cesar/Desktop/Aerolith Code/images/aerolithLarge.png</splashImage>
+    <enableRollback>1</enableRollback>
+    <enableTimestamp>1</enableTimestamp>
+    <vendor>Cesarware</vendor>
+    <componentList>
+        <component>
+            <name>default</name>
+            <description>Default Component</description>
+            <canBeEdited>1</canBeEdited>
+            <selected>1</selected>
+            <show>1</show>
+            <folderList>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfiles</name>
+                    <platforms>all</platforms>
+                    <shortcutList>
+                        <shortcut>
+                            <comment>Uninstall</comment>
+                            <exec>${installdir}/${uninstallerName}</exec>
+                            <icon></icon>
+                            <name>Uninstall ${product_fullname}</name>
+                            <path>${installdir}</path>
+                            <platforms>all</platforms>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}</windowsPath>
+                        </shortcut>
+                    </shortcutList>
+                </folder>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfileslinux</name>
+                    <platforms>linux</platforms>
+                </folder>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfileswindows</name>
+                    <platforms>windows</platforms>
+                    <distributionFileList>
+                        <distributionFile>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/aerolith.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/libgcc_s_dw2-1.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/mingwm10.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtCore4.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtGui4.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtOpenGL4.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtSql4.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>C:/Qt/2010.02.1/qt/bin/QtNetwork4.dll</origin>
+                        </distributionFile>
+                        <distributionDirectory>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/sqldrivers</origin>
+                        </distributionDirectory>
+                        <distributionDirectory>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/For installer/words</origin>
+                        </distributionDirectory>
+                        <distributionFile>
+                            <origin>C:/Users/Cesar/Desktop/Aerolith Code/aerolith.top</origin>
+                        </distributionFile>
+                    </distributionFileList>
+                </folder>
+            </folderList>
+            <startMenuShortcutList>
+                <startMenuShortcut>
+                    <comment>Uninstall ${product_fullname}</comment>
+                    <name>Uninstall ${product_fullname}</name>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
+                    <windowsExecArgs></windowsExecArgs>
+                    <windowsIcon></windowsIcon>
+                    <windowsPath>${installdir}/</windowsPath>
+                </startMenuShortcut>
+                <startMenuShortcut>
+                    <comment>Aerolith</comment>
+                    <name>${product_fullname}</name>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${installdir}/aerolith.exe</windowsExec>
+                    <windowsExecArgs></windowsExecArgs>
+                    <windowsIcon></windowsIcon>
+                    <windowsPath>${installdir}</windowsPath>
+                </startMenuShortcut>
+            </startMenuShortcutList>
+        </component>
+    </componentList>
+    <parameterList>
+        <directoryParameter>
+            <name>installdir</name>
+            <description>Installer.Parameter.installdir.description</description>
+            <explanation>Installer.Parameter.installdir.explanation</explanation>
+            <value>${platform_install_prefix}/${product_shortname}-${product_version}</value>
+            <default>${platform_install_prefix}/${product_shortname}-${product_version}</default>
+            <allowEmptyValue>0</allowEmptyValue>
+            <ask>yes</ask>
+            <cliOptionName>prefix</cliOptionName>
+            <mustBeWritable>yes</mustBeWritable>
+            <mustExist>0</mustExist>
+            <width>40</width>
+        </directoryParameter>
+    </parameterList>
+    <platformOptionsList>
+        <platformOptions>
+            <platform>windows</platform>
+        </platformOptions>
+        <platformOptions>
+            <platform>osx</platform>
+        </platformOptions>
+        <platformOptions>
+            <platform>linux</platform>
+        </platformOptions>
+    </platformOptionsList>
+</project>
+

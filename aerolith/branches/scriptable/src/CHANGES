@@ -1,0 +1,31 @@
+0.3
+Changes: <BR>
+- Moved to a virtual dedicated server! This should result in much less lag, less downtime, faster, etc.
+- Added up to the 15s for regular lists and daily challenges (hey, people actually wanted this!)
+- Tables are now their own windows. (precursor to being in multiple tables and also being able to see the \
+lobby tables better)
+- Eliminated a bad bug that caused sporadic crashes.
+
+
+0.2
+Changes: <BR>
+- Daily challenges<BR>
+- Username registration system<BR>
+- Avatar system<BR>
+- Percentage correct counter in solution box<BR>
+- Number of racks counter (i.e. how many more racks are left till this quiz is over)<BR>
+- Better behavior on unexpected disconnect - can now kick out dead connection<BR>
+
+
+0.1.1
+<BR>
+Added the following mostly based on suggestions (thank you!): <BR><BR>
+- Added configurable timer for each table<BR>
+- Made the font for the game board bigger and better<BR>
+- Pressing Tab on the "guess" box switches to the "chat" box and so on<BR>
+- Added a versioning system - server will tell you if you are using the wrong version of the client<BR>
+- Added a "big huge start button" (no, it's normal size, but more intuitive than pressing enter on the guess\
+ box)<BR>
+- Digital instead of analog timer<BR>
+- Countdown timer (3 seconds) after everyone is ready<BR>
+- Cleared "Ready" indicator for each player once game starts<BR>
