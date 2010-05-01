@@ -1,0 +1,48 @@
+<ui version="4.0" >
+ <class>pmForm</class>
+ <widget class="QWidget" name="pmForm" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>315</width>
+    <height>190</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>200</width>
+    <height>160</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string>Conversation with</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="../client.qrc" >:/images/aerolith.png</iconset>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <widget class="QTextEdit" name="textEdit" >
+     <property name="focusPolicy" >
+      <enum>Qt::ClickFocus</enum>
+     </property>
+     <property name="readOnly" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="lineEdit" >
+     <property name="maxLength" >
+      <number>300</number>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../client.qrc" />
+ </resources>
+ <connections/>
+</ui>
