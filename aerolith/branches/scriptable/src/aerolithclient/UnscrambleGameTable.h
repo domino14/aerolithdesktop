@@ -40,8 +40,8 @@ public:
     ~UnscrambleGameTable();
     void resetTable(quint16, QString, QString);
     void leaveTable();
-    void addPlayer(QString, bool);
-    void removePlayer(QString, bool);
+    void addPlayer(QString);
+    void removePlayer(QString);
     void addPlayers(QStringList);
 
     void setPrivacy(bool p);

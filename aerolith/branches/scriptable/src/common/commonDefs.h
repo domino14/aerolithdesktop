@@ -134,6 +134,10 @@
 #define SERVER_TABLE_UNSCRAMBLEGAME_LIST_REQUEST 'R'
 #define SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED 'W'
 
+// other misc types
+#define SERVER_WORD_LIST_REGULAR 'R'    // server sends client word list info on connect, this is one of the types
+#define SERVER_WORD_LIST_CHALLENGE 'D'
+
 void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums);
 
 // misc defines by game

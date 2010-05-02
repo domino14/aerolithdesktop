@@ -140,10 +140,6 @@ private:
 
     QTimer* gameTimer;
 
-    enum connectionModes { MODE_LOGIN, MODE_REGISTER};
-
-    connectionModes connectionMode;
-
     void closeEvent(QCloseEvent*);
     void writeWindowSettings();
     void readWindowSettings();
@@ -172,18 +168,14 @@ private:
 signals:
     void startServerThread();
     void stopServerThread();
-        public slots:
-    void submitCorrectAnswer(quint8, quint8);
-    void chatTable(QString);
+
+public slots:
+
     void submitChatLEContents();
-    void readFromServer();
-    void displayError(QAbstractSocket::SocketError);
-    void serverDisconnection();
     void toggleConnectToServer();
-    void connectedToServer();
 
     void sendPM(QString);
-    void sendPM(QString, QString);
+
     void viewProfile(QString);
     void receivedPM(QString, QString);
 
@@ -194,7 +186,6 @@ signals:
     void submitReady();
     void aerolithHelpDialog();
     void updateGameTimer();
-    void changeMyAvatar(quint8);
     void dailyChallengeSelected(QAction*);
     void getScores();
     void registerName();
@@ -230,13 +221,13 @@ signals:
     void declinedInvite();
 
     void saveGame();
-    void socketWroteBytes(qint64);
     void showDonationPage();
 
     void on_actionSubmitSuggestion_triggered();
 
     void on_comboBoxGameType_currentIndexChanged(QString);
 
+    void submitCorrectAnswer(quint8 space, quint8 specificAnswer);
     /* for server communciator*/
 
     void badMagicNumber();
@@ -252,19 +243,4 @@ signals:
 };
 
 
-struct tempHighScoresStruct
-{
-    QString username;
-    quint16 numCorrect;
-    quint16 timeRemaining;
-    tempHighScoresStruct(QString username, quint16 numCorrect, quint16 timeRemaining)
-    {
-        this->username = username;
-        this->numCorrect = numCorrect;
-        this->timeRemaining = timeRemaining;
-    }
-
-};
-
-bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b);
 #endif

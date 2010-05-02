@@ -20,11 +20,7 @@
 
 
 
-bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
-{
-    if (a.numCorrect == b.numCorrect) return (a.timeRemaining > b.timeRemaining);
-    else return (a.numCorrect > b.numCorrect);
-}
+
 
 MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler) :
         aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
@@ -93,10 +89,6 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     scoresDialog->setAttribute(Qt::WA_QuitOnClose, false);
     loginDialog->setAttribute(Qt::WA_QuitOnClose, false);
 
-
-    gameStarted = false;
-
-
     currentTablenum = 0;
     uiLogin.stackedWidget->setCurrentIndex(0);
 
@@ -117,7 +109,6 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(exitThisTable()), this, SLOT(leaveThisTable()));
 
 
-    out.setVersion(QDataStream::Qt_4_2);
 
     QTime midnight(0, 0, 0);
     qsrand(midnight.msecsTo(QTime::currentTime()));
@@ -342,69 +333,33 @@ void MainWindow::submitChatLEContents()
     uiMainWindow.lineEditChat->clear();
 }
 
-
-void MainWindow::chatTable(QString textToSend)
-{
-    if (textToSend.indexOf("/me ") == 0)
-    {
-        writeHeaderData();
-        out << (quint8)CLIENT_TABLE_COMMAND;
-        out << (quint16)currentTablenum;
-        out << (quint8)CLIENT_TABLE_ACTION;
-        out << textToSend.mid(4);
-        fixHeaderLength();
-        commsSocket->write(block);
-    }
-    else
-    {
-
-
-        writeHeaderData();
-        out << (quint8)CLIENT_TABLE_COMMAND;
-        out << (quint16)currentTablenum;
-        out << (quint8)CLIENT_TABLE_CHAT;
-        out << textToSend;
-        fixHeaderLength();
-        commsSocket->write(block);
-    }
-
-}
-
+/* TODO: this is game-specific; should move to actual game script/etc as a generic packet to send */
 void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
 {
     // chatText->append(QString("From solution: ") + solutionLE->text());
     // solutionLE->clear();
-
-    writeHeaderData();
-    out << (quint8) CLIENT_TABLE_COMMAND;
-    out << (quint16) currentTablenum;
-    out << (quint8) CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
-    out << space << specificAnswer;
-    fixHeaderLength();
-    commsSocket->write(block);
+//
+//    writeHeaderData();
+//    out << (quint8) CLIENT_TABLE_COMMAND;
+//    out << (quint16) currentTablenum;
+//    out << (quint8) CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
+//    out << space << specificAnswer;
+//    fixHeaderLength();
+//    commsSocket->write(block);
 }
 
-void MainWindow::changeMyAvatar(quint8 avatarID)
-{
 
-    writeHeaderData();
-    out << (quint8) CLIENT_TABLE_COMMAND;
-    out << (quint16) currentTablenum;
-    out << (quint8) CLIENT_TABLE_AVATAR;
-    out << avatarID;
-    fixHeaderLength();
-    commsSocket->write(block);
-}
 
 
 void MainWindow::toggleConnectToServer()
 {
-    if (commsSocket->state() != QAbstractSocket::ConnectedState)
+    if (serverCommunicator->isConnectedToServer())
     {
-        connectionMode = MODE_LOGIN;
-        commsSocket->abort();
 
-        commsSocket->connectToHost(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt());
+        serverCommunicator->connectToServer(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt(),
+                                            uiLogin.usernameLE->text(), uiLogin.passwordLE->text(),
+                                            ServerCommunicator::MODE_LOGIN);
+
         uiLogin.connectStatusLabel->setText("Connecting to server...");
         uiLogin.loginPushButton->setText("Disconnect");
 
@@ -419,14 +374,14 @@ void MainWindow::toggleConnectToServer()
     }
     else
     {
+        serverCommunicator->disconnectFromServer();
+
         uiLogin.connectStatusLabel->setText("Disconnected from server");
-        commsSocket->disconnectFromHost();
+
         uiLogin.loginPushButton->setText("Connect");
-        //gameStackedWidget->setCurrentIndex(2);
-        //centralWidget->hide();
         loginDialog->show();
         loginDialog->raise();
-        //gameBoardWidget->hide();
+
     }
 
 }
@@ -447,7 +402,7 @@ void MainWindow::sendPM(QString person)
     {
         PMWidget *w = new PMWidget(0, currentUsername, person);
         w->setAttribute(Qt::WA_QuitOnClose, false);
-        connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
+        connect(w, SIGNAL(sendPM(QString, QString)), serverCommunicator, SLOT(sendPM(QString, QString)));
         connect(w, SIGNAL(shouldDelete()), this, SLOT(shouldDeletePMWidget()));
         w->show();
 
@@ -456,20 +411,6 @@ void MainWindow::sendPM(QString person)
 
 }
 
-void MainWindow::sendPM(QString username, QString message)
-{
-    if (message.simplified() == "")
-    {
-        return;
-    }
-
-    writeHeaderData();
-    out << (quint8)CLIENT_PM;
-    out << username;
-    out << message;
-    fixHeaderLength();
-    commsSocket->write(block);
-}
 
 void MainWindow::receivedPM(QString username, QString message)
 {
@@ -487,7 +428,7 @@ void MainWindow::receivedPM(QString username, QString message)
     {
         PMWidget *w = new PMWidget(0, currentUsername, username);
         w->setAttribute(Qt::WA_QuitOnClose, false);
-        connect(w, SIGNAL(sendPM(QString, QString)), this, SLOT(sendPM(QString, QString)));
+        connect(w, SIGNAL(sendPM(QString, QString)), serverCommunicator, SLOT(sendPM(QString, QString)));
         connect(w, SIGNAL(shouldDelete()), this, SLOT(shouldDeletePMWidget()));
         w->appendText("[" + username + "] " + message);
         w->show();
@@ -508,7 +449,12 @@ void MainWindow::createUnscrambleGameTable()
 {
     if (uiCreateScrambleTable.radioButtonMyLists->isChecked() && uiCreateScrambleTable.tableWidgetMyLists->selectedItems().size() == 0) return;
 
-    writeHeaderData();
+    /* creating tables is a very specialized thing; it makes sense to write the specially coded byte array in this function
+       and then just use serverCommunicator to send it; rather than send serverCommunicator a bunch of function calls to specially
+       format this data */
+    QByteArray packet;
+    QDataStream out(&packet, QIODevice::WriteOnly);
+
     out << (quint8)CLIENT_NEW_TABLE;
     out << (quint8)GAME_TYPE_UNSCRAMBLE;
 
@@ -593,22 +539,53 @@ void MainWindow::createUnscrambleGameTable()
     //else if (uiTable.randomRbo->isChecked()) out << (quint8)TABLE_TYPE_RANDOM_MODE;
 
     out << (quint8)uiCreateScrambleTable.timerSpinBox->value();
-    fixHeaderLength();
-    commsSocket->write(block);
+
+    serverCommunicator->sendPacket(packet);
+}
+
+void MainWindow::dailyChallengeSelected(QAction* challengeAction)
+{
+    if (challengeAction->text() == "Get today's scores")
+    {
+        uiScores.scoresTableWidget->clearContents();
+        uiScores.scoresTableWidget->setRowCount(0);
+        scoresDialog->show();
+    }
+    else
+    {
+
+        /* creating tables is a very specialized thing; it makes sense to write the specially coded byte array in this function
+           and then just use serverCommunicator to send it; rather than send serverCommunicator a bunch of function calls to specially
+           format this data */
+        QByteArray packet;
+        QDataStream out(&packet, QIODevice::WriteOnly);
+
+        out << (quint8)CLIENT_NEW_TABLE;
+        out << (quint8)GAME_TYPE_UNSCRAMBLE;
+        out << (quint8)1; // 1 player
+        out << (quint8)LIST_TYPE_DAILY_CHALLENGE;
+        out << challengeAction->text();
+        out << uiMainWindow.comboBoxLexicon->currentText(); // TODO this is kind of kludgy, should already know what lexicon
+        // I'm on.
+        out << (quint8)TABLE_TYPE_DAILY_CHALLENGES;
+        out << (quint8)0;	// server should decide time for daily challenge
+
+        serverCommunicator->sendPacket(packet);
+    }
 }
 
 void MainWindow::createBonusGameTable()
 {
-        writeHeaderData();
-        out << (quint8)CLIENT_NEW_TABLE;
-
-        out << (quint8)GAME_TYPE_BONUS;
-   //     out << (quint8)uiTable.playersSpinBox->value();
-            out << uiMainWindow.comboBoxLexicon->currentText();
-    //
-    //    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
-    //    fixHeaderLength();
-    //    commsSocket->write(block);
+//        writeHeaderData();
+//        out << (quint8)CLIENT_NEW_TABLE;
+//
+//        out << (quint8)GAME_TYPE_BONUS;
+//   //     out << (quint8)uiTable.playersSpinBox->value();
+//            out << uiMainWindow.comboBoxLexicon->currentText();
+//    //
+//    //    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
+//    //    fixHeaderLength();
+//    //    commsSocket->write(block);
 
 }
 
@@ -630,20 +607,14 @@ void MainWindow::joinTable()
     QVariant tn = buttonThatSent->property("tablenum");
     quint16 tablenum = (quint16)tn.toInt();
 
-    writeHeaderData();
-    out << (quint8)CLIENT_JOIN_TABLE;
-    out << (quint16) tablenum;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->joinTable(tablenum);
+
 }
 
 void MainWindow::leaveThisTable()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_LEAVE_TABLE;
-    out << (quint16)currentTablenum;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->leaveTable(currentTablenum);
+
 }
 
 
@@ -671,7 +642,7 @@ void MainWindow::lexiconComboBoxIndexChanged(QString lex)
     currentLexicon = lex;
     uiCreateScrambleTable.labelLexiconName->setText(currentLexicon);
     wordFilter->setCurrentLexicon(currentLexicon);
-    repopulateMyListsTable();
+    repopulateMyListsTable();       /* TODO dont use this anymore, load from lexiconListsHash */
 
 }
 
@@ -756,10 +727,10 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
     if (modification == 1)
         // player has been added
         // find a spot
-        gameBoardWidget->addPlayer(player, gameStarted);
+        gameBoardWidget->addPlayer(player);
 
     else if (modification == -1)
-        gameBoardWidget->removePlayer(player, gameStarted);
+        gameBoardWidget->removePlayer(player);
 
 
 }
@@ -824,59 +795,30 @@ void MainWindow::handleAddToTable(quint16 tablenum, QString player)
 
 }
 
-
 void MainWindow::giveUpOnThisGame()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TABLE_GIVEUP;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->sendGiveup(currentTablenum);
 }
 
 void MainWindow::trySitting(quint8 seatNumber)
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TRY_SITTING;
-    out << seatNumber;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->trySitting(seatNumber, currentTablenum);
 }
 
 void MainWindow::standUp()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TRY_STANDING;
-
-    fixHeaderLength();
-    commsSocket->write(block);
-
+    serverCommunicator->standUp(currentTablenum);
 }
 
 void MainWindow::trySetTablePrivate(bool priv)
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TABLE_PRIVACY;
-    out << priv;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->trySetTablePrivate(currentTablenum, priv);
+
 }
 
 void MainWindow::submitReady()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TABLE_READY_BEGIN;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->sendReady(currentTablenum);
 
 }
 
@@ -907,11 +849,8 @@ void MainWindow::showAboutQt()
 
 void MainWindow::sendClientVersion()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_VERSION;
-    out << aerolithVersion;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->sendClientVersion(aerolithVersion);
+
 }
 
 
@@ -924,50 +863,17 @@ void MainWindow::updateGameTimer()
 
 }
 
-void MainWindow::dailyChallengeSelected(QAction* challengeAction)
-{
-    if (challengeAction->text() == "Get today's scores")
-    {
-        uiScores.scoresTableWidget->clearContents();
-        uiScores.scoresTableWidget->setRowCount(0);
-        scoresDialog->show();
-    }
-    else
-    {
-        writeHeaderData();
-        out << (quint8)CLIENT_NEW_TABLE;
-        out << (quint8)GAME_TYPE_UNSCRAMBLE;
-        out << (quint8)1; // 1 player
-        out << (quint8)LIST_TYPE_DAILY_CHALLENGE;
-        out << challengeAction->text();
-        out << uiMainWindow.comboBoxLexicon->currentText(); // TODO this is kind of kludgy, should already know what lexicon
-        // I'm on.
-        out << (quint8)TABLE_TYPE_DAILY_CHALLENGES;
-        out << (quint8)0;	// server should decide time for daily challenge
-
-        fixHeaderLength();
-        commsSocket->write(block);
-    }
-}
-
 void MainWindow::getScores()
 {
     uiScores.scoresTableWidget->clearContents();
     uiScores.scoresTableWidget->setRowCount(0);
-    writeHeaderData();
-    out << (quint8)CLIENT_HIGH_SCORE_REQUEST;
-    out << uiScores.comboBoxChallenges->currentText();
-    fixHeaderLength();
-    commsSocket->write(block);
-
+    serverCommunicator->requestHighScores(uiScores.comboBoxChallenges->currentText());
 
 }
 
 void MainWindow::registerName()
 {
 
-    //  int retval = registerDialog->exec();
-    //if (retval == QDialog::Rejected) return;
     // validate password
     if (uiLogin.desiredFirstPasswordLE->text() != uiLogin.desiredSecondPasswordLE->text())
     {
@@ -978,13 +884,11 @@ void MainWindow::registerName()
 
     }
 
+    serverCommunicator->connectToServer(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt(),
+                                        uiLogin.desiredUsernameLE->text(), uiLogin.desiredFirstPasswordLE->text(),
+                                        ServerCommunicator::MODE_REGISTER);
 
 
-    //
-
-    connectionMode = MODE_REGISTER;
-    commsSocket->abort();
-    commsSocket->connectToHost(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt());
     uiLogin.connectStatusLabel->setText("Connecting to server...");
     uiLogin.loginPushButton->setText("Disconnect");
 }
@@ -1094,55 +998,13 @@ void MainWindow::on_pushButtonImportList_clicked()
         return;
 
     }
-    // split up list into chunks and send one at a time.
-    qDebug() << "probindices" << probIndices;
-    writeHeaderData();
-    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
-    out << (quint8)2;   // this means what follows is the size of the list
-    out << (quint32)probIndices.size();
-    out << currentLexicon;
-    out << listName.mid(0, 64);
-    fixHeaderLength();
-    commsSocket->write(block);
 
-    do
-    {
-
-        writeHeaderData();
-        out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
-        out << (quint8)1;   // this means that this list is CONTINUED (i.e. tell the server to wait for more of these packets)
-        out << probIndices.mid(0, 2000);
-        fixHeaderLength();
-        commsSocket->write(block);
-
-        probIndices = probIndices.mid(2000);
-    } while (probIndices.size() > 2000);
-
-    writeHeaderData();
-    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
-    out << (quint8)0;   // this means that this list is DONE
-    out << probIndices;
-    fixHeaderLength();
-    commsSocket->write(block);
-
-    //    success = dbHandler->saveNewLists(currentLexicon, listName, probIndices);
-    //    if (!success)
-    //    {
-    //        QMessageBox::critical(this, "Error", "Was unable to connect to userlists database! Please inform "
-    //                              "delsolar@gmail.com about this.");
-    //        return;
-    //    }
-
+    serverCommunicator->uploadWordList(currentLexicon, probIndices, listName);
 }
 
 void MainWindow::repopulateMyListsTable()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST;
-    out << currentLexicon;
-    fixHeaderLength();
-
-    commsSocket->write(block);
+    serverCommunicator->requestSavedWordListInfo(currentLexicon);
 
 
 }
@@ -1158,14 +1020,8 @@ void MainWindow::showInviteDialog()
 
         if (playerToInvite != "")
         {
+            serverCommunicator->invitePlayerToTable(currentTablenum, playerToInvite);
 
-            writeHeaderData();
-            out << (quint8)CLIENT_TABLE_COMMAND;
-            out << (quint16)currentTablenum;
-            out << (quint8)CLIENT_TABLE_INVITE;
-            out << playerToInvite;
-            fixHeaderLength();
-            commsSocket->write(block);
         }
     }
 
@@ -1173,24 +1029,13 @@ void MainWindow::showInviteDialog()
 
 void MainWindow::bootFromTable(QString playerToBoot)
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TABLE_BOOT;
-    out << playerToBoot;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->bootFromTable(currentTablenum, playerToBoot);
+
 }
 
 void MainWindow::saveGame()
 {
-    writeHeaderData();
-    out << (quint8)CLIENT_TABLE_COMMAND;
-    out << (quint16)currentTablenum;
-    out << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_SAVE_REQUEST;
-    fixHeaderLength();
-    commsSocket->write(block);
-
+    serverCommunicator->saveGame(currentTablenum);
 }
 
 void MainWindow::on_radioButtonProbability_clicked()
@@ -1219,16 +1064,7 @@ void MainWindow::on_pushButtonDeleteList_clicked()
                                                  si[0]->text() + "'?",
                                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
-
-
-        writeHeaderData();
-        out << (quint8)CLIENT_UNSCRAMBLEGAME_DELETE_LIST;
-        out << currentLexicon;
-        out << si[0]->text();
-        fixHeaderLength();
-        commsSocket->write(block);
-
-
+        serverCommunicator->deleteList(currentLexicon, si[0]->text());
 
     }
 
@@ -1239,11 +1075,7 @@ void MainWindow::acceptedInvite()
     QPushButton* p = static_cast<QPushButton*> (sender());
     quint16 tablenum = p->property("tablenum").toInt();
 
-    writeHeaderData();
-    out << (quint8)CLIENT_JOIN_TABLE;
-    out << (quint16) tablenum;
-    fixHeaderLength();
-    commsSocket->write(block);
+    serverCommunicator->joinTable(tablenum);
 
     p->parent()->deleteLater();
 }
@@ -1252,7 +1084,7 @@ void MainWindow::declinedInvite()
 {
     QPushButton* p = static_cast<QPushButton*> (sender());
 
-
+    // send decline packet?
 
 
     p->parent()->deleteLater();
@@ -1272,7 +1104,7 @@ void MainWindow::showDonationPage()
 
 void MainWindow::on_actionSubmitSuggestion_triggered()
 {
-    if (commsSocket->state() != QAbstractSocket::ConnectedState ||
+    if (!serverCommunicator->isConnectedToServer() ||
         uiLogin.serverLE->text() == "localhost")
     {
         QMessageBox::warning(this, "Log in", "Please log in to the main Aerolith server and then try "
@@ -1291,12 +1123,7 @@ void MainWindow::on_actionSubmitSuggestion_triggered()
 
     if (ok)
     {
-        writeHeaderData();
-        out << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT;
-        out << text.left(1000);
-        fixHeaderLength();
-        commsSocket->write(block);
-
+        serverCommunicator->sendSuggestionOrBugReport(text.left(1000));
         QMessageBox::information(this, "Thank you", "Thank you for your input!");
     }
 }

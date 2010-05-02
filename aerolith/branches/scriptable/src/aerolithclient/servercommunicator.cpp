@@ -19,19 +19,25 @@
 
 const quint16 MAGIC_NUMBER = 25349;
 
+bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruct& b)
+{
+    if (a.numCorrect == b.numCorrect) return (a.timeRemaining > b.timeRemaining);
+    else return (a.numCorrect > b.numCorrect);
+}
 
 ServerCommunicator::ServerCommunicator(QObject* parent) : QObject(parent),
-                                                            out(&block, QIODevice::WriteOnly)
+out(&block, QIODevice::WriteOnly)
 {
     blockSize = 0;
     commsSocket = new QTcpSocket(this);
     connect(commsSocket, SIGNAL(readyRead()), this, SLOT(readFromServer()));
     connect(commsSocket, SIGNAL(error(QAbstractSocket::SocketError)),
-            this, SLOT(displayError(QAbstractSocket::SocketError)));
-    connect(commsSocket, SIGNAL(connected()), this, SLOT(connectedToServer()));
+            this, SLOT(handleError(QAbstractSocket::SocketError)));
+    connect(commsSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
+    connect(commsSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+    //    connect(commsSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(socketWroteBytes(qint64)));
 
-    connect(commsSocket, SIGNAL(disconnected()), this, SLOT(serverDisconnection()));
-//    connect(commsSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(socketWroteBytes(qint64)));
+    out.setVersion(QDataStream::Qt_4_2);
 }
 
 void ServerCommunicator::sendPacket(QByteArray unprocessedPacket)
@@ -113,14 +119,14 @@ void ServerCommunicator::readFromServer()
             {
                 quint32 maxBandwidth;
                 in >> maxBandwidth;
-           //     uiMainWindow.progressBarBandwidthUsage->setRange(0, maxBandwidth);
-            //    uiMainWindow.progressBarBandwidthUsage->setValue(0);
+                //     uiMainWindow.progressBarBandwidthUsage->setRange(0, maxBandwidth);
+                //    uiMainWindow.progressBarBandwidthUsage->setValue(0);
 
             }
             break;
         case SERVER_RESET_TODAYS_BANDWIDTH:
             {
-              //  uiMainWindow.progressBarBandwidthUsage->setValue(0);
+                //  uiMainWindow.progressBarBandwidthUsage->setValue(0);
             }
             break;
 
@@ -323,33 +329,34 @@ void ServerCommunicator::readFromServer()
 }
 
 
-void ServerCommunicator::displayError(QAbstractSocket::SocketError socketError)
+void ServerCommunicator::handleError(QAbstractSocket::SocketError socketError)
 {
     switch (socketError)
     {
     case QAbstractSocket::RemoteHostClosedError:
         break;
     case QAbstractSocket::HostNotFoundError:
-        uiMainWindow.chatText->append("<font color=red>The host was not found. Please check the "
-                                      "host name and port settings.</font>");
+        emit serverConnectionError("The host was not found. Please check the "
+                                   "host name and port settings.");
         break;
     case QAbstractSocket::ConnectionRefusedError:
-        uiMainWindow.chatText->append("<font color=red>The connection was refused by the peer. "
-                                      "Make sure the Aerolith server is running, "
-                                      "and check that the host name and port "
-                                      "settings are correct.</font>");
+        emit serverConnectionError("The connection was refused by the peer. "
+                                   "Make sure the Aerolith server is running, "
+                                   "and check that the host name and port "
+                                   "settings are correct.");
         break;
     default:
-        uiMainWindow.chatText->append(QString("<font color=red>The following error occurred: %1.</font>")
-                                      .arg(commsSocket->errorString()));
+        emit serverConnectionError("The following error occurred: " + commsSocket->errorString());
     }
 
-    uiLogin.loginPushButton->setText("Connect");
-    uiLogin.connectStatusLabel->setText("Disconnected.");
+    //    uiLogin.loginPushButton->setText("Connect");
+    //    uiLogin.connectStatusLabel->setText("Disconnected.");
 }
 
-void ServerCommunicator::serverDisconnection()
+void ServerCommunicator::socketDisconnected()
 {
+    emit serverDisconnect();
+    /* :
     uiLogin.connectStatusLabel->setText("You are disconnected.");
     uiMainWindow.listWidgetPeopleConnected->clear();
     peopleLoggedIn.clear();
@@ -370,9 +377,10 @@ void ServerCommunicator::serverDisconnection()
     setWindowTitle("Aerolith - disconnected");
     gameBoardWidget->hide();
     uiMainWindow.comboBoxLexicon->setEnabled(true);
+    */
 }
 
-void ServerCommunicator::connectedToServer()
+void ServerCommunicator::socketConnected()
 {
     // only after connecting!
     blockSize = 0;
@@ -382,55 +390,71 @@ void ServerCommunicator::connectedToServer()
 
     // here we see if we are registering a name, or if we are connecting with an existing
     // name/password
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
 
     if (connectionMode == MODE_LOGIN)
     {
-
-        currentUsername = uiLogin.usernameLE->text();
-
-
-        writeHeaderData();
-        out << (quint8)CLIENT_LOGIN;
-        out << currentUsername;
-        out << uiLogin.passwordLE->text();
-        fixHeaderLength();
-        commsSocket->write(block);
+        o << (quint8)CLIENT_LOGIN;
     }
     else if (connectionMode == MODE_REGISTER)
     {
-        writeHeaderData();
-        out << (quint8)CLIENT_REGISTER;
-        out << uiLogin.desiredUsernameLE->text();
-        out << uiLogin.desiredFirstPasswordLE->text();
-        fixHeaderLength();
-        commsSocket->write(block);
+        o << (quint8)CLIENT_REGISTER;
     }
+    o << username << password;
+    sendPacket(packet);
 }
 
-/*
-void MainWindow::handleWordlistsMessage()
+bool ServerCommunicator::isConnectedToServer()
+{
+    return commsSocket->state() == QAbstractSocket::ConnectedState;
+}
+
+void ServerCommunicator::connectToServer(QString server, int port, QString _username, QString _password,
+                                         ConnectionModes _connectionMode)
+{
+    connectionMode = _connectionMode;
+    username = _username;
+    password = _password;
+
+    commsSocket->abort();
+    commsSocket->connectToHost(server, port);
+}
+
+void ServerCommunicator::disconnectFromServer()
+{
+    commsSocket->disconnectFromHost();
+}
+
+
+void ServerCommunicator::handleWordlistsMessage()
 {
 
     quint8 numLexica;
     in >> numLexica;
+
+    /* move
+
     disconnect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)), 0, 0);
     uiMainWindow.comboBoxLexicon->clear();
     lexiconListsHash.clear();
-    qDebug() << "Got" << numLexica << "lexica.";
-
-    QHash <int, QString> localLexHash;
+    */
 
     for (int i = 0; i < numLexica; i++)
     {
         QByteArray lexicon;
         in >> lexicon;
-        localLexHash.insert(i, QString(lexicon));
+        //localLexHash.insert(i, QString(lexicon));
 
+        emit gotLexicon(lexicon, i);
+
+
+        /* move
         if (existingLocalDBList.contains(lexicon))
             uiMainWindow.comboBoxLexicon->addItem(lexicon);
         LexiconLists dummyLists;
         dummyLists.lexicon = lexicon;
-        lexiconListsHash.insert(QString(lexicon), dummyLists);
+        lexiconListsHash.insert(QString(lexicon), dummyLists);*/
 
     }
 
@@ -444,7 +468,7 @@ void MainWindow::handleWordlistsMessage()
         switch(type)
         {
 
-        case 'R':
+        case SERVER_WORD_LIST_REGULAR:
             {
                 for (int j = 0; j < numLexica; j++)
                 {
@@ -452,19 +476,22 @@ void MainWindow::handleWordlistsMessage()
                     quint16 numLists;
                     in >> lexiconIndex >> numLists;
 
-                    QString lexicon = localLexHash.value(lexiconIndex);
+                    //     QString lexicon = localLexHash.value(lexiconIndex);
                     for (int k = 0; k < numLists; k++)
                     {
                         QByteArray listTitle;
                         in >> listTitle;
-                        lexiconListsHash[lexicon].regularWordLists << listTitle;
+
+                        // move
+                        // lexiconListsHash[lexicon].regularWordLists << listTitle;
+                        emit addWordList(lexiconIndex, listTitle, (char)SERVER_WORD_LIST_REGULAR);
                     }
                 }
             }
             break;
 
 
-        case 'D':
+        case SERVER_WORD_LIST_CHALLENGE:
             {
                 for (int j = 0; j < numLexica; j++)
                 {
@@ -472,13 +499,15 @@ void MainWindow::handleWordlistsMessage()
                     quint16 numLists;
                     in >> lexiconIndex >> numLists;
 
-                    QString lexicon = localLexHash.value(lexiconIndex);
+                    //  QString lexicon = localLexHash.value(lexiconIndex);
 
                     for (int k = 0; k < numLists; k++)
                     {
                         QByteArray listTitle;
                         in >> listTitle;
-                        lexiconListsHash[lexicon].dailyWordLists << listTitle;
+                        // move
+                        //  lexiconListsHash[lexicon].dailyWordLists << listTitle;
+                        emit addWordList(lexiconIndex, listTitle, (char)SERVER_WORD_LIST_CHALLENGE);
                     }
                 }
             }
@@ -487,6 +516,9 @@ void MainWindow::handleWordlistsMessage()
         }
     }
 
+    /* move */
+
+    /*
     if (uiMainWindow.comboBoxLexicon->count() > 0)
     {
         uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
@@ -508,10 +540,11 @@ void MainWindow::handleWordlistsMessage()
             SLOT(lexiconComboBoxIndexChanged(QString)));
 
     spinBoxWordLengthChange(uiCreateScrambleTable.spinBoxWL->value());
+    */
 
 
 }
-*/
+
 
 
 void ServerCommunicator::handleTableCommand()
@@ -528,7 +561,8 @@ void ServerCommunicator::handleTableCommand()
         {
             QString message;
             in >> message;
-            gameBoardWidget->gotChat("<font color=green>" + message + "</font>");
+            emit serverTableMessage(tablenum, message);
+          //  gameBoardWidget->gotChat("<font color=green>" + message + "</font>");
 
 
         }
@@ -538,9 +572,8 @@ void ServerCommunicator::handleTableCommand()
         {
             quint16 timerval;
             in >> timerval;
-            gameBoardWidget->gotTimerValue(timerval);
-
-
+            emit serverTableTimerValue(tablenum, timerval);
+//            gameBoardWidget->gotTimerValue(timerval);
         }
 
         break;
@@ -550,17 +583,17 @@ void ServerCommunicator::handleTableCommand()
         {
             quint8 seat;
             in >> seat;
-            gameBoardWidget->setReadyIndicator(seat);
+            emit serverTableReadyBegin(tablenum, seat);
+         //   gameBoardWidget->setReadyIndicator(seat);
         }
         break;
     case SERVER_TABLE_GAME_START:
         // the game has started
         {
-            gameBoardWidget->setupForGameStart();
-            gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
-            gameStarted = true;
+          //  gameBoardWidget->setupForGameStart();
+          //  gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
 
-            //gameTimer->start(1000);
+          emit serverTableGameStart(tablenum);
         }
 
         break;
@@ -572,7 +605,9 @@ void ServerCommunicator::handleTableCommand()
             quint8 avatarID;
             in >> seatNumber >> avatarID;
 
-            gameBoardWidget->setAvatar(seatNumber, avatarID);
+            emit serverTableAvatarChange(tablenum, seatNumber, avatarID);
+
+//            gameBoardWidget->setAvatar(seatNumber, avatarID);
 
             // then here we can do something like chatwidget->setavatar( etc). but this requires the server
             // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
@@ -582,11 +617,11 @@ void ServerCommunicator::handleTableCommand()
     case SERVER_TABLE_GAME_END:
         // the game has ended
 
+        emit serverTableGameEnd(tablenum);
+        /*
         gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
-        gameStarted = false;
         gameBoardWidget->populateSolutionsTable();
-        ///gameTimer->stop();
-        gameBoardWidget->clearAllWordTiles();
+        gameBoardWidget->clearAllWordTiles();*/
         break;
 
 
@@ -596,14 +631,16 @@ void ServerCommunicator::handleTableCommand()
             QString username, chat;
             in >> username;
             in >> chat;
-            gameBoardWidget->gotChat("[" + username + "] " + chat);
+            emit serverTableChat(tablenum, username, chat);
+            //gameBoardWidget->gotChat("[" + username + "] " + chat);
         }
         break;
     case SERVER_TABLE_HOST:
         {
             QString host;
             in >> host;
-            gameBoardWidget->setHost(host);
+            emit serverTableHost(tablenum, host);
+          //  gameBoardWidget->setHost(host);
         }
         break;
 
@@ -613,7 +650,8 @@ void ServerCommunicator::handleTableCommand()
             quint8 seatNumber;
 
             in >> username >> seatNumber;
-            gameBoardWidget->standup(username, seatNumber);
+            emit serverTableSuccessfulStand(tablenum, username, seatNumber);
+//            gameBoardWidget->standup(username, seatNumber);
         }
         break;
 
@@ -622,8 +660,8 @@ void ServerCommunicator::handleTableCommand()
             QString username;
             quint8 seatNumber;
             in >> username >> seatNumber;
-            gameBoardWidget->sitdown(username, seatNumber);
-            qDebug() << "Got saet packet" << username << seatNumber;
+         //   gameBoardWidget->sitdown(username, seatNumber);
+            emit serverTableSuccessfulSit(tablenum, username, seatNumber);
 
         }
         break;
@@ -633,8 +671,8 @@ void ServerCommunicator::handleTableCommand()
         /* any other packets are specific to a specific game, so these should be handled by the relevant
            game script ---
          read packetlength-4 bytes from the stream and pass them to a dedicated function. */
-        char byteArray[] = new char[packetlength - 4];  // -4 because of quint8, quint16 tablenum, quint8 cmd
-        in.readRawData(byteArray, packetlength - 4);
+        char* byteArray = new char[blockSize - 4];  // -4 because of quint8, quint16 tablenum, quint8 cmd
+        in.readRawData(byteArray, blockSize - 4);
         QByteArray ba(byteArray);
 
         emit specificTableCommand(ba, tablenum, commandByte);
@@ -656,8 +694,7 @@ void ServerCommunicator::processHighScores()
     QString username;
     quint16 numCorrect;
     quint16 timeRemaining;
-    uiScores.scoresTableWidget->clearContents();
-    uiScores.scoresTableWidget->setRowCount(0);
+
 
 
     QList <tempHighScoresStruct> temp;
@@ -668,8 +705,17 @@ void ServerCommunicator::processHighScores()
     }
     qSort(temp.begin(), temp.end(), highScoresLessThan);
 
-    for (int i = 0; i < numEntries; i++)
+    emit clearHighScoresTable();
+    /* :
+    uiScores.scoresTableWidget->clearContents();
+    uiScores.scoresTableWidget->setRowCount(0);
+    */
+
+    for (int i = 0; i < numEntries; i++)        
     {
+        emit newHighScore(i+1, temp.at(i).username,
+                          100.0*(double)temp.at(i).numCorrect/(double)numSolutions, temp.at(i).timeRemaining);
+        /*
 
         QTableWidgetItem* rankItem = new QTableWidgetItem(QString("%1").arg(i+1));
         QTableWidgetItem* usernameItem = new QTableWidgetItem(temp.at(i).username);
@@ -679,8 +725,213 @@ void ServerCommunicator::processHighScores()
         uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 0, rankItem);
         uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 1, usernameItem);
         uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 2, correctItem);
-        uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 3, timeItem);
+        uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 3, timeItem);*/
     }
 
+    emit endHighScoresTable();
+    /* :
     uiScores.scoresTableWidget->resizeColumnsToContents();
+    */
 }
+
+void ServerCommunicator::chatTable(QString textToSend, quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum;
+    if (textToSend.indexOf("/me ") == 0)
+    {
+        o << (quint8)CLIENT_TABLE_ACTION << textToSend.mid(4);
+    }
+    else
+    {
+        o << (quint8)CLIENT_TABLE_CHAT << textToSend;
+    }
+    sendPacket(packet);
+
+}
+
+void ServerCommunicator::changeMyAvatar(quint8 avatarID, quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8) CLIENT_TABLE_AVATAR << avatarID;
+
+    sendPacket(packet);
+}
+
+
+void ServerCommunicator::sendPM(QString username, QString message)
+{
+    if (message.simplified() == "")
+    {
+        return;
+    }
+
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_PM << username << message;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::joinTable(quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_JOIN_TABLE << tablenum;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::leaveTable(quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_LEAVE_TABLE << tablenum;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::trySitting(quint8 seat, quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TRY_SITTING << seat;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::standUp(quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TRY_STANDING;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::trySetTablePrivate(quint16 tablenum, bool priv)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_PRIVACY << priv;
+    sendPacket(packet);
+
+}
+
+void ServerCommunicator::sendReady(quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_READY_BEGIN;
+    sendPacket(packet);
+
+}
+
+void ServerCommunicator::sendGiveup(quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_GIVEUP;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::sendClientVersion(QString version)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_VERSION << version;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::requestHighScores(QString challenge)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_HIGH_SCORE_REQUEST << challenge;
+    sendPacket(packet);
+
+}
+
+void ServerCommunicator::uploadWordList(QString lexicon, QList<quint32> &probIndices, QString listName)
+{
+    QByteArray packet;
+    QDataStream out(&packet, QIODevice::WriteOnly);
+
+    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+    out << (quint8)2;   // this means what follows is the size of the list
+    out << (quint32)probIndices.size();
+    out << lexicon;
+    out << listName.mid(0, 64);
+
+    sendPacket(packet);
+
+    do
+    {
+        packet.clear();
+        out.device()->seek(0);
+
+        out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+        out << (quint8)1;   // this means that this list is CONTINUED (i.e. tell the server to wait for more of these packets)
+        out << probIndices.mid(0, 2000);
+
+        sendPacket(packet);
+
+        probIndices = probIndices.mid(2000);
+    } while (probIndices.size() > 2000);
+
+    packet.clear();
+    out.device()->seek(0);
+
+    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+    out << (quint8)0;   // this means that this list is DONE
+    out << probIndices;
+
+    sendPacket(packet);
+
+}
+
+void ServerCommunicator::requestSavedWordListInfo(QString lexicon)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST << lexicon;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::invitePlayerToTable(quint16 tablenum, QString playerToInvite)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_INVITE << playerToInvite;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::bootFromTable(quint16 tablenum, QString playerToBoot)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_BOOT << playerToBoot;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::saveGame(quint16 tablenum)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_SAVE_REQUEST;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::deleteList(QString lexicon, QString listname)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_UNSCRAMBLEGAME_DELETE_LIST << lexicon << listname;
+    sendPacket(packet);
+}
+
+void ServerCommunicator::sendSuggestionOrBugReport(QString suggestion)
+{
+    QByteArray packet;
+    QDataStream o(&packet, QIODevice::WriteOnly);
+    o << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT << suggestion;
+    sendPacket(packet);
+}
+
