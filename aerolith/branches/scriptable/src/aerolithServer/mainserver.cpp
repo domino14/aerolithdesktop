@@ -567,13 +567,13 @@ void MainServer::sendHighScores(ClientSocket* socket)
         out << challengeName;
         out << tmpList.at(0).numSolutions;
         out << (quint16) tmpList.size();
-        qDebug() << challengeName << "#Sol" << tmpList.at(0).numSolutions << "#players" << tmpList.size();
+      //  qDebug() << challengeName << "#Sol" << tmpList.at(0).numSolutions << "#players" << tmpList.size();
         for (int i = 0; i < tmpList.size(); i++)
         {
             out << tmpList.at(i).userName;
             out << tmpList.at(i).numCorrect;
             out << tmpList.at(i).timeRemaining;
-            qDebug() << tmpList.at(i).userName << tmpList.at(i).numCorrect << tmpList.at(i).timeRemaining;
+       //     qDebug() << tmpList.at(i).userName << tmpList.at(i).numCorrect << tmpList.at(i).timeRemaining;
         }
 
         // 40 bytes per score

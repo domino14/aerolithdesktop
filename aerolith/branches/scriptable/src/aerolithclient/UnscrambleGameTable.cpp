@@ -630,17 +630,16 @@ void UnscrambleGameTable::addPlayers(QStringList plist)
     //    addPlayersToWidgets(plist);
 }
 
-void UnscrambleGameTable::addPlayer(QString player, bool gameStarted)
+void UnscrambleGameTable::addPlayer(QString player)
 {
-    //   addPlayerToWidgets(player, gameStarted);
+
     peopleInTable.append(player);
     tableUi.listWidgetPeopleInRoom->addItem(player);
 }
 
-void UnscrambleGameTable::removePlayer(QString player, bool gameStarted)
+void UnscrambleGameTable::removePlayer(QString player)
 {
     peopleInTable.removeAll(player);
-    //    removePlayerFromWidgets(player, gameStarted);
     for (int i = 0; i < tableUi.listWidgetPeopleInRoom->count(); i++)
     {
         if (tableUi.listWidgetPeopleInRoom->item(i)->text() == player)

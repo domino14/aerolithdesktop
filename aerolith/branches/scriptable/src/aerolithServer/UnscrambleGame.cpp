@@ -1002,7 +1002,7 @@ void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
     foreach(QString lexiconName, dbHandler->availableDatabases)
         out << lexiconName.toAscii();
     out << (quint8) 2;           // two types right now, regular, and challenge.
-    out << (quint8) 'R';	// regular
+    out << (quint8) SERVER_WORD_LIST_REGULAR;	// regular
 
     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
@@ -1018,7 +1018,7 @@ void UnscrambleGame::loadWordLists(DatabaseHandler* dbHandler)
             out << wordlistName.toAscii();
     }
 
-    out << (quint8) 'D';
+    out << (quint8) SERVER_WORD_LIST_CHALLENGE;
     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
         out << i;
