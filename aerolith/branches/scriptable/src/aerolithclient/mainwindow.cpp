@@ -150,7 +150,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(uiDatabase.pushButtonCreateDatabases, SIGNAL(clicked()), SLOT(createDatabasesOKClicked()));
 
     connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
-     connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
+    connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
     connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
     connect(dbHandler, SIGNAL(enableClose(bool)), SLOT(dbDialogEnableClose(bool)));
     connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
@@ -213,10 +213,11 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(serverCommunicator, SIGNAL(badMagicNumber()), this, SLOT(badMagicNumber()));
     connect(serverCommunicator, SIGNAL(userLoggedIn(QString)), this, SLOT(userLoggedIn(QString)));
     connect(serverCommunicator, SIGNAL(userLoggedOut(QString)), this, SLOT(userLoggedOut(QString)));
-
+    connect(serverCommunicator, SIGNAL(sentLogin()), this, SLOT(sentLogin()));
+    connect(serverCommunicator, SIGNAL(chatReceived(QString,QString)), this, SLOT(chatReceived(QString,QString)));
     testFunction(); // used for debugging
 
-     uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
+    uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -338,14 +339,14 @@ void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
 {
     // chatText->append(QString("From solution: ") + solutionLE->text());
     // solutionLE->clear();
-//
-//    writeHeaderData();
-//    out << (quint8) CLIENT_TABLE_COMMAND;
-//    out << (quint16) currentTablenum;
-//    out << (quint8) CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
-//    out << space << specificAnswer;
-//    fixHeaderLength();
-//    commsSocket->write(block);
+    //
+    //    writeHeaderData();
+    //    out << (quint8) CLIENT_TABLE_COMMAND;
+    //    out << (quint16) currentTablenum;
+    //    out << (quint8) CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
+    //    out << space << specificAnswer;
+    //    fixHeaderLength();
+    //    commsSocket->write(block);
 }
 
 
@@ -353,7 +354,7 @@ void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
 
 void MainWindow::toggleConnectToServer()
 {
-    if (serverCommunicator->isConnectedToServer())
+    if (!serverCommunicator->isConnectedToServer())
     {
 
         serverCommunicator->connectToServer(uiLogin.serverLE->text(), uiLogin.portLE->text().toInt(),
@@ -576,16 +577,16 @@ void MainWindow::dailyChallengeSelected(QAction* challengeAction)
 
 void MainWindow::createBonusGameTable()
 {
-//        writeHeaderData();
-//        out << (quint8)CLIENT_NEW_TABLE;
-//
-//        out << (quint8)GAME_TYPE_BONUS;
-//   //     out << (quint8)uiTable.playersSpinBox->value();
-//            out << uiMainWindow.comboBoxLexicon->currentText();
-//    //
-//    //    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
-//    //    fixHeaderLength();
-//    //    commsSocket->write(block);
+    //        writeHeaderData();
+    //        out << (quint8)CLIENT_NEW_TABLE;
+    //
+    //        out << (quint8)GAME_TYPE_BONUS;
+    //   //     out << (quint8)uiTable.playersSpinBox->value();
+    //            out << uiMainWindow.comboBoxLexicon->currentText();
+    //    //
+    //    //    out << (quint8)uiMainWindow.comboBoxLexicon->currentIndex();
+    //    //    fixHeaderLength();
+    //    //    commsSocket->write(block);
 
 }
 
@@ -1112,7 +1113,7 @@ void MainWindow::on_actionSubmitSuggestion_triggered()
         return;
     }
     bool ok;
- //   QMessageBox::warning(this, "woo", "a suggestion to submit!");
+    //   QMessageBox::warning(this, "woo", "a suggestion to submit!");
     QString text =  QInputDialog::getText(this, "Suggestion/Bug report",
                                           "Enter your suggestion or bug report. Please "
                                           "be detailed and try to remember what triggered a bug.",
@@ -1136,6 +1137,12 @@ void MainWindow::on_comboBoxGameType_currentIndexChanged(QString text)
     }
     else
         uiMainWindow.pushButtonChallenges->setVisible(false);
+
+}
+
+void MainWindow::sentLogin()
+{
+    currentUsername = uiLogin.usernameLE->text();
 
 }
 
@@ -1172,17 +1179,22 @@ void MainWindow::userLoggedOut(QString username)
     peopleLoggedIn.removeAll(username);
 }
 
+void MainWindow::chatReceived(QString username, QString text)
+{
+
+    uiMainWindow.chatText->moveCursor(QTextCursor::End);
+    uiMainWindow.chatText->insertHtml(QString("[")+username+"] " + text);
+    uiMainWindow.chatText->append("");
+
+}
+
 /* error from server
                 QMessageBox::information(loginDialog, "Aerolith client", errorString);
 
                 uiMainWindow.chatText->append("<font color=red>" + errorString + "</font>");
                 */
 
-/* chat received
-                uiMainWindow.chatText->moveCursor(QTextCursor::End);
-                uiMainWindow.chatText->insertHtml(QString("[")+username+"] " + text);
-                uiMainWindow.chatText->append("");
-                */
+
 /* pm received
                 if (uiMainWindow.checkBoxIgnoreMsgs->isChecked() == false)
                     receivedPM(username, message);
@@ -1416,25 +1428,25 @@ void MainWindow::userLoggedOut(QString username)
 void MainWindow::badMagicNumber()
 {
 #ifdef Q_WS_MAC
-                QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
-                                      "version of Aerolith. Please go to www.aerolith.org and download the newest "
-                                      " update.");
+    QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
+                          "version of Aerolith. Please go to www.aerolith.org and download the newest "
+                          " update.");
 #endif
 #ifdef Q_WS_WIN
-                // call an updater program
-                // QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
-                // QCoreApplication::quit();
-                QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
-                                      "version of Aerolith. Please go to www.aerolith.org and download the newest "
-                                      " update.");
+    // call an updater program
+    // QDesktopServices::openUrl(QUrl("http://www.aerolith.org"));
+    // QCoreApplication::quit();
+    QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
+                          "version of Aerolith. Please go to www.aerolith.org and download the newest "
+                          " update.");
 #endif
 #ifdef Q_WS_X11
-                QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
-                                      "version of Aerolith. If you compiled this from source, please check out the new "
-                                      "version of Aerolith by typing into a terminal window: <BR>"
-                                      "svn co svn://www.aerolith.org/aerolith/tags/1.0 aerolith<BR>"
-                                      "and then go to this directory, type in qmake, then make."
-                                      " You must have Qt 4.5 on your system.");
+    QMessageBox::critical(this, "Wrong version of Aerolith", "You seem to be using an outdated "
+                          "version of Aerolith. If you compiled this from source, please check out the new "
+                          "version of Aerolith by typing into a terminal window: <BR>"
+                          "svn co svn://www.aerolith.org/aerolith/tags/1.0 aerolith<BR>"
+                          "and then go to this directory, type in qmake, then make."
+                          " You must have Qt 4.5 on your system.");
 #endif
 
 }

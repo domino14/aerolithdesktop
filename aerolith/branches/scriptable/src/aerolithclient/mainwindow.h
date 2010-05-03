@@ -203,6 +203,8 @@ public slots:
     void setCheckbox(QString);
     void repopulateMyListsTable();
  private slots:
+    void sentLogin();
+
     void createDatabasesOKClicked();
     void rebuildDatabaseAction(QAction*);
     void createUnscrambleGameTable();
@@ -233,6 +235,7 @@ public slots:
     void badMagicNumber();
     void userLoggedIn(QString);
     void userLoggedOut(QString);
+    void chatReceived(QString, QString);
 
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
