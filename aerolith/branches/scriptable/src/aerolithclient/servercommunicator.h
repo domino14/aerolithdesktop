@@ -104,6 +104,7 @@ signals:
 
     void gotLexicon(QByteArray, int);
     void addWordList(int, QByteArray, char);
+    void sentLogin();
 private slots:
     void readFromServer();
     void handleError(QAbstractSocket::SocketError socketError);

@@ -395,6 +395,7 @@ void ServerCommunicator::socketConnected()
 
     if (connectionMode == MODE_LOGIN)
     {
+        emit sentLogin();
         o << (quint8)CLIENT_LOGIN;
     }
     else if (connectionMode == MODE_REGISTER)
