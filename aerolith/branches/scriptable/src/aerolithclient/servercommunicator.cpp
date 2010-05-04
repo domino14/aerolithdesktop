@@ -349,35 +349,11 @@ void ServerCommunicator::handleError(QAbstractSocket::SocketError socketError)
         emit serverConnectionError("The following error occurred: " + commsSocket->errorString());
     }
 
-    //    uiLogin.loginPushButton->setText("Connect");
-    //    uiLogin.connectStatusLabel->setText("Disconnected.");
 }
 
 void ServerCommunicator::socketDisconnected()
 {
     emit serverDisconnect();
-    /* :
-    uiLogin.connectStatusLabel->setText("You are disconnected.");
-    uiMainWindow.listWidgetPeopleConnected->clear();
-    peopleLoggedIn.clear();
-    //	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
-    uiLogin.loginPushButton->setText("Connect");
-    //centralWidget->hide();
-    loginDialog->show();
-    loginDialog->raise();
-    uiMainWindow.roomTableWidget->clearContents();
-    uiMainWindow.roomTableWidget->setRowCount(0);
-
-    QList <tableRepresenter*> tableStructs = tables.values();
-    tables.clear();
-    foreach (tableRepresenter* t, tableStructs)
-        delete t;
-
-
-    setWindowTitle("Aerolith - disconnected");
-    gameBoardWidget->hide();
-    uiMainWindow.comboBoxLexicon->setEnabled(true);
-    */
 }
 
 void ServerCommunicator::socketConnected()
