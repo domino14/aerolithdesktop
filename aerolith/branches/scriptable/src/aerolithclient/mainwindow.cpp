@@ -215,6 +215,30 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(serverCommunicator, SIGNAL(userLoggedOut(QString)), this, SLOT(userLoggedOut(QString)));
     connect(serverCommunicator, SIGNAL(sentLogin()), this, SLOT(sentLogin()));
     connect(serverCommunicator, SIGNAL(chatReceived(QString,QString)), this, SLOT(chatReceived(QString,QString)));
+    connect(serverCommunicator, SIGNAL(errorFromServer(QString)), this, SLOT(errorFromServer(QString)));
+    connect(serverCommunicator, SIGNAL(serverConnectionError(QString)), this, SLOT(serverConnectionError(QString)));
+    connect(serverCommunicator, SIGNAL(serverDisconnect()), this, SLOT(serverDisconnected()));
+
+    connect(serverCommunicator, SIGNAL(pmReceived(QString,QString)), this, SLOT(receivedPM(QString,QString)));
+    connect(serverCommunicator, SIGNAL(newTableInfoReceived(quint16,quint8,QString,QString,quint8,bool)), this,
+            SLOT(handleCreateTable(quint16,quint8,QString,QString,quint8,bool)));
+    connect(serverCommunicator, SIGNAL(playerJoinedTable(quint16,QString)), this, SLOT(playerJoinedTable(quint16,QString)));
+    connect(serverCommunicator, SIGNAL(tablePrivacyChange(quint16,bool)), this, SLOT(tablePrivacyChange(quint16,bool)));
+    connect(serverCommunicator, SIGNAL(receivedTableInvite(quint16,QString)), this, SLOT(tableInvite(quint16,QString)));
+    connect(serverCommunicator, SIGNAL(bootedFromTable(quint16,QString)), this, SLOT(bootedFromTable(quint16,QString)));
+    connect(serverCommunicator, SIGNAL(playerJoinedTable(quint16,QString)), this, SLOT(playerJoinedTable(quint16,QString)));
+    connect(serverCommunicator, SIGNAL(tableDeleted(quint16)), this, SLOT(handleDeleteTable(quint16)));
+    connect(serverCommunicator, SIGNAL(gotServerMessage(QString)), this, SLOT(gotServerMessage(QString)));
+
+    connect(serverCommunicator, SIGNAL(clearAllUnscramblegameListData()), this, SLOT(clearAllUnscramblegameListData()));
+    connect(serverCommunicator, SIGNAL(addUnscramblegameListData(QString,QStringList)),
+            this, SLOT(addUnscramblegameListData(QString,QStringList)));
+    connect(serverCommunicator, SIGNAL(doneUnscramblegameListData()), this, SLOT(doneUnscramblegameListData()));
+    connect(serverCommunicator, SIGNAL(clearUnscramblegameListData(QString,QString)), this,
+            SLOT(clearUnscramblegameListData(QString,QString)));
+    connect(serverCommunicator, SIGNAL(unscramblegameListSpaceUsage(quint32,quint32)), this,
+            SLOT(unscramblegameListSpaceUsage(quint32,quint32)));
+
     testFunction(); // used for debugging
 
     uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
@@ -415,27 +439,34 @@ void MainWindow::sendPM(QString person)
 
 void MainWindow::receivedPM(QString username, QString message)
 {
-    QString hashString = username.toLower();
-    if (pmWindows.contains(hashString))
+    if (uiMainWindow.checkBoxIgnoreMsgs->isChecked() == false)
     {
-        PMWidget* w = pmWindows.value(hashString);
-        w->appendText("[" + username + "] " + message);
-        w->show();
-        w->activateWindow();
-        w->raise();
+        QString hashString = username.toLower();
+        if (pmWindows.contains(hashString))
+        {
+            PMWidget* w = pmWindows.value(hashString);
+            w->appendText("[" + username + "] " + message);
+            w->show();
+            w->activateWindow();
+            w->raise();
 
+        }
+        else
+        {
+            PMWidget *w = new PMWidget(0, currentUsername, username);
+            w->setAttribute(Qt::WA_QuitOnClose, false);
+            connect(w, SIGNAL(sendPM(QString, QString)), serverCommunicator, SLOT(sendPM(QString, QString)));
+            connect(w, SIGNAL(shouldDelete()), this, SLOT(shouldDeletePMWidget()));
+            w->appendText("[" + username + "] " + message);
+            w->show();
+            pmWindows.insert(hashString, w);
+        }
+        //QSound::play("sounds/inbound.wav");
     }
     else
     {
-        PMWidget *w = new PMWidget(0, currentUsername, username);
-        w->setAttribute(Qt::WA_QuitOnClose, false);
-        connect(w, SIGNAL(sendPM(QString, QString)), serverCommunicator, SLOT(sendPM(QString, QString)));
-        connect(w, SIGNAL(shouldDelete()), this, SLOT(shouldDeletePMWidget()));
-        w->appendText("[" + username + "] " + message);
-        w->show();
-        pmWindows.insert(hashString, w);
+        // TODO handle reject pm message
     }
-    //QSound::play("sounds/inbound.wav");
 }
 
 void MainWindow::shouldDeletePMWidget()
@@ -676,8 +707,6 @@ void MainWindow::handleCreateTable(quint16 tablenum, quint8 gameType, QString le
     connect(t->buttonItem, SIGNAL(clicked()), this, SLOT(joinTable()));
     t->buttonItem->setEnabled(!t->isPrivate);
 
-    //  QStringList playerList;
-    //t->playersItem->setData(PLAYERLIST_ROLE, QVariant(playerList));
 
     int rc = uiMainWindow.roomTableWidget->rowCount();
 
@@ -737,64 +766,6 @@ void MainWindow::modifyPlayerLists(quint16 tablenum, QString player, int modific
 }
 
 
-
-void MainWindow::handleDeleteTable(quint16 tablenum)
-{
-
-    if (!tables.contains(tablenum))
-        return;
-
-    tableRepresenter* t = tables.value(tablenum);
-    uiMainWindow.roomTableWidget->removeRow(t->tableNumItem->row()); // delete the whole row (this function deletes the elements)
-    delete tables.take(tablenum); // delete the tableRepresenter object after removing it from the hash.
-}
-
-void MainWindow::handleLeaveTable(quint16 tablenum, QString player)
-{
-
-
-    if (!tables.contains(tablenum))
-        return;
-
-    tableRepresenter* t = tables.value(tablenum);
-
-    t->playerList.removeAll(player);
-    QString textToSet="";
-    foreach(QString thisplayer, t->playerList)
-    {
-        textToSet += thisplayer + " ";
-    }
-
-    int numPlayers = t->playerList.size();
-    textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(t->maxPlayers) + ")";
-    t->playersItem->setText(textToSet);
-
-}
-
-void MainWindow::handleAddToTable(quint16 tablenum, QString player)
-{
-    // this will change button state as well
-
-    if (!tables.contains(tablenum))
-        return;
-
-    tableRepresenter* t = tables.value(tablenum);
-    t->playerList << player;
-    QString textToSet = "";
-    foreach(QString thisplayer, t->playerList)
-    {
-        textToSet += thisplayer + " ";
-
-    }
-
-    quint8 numPlayers = t->playerList.size();
-    quint8 maxPlayers = t->maxPlayers;
-
-    textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(maxPlayers) + ")";
-
-    t->playersItem->setText(textToSet);
-
-}
 
 void MainWindow::giveUpOnThisGame()
 {
@@ -1188,162 +1159,235 @@ void MainWindow::chatReceived(QString username, QString text)
 
 }
 
-/* error from server
-                QMessageBox::information(loginDialog, "Aerolith client", errorString);
+void MainWindow::errorFromServer(QString errorString)
+{
+    QMessageBox::information(loginDialog, "Aerolith client", errorString);
+    uiMainWindow.chatText->append("<font color=red>" + errorString + "</font>");
 
-                uiMainWindow.chatText->append("<font color=red>" + errorString + "</font>");
-                */
+}
+
+void MainWindow::serverConnectionError(QString errorString)
+{
+    QMessageBox::warning(this, "Error connecting", errorString);
+    uiLogin.loginPushButton->setText("Connect");
+    uiLogin.connectStatusLabel->setText("Disconnected.");
+}
+
+void MainWindow::serverDisconnected()
+{
+    uiLogin.connectStatusLabel->setText("You are disconnected.");
+    uiMainWindow.listWidgetPeopleConnected->clear();
+    peopleLoggedIn.clear();
+    //	QMessageBox::information(this, "Aerolith Client", "You have been disconnected.");
+    uiLogin.loginPushButton->setText("Connect");
+    //centralWidget->hide();
+    loginDialog->show();
+    loginDialog->raise();
+    uiMainWindow.roomTableWidget->clearContents();
+    uiMainWindow.roomTableWidget->setRowCount(0);
+
+    QList <tableRepresenter*> tableStructs = tables.values();
+    tables.clear();
+    foreach (tableRepresenter* t, tableStructs)
+        delete t;
 
 
-/* pm received
-                if (uiMainWindow.checkBoxIgnoreMsgs->isChecked() == false)
-                    receivedPM(username, message);
-                else
-                {
-                }// TODO inform user that his message didn't go through
-                */
+    setWindowTitle("Aerolith - disconnected");
+    gameBoardWidget->hide();
+    uiMainWindow.comboBoxLexicon->setEnabled(true);
+}
 
-/*                 // create table -- make handleCreateTable a slot.
-                handleCreateTable(tablenum, gameType, lexiconName, tableName, maxPlayers, isPrivate);
+void MainWindow::playerJoinedTable(quint16 tablenum, QString playerName)
+{
+    qDebug() << playerName << "joined" << tablenum;
 
-*/
-/* player joined table
-                qDebug() << playerName << "joined" << tablenum;
-                handleAddToTable(tablenum, playerName);
-                if (playerName == currentUsername)
-                {
+    if (!tables.contains(tablenum))
+        return;
 
-                    currentTablenum = tablenum;
-                    if (!tables.contains(tablenum))
-                        break;
-                    tableRepresenter* t = tables.value(tablenum);
-                    gameBoardWidget->setTableCapacity(t->maxPlayers);
-                    QString wList = t->descriptorItem->text();
-                    qDebug() << "I joined table!";
-                    gameBoardWidget->resetTable(tablenum, wList, playerName);
-                    gameBoardWidget->show();
-                    trySitting(0);  // whenever player joins, they try sitting at spot 0.
-                    gameBoardWidget->setPrivacy(t->isPrivate);
+    tableRepresenter* t = tables.value(tablenum);
+    t->playerList << playerName;
+    QString textToSet = "";
+    foreach(QString thisplayer, t->playerList)
+    {
+        textToSet += thisplayer + " ";
 
-                    uiMainWindow.comboBoxLexicon->setEnabled(false);
+    }
 
-                }
-                if (currentTablenum == tablenum)
-                    modifyPlayerLists(tablenum, playerName, 1);
-                //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
-                    */
+    quint8 numPlayers = t->playerList.size();
+    quint8 maxPlayers = t->maxPlayers;
 
-/* privacy change
-                if (tables.contains(tablenum))
-                {
-                    tableRepresenter *t = tables.value(tablenum);
-                    t->isPrivate = privacy;
-                    t->buttonItem->setEnabled(!t->isPrivate);
-                    if (currentTablenum == tablenum)
-                        gameBoardWidget->setPrivacy(privacy);
-                }
+    textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(maxPlayers) + ")";
 
-                */
+    t->playersItem->setText(textToSet);
 
-/* table invite
-                if (uiMainWindow.checkBoxIgnoreTableInvites->isChecked() == false)
-                {
-                    Ui::inviteForm ui;
-                    QWidget* inviteWidget = new QWidget(this, Qt::Window);
-                    ui.setupUi(inviteWidget);
-                    inviteWidget->setAttribute(Qt::WA_DeleteOnClose);
-                    inviteWidget->show();
+    if (playerName == currentUsername)
+    {
 
-                    ui.pushButtonAccept->setProperty("tablenum", tablenum);
-                    ui.pushButtonAccept->setProperty("host", username);
+        currentTablenum = tablenum;
+        if (!tables.contains(tablenum))
+            return;
+        tableRepresenter* t = tables.value(tablenum);
+        gameBoardWidget->setTableCapacity(t->maxPlayers);
+        QString wList = t->descriptorItem->text();
+        qDebug() << "I joined table!";
+        gameBoardWidget->resetTable(tablenum, wList, playerName);
+        gameBoardWidget->show();
+        trySitting(0);  // whenever player joins, they try sitting at spot 0.
+        gameBoardWidget->setPrivacy(t->isPrivate);
 
-                    ui.pushButtonDecline->setProperty("tablenum", tablenum);
-                    ui.pushButtonDecline->setProperty("host", username);
+        uiMainWindow.comboBoxLexicon->setEnabled(false);
 
-                    connect(ui.pushButtonAccept, SIGNAL(clicked()), SLOT(acceptedInvite()));
-                    connect(ui.pushButtonDecline, SIGNAL(clicked()), SLOT(declinedInvite()));
-                    ui.labelInfo->setText(QString("You have been invited to table %1 by %2.").arg(tablenum).arg(username));
-                    //TODO watch out for abuses of this! (invite bombs?)
-                }
-                else
-                {
-                }   // TODO inform user that their invite didn't go through
-                */
+    }
+    if (currentTablenum == tablenum)
+        modifyPlayerLists(tablenum, playerName, 1);
+    //  chatText->append(QString("%1 has entered %2").arg(playerName).arg(tablenum));
+}
 
-/* booted from table!
-                if (tablenum == currentTablenum)
-                    QMessageBox::information(this, "You have been booted",
-                                             QString("You have been booted from table %1 by %2").arg(tablenum).arg(username));
+void MainWindow::tablePrivacyChange(quint16 tablenum, bool privacy)
+{
 
-                                             */
+    if (tables.contains(tablenum))
+    {
+        tableRepresenter *t = tables.value(tablenum);
+        t->isPrivate = privacy;
+        t->buttonItem->setEnabled(!t->isPrivate);
+        if (currentTablenum == tablenum)
+            gameBoardWidget->setPrivacy(privacy);
+    }
+}
 
-/* player left table
+void MainWindow::tableInvite(quint16 tablenum, QString username)
+{
 
-                if (currentTablenum == tablenum)
-                {
-                    modifyPlayerLists(tablenum, playerName, -1);
-                }
+    if (uiMainWindow.checkBoxIgnoreTableInvites->isChecked() == false)
+    {
+        Ui::inviteForm ui;
+        QWidget* inviteWidget = new QWidget(this, Qt::Window);
+        ui.setupUi(inviteWidget);
+        inviteWidget->setAttribute(Qt::WA_DeleteOnClose);
+        inviteWidget->show();
 
-                if (playerName == currentUsername)
-                {
-                    currentTablenum = 0;
-                    //gameStackedWidget->setCurrentIndex(0);
-                    gameBoardWidget->hide();
-                    uiMainWindow.comboBoxLexicon->setEnabled(true);
-                }
+        ui.pushButtonAccept->setProperty("tablenum", tablenum);
+        ui.pushButtonAccept->setProperty("host", username);
 
-                // chatText->append(QString("%1 has left %2").arg(playerName).arg(tablenum));
-                handleLeaveTable(tablenum, playerName);
+        ui.pushButtonDecline->setProperty("tablenum", tablenum);
+        ui.pushButtonDecline->setProperty("host", username);
 
-                */
+        connect(ui.pushButtonAccept, SIGNAL(clicked()), SLOT(acceptedInvite()));
+        connect(ui.pushButtonDecline, SIGNAL(clicked()), SLOT(declinedInvite()));
+        ui.labelInfo->setText(QString("You have been invited to table %1 by %2.").arg(tablenum).arg(username));
+        //TODO watch out for abuses of this! (invite bombs?)
+    }
+    else
+    {
+    }   // TODO inform user that their invite didn't go through
+}
 
-/*                 //	    chatText->append(QString("%1 has ceasd to exist").arg(tablenum));
-                handleDeleteTable(tablenum); // make this a slot
-                */
+void MainWindow::bootedFromTable(quint16 tablenum, QString username)
+{
+    // username is user that booted us.
+    if (tablenum == currentTablenum)
+        QMessageBox::information(this, "You have been booted",
+                                 QString("You have been booted from table %1 by %2").arg(tablenum).arg(username));
+}
 
-/* got server message
-                uiMainWindow.chatText->append("<font color=red>" + serverMessage + "</font>");
-                gameBoardWidget->gotChat("<font color=red>" + serverMessage + "</font>");
-                */
+void MainWindow::playerLeftTable(quint16 tablenum, QString username)
+{
+    if (currentTablenum == tablenum)
+    {
+        modifyPlayerLists(tablenum, username, -1);
+    }
 
-/* unscramblegame clear data
-                uiCreateScrambleTable.tableWidgetMyLists->clearContents();
-                uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
-                */
+    if (username == currentUsername)
+    {
+        currentTablenum = 0;
+        //gameStackedWidget->setCurrentIndex(0);
+        gameBoardWidget->hide();
+        uiMainWindow.comboBoxLexicon->setEnabled(true);
+    }
 
-/* unscramblegame add single list data
-                if (lexicon == currentLexicon)
-                {
-                    uiCreateScrambleTable.tableWidgetMyLists->insertRow(0);
-                    for (int j = 0; j < labels.size(); j++)
-                        uiCreateScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
 
-                }
-                */
 
-/* done unscramblegame list data
-                   uiCreateScrambleTable.tableWidgetMyLists->resizeColumnsToContents();
-                   */
+    if (!tables.contains(tablenum))
+        return;
 
-/* clear single unscramblegame list data
-                if (lexicon == currentLexicon)
-                {
-                    for (int i = 0; i < uiCreateScrambleTable.tableWidgetMyLists->rowCount(); i++)
-                    {
-                        if (uiCreateScrambleTable.tableWidgetMyLists->item(i, 0)->text() == listname)
-                        {
-                            uiCreateScrambleTable.tableWidgetMyLists->removeRow(i);
-                            break;  // break out of for-loop
-                        }
-                    }
-                }
-                */
+    tableRepresenter* t = tables.value(tablenum);
 
-/* uncramble game list space usage
-                uiCreateScrambleTable.progressBarUsedListSpace->setRange(0, max);
-                uiCreateScrambleTable.progressBarUsedListSpace->setValue(usage);
+    t->playerList.removeAll(username);
+    QString textToSet="";
+    foreach(QString thisplayer, t->playerList)
+    {
+        textToSet += thisplayer + " ";
+    }
 
-                */
+    int numPlayers = t->playerList.size();
+    textToSet += "(" + QString::number(numPlayers) + "/" + QString::number(t->maxPlayers) + ")";
+    t->playersItem->setText(textToSet);
+}
+
+
+
+void MainWindow::handleDeleteTable(quint16 tablenum)
+{
+
+    if (!tables.contains(tablenum))
+        return;
+
+    tableRepresenter* t = tables.value(tablenum);
+    uiMainWindow.roomTableWidget->removeRow(t->tableNumItem->row()); // delete the whole row (this function deletes the elements)
+    delete tables.take(tablenum); // delete the tableRepresenter object after removing it from the hash.
+}
+
+void MainWindow::gotServerMessage(QString message)
+{
+    uiMainWindow.chatText->append("<font color=red>" + message + "</font>");
+    gameBoardWidget->gotChat("<font color=red>" + message + "</font>");
+}
+
+void MainWindow::clearAllUnscramblegameListData()
+{
+    uiCreateScrambleTable.tableWidgetMyLists->clearContents();
+    uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
+}
+
+void MainWindow::addUnscramblegameListData(QString lexicon, QStringList labels)
+{
+
+    if (lexicon == currentLexicon)
+    {
+        uiCreateScrambleTable.tableWidgetMyLists->insertRow(0);
+        for (int j = 0; j < labels.size(); j++)
+            uiCreateScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
+
+    }
+}
+
+void MainWindow::doneUnscramblegameListData()
+{
+    uiCreateScrambleTable.tableWidgetMyLists->resizeColumnsToContents();
+}
+
+void MainWindow::clearUnscramblegameListData(QString lexicon, QString listname)
+{
+    if (lexicon == currentLexicon)
+    {
+        for (int i = 0; i < uiCreateScrambleTable.tableWidgetMyLists->rowCount(); i++)
+        {
+            if (uiCreateScrambleTable.tableWidgetMyLists->item(i, 0)->text() == listname)
+            {
+                uiCreateScrambleTable.tableWidgetMyLists->removeRow(i);
+                break;  // break out of for-loop
+            }
+        }
+    }
+}
+
+void MainWindow::unscramblegameListSpaceUsage(quint32 usage, quint32 max)
+{
+    uiCreateScrambleTable.progressBarUsedListSpace->setRange(0, max);
+    uiCreateScrambleTable.progressBarUsedListSpace->setValue(usage);
+
+}
 
 /* dont understand packet
    QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");

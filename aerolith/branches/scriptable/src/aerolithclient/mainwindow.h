@@ -97,11 +97,7 @@ private:
     QHash <QString, LexiconLists> lexiconListsHash;
 
 
-    void handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName, QString wordListDescriptor,
-                           quint8 maxPlayers, bool isPrivate);
-    void handleDeleteTable(quint16 tablenum);
-    void handleAddToTable(quint16 tablenum, QString player);
-    void handleLeaveTable(quint16 tablenum, QString player);
+
     void handleTableCommand(quint16 tablenum, quint8 commandByte);
     void handleWordlistsMessage();
 
@@ -177,7 +173,6 @@ public slots:
     void sendPM(QString);
 
     void viewProfile(QString);
-    void receivedPM(QString, QString);
 
     void createNewRoom();
     void leaveThisTable();
@@ -236,6 +231,27 @@ public slots:
     void userLoggedIn(QString);
     void userLoggedOut(QString);
     void chatReceived(QString, QString);
+    void errorFromServer(QString);
+    void serverConnectionError(QString);
+    void serverDisconnected();
+    void receivedPM(QString username, QString message);
+    void handleCreateTable(quint16 tablenum, quint8 gameType, QString lexiconName, QString wordListDescriptor,
+                           quint8 maxPlayers, bool isPrivate);
+
+    void playerJoinedTable(quint16 tablenum, QString playerName);
+    void tablePrivacyChange(quint16 tablenum, bool privacy);
+    void tableInvite(quint16 tablenum, QString username);
+    void bootedFromTable(quint16 tablenum, QString username);
+    void playerLeftTable(quint16 tablenum, QString username);
+    void handleDeleteTable(quint16 tablenum);
+
+    void gotServerMessage(QString);
+
+    void clearAllUnscramblegameListData();
+    void addUnscramblegameListData(QString, QStringList);
+    void doneUnscramblegameListData();
+    void clearUnscramblegameListData(QString, QString);
+    void     unscramblegameListSpaceUsage(quint32 usage, quint32 max);
 
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
