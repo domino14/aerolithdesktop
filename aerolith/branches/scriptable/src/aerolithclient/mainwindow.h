@@ -162,6 +162,8 @@ private:
 
     QStringList existingLocalDBList;
 
+    bool unscramblegameUserlistData_clearHash;  // a hackily-named variable that has a simple function (search in code)
+
 signals:
     void startServerThread();
     void stopServerThread();
@@ -248,7 +250,7 @@ public slots:
 
     void gotServerMessage(QString);
 
-    void clearAllUnscramblegameListData();
+    void beginUnscramblegameListData();
     void addUnscramblegameListData(QString, QStringList);
     void doneUnscramblegameListData();
     void clearSingleUnscramblegameListData(QString, QString);

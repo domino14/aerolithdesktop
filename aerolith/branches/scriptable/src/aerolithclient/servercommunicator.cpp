@@ -103,7 +103,7 @@ void ServerCommunicator::readFromServer()
         // the process function will set blocksize to 0 at the end
         quint8 packetType;
         in >> packetType; // this is the case byte!
-        qDebug() << "Packet type " << (char)packetType << "block length" << blockSize;
+        qDebug() << "Client received: Packet type " << (char)packetType << "block length" << blockSize;
         switch(packetType)
         {
         case SERVER_PING:
@@ -281,9 +281,9 @@ void ServerCommunicator::readFromServer()
             }
             break;
 
-        case SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARALL:
+        case SERVER_UNSCRAMBLEGAME_LISTDATA_BEGIN:
             {
-                emit clearAllUnscramblegameListData();
+                emit beginUnscramblegameListData();
 
             }
             break;

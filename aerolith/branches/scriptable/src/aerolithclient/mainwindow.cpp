@@ -230,7 +230,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(serverCommunicator, SIGNAL(tableDeleted(quint16)), this, SLOT(handleDeleteTable(quint16)));
     connect(serverCommunicator, SIGNAL(gotServerMessage(QString)), this, SLOT(gotServerMessage(QString)));
 
-    connect(serverCommunicator, SIGNAL(clearAllUnscramblegameListData()), this, SLOT(clearAllUnscramblegameListData()));
+    connect(serverCommunicator, SIGNAL(beginUnscramblegameListData()), this, SLOT(beginUnscramblegameListData()));
     connect(serverCommunicator, SIGNAL(addUnscramblegameListData(QString,QStringList)),
             this, SLOT(addUnscramblegameListData(QString,QStringList)));
     connect(serverCommunicator, SIGNAL(doneUnscramblegameListData()), this, SLOT(doneUnscramblegameListData()));
@@ -247,6 +247,8 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     testFunction(); // used for debugging
 
     uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
+
+    unscramblegameUserlistData_clearHash = false;
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -679,7 +681,7 @@ void MainWindow::lexiconComboBoxIndexChanged(QString lex)
     currentLexicon = lex;
     uiCreateScrambleTable.labelLexiconName->setText(currentLexicon);
     wordFilter->setCurrentLexicon(currentLexicon);
-    repopulateMyListsTable();       /* TODO dont use this anymore, load from lexiconListsHash */
+    repopulateMyListsTable();
 
 }
 
@@ -981,7 +983,27 @@ void MainWindow::on_pushButtonImportList_clicked()
 
 void MainWindow::repopulateMyListsTable()
 {
-    serverCommunicator->requestSavedWordListInfo(currentLexicon);
+    if (lexiconListsHash[currentLexicon].savedWordLists.size() == 0)
+    {
+        serverCommunicator->requestSavedWordListInfo(currentLexicon);
+        qDebug() << "Requested saved word list info from server";
+    }
+    else
+    {
+        uiCreateScrambleTable.tableWidgetMyLists->clearContents();
+        uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
+        qDebug() << "Going to load saved word list info from hash, size"
+                << lexiconListsHash[currentLexicon].savedWordLists.size();
+        for (int i = 0; i < lexiconListsHash[currentLexicon].savedWordLists.size(); i++)
+        {
+            uiCreateScrambleTable.tableWidgetMyLists->insertRow(0);
+            QStringList labels = lexiconListsHash[currentLexicon].savedWordLists.at(i);
+            qDebug() << "Labels -------> " << labels;
+            for (int j = 0; j < labels.size(); j++)
+                uiCreateScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
+        }
+        uiCreateScrambleTable.tableWidgetMyLists->resizeColumnsToContents();
+    }
 
 
 }
@@ -1349,32 +1371,37 @@ void MainWindow::gotServerMessage(QString message)
     gameBoardWidget->gotChat("<font color=red>" + message + "</font>");
 }
 
-void MainWindow::clearAllUnscramblegameListData()
+void MainWindow::beginUnscramblegameListData()
 {
     uiCreateScrambleTable.tableWidgetMyLists->clearContents();
     uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
 
-
+    unscramblegameUserlistData_clearHash = true;
 }
 
 void MainWindow::addUnscramblegameListData(QString lexicon, QStringList labels)
 {
-
     if (lexicon == currentLexicon)
     {
+        if (unscramblegameUserlistData_clearHash)
+        {
+            lexiconListsHash[lexicon].savedWordLists.clear();
+            unscramblegameUserlistData_clearHash = false;
+        }
+
         uiCreateScrambleTable.tableWidgetMyLists->insertRow(0);
         for (int j = 0; j < labels.size(); j++)
         {
             uiCreateScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
-            lexiconListsHash[lexicon].savedWordLists.append(labels);
         }
-
+        lexiconListsHash[lexicon].savedWordLists.append(labels);
     }
 }
 
 void MainWindow::doneUnscramblegameListData()
 {
     uiCreateScrambleTable.tableWidgetMyLists->resizeColumnsToContents();
+    unscramblegameUserlistData_clearHash = false;
 }
 
 void MainWindow::clearSingleUnscramblegameListData(QString lexicon, QString listname)
