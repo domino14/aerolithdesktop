@@ -307,7 +307,7 @@ void ServerCommunicator::readFromServer()
             {
                 QString lexicon, listname;
                 in >> lexicon >> listname;
-                emit clearUnscramblegameListData(lexicon, listname);
+                emit clearSingleUnscramblegameListData(lexicon, listname);
 
             }
             break;
@@ -410,30 +410,18 @@ void ServerCommunicator::handleWordlistsMessage()
     quint8 numLexica;
     in >> numLexica;
 
-    /* move
+    emit gettingLexiconAndListInfo();
 
-    disconnect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)), 0, 0);
-    uiMainWindow.comboBoxLexicon->clear();
-    lexiconListsHash.clear();
-    */
-
+    QList<QByteArray> serverLexica;
     for (int i = 0; i < numLexica; i++)
     {
         QByteArray lexicon;
         in >> lexicon;
-        //localLexHash.insert(i, QString(lexicon));
+        emit gotLexicon(lexicon);
 
-        emit gotLexicon(lexicon, i);
-
-
-        /* move
-        if (existingLocalDBList.contains(lexicon))
-            uiMainWindow.comboBoxLexicon->addItem(lexicon);
-        LexiconLists dummyLists;
-        dummyLists.lexicon = lexicon;
-        lexiconListsHash.insert(QString(lexicon), dummyLists);*/
-
+        serverLexica << lexicon;
     }
+
 
 
     quint8 numTypes;
@@ -453,15 +441,11 @@ void ServerCommunicator::handleWordlistsMessage()
                     quint16 numLists;
                     in >> lexiconIndex >> numLists;
 
-                    //     QString lexicon = localLexHash.value(lexiconIndex);
                     for (int k = 0; k < numLists; k++)
                     {
                         QByteArray listTitle;
                         in >> listTitle;
-
-                        // move
-                        // lexiconListsHash[lexicon].regularWordLists << listTitle;
-                        emit addWordList(lexiconIndex, listTitle, (char)SERVER_WORD_LIST_REGULAR);
+                        emit addWordList(serverLexica[lexiconIndex], listTitle, (char)SERVER_WORD_LIST_REGULAR);
                     }
                 }
             }
@@ -476,15 +460,11 @@ void ServerCommunicator::handleWordlistsMessage()
                     quint16 numLists;
                     in >> lexiconIndex >> numLists;
 
-                    //  QString lexicon = localLexHash.value(lexiconIndex);
-
                     for (int k = 0; k < numLists; k++)
                     {
                         QByteArray listTitle;
                         in >> listTitle;
-                        // move
-                        //  lexiconListsHash[lexicon].dailyWordLists << listTitle;
-                        emit addWordList(lexiconIndex, listTitle, (char)SERVER_WORD_LIST_CHALLENGE);
+                        emit addWordList(serverLexica[lexiconIndex], listTitle, (char)SERVER_WORD_LIST_CHALLENGE);
                     }
                 }
             }
@@ -493,33 +473,7 @@ void ServerCommunicator::handleWordlistsMessage()
         }
     }
 
-    /* move */
-
-    /*
-    if (uiMainWindow.comboBoxLexicon->count() > 0)
-    {
-        uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
-        lexiconComboBoxIndexChanged(uiMainWindow.comboBoxLexicon->currentText());
-    }
-    else
-    {
-        QMessageBox::critical(this, "No Lexicon Databases!", "You have no lexicon databases built. You will not be"
-                              " able to play Aerolith without building a lexicon database. Please select the 'Lexica'"
-                              " option from the menu and build at least one lexicon database, then reconnect to Aerolith.");
-
-
-    }
-    // we connect the signals here instead of earlier in the constructor for some reason having to do with the
-    //   above two lines. the 'disconnect' is earlier in this function
-
-
-    connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)),
-            SLOT(lexiconComboBoxIndexChanged(QString)));
-
-    spinBoxWordLengthChange(uiCreateScrambleTable.spinBoxWL->value());
-    */
-
-
+    emit doneGettingLexAndListInfo();
 }
 
 

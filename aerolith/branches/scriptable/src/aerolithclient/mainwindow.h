@@ -89,6 +89,7 @@ private:
         QString lexicon;
         QStringList regularWordLists;
         QStringList dailyWordLists;
+        QList <QStringList> savedWordLists;
         LexiconLists()
         {
         }
@@ -250,8 +251,14 @@ public slots:
     void clearAllUnscramblegameListData();
     void addUnscramblegameListData(QString, QStringList);
     void doneUnscramblegameListData();
-    void clearUnscramblegameListData(QString, QString);
+    void clearSingleUnscramblegameListData(QString, QString);
     void     unscramblegameListSpaceUsage(quint32 usage, quint32 max);
+
+    void gettingLexiconAndListInfo();
+    void gotLexicon(QByteArray);
+    void doneGettingLexAndListInfo();
+    void addWordList(QByteArray, QByteArray, char);
+
 
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
