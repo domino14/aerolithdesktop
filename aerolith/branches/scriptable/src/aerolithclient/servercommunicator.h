@@ -74,11 +74,13 @@ signals:
     void playerLeftTable(quint16, QString);
     void tableDeleted(quint16);
     void gotServerMessage(QString);
+
     void clearAllUnscramblegameListData();
     void addUnscramblegameListData(QString, QStringList);
     void doneUnscramblegameListData();
-    void clearUnscramblegameListData(QString, QString);
+    void clearSingleUnscramblegameListData(QString, QString);
     void unscramblegameListSpaceUsage(quint32, quint32);
+
     void dontUnderstandPacket();
 
     /* in-table signals */
@@ -102,9 +104,12 @@ signals:
     void newHighScore(int rank, QString username, double percentCorrect, int timeRemaining);
     void endHighScoresTable();
 
-    void gotLexicon(QByteArray, int);
-    void addWordList(int, QByteArray, char);
-    void sentLogin();
+        void sentLogin();
+
+    void gotLexicon(QByteArray);
+    void addWordList(QByteArray, QByteArray, char);
+    void gettingLexiconAndListInfo();
+    void doneGettingLexAndListInfo();
 private slots:
     void readFromServer();
     void handleError(QAbstractSocket::SocketError socketError);

@@ -234,10 +234,15 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(serverCommunicator, SIGNAL(addUnscramblegameListData(QString,QStringList)),
             this, SLOT(addUnscramblegameListData(QString,QStringList)));
     connect(serverCommunicator, SIGNAL(doneUnscramblegameListData()), this, SLOT(doneUnscramblegameListData()));
-    connect(serverCommunicator, SIGNAL(clearUnscramblegameListData(QString,QString)), this,
-            SLOT(clearUnscramblegameListData(QString,QString)));
+    connect(serverCommunicator, SIGNAL(clearSingleUnscramblegameListData(QString,QString)), this,
+            SLOT(clearSingleUnscramblegameListData(QString,QString)));
     connect(serverCommunicator, SIGNAL(unscramblegameListSpaceUsage(quint32,quint32)), this,
             SLOT(unscramblegameListSpaceUsage(quint32,quint32)));
+
+    connect(serverCommunicator, SIGNAL(gettingLexiconAndListInfo()), this, SLOT(gettingLexiconAndListInfo()));
+    connect(serverCommunicator, SIGNAL(gotLexicon(QByteArray)), this, SLOT(gotLexicon(QByteArray)));
+    connect(serverCommunicator, SIGNAL(doneGettingLexAndListInfo()), this, SLOT(doneGettingLexAndListInfo()));
+    connect(serverCommunicator, SIGNAL(addWordList(QByteArray,QByteArray,char)), this, SLOT(addWordList(QByteArray,QByteArray,char)));
 
     testFunction(); // used for debugging
 
@@ -1348,6 +1353,8 @@ void MainWindow::clearAllUnscramblegameListData()
 {
     uiCreateScrambleTable.tableWidgetMyLists->clearContents();
     uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
+
+
 }
 
 void MainWindow::addUnscramblegameListData(QString lexicon, QStringList labels)
@@ -1357,7 +1364,10 @@ void MainWindow::addUnscramblegameListData(QString lexicon, QStringList labels)
     {
         uiCreateScrambleTable.tableWidgetMyLists->insertRow(0);
         for (int j = 0; j < labels.size(); j++)
+        {
             uiCreateScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
+            lexiconListsHash[lexicon].savedWordLists.append(labels);
+        }
 
     }
 }
@@ -1367,17 +1377,26 @@ void MainWindow::doneUnscramblegameListData()
     uiCreateScrambleTable.tableWidgetMyLists->resizeColumnsToContents();
 }
 
-void MainWindow::clearUnscramblegameListData(QString lexicon, QString listname)
+void MainWindow::clearSingleUnscramblegameListData(QString lexicon, QString listname)
 {
-    if (lexicon == currentLexicon)
+    bool foundInTable = false;
+    bool foundInList = false;
+    if (lexicon == currentLexicon) // ! TODO may be a bug
     {
         for (int i = 0; i < uiCreateScrambleTable.tableWidgetMyLists->rowCount(); i++)
         {
-            if (uiCreateScrambleTable.tableWidgetMyLists->item(i, 0)->text() == listname)
+            if (uiCreateScrambleTable.tableWidgetMyLists->item(i, 0)->text() == listname && !foundInTable)
             {
+                foundInTable = true;
                 uiCreateScrambleTable.tableWidgetMyLists->removeRow(i);
-                break;  // break out of for-loop
             }
+            if (i < lexiconListsHash[lexicon].savedWordLists.size() &&
+                lexiconListsHash[lexicon].savedWordLists.at(i).at(0) == listname && !foundInList)
+            {
+                foundInList = true;
+                lexiconListsHash[lexicon].savedWordLists.removeAt(i);
+            }
+            if (foundInList && foundInTable) break; // removed correctly, so break
         }
     }
 }
@@ -1386,6 +1405,57 @@ void MainWindow::unscramblegameListSpaceUsage(quint32 usage, quint32 max)
 {
     uiCreateScrambleTable.progressBarUsedListSpace->setRange(0, max);
     uiCreateScrambleTable.progressBarUsedListSpace->setValue(usage);
+
+}
+
+void MainWindow::gettingLexiconAndListInfo()
+{
+    disconnect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)), 0, 0);
+    uiMainWindow.comboBoxLexicon->clear();
+    lexiconListsHash.clear();
+
+}
+
+void MainWindow::gotLexicon(QByteArray lex)
+{
+    QString lexicon(lex);
+    if (existingLocalDBList.contains(lexicon))
+        uiMainWindow.comboBoxLexicon->addItem(lexicon);
+    LexiconLists dummyLists;
+    dummyLists.lexicon = lexicon;
+    lexiconListsHash.insert(lexicon, dummyLists);
+}
+
+void MainWindow::addWordList(QByteArray lexicon, QByteArray listname, char type)
+{
+    if (type == (char)SERVER_WORD_LIST_REGULAR)
+        lexiconListsHash[QString(lexicon)].regularWordLists << listname;
+    else if (type == (char)SERVER_WORD_LIST_CHALLENGE)
+        lexiconListsHash[QString(lexicon)].dailyWordLists << listname;
+}
+
+void MainWindow::doneGettingLexAndListInfo()
+{
+
+    if (uiMainWindow.comboBoxLexicon->count() > 0)
+    {
+        uiMainWindow.comboBoxLexicon->setCurrentIndex(0);
+        lexiconComboBoxIndexChanged(uiMainWindow.comboBoxLexicon->currentText());
+    }
+    else
+    {
+        QMessageBox::critical(this, "No Lexicon Databases!", "You have no lexicon databases built. You will not be"
+                              " able to play Aerolith without building a lexicon database. Please select the 'Lexica'"
+                              " option from the menu and build at least one lexicon database, then reconnect to Aerolith.");
+
+
+    }
+
+
+    connect(uiMainWindow.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)),
+            SLOT(lexiconComboBoxIndexChanged(QString)));
+
+    spinBoxWordLengthChange(uiCreateScrambleTable.spinBoxWL->value());  // TODO why have it here?
 
 }
 
