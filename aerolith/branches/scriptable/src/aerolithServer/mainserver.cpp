@@ -500,7 +500,7 @@ void MainServer::listInfoRequest(ClientSocket* socket)
     QList <QStringList> myListsTableLabels = dbHandler->getAllListLabels(lex, socket->connData.userName);
 
     writeHeaderData();
-    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARALL;
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_BEGIN;
     fixHeaderLength();
     socket->write(block);
 

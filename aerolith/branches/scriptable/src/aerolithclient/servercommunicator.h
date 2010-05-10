@@ -48,12 +48,7 @@ private:
     QDataStream in;
 
     QString username, password;
-
-
-
-
     ConnectionModes connectionMode;
-
 
 signals:
     void badMagicNumber();
@@ -75,7 +70,7 @@ signals:
     void tableDeleted(quint16);
     void gotServerMessage(QString);
 
-    void clearAllUnscramblegameListData();
+    void beginUnscramblegameListData();
     void addUnscramblegameListData(QString, QStringList);
     void doneUnscramblegameListData();
     void clearSingleUnscramblegameListData(QString, QString);
