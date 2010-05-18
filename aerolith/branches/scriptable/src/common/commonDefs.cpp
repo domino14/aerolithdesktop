@@ -1,4 +1,7 @@
 #include "commonDefs.h"
+
+extern const quint16 MAGIC_NUMBER;
+
 void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums)
 {
     // takes all the numbers between start and end, including start and end,
@@ -54,3 +57,40 @@ QString Utilities::getRootDir()
 
 }
 
+/////////////////////
+
+PacketBuilder::PacketBuilder() : o(&packet, QIODevice::WriteOnly)
+{
+    o.setVersion(QDataStream::Qt_4_2);
+}
+
+void PacketBuilder::processRawPacketForSending(QByteArray rawPacket)
+{
+    o.device()->seek(0);
+    packet.clear();
+    o << MAGIC_NUMBER;
+    o << (quint16)rawPacket.length();
+    o.writeRawData(rawPacket.constData(), rawPacket.length());
+}
+
+void PacketBuilder::processForSending()
+{
+    // possibly add encryption to packet at some point?
+    QByteArray tempPacket = packet;
+    o.device()->seek(0);
+    packet.clear();
+    o << MAGIC_NUMBER;
+    o << (quint16)tempPacket.length();
+    o.writeRawData(tempPacket.constData(), tempPacket.length());
+}
+
+void PacketBuilder::resetPacket()
+{
+    o.device()->seek(0);
+    packet.clear();
+}
+
+QByteArray PacketBuilder::getPacket()
+{
+    return packet;
+}

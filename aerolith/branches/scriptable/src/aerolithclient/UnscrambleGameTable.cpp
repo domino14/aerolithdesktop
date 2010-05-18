@@ -1015,8 +1015,79 @@ void UnscrambleGameTable::fullQuizDone()
 //
 //    }
 
-    // TODO delete, move to server!
 
+}
+
+void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
+{
+    QDataStream in(ba);
+    in.setVersion(QDataStream::Qt_4_2);
+    switch (commandByte)
+    {
+        case SERVER_TABLE_QUESTIONS:
+            // alphagrams!!!
+            {
+                QTime t;
+                t.start();
+                quint8 numRacks;
+                in >> numRacks;
+                for (int i = 0; i < numRacks; i++)
+                {
+                    quint32 probIndex;
+                    in >> probIndex;
+                    quint8 numSolutionsNotYetSolved;
+                    in >> numSolutionsNotYetSolved;
+                    QSet <quint8> notSolved;
+
+                    quint8 temp;
+                    for (int j = 0; j < numSolutionsNotYetSolved; j++)
+                    {
+                        in >> temp;
+                        notSolved.insert(temp);
+                    }
+                    addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
+                }
+                clearSolutionsDialog();
+
+            }
+            break;
+
+        case SERVER_TABLE_NUM_QUESTIONS:
+            // word list info
+
+            {
+                quint16 numRacksSeen;
+                quint16 numTotalRacks;
+                in >> numRacksSeen >> numTotalRacks;
+                gotWordListInfo(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
+                break;
+            }
+
+        case SERVER_TABLE_CORRECT_ANSWER:
+            {
+                quint8 seatNumber;
+                quint8 space, specificAnswer;
+                in >> seatNumber >> space >> specificAnswer;
+                answeredCorrectly(seatNumber, space, specificAnswer);
+
+
+            }
+            break;
+        case SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE:
+            mainQuizDone();
+            break;
+        case SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE:
+            fullQuizDone();
+            break;
+        case SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED:
+            {
+                bool allowed;
+                in >> allowed;
+                setSavingAllowed(allowed);
+            }
+            break;
+
+    }
 }
 
 

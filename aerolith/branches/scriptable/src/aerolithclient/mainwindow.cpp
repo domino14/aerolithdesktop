@@ -93,20 +93,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     uiLogin.stackedWidget->setCurrentIndex(0);
 
 
-    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, dbHandler);
-    gameBoardWidget->setWindowTitle("Table");
-    gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
-    gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
 
-    connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
-    connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
-    connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
-    connect(gameBoardWidget, SIGNAL(correctAnswerSubmitted(quint8, quint8)), this, SLOT(submitCorrectAnswer(quint8, quint8)));
-    connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
-
-    connect(gameBoardWidget, SIGNAL(viewProfile(QString)), this, SLOT(viewProfile(QString)));
-    connect(gameBoardWidget, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
-    connect(gameBoardWidget, SIGNAL(exitThisTable()), this, SLOT(leaveThisTable()));
 
 
 
@@ -199,15 +186,6 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     uiCreateScrambleTable.tableWidgetMyLists->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 
-    connect(gameBoardWidget, SIGNAL(saveCurrentGame()),
-            SLOT(saveGame()));
-
-    connect(gameBoardWidget, SIGNAL(sitDown(quint8)), SLOT(trySitting(quint8)));
-    connect(gameBoardWidget, SIGNAL(standUp()), SLOT(standUp()));
-    connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
-    connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
-    connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
-
     /* server communicator */
     serverCommunicator = new ServerCommunicator(this);
     connect(serverCommunicator, SIGNAL(badMagicNumber()), this, SLOT(badMagicNumber()));
@@ -223,10 +201,10 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(serverCommunicator, SIGNAL(newTableInfoReceived(quint16,quint8,QString,QString,quint8,bool)), this,
             SLOT(handleCreateTable(quint16,quint8,QString,QString,quint8,bool)));
     connect(serverCommunicator, SIGNAL(playerJoinedTable(quint16,QString)), this, SLOT(playerJoinedTable(quint16,QString)));
+    connect(serverCommunicator, SIGNAL(playerLeftTable(quint16,QString)), this, SLOT(playerLeftTable(quint16,QString)));
     connect(serverCommunicator, SIGNAL(tablePrivacyChange(quint16,bool)), this, SLOT(tablePrivacyChange(quint16,bool)));
     connect(serverCommunicator, SIGNAL(receivedTableInvite(quint16,QString)), this, SLOT(tableInvite(quint16,QString)));
     connect(serverCommunicator, SIGNAL(bootedFromTable(quint16,QString)), this, SLOT(bootedFromTable(quint16,QString)));
-    connect(serverCommunicator, SIGNAL(playerJoinedTable(quint16,QString)), this, SLOT(playerJoinedTable(quint16,QString)));
     connect(serverCommunicator, SIGNAL(tableDeleted(quint16)), this, SLOT(handleDeleteTable(quint16)));
     connect(serverCommunicator, SIGNAL(gotServerMessage(QString)), this, SLOT(gotServerMessage(QString)));
 
@@ -244,11 +222,68 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(serverCommunicator, SIGNAL(doneGettingLexAndListInfo()), this, SLOT(doneGettingLexAndListInfo()));
     connect(serverCommunicator, SIGNAL(addWordList(QByteArray,QByteArray,char)), this, SLOT(addWordList(QByteArray,QByteArray,char)));
 
+    connect(serverCommunicator, SIGNAL(clearHighScoresTable()), this, SLOT(clearHighScoresTable()));
+    connect(serverCommunicator, SIGNAL(newHighScore(int,QString,double,int)), this,
+            SLOT(newHighScore(int,QString,double,int)));
+    connect(serverCommunicator, SIGNAL(endHighScoresTable()), this, SLOT(endHighScores()));
+
+    /* TODO this idea of a single gameboard widget is temporary; fix soon */
+
+    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, dbHandler);
+    gameBoardWidget->setWindowTitle("Table");
+    gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
+    gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
+
+    connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
+    connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
+    connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
+    connect(gameBoardWidget, SIGNAL(correctAnswerSubmitted(quint8, quint8)), this, SLOT(submitCorrectAnswer(quint8, quint8)));
+    connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
+
+    connect(gameBoardWidget, SIGNAL(viewProfile(QString)), this, SLOT(viewProfile(QString)));
+    connect(gameBoardWidget, SIGNAL(sendPM(QString)), this, SLOT(sendPM(QString)));
+    connect(gameBoardWidget, SIGNAL(exitThisTable()), this, SLOT(leaveThisTable()));
+
+    connect(gameBoardWidget, SIGNAL(saveCurrentGame()),
+            SLOT(saveGame()));
+
+    connect(gameBoardWidget, SIGNAL(sitDown(quint8)), SLOT(trySitting(quint8)));
+    connect(gameBoardWidget, SIGNAL(standUp()), SLOT(standUp()));
+    connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
+    connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
+    connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
+
+    connect(serverCommunicator, SIGNAL(serverTableChat(quint16,QString,QString)),
+            this, SLOT(gotTableChat(quint16, QString, QString)));
+    connect(serverCommunicator, SIGNAL(serverTableMessage(quint16,QString)),
+            this, SLOT(gotTableMessage(quint16, QString)));
+    connect(serverCommunicator, SIGNAL(serverTableTimerValue(quint16,quint16)), this,
+            SLOT(gotServerTableTimerValue(quint16,quint16)));
+    connect(serverCommunicator, SIGNAL(serverTableReadyBegin(quint16,quint8)), this,
+            SLOT(gotServerTableReadyBegin(quint16,quint8)));
+    connect(serverCommunicator, SIGNAL(serverTableGameStart(quint16)), this,
+            SLOT(gotServerTableGameStart(quint16)));
+    connect(serverCommunicator, SIGNAL(serverTableAvatarChange(quint16,quint8,quint8)), this,
+            SLOT(gotServerTableAvatarChange(quint16,quint8,quint8)));
+    connect(serverCommunicator, SIGNAL(serverTableGameEnd(quint16)), this, SLOT(gotServerTableGameEnd(quint16)));
+    connect(serverCommunicator, SIGNAL(serverTableHost(quint16,QString)), this,
+            SLOT(gotServerTableHost(quint16,QString)));
+    connect(serverCommunicator, SIGNAL(serverTableSuccessfulStand(quint16,QString,quint8)), this,
+            SLOT(gotServerTableSuccessfulStand(quint16,QString,quint8)));
+    connect(serverCommunicator, SIGNAL(serverTableSuccessfulSit(quint16,QString,quint8)), this,
+            SLOT(gotServerTableSuccessfulSit(quint16,QString,quint8)));
+    connect(serverCommunicator, SIGNAL(specificTableCommand(quint16,quint8,QByteArray)), this,
+            SLOT(gotSpecificTableCommand(quint16,quint8,QByteArray)));
+
+
     testFunction(); // used for debugging
 
     uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
 
     unscramblegameUserlistData_clearHash = false;
+
+
+
 }
 
 void MainWindow::dbDialogEnableClose(bool e)
@@ -380,6 +415,15 @@ void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
     //    commsSocket->write(block);
 }
 
+void MainWindow::changeMyAvatar(quint8 avatarID)
+{
+    serverCommunicator->changeMyAvatar(avatarID, currentTablenum);
+}
+
+void MainWindow::chatTable(QString chat)
+{
+    serverCommunicator->chatTable(chat, currentTablenum);
+}
 
 
 
@@ -1486,86 +1530,106 @@ void MainWindow::doneGettingLexAndListInfo()
 
 }
 
+void MainWindow::clearHighScoresTable()
+{
+    uiScores.scoresTableWidget->clearContents();
+    uiScores.scoresTableWidget->setRowCount(0);
+}
+
+void MainWindow::newHighScore(int rank, QString username, double percCorrect, int timeRemaining)
+{
+    QTableWidgetItem* rankItem = new QTableWidgetItem(QString("%1").arg(rank+1));
+    QTableWidgetItem* usernameItem = new QTableWidgetItem(username);
+    QTableWidgetItem* correctItem = new QTableWidgetItem(QString("%1%").arg(percCorrect, 0, 'f', 1));
+    QTableWidgetItem* timeItem = new QTableWidgetItem(QString("%1 s").arg(timeRemaining));
+    uiScores.scoresTableWidget->insertRow(uiScores.scoresTableWidget->rowCount());
+    uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 0, rankItem);
+    uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 1, usernameItem);
+    uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 2, correctItem);
+    uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 3, timeItem);
+}
+
+void MainWindow::endHighScores()
+{
+    uiScores.scoresTableWidget->resizeColumnsToContents();
+}
+
+void MainWindow::gotTableChat(quint16 tablenum, QString username, QString chat)
+{
+    Q_UNUSED(tablenum);
+    gameBoardWidget->gotChat("[" + username + "] " + chat);
+}
+
+void MainWindow::gotTableMessage(quint16 tablenum, QString message)
+{
+    Q_UNUSED(tablenum);
+    gameBoardWidget->gotChat("<font color=green>" + message + "</font>");
+}
+
+void MainWindow::gotServerTableTimerValue(quint16 tablenum, quint16 timerVal)
+{
+    gameBoardWidget->gotTimerValue(timerVal);
+}
+
+void MainWindow::gotServerTableReadyBegin(quint16 tablenum, quint8 seat)
+{
+    gameBoardWidget->setReadyIndicator(seat);
+}
+
+void MainWindow::gotServerTableGameStart(quint16 tablenum)
+{
+    gameBoardWidget->setupForGameStart();
+    gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
+}
+
+void MainWindow::gotServerTableAvatarChange(quint16 tablenum, quint8 seatNumber, quint8 avatarID)
+{
+
+     gameBoardWidget->setAvatar(seatNumber, avatarID);
+
+    // then here we can do something like chatwidget->setavatar( etc). but this requires the server
+    // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
+    // this way we can just send everyone's avatar on login. consider changing this!
+}
+
+void MainWindow::gotServerTableGameEnd(quint16 tablenum)
+{
+    // todo replace this with a virtual end game function
+    gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
+    gameBoardWidget->populateSolutionsTable();
+    gameBoardWidget->clearAllWordTiles();
+}
+
+void MainWindow::gotServerTableHost(quint16 tablenum, QString host)
+{
+    gameBoardWidget->setHost(host);
+}
+
+void MainWindow::gotServerTableSuccessfulStand(quint16 tablenum, QString username, quint8 seatNumber)
+{
+    gameBoardWidget->standup(username, seatNumber);
+}
+
+void MainWindow::gotServerTableSuccessfulSit(quint16 tablenum, QString username, quint8 seatNumber)
+{
+    gameBoardWidget->sitdown(username, seatNumber);
+}
+
+void MainWindow::gotServerTableGameEndRequest(quint16 tablenum, QString username)
+{
+    gameBoardWidget->gotChat("<font color=red>" + username + " gave up! </font>");
+}
+
+void MainWindow::gotSpecificTableCommand(quint16 tablenum, quint8 commandByte, QByteArray ba)
+{
+    gameBoardWidget->gotSpecificCommand(commandByte, ba);
+}
+
+
 /* dont understand packet
    QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
    */
 
-
-/* subcommands for unscramble game table packets -> move to appropriate script/file
-    case SERVER_TABLE_QUESTIONS:
-        // alphagrams!!!
-        {
-            QTime t;
-            t.start();
-            quint8 numRacks;
-            in >> numRacks;
-            for (int i = 0; i < numRacks; i++)
-            {
-                quint32 probIndex;
-                in >> probIndex;
-                quint8 numSolutionsNotYetSolved;
-                in >> numSolutionsNotYetSolved;
-                QSet <quint8> notSolved;
-
-                quint8 temp;
-                for (int j = 0; j < numSolutionsNotYetSolved; j++)
-                {
-                    in >> temp;
-                    notSolved.insert(temp);
-                }
-                gameBoardWidget->addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
-            }
-            gameBoardWidget->clearSolutionsDialog();
-
-        }
-        break;
-
-    case SERVER_TABLE_NUM_QUESTIONS:
-        // word list info
-
-        {
-            quint16 numRacksSeen;
-            quint16 numTotalRacks;
-            in >> numRacksSeen >> numTotalRacks;
-            gameBoardWidget->gotWordListInfo(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
-            break;
-        }
-
-    case SERVER_TABLE_GIVEUP:
-        // someone cried uncle
-        {
-            QString username;
-            in >> username;
-            gameBoardWidget->gotChat("<font color=red>" + username + " gave up! </font>");
-        }
-        break;
-
-    case SERVER_TABLE_CORRECT_ANSWER:
-        {
-            quint8 seatNumber;
-            quint8 space, specificAnswer;
-            in >> seatNumber >> space >> specificAnswer;
-            gameBoardWidget->answeredCorrectly(seatNumber, space, specificAnswer);
-
-
-        }
-        break;
-    case SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE:
-        gameBoardWidget->mainQuizDone();
-        break;
-    case SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE:
-        gameBoardWidget->fullQuizDone();
-        break;
-    case SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED:
-        {
-            bool allowed;
-            in >> allowed;
-            gameBoardWidget->setSavingAllowed(allowed);
-        }
-        break;
-
-
-        */
 void MainWindow::badMagicNumber()
 {
 #ifdef Q_WS_MAC
