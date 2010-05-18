@@ -25,8 +25,7 @@ bool highScoresLessThan(const tempHighScoresStruct& a, const tempHighScoresStruc
     else return (a.numCorrect > b.numCorrect);
 }
 
-ServerCommunicator::ServerCommunicator(QObject* parent) : QObject(parent),
-out(&block, QIODevice::WriteOnly)
+ServerCommunicator::ServerCommunicator(QObject* parent) : QObject(parent)
 {
     blockSize = 0;
     commsSocket = new QTcpSocket(this);
@@ -37,30 +36,34 @@ out(&block, QIODevice::WriteOnly)
     connect(commsSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
     //    connect(commsSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(socketWroteBytes(qint64)));
 
-    out.setVersion(QDataStream::Qt_4_2);
+    pb = new PacketBuilder();
+}
+
+ServerCommunicator::~ServerCommunicator()
+{
+    delete pb;
 }
 
 void ServerCommunicator::sendPacket(QByteArray unprocessedPacket)
 {
-    // possibly add encryption to packet at some point?
-    out.device()->seek(0);
-    block.clear();
-    out << MAGIC_NUMBER;
-    out << (quint16)unprocessedPacket.length();
-    out.writeRawData(unprocessedPacket.constData(), unprocessedPacket.length());
+    pb->resetPacket();
+    pb->processRawPacketForSending(unprocessedPacket);
+    commsSocket->write(pb->getPacket());
+}
 
+void ServerCommunicator::sendPreloadedPacket()
+{
     // and send block
-    commsSocket->write(block);
-
+    pb->processForSending();
+    commsSocket->write(pb->getPacket());
 }
 
 
 void ServerCommunicator::sendChatAll(QString chat)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_CHAT << chat;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_CHAT << chat;
+    sendPreloadedPacket();
 }
 
 
@@ -109,10 +112,9 @@ void ServerCommunicator::readFromServer()
         case SERVER_PING:
             {
                 // keep alive
-                QByteArray packet;
-                QDataStream o(&packet, QIODevice::WriteOnly);
-                o << (quint8)CLIENT_PONG;
-                sendPacket(packet);
+                pb->resetPacket();
+                pb->o << (quint8)CLIENT_PONG;
+                sendPreloadedPacket();
             }
             break;
         case SERVER_MAX_BANDWIDTH:
@@ -366,20 +368,19 @@ void ServerCommunicator::socketConnected()
 
     // here we see if we are registering a name, or if we are connecting with an existing
     // name/password
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
+    pb->resetPacket();
 
     if (connectionMode == MODE_LOGIN)
     {
         emit sentLogin();
-        o << (quint8)CLIENT_LOGIN;
+        pb->o << (quint8)CLIENT_LOGIN;
     }
     else if (connectionMode == MODE_REGISTER)
     {
-        o << (quint8)CLIENT_REGISTER;
+        pb->o << (quint8)CLIENT_REGISTER;
     }
-    o << username << password;
-    sendPacket(packet);
+    pb->o << username << password;
+    sendPreloadedPacket();
 }
 
 bool ServerCommunicator::isConnectedToServer()
@@ -493,9 +494,6 @@ void ServerCommunicator::handleTableCommand()
             QString message;
             in >> message;
             emit serverTableMessage(tablenum, message);
-          //  gameBoardWidget->gotChat("<font color=green>" + message + "</font>");
-
-
         }
         break;
     case SERVER_TABLE_TIMER_VALUE:
@@ -504,7 +502,6 @@ void ServerCommunicator::handleTableCommand()
             quint16 timerval;
             in >> timerval;
             emit serverTableTimerValue(tablenum, timerval);
-//            gameBoardWidget->gotTimerValue(timerval);
         }
 
         break;
@@ -515,15 +512,11 @@ void ServerCommunicator::handleTableCommand()
             quint8 seat;
             in >> seat;
             emit serverTableReadyBegin(tablenum, seat);
-         //   gameBoardWidget->setReadyIndicator(seat);
         }
         break;
     case SERVER_TABLE_GAME_START:
         // the game has started
         {
-          //  gameBoardWidget->setupForGameStart();
-          //  gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
-
           emit serverTableGameStart(tablenum);
         }
 
@@ -538,21 +531,13 @@ void ServerCommunicator::handleTableCommand()
 
             emit serverTableAvatarChange(tablenum, seatNumber, avatarID);
 
-//            gameBoardWidget->setAvatar(seatNumber, avatarID);
-
-            // then here we can do something like chatwidget->setavatar( etc). but this requires the server
-            // to send avatars to more than just the table. so if we want to do this, we need to change the server behavior!
-            // this way we can just send everyone's avatar on login. consider changing this!
         }
         break;
     case SERVER_TABLE_GAME_END:
         // the game has ended
 
         emit serverTableGameEnd(tablenum);
-        /*
-        gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
-        gameBoardWidget->populateSolutionsTable();
-        gameBoardWidget->clearAllWordTiles();*/
+
         break;
 
 
@@ -563,7 +548,6 @@ void ServerCommunicator::handleTableCommand()
             in >> username;
             in >> chat;
             emit serverTableChat(tablenum, username, chat);
-            //gameBoardWidget->gotChat("[" + username + "] " + chat);
         }
         break;
     case SERVER_TABLE_HOST:
@@ -571,7 +555,6 @@ void ServerCommunicator::handleTableCommand()
             QString host;
             in >> host;
             emit serverTableHost(tablenum, host);
-          //  gameBoardWidget->setHost(host);
         }
         break;
 
@@ -582,7 +565,7 @@ void ServerCommunicator::handleTableCommand()
 
             in >> username >> seatNumber;
             emit serverTableSuccessfulStand(tablenum, username, seatNumber);
-//            gameBoardWidget->standup(username, seatNumber);
+
         }
         break;
 
@@ -591,9 +574,16 @@ void ServerCommunicator::handleTableCommand()
             QString username;
             quint8 seatNumber;
             in >> username >> seatNumber;
-         //   gameBoardWidget->sitdown(username, seatNumber);
             emit serverTableSuccessfulSit(tablenum, username, seatNumber);
 
+        }
+        break;
+    case SERVER_TABLE_GIVEUP:
+        // someone cried uncle
+        {
+            QString username;
+            in >> username;
+            emit serverTableGameEndRequest(tablenum, username);
         }
         break;
 
@@ -606,7 +596,7 @@ void ServerCommunicator::handleTableCommand()
         in.readRawData(byteArray, blockSize - 4);
         QByteArray ba(byteArray);
 
-        emit specificTableCommand(ba, tablenum, commandByte);
+        emit specificTableCommand(tablenum, commandByte, ba);
 
         delete [] byteArray;
 
@@ -637,58 +627,40 @@ void ServerCommunicator::processHighScores()
     qSort(temp.begin(), temp.end(), highScoresLessThan);
 
     emit clearHighScoresTable();
-    /* :
-    uiScores.scoresTableWidget->clearContents();
-    uiScores.scoresTableWidget->setRowCount(0);
-    */
 
     for (int i = 0; i < numEntries; i++)        
     {
         emit newHighScore(i+1, temp.at(i).username,
                           100.0*(double)temp.at(i).numCorrect/(double)numSolutions, temp.at(i).timeRemaining);
-        /*
 
-        QTableWidgetItem* rankItem = new QTableWidgetItem(QString("%1").arg(i+1));
-        QTableWidgetItem* usernameItem = new QTableWidgetItem(temp.at(i).username);
-        QTableWidgetItem* correctItem = new QTableWidgetItem(QString("%1%").arg(100.0*(double)temp.at(i).numCorrect/(double)numSolutions, 0, 'f', 1));
-        QTableWidgetItem* timeItem = new QTableWidgetItem(QString("%1 s").arg(temp.at(i).timeRemaining));
-        uiScores.scoresTableWidget->insertRow(uiScores.scoresTableWidget->rowCount());
-        uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 0, rankItem);
-        uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 1, usernameItem);
-        uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 2, correctItem);
-        uiScores.scoresTableWidget->setItem(uiScores.scoresTableWidget->rowCount() -1, 3, timeItem);*/
     }
 
     emit endHighScoresTable();
-    /* :
-    uiScores.scoresTableWidget->resizeColumnsToContents();
-    */
+
 }
 
 void ServerCommunicator::chatTable(QString textToSend, quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum;
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum;
     if (textToSend.indexOf("/me ") == 0)
     {
-        o << (quint8)CLIENT_TABLE_ACTION << textToSend.mid(4);
+        pb->o << (quint8)CLIENT_TABLE_ACTION << textToSend.mid(4);
     }
     else
     {
-        o << (quint8)CLIENT_TABLE_CHAT << textToSend;
+        pb->o << (quint8)CLIENT_TABLE_CHAT << textToSend;
     }
-    sendPacket(packet);
+    sendPreloadedPacket();
 
 }
 
 void ServerCommunicator::changeMyAvatar(quint8 avatarID, quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8) CLIENT_TABLE_AVATAR << avatarID;
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8) CLIENT_TABLE_AVATAR << avatarID;
 
-    sendPacket(packet);
+    sendPreloadedPacket();
 }
 
 
@@ -699,170 +671,150 @@ void ServerCommunicator::sendPM(QString username, QString message)
         return;
     }
 
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_PM << username << message;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_PM << username << message;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::joinTable(quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_JOIN_TABLE << tablenum;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_JOIN_TABLE << tablenum;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::leaveTable(quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_LEAVE_TABLE << tablenum;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_LEAVE_TABLE << tablenum;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::trySitting(quint8 seat, quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TRY_SITTING << seat;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TRY_SITTING << seat;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::standUp(quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TRY_STANDING;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TRY_STANDING;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::trySetTablePrivate(quint16 tablenum, bool priv)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_PRIVACY << priv;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_PRIVACY << priv;
+    sendPreloadedPacket();
 
 }
 
 void ServerCommunicator::sendReady(quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_READY_BEGIN;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_READY_BEGIN;
+    sendPreloadedPacket();
 
 }
 
 void ServerCommunicator::sendGiveup(quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_GIVEUP;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_GIVEUP;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::sendClientVersion(QString version)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_VERSION << version;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_VERSION << version;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::requestHighScores(QString challenge)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_HIGH_SCORE_REQUEST << challenge;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_HIGH_SCORE_REQUEST << challenge;
+    sendPreloadedPacket();
 
 }
 
 void ServerCommunicator::uploadWordList(QString lexicon, QList<quint32> &probIndices, QString listName)
 {
-    QByteArray packet;
-    QDataStream out(&packet, QIODevice::WriteOnly);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+    pb->o << (quint8)2;   // this means what follows is the size of the list
+    pb->o << (quint32)probIndices.size();
+    pb->o << lexicon;
+    pb->o << listName.mid(0, 64);
 
-    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
-    out << (quint8)2;   // this means what follows is the size of the list
-    out << (quint32)probIndices.size();
-    out << lexicon;
-    out << listName.mid(0, 64);
-
-    sendPacket(packet);
+    sendPreloadedPacket();
 
     do
     {
-        packet.clear();
-        out.device()->seek(0);
+        pb->resetPacket();
 
-        out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
-        out << (quint8)1;   // this means that this list is CONTINUED (i.e. tell the server to wait for more of these packets)
-        out << probIndices.mid(0, 2000);
+        pb->o << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+        pb->o << (quint8)1;   // this means that this list is CONTINUED (i.e. tell the server to wait for more of these packets)
+        pb->o << probIndices.mid(0, 2000);
 
-        sendPacket(packet);
+        sendPreloadedPacket();
 
         probIndices = probIndices.mid(2000);
     } while (probIndices.size() > 2000);
 
-    packet.clear();
-    out.device()->seek(0);
+    pb->resetPacket();
 
-    out << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
-    out << (quint8)0;   // this means that this list is DONE
-    out << probIndices;
+    pb->o << (quint8)CLIENT_UNSCRAMBLEGAME_LIST_UPLOAD;
+    pb->o << (quint8)0;   // this means that this list is DONE
+    pb->o << probIndices;
 
-    sendPacket(packet);
+    sendPreloadedPacket();
 
 }
 
 void ServerCommunicator::requestSavedWordListInfo(QString lexicon)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST << lexicon;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_UNSCRAMBLEGAME_LISTINFO_REQUEST << lexicon;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::invitePlayerToTable(quint16 tablenum, QString playerToInvite)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_INVITE << playerToInvite;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_INVITE << playerToInvite;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::bootFromTable(quint16 tablenum, QString playerToBoot)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_BOOT << playerToBoot;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_BOOT << playerToBoot;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::saveGame(quint16 tablenum)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_SAVE_REQUEST;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << tablenum << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_SAVE_REQUEST;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::deleteList(QString lexicon, QString listname)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_UNSCRAMBLEGAME_DELETE_LIST << lexicon << listname;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_UNSCRAMBLEGAME_DELETE_LIST << lexicon << listname;
+    sendPreloadedPacket();
 }
 
 void ServerCommunicator::sendSuggestionOrBugReport(QString suggestion)
 {
-    QByteArray packet;
-    QDataStream o(&packet, QIODevice::WriteOnly);
-    o << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT << suggestion;
-    sendPacket(packet);
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_SUGGESTION_OR_BUG_REPORT << suggestion;
+    sendPreloadedPacket();
 }
 

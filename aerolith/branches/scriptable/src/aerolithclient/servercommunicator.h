@@ -24,12 +24,15 @@
 
 #include "commonDefs.h"
 
+
+
 class ServerCommunicator : public QObject
 {
     Q_OBJECT
 public:
     enum ConnectionModes { MODE_LOGIN, MODE_REGISTER};
     ServerCommunicator(QObject*);
+    ~ServerCommunicator();
     void sendChatAll(QString);
 
     bool isConnectedToServer();
@@ -38,9 +41,9 @@ public:
 
 private:
 
-    QByteArray block;
-    QDataStream out;
+
     QTcpSocket *commsSocket;
+    PacketBuilder* pb;
     quint16 blockSize;
     void handleTableCommand();
     void handleWordlistsMessage();
@@ -49,6 +52,7 @@ private:
 
     QString username, password;
     ConnectionModes connectionMode;
+
 
 signals:
     void badMagicNumber();
@@ -89,9 +93,9 @@ signals:
     void serverTableHost(quint16 tablenum, QString host);
     void serverTableSuccessfulStand(quint16 tablenum, QString username, quint8 seat);
     void serverTableSuccessfulSit(quint16 tablenum, QString username, quint8 seat);
+    void serverTableGameEndRequest(quint16 tablenum, QString username);
 
-
-    void specificTableCommand(QByteArray, quint16, quint8);
+    void specificTableCommand(quint16, quint8, QByteArray);
 
 
     /* other signals */
@@ -132,6 +136,7 @@ public slots:
     void deleteList(QString lexicon, QString listname);
     void sendSuggestionOrBugReport(QString suggestion);
     void sendPacket(QByteArray unprocessedPacket);
+    void sendPreloadedPacket();
 
 };
 

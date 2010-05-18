@@ -69,7 +69,7 @@ public:
     }
     void setHost(QString hostname);
 
-
+    void gotSpecificCommand(quint8, QByteArray);
 private:
     QString tableHost;
   //  SavedUnscrambleGame currentSug; // TODO delete

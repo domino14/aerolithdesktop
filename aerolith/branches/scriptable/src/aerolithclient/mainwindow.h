@@ -216,6 +216,8 @@ public slots:
     void showInviteDialog();
     void bootFromTable(QString);
     void shouldDeletePMWidget();
+    void chatTable(QString);
+    void changeMyAvatar(quint8);
 
     void acceptedInvite();
     void declinedInvite();
@@ -261,7 +263,22 @@ public slots:
     void doneGettingLexAndListInfo();
     void addWordList(QByteArray, QByteArray, char);
 
+    void clearHighScoresTable();
+    void newHighScore(int rank, QString username, double percCorrect, int timeRemaining);
+    void endHighScores();
 
+    void gotTableChat(quint16, QString, QString);
+    void gotTableMessage(quint16, QString);
+    void gotServerTableTimerValue(quint16, quint16);
+    void gotServerTableReadyBegin(quint16, quint8);
+    void gotServerTableGameStart(quint16);
+    void gotServerTableAvatarChange(quint16, quint8, quint8);
+    void gotServerTableGameEnd(quint16);
+    void gotServerTableHost(quint16, QString);
+    void gotServerTableSuccessfulStand(quint16, QString, quint8);
+    void gotServerTableSuccessfulSit(quint16, QString, quint8);
+    void gotServerTableGameEndRequest(quint16 tablenum, QString username);
+    void gotSpecificTableCommand(quint16 tablenum, quint8 commandByte, QByteArray ba);
     // uiTable auto-slots
     void on_radioButtonProbability_clicked();
     void on_radioButtonOtherLists_clicked();

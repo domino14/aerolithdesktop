@@ -37,6 +37,7 @@ public:
     virtual void clearReadyIndicators() = 0;
     virtual void setupForGameStart() = 0;
     void addToPlayerList(quint8, QString);
+    virtual void gotSpecificCommand(quint8, QByteArray) = 0;
     //virtual void setDatabase(QString name) = 0;
     void setLexicon(QString name)
     {

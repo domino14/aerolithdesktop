@@ -160,5 +160,19 @@ public:
 };
 
 
+class PacketBuilder
+{
+public:
+    PacketBuilder();
+    QByteArray getPacket();
+    QDataStream o;
+    void processForSending();
+    void processRawPacketForSending(QByteArray);
+    void resetPacket();
+private:
+    QByteArray packet;
+
+};
+
 
 #endif
