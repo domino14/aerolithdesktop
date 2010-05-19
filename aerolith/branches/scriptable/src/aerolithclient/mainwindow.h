@@ -229,7 +229,6 @@ public slots:
 
     void on_comboBoxGameType_currentIndexChanged(QString);
 
-    void submitCorrectAnswer(quint8 space, quint8 specificAnswer);
     /* for server communciator*/
 
     void badMagicNumber();

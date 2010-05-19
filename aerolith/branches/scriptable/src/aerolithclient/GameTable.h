@@ -54,14 +54,21 @@ public:
     void sitdown(QString username, quint8 seat);
 
     QStringList peopleInTable;
+    void setTableNum(quint16 tablenum)
+    {
+        this->tablenum = tablenum;
+    }
+
 signals:
     void avatarChange(quint8);
     void sitDown(quint8);
     void standUp();
+    void sendSpecificGamePacket(QByteArray);
 protected:
     bool isPrivate;
     quint8 mySeatNumber;
     quint8 tableCapacity;
+    quint16 tablenum;
     avatarLabel* myAvatarLabel;
     QSqlDatabase wordDb;
     DatabaseHandler* dbHandler;
@@ -75,10 +82,6 @@ protected:
     void clearPlayerWidgets();
     void playerLeaveTable();
 
-//
-//    void addPlayersToWidgets(QStringList playerList);
-//    void removePlayerFromWidgets(QString, bool);
-//    void addPlayerToWidgets(QString, bool);
     QString lexiconName;
 
 private slots:

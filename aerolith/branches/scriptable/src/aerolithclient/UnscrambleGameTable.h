@@ -29,6 +29,7 @@
 #include "wordRectangle.h"
 #include "GameTable.h"
 #include "databasehandler.h"
+#include "commonDefs.h"
 
 
 class UnscrambleGameTable : public GameTable
@@ -119,15 +120,18 @@ private:
     int getTileWidth(int wordLength);
     void getBasePosition(int index, double& x, double& y, int tileWidth);
 
+    void submitCorrectAnswer(quint8 space, quint8 specificAnswer);
+
     QString unmodifiedListName;
     bool savedGameModified;
+    PacketBuilder* pb;
 
 protected:
     virtual void closeEvent(QCloseEvent*);
 signals:
     void giveUp();
     void sendStartRequest();
-    void correctAnswerSubmitted(quint8, quint8);
+
     void chatTable(QString);
     void sendPM(QString);
     void exitThisTable();

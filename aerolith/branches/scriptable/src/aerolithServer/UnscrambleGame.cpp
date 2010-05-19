@@ -829,7 +829,9 @@ void UnscrambleGame::sendUserCurrentQuestions(ClientSocket* socket)
         out << unscrambleGameQuestions.at(i).numNotYetSolved;
         foreach (quint8 notSolved, unscrambleGameQuestions.at(i).notYetSolved)
             out << notSolved;
+        //qDebug () << "sent" << unscrambleGameQuestions.at(i).probIndex << unscrambleGameQuestions.at(i).numNotYetSolved;
     }
+
     fixHeaderLength();
     socket->write(block);
 }
