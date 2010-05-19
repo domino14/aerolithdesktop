@@ -22,6 +22,7 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, Dat
 {
     currentWordLength = 0;
     this->dbHandler = dbHandler;
+    pb = new PacketBuilder(this);
     //this->setStyle(new QWindowsStyle);
     tableUi.setupUi(this);
     savingAllowed = false;
@@ -552,6 +553,14 @@ void UnscrambleGameTable::enteredChat()
 }
 
 
+void UnscrambleGameTable::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
+{
+    pb->resetPacket();
+    pb->o << (quint8)CLIENT_TABLE_COMMAND << (quint16)tablenum << (quint8)CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
+    pb->o << space << specificAnswer;
+    emit sendSpecificGamePacket(pb->getPacket());
+}
+
 void UnscrambleGameTable::enteredGuess()
 {
 
@@ -570,7 +579,8 @@ void UnscrambleGameTable::enteredGuess()
     {
         const wordQuestion* wq = &(wordQuestions.at(answerHash.value(guess)));
         int pos = wq->solutions.indexOf(guess);         // TODO should find something more efficient than a linear search
-        emit correctAnswerSubmitted(wq->space, pos);
+
+        submitCorrectAnswer(wq->space, pos);
         qDebug() << "enteredguess" << wq->space << pos;
     }
 
@@ -932,7 +942,6 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
 void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
                                      quint8 numNotYetSolved, QSet <quint8> notYetSolved)
 {
-
     QSqlQuery query(wordDb);
     query.prepare("select words, alphagram from alphagrams "
                   "where probability = ?");
@@ -1020,6 +1029,7 @@ void UnscrambleGameTable::fullQuizDone()
 
 void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
 {
+    //qDebug() << "Byte array" << Utilities::hexPrintable(ba);
     QDataStream in(ba);
     in.setVersion(QDataStream::Qt_4_2);
     switch (commandByte)
@@ -1038,7 +1048,7 @@ void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
                     quint8 numSolutionsNotYetSolved;
                     in >> numSolutionsNotYetSolved;
                     QSet <quint8> notSolved;
-
+                    //qDebug() << "Got" << probIndex << numSolutionsNotYetSolved;
                     quint8 temp;
                     for (int j = 0; j < numSolutionsNotYetSolved; j++)
                     {

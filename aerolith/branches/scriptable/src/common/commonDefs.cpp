@@ -57,9 +57,21 @@ QString Utilities::getRootDir()
 
 }
 
+QString Utilities::hexPrintable(const QByteArray x)
+{
+    QString outStr;
+    QTextStream out(&outStr);
+    for (unsigned int i = 0; i < x.size(); i++)
+    {
+        out << QString::number((quint8)x.at(i), 16).toUpper().rightJustified(2, '0', true) + " ";
+    }
+    return outStr;
+}
+
+
 /////////////////////
 
-PacketBuilder::PacketBuilder() : o(&packet, QIODevice::WriteOnly)
+PacketBuilder::PacketBuilder(QObject* parent) : QObject(parent), o(&packet, QIODevice::WriteOnly)
 {
     o.setVersion(QDataStream::Qt_4_2);
 }

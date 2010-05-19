@@ -237,7 +237,6 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(giveUp()), this, SLOT(giveUpOnThisGame()));
     connect(gameBoardWidget, SIGNAL(sendStartRequest()), this, SLOT(submitReady()));
     connect(gameBoardWidget, SIGNAL(avatarChange(quint8)), this, SLOT(changeMyAvatar(quint8)));
-    connect(gameBoardWidget, SIGNAL(correctAnswerSubmitted(quint8, quint8)), this, SLOT(submitCorrectAnswer(quint8, quint8)));
     connect(gameBoardWidget, SIGNAL(chatTable(QString)), this, SLOT(chatTable(QString)));
 
     connect(gameBoardWidget, SIGNAL(viewProfile(QString)), this, SLOT(viewProfile(QString)));
@@ -252,6 +251,12 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     connect(gameBoardWidget, SIGNAL(setTablePrivate(bool)), SLOT(trySetTablePrivate(bool)));
     connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
     connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
+
+
+
+
+    connect(gameBoardWidget, SIGNAL(sendSpecificGamePacket(QByteArray)), serverCommunicator, SLOT(sendPacket(QByteArray)));
+
 
     connect(serverCommunicator, SIGNAL(serverTableChat(quint16,QString,QString)),
             this, SLOT(gotTableChat(quint16, QString, QString)));
@@ -400,20 +405,6 @@ void MainWindow::submitChatLEContents()
     uiMainWindow.lineEditChat->clear();
 }
 
-/* TODO: this is game-specific; should move to actual game script/etc as a generic packet to send */
-void MainWindow::submitCorrectAnswer(quint8 space, quint8 specificAnswer)
-{
-    // chatText->append(QString("From solution: ") + solutionLE->text());
-    // solutionLE->clear();
-    //
-    //    writeHeaderData();
-    //    out << (quint8) CLIENT_TABLE_COMMAND;
-    //    out << (quint16) currentTablenum;
-    //    out << (quint8) CLIENT_TABLE_UNSCRAMBLEGAME_CORRECT_ANSWER;
-    //    out << space << specificAnswer;
-    //    fixHeaderLength();
-    //    commsSocket->write(block);
-}
 
 void MainWindow::changeMyAvatar(quint8 avatarID)
 {
@@ -530,13 +521,15 @@ void MainWindow::shouldDeletePMWidget()
 
 void MainWindow::createUnscrambleGameTable()
 {
-    if (uiCreateScrambleTable.radioButtonMyLists->isChecked() && uiCreateScrambleTable.tableWidgetMyLists->selectedItems().size() == 0) return;
+    if (uiCreateScrambleTable.radioButtonMyLists->isChecked() &&
+        uiCreateScrambleTable.tableWidgetMyLists->selectedItems().size() == 0) return;
 
     /* creating tables is a very specialized thing; it makes sense to write the specially coded byte array in this function
        and then just use serverCommunicator to send it; rather than send serverCommunicator a bunch of function calls to specially
        format this data */
     QByteArray packet;
     QDataStream out(&packet, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_2);
 
     out << (quint8)CLIENT_NEW_TABLE;
     out << (quint8)GAME_TYPE_UNSCRAMBLE;
@@ -614,8 +607,7 @@ void MainWindow::createUnscrambleGameTable()
         gameBoardWidget->setUnmodifiedListName(si[0]->text());
     }
 
-
-
+    out << uiMainWindow.comboBoxLexicon->currentText();
 
     if (uiCreateScrambleTable.cycleRbo->isChecked()) out << (quint8)TABLE_TYPE_CYCLE_MODE;
     else if (uiCreateScrambleTable.endlessRbo->isChecked()) out << (quint8)TABLE_TYPE_MARATHON_MODE;
@@ -1303,6 +1295,7 @@ void MainWindow::playerJoinedTable(quint16 tablenum, QString playerName)
         qDebug() << "I joined table!";
         gameBoardWidget->resetTable(tablenum, wList, playerName);
         gameBoardWidget->show();
+        gameBoardWidget->setTableNum(tablenum);
         trySitting(0);  // whenever player joins, they try sitting at spot 0.
         gameBoardWidget->setPrivacy(t->isPrivate);
 

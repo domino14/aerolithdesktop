@@ -36,12 +36,12 @@ ServerCommunicator::ServerCommunicator(QObject* parent) : QObject(parent)
     connect(commsSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
     //    connect(commsSocket, SIGNAL(bytesWritten(qint64)), this, SLOT(socketWroteBytes(qint64)));
 
-    pb = new PacketBuilder();
+    pb = new PacketBuilder(this);
 }
 
 ServerCommunicator::~ServerCommunicator()
 {
-    delete pb;
+    //
 }
 
 void ServerCommunicator::sendPacket(QByteArray unprocessedPacket)
@@ -592,9 +592,12 @@ void ServerCommunicator::handleTableCommand()
         /* any other packets are specific to a specific game, so these should be handled by the relevant
            game script ---
          read packetlength-4 bytes from the stream and pass them to a dedicated function. */
+        //qDebug() << "Blocksize = " << blockSize << "Header " << (char)commandByte;
+
         char* byteArray = new char[blockSize - 4];  // -4 because of quint8, quint16 tablenum, quint8 cmd
         in.readRawData(byteArray, blockSize - 4);
-        QByteArray ba(byteArray);
+        QByteArray ba(byteArray, blockSize - 4);
+        //qDebug() << "Sending specific packet" << Utilities::hexPrintable(ba);
 
         emit specificTableCommand(tablenum, commandByte, ba);
 

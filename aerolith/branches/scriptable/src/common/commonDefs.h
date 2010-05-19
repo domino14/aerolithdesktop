@@ -155,22 +155,24 @@ class Utilities
 {
 public:
     static QString getRootDir();
-
+    static QString hexPrintable(const QByteArray x);
 
 };
 
 
-class PacketBuilder
+class PacketBuilder : public QObject
 {
+Q_OBJECT
 public:
-    PacketBuilder();
+    PacketBuilder(QObject* parent);
     QByteArray getPacket();
+private:
+    QByteArray packet;
+public:
     QDataStream o;
     void processForSending();
     void processRawPacketForSending(QByteArray);
     void resetPacket();
-private:
-    QByteArray packet;
 
 };
 
