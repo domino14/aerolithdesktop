@@ -211,17 +211,6 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 
     }
 
-    //    if (socket == table->originalHost)
-    //    {
-    //        if (listType == LIST_TYPE_USER_LIST)
-    //        {
-    //            /* the host is no longer able to send out indices to the table.  inform the players of this */
-    //            table->sendTableMessage("The original host of the table has left. "
-    //                                    "Since the host was the one to create this list, you cannot quiz on it any longer.");
-    //
-    //
-    //        }
-    //    }
 }
 
 void UnscrambleGame::gameStartRequest(ClientSocket* client)
