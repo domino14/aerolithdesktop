@@ -602,7 +602,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 {
     setWindowTitle(QString("Table %1 - Word List: %2 - Logged in as %3 - Table Host: %4").arg(tableNum).arg(wordListName).arg(myUsername).arg(""));
     tableUi.labelWordListInfo->clear();
-    tableUi.lcdNumberTimer->display(0);
+    tableUi.labelTimer->setText("<center>0:00</center>");
     clearPlayerWidgets();
     clearAllWordTiles();
 
@@ -671,7 +671,17 @@ void UnscrambleGameTable::gotChat(QString chat)
 
 void UnscrambleGameTable::gotTimerValue(quint16 timerval)
 {
-    tableUi.lcdNumberTimer->display(timerval);
+    quint16 mins = timerval/60;
+    quint8 secs = (quint8) (timerval-(mins*60));
+    QString col;
+    if (timerval > 0 && timerval <= 10) col = "red";
+    else col = "black";
+
+
+    tableUi.labelTimer->setText(QString("<font color=%1><center>%2:%3</center></font>").
+                                arg(col).
+                                arg(mins).
+                                arg(secs, int(2), int(10), QChar('0')));
 }
 
 void UnscrambleGameTable::gotWordListInfo(QString info)
