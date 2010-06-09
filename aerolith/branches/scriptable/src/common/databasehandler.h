@@ -111,6 +111,8 @@ public:
 
     bool savedListExists(QString lexicon, QString listName, QString username);
     void getListSpaceUsage(QString username, quint32& usage, quint32& max);
+
+    static quint32 encodeProbIndex(quint32 probIndex, quint32 wordLength);
 private:
 
     QSqlDatabase userlistsDb;

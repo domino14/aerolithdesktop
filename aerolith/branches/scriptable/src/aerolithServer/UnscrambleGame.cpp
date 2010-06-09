@@ -100,6 +100,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
     countingDown = false;
     startEnabled = true;
     tableTimerVal = (quint16)tableTimerValMin * (quint16)60;
+    tableTimerVal = 10; // DEBUG!!
     currentTimerVal = tableTimerVal;
     countdownTimerVal = COUNTDOWN_TIMER_VAL;
 
@@ -264,9 +265,9 @@ void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint
 {
     if (socket->connData.isSitting)
     {
-        if (space < numRacksThisRound)
+        if (space < numRacksThisRound && space < unscrambleGameQuestions.size())
         {
-            //         qDebug() << "  " << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
+            qDebug() << "corrans" << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
             if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
             {
                 unscrambleGameQuestions[space].notYetSolved.remove(specificAnswer);
@@ -283,10 +284,10 @@ void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint
                         sug.brandNew = false;
                         sug.curQuizSet = sug.origIndices;
                     }
-                    qDebug() << "Answered correctly";
+//                    qDebug() << "Answered correctly";
 
                     //       Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
-                    qDebug() << sug.curQuizSet.contains(unscrambleGameQuestions[space].probIndex);
+                  //  qDebug() << sug.curQuizSet.contains(unscrambleGameQuestions[space].probIndex);
 
                     sug.curQuizSet.remove(unscrambleGameQuestions[space].probIndex);
                 }
@@ -468,6 +469,7 @@ void UnscrambleGame::endGame()
         }
     }
 
+    unscrambleGameQuestions.clear();
 }
 
 
@@ -491,7 +493,7 @@ void UnscrambleGame::setQuizArrayRange(quint32 low, quint32 high)
 {
     QList <quint32> indexList;
     numTotalRacks = high-low+1;
-    getUniqueRandomNumbers(indexList, low, high, numTotalRacks);
+    Utilities::getUniqueRandomNumbers(indexList, low, high, numTotalRacks);
 
 
     for (quint32 i = low; i <= high; i++)
@@ -532,22 +534,17 @@ void UnscrambleGame::generateQuizArray()
                 // a list of indices
                 quint32 size;
                 stream >> size;
-                QList <quint32> tempList;
-                QList <quint32> indexList;
-                for (int i = 0; i < size; i++)
-                    indexList << 0;   // dummy, to resize to 'size'
 
                 quint32 index;
-                getUniqueRandomNumbers(tempList, 0, size-1, size);
+                quizArray.clear();
                 for (quint32 i = 0; i < size; i++)
                 {
+
                     stream >> index;
-                    indexList[tempList.at(i)] = index;
+                    quizArray << index;
                 }
 
-                for (quint32 i = 0; i < size; i++)
-                    quizArray << indexList.at(i);
-
+                Utilities::shuffle(quizArray);
                 numTotalRacks = size;
             }
             else
@@ -561,8 +558,8 @@ void UnscrambleGame::generateQuizArray()
 
     case LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH:
         {
-            lowProbIndex += (wordLength << 24);
-            highProbIndex += (wordLength << 24);    // this is the encoding we use for probability.
+            lowProbIndex = DatabaseHandler::encodeProbIndex(lowProbIndex, wordLength);
+            highProbIndex = DatabaseHandler::encodeProbIndex(highProbIndex, wordLength);
 
 
             setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks is also set in this function
@@ -573,10 +570,12 @@ void UnscrambleGame::generateQuizArray()
         }
     case  LIST_TYPE_ALL_WORD_LENGTH:
         {
-            lowProbIndex = 1 + (wordLength << 24);  // probability 1 is the first
+            lowProbIndex = DatabaseHandler::encodeProbIndex(1, wordLength);  // probability 1 is the first
             if (wordLength >=2 && wordLength <= 15)
-                highProbIndex = DatabaseHandler::lexiconMap.value(lexiconName).alphagramsPerLength[wordLength]
-                                + (wordLength << 24);
+                highProbIndex = DatabaseHandler::encodeProbIndex(DatabaseHandler::lexiconMap.
+                                                                 value(lexiconName).
+                                                                 alphagramsPerLength[wordLength], wordLength);
+
 
             setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks also set in this function
 
@@ -600,35 +599,35 @@ void UnscrambleGame::generateQuizArray()
             switch (userlistMode)
             {
 
-            case UNSCRAMBLEGAME_USERLIST_MODE_RESTART:
-                sug.initialize(sug.origIndices);
+                case UNSCRAMBLEGAME_USERLIST_MODE_RESTART:
+                    sug.initialize(sug.origIndices);
 
-                qindices = sug.origIndices.toList();
-                mindices.clear();
-
-                break;
-
-            case UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED:
-                qindices = sug.firstMissed.toList();
-                mindices.clear();
-
-                sug.curQuizSet = sug.firstMissed;
-                sug.curMissedSet.clear();
-                break;
-
-            case UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE:
-                if (sug.brandNew)
-                {
                     qindices = sug.origIndices.toList();
                     mindices.clear();
-                }
-                else
-                {
-                    qindices = sug.curQuizSet.toList();
-                    mindices = sug.curMissedSet.toList();
-                }
-             //   qDebug() << "Index:" << qindices.at(0);
-                break;
+
+                    break;
+
+                case UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED:
+                    qindices = sug.firstMissed.toList();
+                    mindices.clear();
+
+                    sug.curQuizSet = sug.firstMissed;
+                    sug.curMissedSet.clear();
+                    break;
+
+                case UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE:
+                    if (sug.brandNew)
+                    {
+                        qindices = sug.origIndices.toList();
+                        mindices.clear();
+                    }
+                    else
+                    {
+                        qindices = sug.curQuizSet.toList();
+                        mindices = sug.curMissedSet.toList();
+                    }
+                 //   qDebug() << "Index:" << qindices.at(0);
+                    break;
             }
 
             // a list of indices
@@ -637,40 +636,45 @@ void UnscrambleGame::generateQuizArray()
             // TODO modularize this; put into a function. shouldn't repeat code.
             if (size > 0)
             {
-                QList <quint32> tempList;
-                QList <quint32> indexList;
-                for (int i = 0; i < size; i++)
-                    indexList << 0;   // dummy, to resize to 'size'
-
-                quint32 index;
-                getUniqueRandomNumbers(tempList, 0, size-1, size);
-                for (quint32 i = 0; i < size; i++)
-                {
-                    indexList[tempList.at(i)] = qindices.at(i);
-                }
-
-                for (quint32 i = 0; i < size; i++)
-                    quizArray << indexList.at(i);
+                quizArray = qindices;
+                Utilities::shuffle(quizArray);
+//                QList <quint32> tempList;
+//                QList <quint32> indexList;
+//                for (int i = 0; i < size; i++)
+//                    indexList << 0;   // dummy, to resize to 'size'
+//
+//                quint32 index;
+//                Utilities::getUniqueRandomNumbers(tempList, 0, size-1, size);
+//                for (quint32 i = 0; i < size; i++)
+//                {
+//                    indexList[tempList.at(i)] = qindices.at(i);
+//                }
+//
+//                for (quint32 i = 0; i < size; i++)
+//                    quizArray << indexList.at(i);
             }
             numTotalRacks = size;
 
             size = mindices.size();
             if (size > 0)
             {
-                QList <quint32> tempList;
-                QList <quint32> indexList;
-                for (int i = 0; i < size; i++)
-                    indexList << 0;   // dummy, to resize to 'size'
+                missedArray = mindices;
+                Utilities::shuffle(missedArray);
 
-                quint32 index;
-                getUniqueRandomNumbers(tempList, 0, size-1, size);
-                for (quint32 i = 0; i < size; i++)
-                {
-                    indexList[tempList.at(i)] = mindices.at(i);
-                }
 
-                for (quint32 i = 0; i < size; i++)
-                    missedArray << indexList.at(i);
+//                QList <quint32> tempList;
+//                QList <quint32> indexList;
+//                for (int i = 0; i < size; i++)
+//                    indexList << 0;   // dummy, to resize to 'size'
+//
+//                Utilities::getUniqueRandomNumbers(tempList, 0, size-1, size);
+//                for (quint32 i = 0; i < size; i++)
+//                {
+//                    indexList[tempList.at(i)] = mindices.at(i);
+//                }
+//
+//                for (quint32 i = 0; i < size; i++)
+//                    missedArray << indexList.at(i);
 
             }
 
@@ -1071,29 +1075,26 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
 
     for (quint8 i = 0; i < dbHandler->availableDatabases.size(); i++)
     {
-        QSqlQuery query(DatabaseHandler::lexiconMap.value(dbHandler->availableDatabases[i]).db_server);
-        query.exec("BEGIN TRANSACTION");
         for (int j = 2; j <= 15; j++)
         {
-            query.exec(QString("SELECT count(*) from alphagrams where length = %1").arg(j));
-            int wordCount = 0;
-            while (query.next())
-            {
-                wordCount = query.value(0).toInt();
-            }
+            timer.start();
+            int wordCount = dbHandler->getNumWordsByLength(dbHandler->availableDatabases[i], j);
+            qDebug () << "Wordcount" << dbHandler->availableDatabases[i] << wordCount;
             if (wordCount != 0)
             {
                 challengeInfo tmpChallenge;
                 tmpChallenge.highScores = new QHash <QString, highScoreData>;
-                getUniqueRandomNumbers(tmpChallenge.dbIndices, 1 + (j << 24), wordCount+(j << 24), qMin(wordCount, 50));
+                Utilities::getUniqueRandomNumbers(tmpChallenge.dbIndices,
+                                                  DatabaseHandler::encodeProbIndex(1, j),
+                                                  DatabaseHandler::encodeProbIndex(wordCount, j),
+                                                  qMin(wordCount, 50));
                 tmpChallenge.wordLength = j;
                 QString challengeName = QString("Today's " + dbHandler->availableDatabases.at(i) + " %1s").arg(j);
                 challenges.insert(challengeName, tmpChallenge);
-                qDebug() << "Generated" << challengeName << tmpChallenge.dbIndices;
+                qDebug() << "Generated" << challengeName; // << tmpChallenge.dbIndices;
             }
 
         }
-        query.exec("END TRANSACTION");
     }
     qDebug() << "Generated daily challenges!";
 }

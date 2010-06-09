@@ -380,6 +380,11 @@ void MainWindow::writeWindowSettings()
         settings.setValue("password", "");
     }
     settings.setValue("savePassword", uiLogin.checkBoxSavePassword->isChecked());
+
+    settings.setValue("ignoreMsgs", uiMainWindow.checkBoxIgnoreMsgs->isChecked());
+    settings.setValue("ignoreInvites", uiMainWindow.checkBoxIgnoreTableInvites->isChecked());
+    settings.setValue("soundsEnabled", uiMainWindow.checkBoxSounds->isChecked());
+
     settings.endGroup();
 
 }
@@ -393,6 +398,10 @@ void MainWindow::readWindowSettings()
     uiLogin.usernameLE->setText(settings.value("username", "").toString());
     uiLogin.passwordLE->setText(settings.value("password", "").toString());
     uiLogin.checkBoxSavePassword->setChecked(settings.value("savePassword", true).toBool());
+
+    uiMainWindow.checkBoxIgnoreMsgs->setChecked(settings.value("ignoreMsgs", false).toBool());
+    uiMainWindow.checkBoxIgnoreTableInvites->setChecked(settings.value("ignoreInvites", false).toBool());
+    uiMainWindow.checkBoxSounds->setChecked(settings.value("soundsEnabled", true).toBool());
     settings.endGroup();
 }
 
@@ -503,7 +512,8 @@ void MainWindow::receivedPM(QString username, QString message)
             w->show();
             pmWindows.insert(hashString, w);
         }
-        //QSound::play("sounds/inbound.wav");
+        if (uiMainWindow.checkBoxSounds->isChecked())
+            QSound::play("sounds/Sword1.wav");
     }
     else
     {
@@ -1028,13 +1038,13 @@ void MainWindow::repopulateMyListsTable()
     {
         uiCreateScrambleTable.tableWidgetMyLists->clearContents();
         uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
-        qDebug() << "Going to load saved word list info from hash, size"
-                << lexiconListsHash[currentLexicon].savedWordLists.size();
+        //qDebug() << "Going to load saved word list info from hash, size"
+          //      << lexiconListsHash[currentLexicon].savedWordLists.size();
         for (int i = 0; i < lexiconListsHash[currentLexicon].savedWordLists.size(); i++)
         {
             uiCreateScrambleTable.tableWidgetMyLists->insertRow(0);
             QStringList labels = lexiconListsHash[currentLexicon].savedWordLists.at(i);
-            qDebug() << "Labels -------> " << labels;
+          //  qDebug() << "Labels -------> " << labels;
             for (int j = 0; j < labels.size(); j++)
                 uiCreateScrambleTable.tableWidgetMyLists->setItem(0, j, new QTableWidgetItem(labels[j]));
         }
@@ -1186,7 +1196,8 @@ void MainWindow::userLoggedIn(QString username)
     peopleLoggedIn.append(username);
     if (username == currentUsername)
     {
-        // QSound::play("sounds/enter.wav");
+        if (uiMainWindow.checkBoxSounds->isChecked())
+            QSound::play("sounds/enter.wav");
 
         uiLogin.connectStatusLabel->setText("You have connected!");
         loginDialog->hide();
@@ -1414,10 +1425,13 @@ void MainWindow::beginUnscramblegameListData()
     uiCreateScrambleTable.tableWidgetMyLists->setRowCount(0);
 
     unscramblegameUserlistData_clearHash = true;
+    // because we dont' know what lexicon we are beginning yet
+        // TODO should change this behavior in the server.
 }
 
 void MainWindow::addUnscramblegameListData(QString lexicon, QStringList labels)
 {
+    qDebug() << "Add single data" << lexicon << labels;
     if (lexicon == currentLexicon)
     {
         if (unscramblegameUserlistData_clearHash)
@@ -1567,6 +1581,8 @@ void MainWindow::gotServerTableTimerValue(quint16 tablenum, quint16 timerVal)
 void MainWindow::gotServerTableReadyBegin(quint16 tablenum, quint8 seat)
 {
     gameBoardWidget->setReadyIndicator(seat);
+    if (uiMainWindow.checkBoxSounds->isChecked())
+        QSound::play("sounds/BEEPDOUB.WAV");
 }
 
 void MainWindow::gotServerTableGameStart(quint16 tablenum)
@@ -1666,7 +1682,7 @@ void PMWidget::readAndSendLEContents()
     uiPm.textEdit->append("[" + localUsername + "] " + uiPm.lineEdit->text());
 
     uiPm.lineEdit->clear();
-    QSound::play("sounds/outbound.wav");
+    //QSound::play("sounds/outbound.wav");
 }
 
 void PMWidget::appendText(QString text)

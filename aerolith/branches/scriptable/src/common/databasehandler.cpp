@@ -102,7 +102,7 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
         if (lexiconMap.contains(key))
         {
             LexiconInfo* lexInfo = &(lexiconMap[key]);
-            qDebug() << "Name:" << lexInfo->lexiconName;
+           // qDebug() << "Name:" << lexInfo->lexiconName;
             QSqlDatabase* db = NULL;
             if (clientCall)
             {
@@ -131,7 +131,7 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
                 while (query.next())
                 {
                     lexInfo->alphagramsPerLength[i] = query.value(0).toInt();
-                    qDebug() << "lengths " << i << lexInfo->alphagramsPerLength[i] << clientCall;
+                //    qDebug() << "lengths " << i << lexInfo->alphagramsPerLength[i] << clientCall;
                 }
             }
             query.exec("END TRANSACTION");
@@ -385,7 +385,7 @@ void DatabaseHandler::createLexiconDatabase(QString lexiconName)
         if (wordLength <= 15)
             probs[wordLength]++;
 
-        wordQuery.bindValue(2, probs[wordLength] + (wordLength << 24));
+        wordQuery.bindValue(2, encodeProbIndex(probs[wordLength], wordLength));
         wordQuery.bindValue(3, wordLength);
         wordQuery.bindValue(4, alphs[i].alphagram.count(QChar('A')) +  alphs[i].alphagram.count(QChar('E')) +
                             alphs[i].alphagram.count(QChar('I')) +  alphs[i].alphagram.count(QChar('O')) +
@@ -1187,6 +1187,11 @@ QMap <unsigned char, int> DatabaseHandler::getSpanishDist()
     dist.insert('V', 1); dist.insert('X', 1); dist.insert('Y', 1);
     dist.insert('Z', 1); dist.insert('?', 2);
     return dist;
+}
+
+quint32 DatabaseHandler::encodeProbIndex(quint32 probIndex, quint32 wordLength)
+{
+    return probIndex + (wordLength << 24);
 }
 
 /*

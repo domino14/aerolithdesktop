@@ -90,6 +90,7 @@ private:
     QWidget* preferencesWidget;
     Ui::tableCustomizationForm uiPreferences;
 
+    QSet <quint32> overallQuestionSet;
 
     struct wordQuestion
     {

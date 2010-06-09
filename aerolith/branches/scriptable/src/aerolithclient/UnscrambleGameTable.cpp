@@ -619,6 +619,8 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
 
     answerHash.clear();
     savedGameModified = false;
+
+    overallQuestionSet.clear();
 }
 
 void UnscrambleGameTable::leaveTable()
@@ -952,6 +954,7 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
 void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
                                      quint8 numNotYetSolved, QSet <quint8> notYetSolved)
 {
+    overallQuestionSet.insert(probIndex);
     QSqlQuery query(wordDb);
     query.prepare("select words, alphagram from alphagrams "
                   "where probability = ?");
@@ -1021,7 +1024,7 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
 
 void UnscrambleGameTable::mainQuizDone()
 {
-
+    qDebug() << "Number of unique questions:" << overallQuestionSet.size();
 }
 
 void UnscrambleGameTable::fullQuizDone()
@@ -1113,7 +1116,7 @@ void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
 
 void UnscrambleGameTable::answeredCorrectly(quint8 seatNumber, quint8 space, quint8 specificAnswer)
 {
-    QString alphagram = wordQuestions.at(space).alphagram;
+    QString alphagram = wordQuestions.at(space).alphagram;// THIS IS WHER IT CRASHES
     int tileWidth = getTileWidth(alphagram.length());
     double scale = (double)tileWidth/19.0;
     wordQuestions[space].numNotYetSolved--;
