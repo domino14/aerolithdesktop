@@ -138,7 +138,7 @@
 #define SERVER_WORD_LIST_REGULAR 'R'    // server sends client word list info on connect, this is one of the types
 #define SERVER_WORD_LIST_CHALLENGE 'D'
 
-void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums);
+
 
 // misc defines by game
 
@@ -156,7 +156,8 @@ class Utilities
 public:
     static QString getRootDir();
     static QString hexPrintable(const QByteArray x);
-
+    static void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums);
+    static void shuffle(QList <quint32>&);
 };
 
 

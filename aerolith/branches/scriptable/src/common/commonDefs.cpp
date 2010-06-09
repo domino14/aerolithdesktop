@@ -2,31 +2,58 @@
 
 extern const quint16 MAGIC_NUMBER;
 
-void getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums)
+void Utilities::getUniqueRandomNumbers(QList<quint32>&numbers, quint32 start, quint32 end, int numNums)
 {
     // takes all the numbers between start and end, including start and end,
     // randomly shuffles, and returns the first numNums numbers of the shuffled array.
 
-    //  qDebug() << "gurn" << start << end << numNums;
+
+//    int size = end - start + 1;
+//    if (size < 1) size = start - end + 1;
+//    if (numNums > size) return;
+//
+//    QList <quint32> pool;
+//    //   pool.resize(size);
+//    for (int i = 0; i < size; i++)
+//    {
+//        pool << i + start;
+//    }
+//    int choose, temp;
+//    for (int i = 0; i < numNums; i++)
+//    {
+//        choose = qrand() % size;
+//        numbers << pool[choose];
+//        size--;
+//        temp = pool[choose];
+//        pool[choose] = pool[size];
+//        pool[size] = temp;
+//    }
+
     int size = end - start + 1;
     if (size < 1) size = start - end + 1;
     if (numNums > size) return;
 
     QList <quint32> pool;
- //   pool.resize(size);
     for (int i = 0; i < size; i++)
-    {
         pool << i + start;
-    }
-    int choose, temp;
+
+    shuffle(pool);
+
     for (int i = 0; i < numNums; i++)
+        numbers << pool[i];
+
+}
+
+void Utilities::shuffle(QList<quint32>& toShuffle)
+{
+    for (quint32 i = toShuffle.length(); i > 1; i--)
     {
-        choose = qrand() % size;
-        numbers << pool[choose];
-        size--;
-        temp = pool[choose];
-        pool[choose] = pool[size];
-        pool[size] = temp;
+        // Pick a random element to swap with the i-th element.
+        quint32 j = qrand() % i; // 0 <= j <= i-1 (0-based array)
+        // Swap array elements.
+        quint32 tmp = toShuffle[j];
+        toShuffle[j] = toShuffle[i-1];
+        toShuffle[i-1] = tmp;
     }
 }
 
