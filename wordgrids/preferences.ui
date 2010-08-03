@@ -34,32 +34,6 @@ p, li { white-space: pre-wrap; }
       <attribute name="title">
        <string>General</string>
       </attribute>
-      <widget class="QCheckBox" name="checkBoxAutoHighlightTiles">
-       <property name="geometry">
-        <rect>
-         <x>40</x>
-         <y>10</y>
-         <width>191</width>
-         <height>17</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Highlight letters as mouse hovers</string>
-       </property>
-      </widget>
-      <widget class="QCheckBox" name="checkBoxDisplayScoresInGameWindow">
-       <property name="geometry">
-        <rect>
-         <x>40</x>
-         <y>40</y>
-         <width>191</width>
-         <height>17</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Display scores in game window</string>
-       </property>
-      </widget>
      </widget>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
@@ -91,69 +65,11 @@ p, li { white-space: pre-wrap; }
         <number>10</number>
        </property>
       </widget>
-      <widget class="QLabel" name="label_6">
-       <property name="geometry">
-        <rect>
-         <x>150</x>
-         <y>40</y>
-         <width>121</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Penalty for bad guess:</string>
-       </property>
-      </widget>
-      <widget class="QSpinBox" name="spinBoxWordStruckPenaltySecs">
-       <property name="geometry">
-        <rect>
-         <x>280</x>
-         <y>40</y>
-         <width>51</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="suffix">
-        <string> s.</string>
-       </property>
-       <property name="value">
-        <number>10</number>
-       </property>
-      </widget>
      </widget>
      <widget class="QWidget" name="tab">
       <attribute name="title">
        <string>Simple mode (Word Dash)</string>
       </attribute>
-      <widget class="QSpinBox" name="spinBoxSecondsPerWord">
-       <property name="geometry">
-        <rect>
-         <x>170</x>
-         <y>30</y>
-         <width>42</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="value">
-        <number>5</number>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_2">
-       <property name="geometry">
-        <rect>
-         <x>30</x>
-         <y>30</y>
-         <width>111</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Seconds per word</string>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_3">
        <property name="geometry">
         <rect>
@@ -216,35 +132,6 @@ p, li { white-space: pre-wrap; }
        </property>
        <property name="text">
         <string>Max word length to find:</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_7">
-       <property name="geometry">
-        <rect>
-         <x>30</x>
-         <y>120</y>
-         <width>121</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Penalty for bad guess:</string>
-       </property>
-      </widget>
-      <widget class="QSpinBox" name="spinBoxWordDashPenaltySecs">
-       <property name="geometry">
-        <rect>
-         <x>170</x>
-         <y>120</y>
-         <width>51</width>
-         <height>20</height>
-        </rect>
-       </property>
-       <property name="suffix">
-        <string> s.</string>
-       </property>
-       <property name="value">
-        <number>3</number>
        </property>
       </widget>
      </widget>

@@ -17,6 +17,9 @@ public:
     ThreadOptions currentThreadOption;
     QHash <QString, QString> wordStructure;
     void loadWordStructure();
+    QString getDefinitions(QString words);
+    QSqlDatabase wordDb;
+    bool containsOnlyPlurals(QString words);
 protected:
     void run();
     void generateWordHash();

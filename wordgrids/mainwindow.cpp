@@ -21,7 +21,7 @@
 
 
 int scoresByLength[16] =
-{ 0, 0, 4, 9, 16, 25, 49, 64, 81, 100, 121, 169, 196, 225, 256, 289 };
+{ 0, 0, 0, 9, 16, 25, 49, 64, 81, 100, 121, 169, 196, 225, 256, 289 };
 /*0  1  2  3  4    5   6   7   8    9   10   11   12   13   14   15*/
 
 int letterDist[26] =
@@ -99,9 +99,14 @@ MainWindow::MainWindow(QWidget *parent)
     scene->addItem(thisScoreLabel);
     thisScoreLabel->setFont(QFont("Comic Sans", 36, QFont::Bold));
 
+    bonusScoreLabel = new QGraphicsSimpleTextItem("");
+    bonusScoreLabel->setZValue(1);
+    bonusScoreLabel->setVisible(false);
+    scene->addItem(bonusScoreLabel);
+    bonusScoreLabel->setFont(QFont("Comic Sans", 20, QFont::Bold));
 
 
-    curTileWidth = 40;
+    curTileWidth = 37;
     boardWidth = 10;
     boardHeight = 10;
 
@@ -113,7 +118,7 @@ MainWindow::MainWindow(QWidget *parent)
     gameTimer.setInterval(1000);
     curScore = 0;
 
-    ui->textEdit->document()->setMaximumBlockCount(500);
+    //ui->textEdit->document()->setMaximumBlockCount(500);
     connect(&gameTimer, SIGNAL(timeout()), SLOT(secPassed()));
 
     gameGoing = false;
@@ -130,7 +135,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(wordStructure, SIGNAL(finishedLoadingWordStructure()), this, SLOT(finishedLoadingWordStructure()));
     wordStructure->loadWordStructure();
 
-    ui->textEdit->append("Please wait for word structure to load...");
+    // ui->textEdit->append("Please wait for word structure to load...");
+
+    ui->statusBar->showMessage("Please wait... Loading word structure");
+    ui->pushButtonNewGame->setEnabled(false);
 
 
     shouldLoadNextNewGame = false;
@@ -138,9 +146,18 @@ MainWindow::MainWindow(QWidget *parent)
     scoreLabel->setVisible(false);
 
     readSettings();
-    scoreTimer = new QTimer(this);
-    scoreTimer->setSingleShot(true);
-    connect(scoreTimer, SIGNAL(timeout()), SLOT(hideSingleScore()));
+    singleScoreTimer = new QTimer(this);
+    singleScoreTimer->setSingleShot(true);
+    connect(singleScoreTimer, SIGNAL(timeout()), SLOT(hideSingleScore()));
+
+    bonusScoreTimer = new QTimer(this);
+    bonusScoreTimer->setSingleShot(true);
+    connect(bonusScoreTimer, SIGNAL(timeout()), SLOT(hideBonusScore()));
+
+    connect(ui->listWidgetWordList, SIGNAL(itemClicked(QListWidgetItem*)), this,
+            SLOT(listWidgetItemClicked(QListWidgetItem*)));
+
+    //  ui->listWidgetWordList
 }
 
 void MainWindow::closeEvent ( QCloseEvent * event )
@@ -156,7 +173,9 @@ void MainWindow::quit()
 
 void MainWindow::mouseOverTile()
 {
-    if (uiPreferences.checkBoxAutoHighlightTiles->isChecked() == false) return;
+    return; // no mouse over tile anymore
+
+    // if (uiPreferences.checkBoxAutoHighlightTiles->isChecked() == false) return;
     Tile* tile = qobject_cast<Tile *>(QObject::sender());
     if (clickState == FIRST_TILE_CLICKED)
     {
@@ -217,7 +236,8 @@ void MainWindow::mouseOverTile()
 
 void MainWindow::mouseOutOfTile()
 {
-    if (uiPreferences.checkBoxAutoHighlightTiles->isChecked() == false) return;
+    return;
+    //  if (uiPreferences.checkBoxAutoHighlightTiles->isChecked() == false) return;
     resetTilesHighlightStatus();
 
 }
@@ -270,6 +290,7 @@ void MainWindow::sceneMouseClicked(double x, double y)
         {
             x2 = tile->tileCoordX;
             y2 = tile->tileCoordY;
+            tile->setTileBrush(brushHighlight);
 
             clickState = NO_TILES_CLICKED;
             possibleRectangleCheck();
@@ -340,12 +361,13 @@ void MainWindow::possibleRectangleCheck()
     if (currentGameDescription == "WordStruck")
     {
         int numExtraLetters = 0;
-
+        bool bonusS = false;
         if (curselBonusTile && curselBonusTile->getTileLetter() != "")
         {
             letters += curselBonusTile->getTileLetter();
             numExtraLetters = curselBonusTile->getTileLetter().length();
 
+            if (curselBonusTile->getTileLetter() == "S") bonusS = true;
         }
         curselBonusTile->setTileLetter("");
 
@@ -365,6 +387,9 @@ void MainWindow::possibleRectangleCheck()
                 {
 
                     int index = j*boardWidth + i;
+                    // todo right here, set a flag on the tile telling it to not be considered in future
+                    // rectangles, then write flashing code in a timer somewhere. so that rectangle
+                    // flashes and disappears.
                     tiles.at(index)->setTileLetter("");
                     tiles.at(index)->setTileBrush(brushSolved);
                     simpleGridRep[i][j] = ' ';
@@ -378,6 +403,9 @@ void MainWindow::possibleRectangleCheck()
             {
                 int effectiveWordLength = wordLength;
 
+                if (bonusS)
+                    if (wordStructure->containsOnlyPlurals(answers))
+                        effectiveWordLength--;  // remove bonus pts for trivially adding an S to make a plural
                 thisScore = scoresByLength[effectiveWordLength];
                 solvedWordsByLength[wordLength]++;
             }
@@ -387,16 +415,13 @@ void MainWindow::possibleRectangleCheck()
 
             numSolvedLetters += (wordLength - numExtraLetters);
 
-            if (wordLength != 2)
-            {
-                showSingleScore(thisScore, x1, x2, y1, y2);
 
-            /*   ui->textEdit->append(QString("+%1 for %2-letter word!").
-                                     arg(thisScore).arg(wordLength));
-*/
+            showSingleScore(thisScore, x1, x2, y1, y2);
 
-                curScore += thisScore;
-            }   /* do not count 2-letter words in score! */
+
+
+            curScore += thisScore;
+
 
 
             if (numSolvedLetters == boardWidth * boardHeight)
@@ -405,9 +430,10 @@ void MainWindow::possibleRectangleCheck()
 
                 int clearBonus = boardWidth * boardHeight * 2;
                 curScore += clearBonus;
-                ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
+                //  ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
                 int timeBonus = timerSecs;
-                ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+                //  ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+                showBonusScore(clearBonus, timeBonus, 1, 1);
                 curScore += timeBonus;
                 timerSecs = 0;
                 gameGoing = false;
@@ -430,9 +456,11 @@ void MainWindow::possibleRectangleCheck()
                 {
                     curselBonusTile->setVisible(false);
                     bonusTileLabel->setVisible(false);
-                    ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
-                                         arg(boardWidth*boardHeight - numSolvedLetters));
 
+                    // todo replaced with gfx
+                    /* ui->textEdit->append(QString("Turned off bonus tiles with %1 tiles left!").
+                                         arg(boardWidth*boardHeight - numSolvedLetters));
+*/
                     bonusTilesAllowed = false;
                 }
             }
@@ -446,7 +474,7 @@ void MainWindow::possibleRectangleCheck()
         }
         else
         {
-            int penalty = uiPreferences.spinBoxWordStruckPenaltySecs->value();
+            int penalty = 1;
             timerSecs -= penalty;
             if (penalty > 0) /*ui->textEdit->append(QString("<font color=red>%1-second penalty!</font>").
                                                   arg(penalty));*/
@@ -490,9 +518,10 @@ void MainWindow::possibleRectangleCheck()
                     // game over!
                     int clearBonus = boardWidth * boardHeight * 2;
                     curScore += clearBonus;
-                    ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
+                    //   ui->textEdit->append(QString("Got +%1 for clearing whole board! Good job!").arg(clearBonus));
                     int timeBonus = timerSecs;
-                    ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+                    //   ui->textEdit->append(QString("Got %1 for time left!").arg(timeBonus));
+                    showBonusScore(clearBonus, timeBonus, 1, 1);
                     curScore += timeBonus;
                     timerSecs = 0;
                     gameGoing = false;
@@ -513,7 +542,7 @@ void MainWindow::possibleRectangleCheck()
         }
         else
         {
-            int penalty = uiPreferences.spinBoxWordDashPenaltySecs->value();
+            int penalty =1;
             timerSecs -= penalty;
             if (penalty > 0) /*ui->textEdit->append(QString("<font color=red>%1-second penalty!</font>").
                                                   arg(penalty));*/
@@ -525,34 +554,24 @@ void MainWindow::possibleRectangleCheck()
 
 void MainWindow::showSingleScore(int score, int x1, int x2, int y1, int y2, bool penalty)
 {
-    if (uiPreferences.checkBoxDisplayScoresInGameWindow->isChecked())
-    {
-        double posX = curTileWidth*(double)(x1 + x2)/2.0;
-        double posY = curTileWidth*(double)(y1+y2)/2.0;
-        thisScoreLabel->setPos(posX, posY);
-        thisScoreLabel->setVisible(true);
 
-        if (penalty)
-            thisScoreLabel->setBrush(QBrush(Qt::red));
-        else
-            thisScoreLabel->setBrush(QBrush(Qt::cyan));
+    double posX = curTileWidth*(double)(x1 + x2)/2.0;
+    double posY = curTileWidth*(double)(y1+y2)/2.0;
+    thisScoreLabel->setPos(posX, posY);
+    thisScoreLabel->setVisible(true);
 
-        if (score > 0)
-            thisScoreLabel->setText(QString("+%1").arg(score));
-        else
-            thisScoreLabel->setText(QString::number(score) + " s.");
-
-        scoreTimer->start(500);
-    }
+    if (penalty)
+        thisScoreLabel->setBrush(QBrush(Qt::red));
     else
-    {
-        if (penalty)
-            ui->textEdit->append(QString::number(score) + " seconds for highlighting incorrect square!");
-        else
-            ui->textEdit->append("+" + QString::number(score) + " points!");
+        thisScoreLabel->setBrush(QBrush(Qt::blue));
 
+    if (score >= 0)
+        thisScoreLabel->setText(QString("+%1").arg(score));
+    else
+        thisScoreLabel->setText(QString::number(score) + " s.");
 
-    }
+    singleScoreTimer->start(500);
+
 
 }
 
@@ -560,6 +579,23 @@ void MainWindow::hideSingleScore()
 {
 
     thisScoreLabel->setVisible(false);
+}
+
+void MainWindow::showBonusScore(int clearBonus, int timeBonus, int x, int y)
+{
+    bonusScoreLabel->setPos(x, y);
+    bonusScoreLabel->setVisible(true);
+
+    bonusScoreLabel->setBrush(QBrush(Qt::green));
+
+    bonusScoreLabel->setText(QString("+%1 Clear Board Bonus\n+%2 Time Bonus").arg(clearBonus).arg(timeBonus));
+    bonusScoreTimer->start(3000);
+}
+
+void MainWindow::hideBonusScore()
+{
+
+    bonusScoreLabel->setVisible(false);
 }
 
 void MainWindow::displayScore(int score)
@@ -614,6 +650,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
 
     if (currentGameDescription == "WordStruck")
     {
+        dashInstructionsLabel->setVisible(false);
         bonusTurnoffTiles = uiPreferences.spinBoxBonusTurnOff->value();
     }
     else if (currentGameDescription == "WordDash")
@@ -765,7 +802,9 @@ void MainWindow::on_pushButtonNewGame_clicked()
     if (currentGameDescription == "WordDash")
     {
         generateFindList();
-        timerSecs = qMax(foundAlphaset.size() * uiPreferences.spinBoxSecondsPerWord->value(), 1);
+        int timePerWord = WordDashSecondsPerWord(boardWidth);
+        qDebug() << "Time per word:" << timePerWord;
+        timerSecs = qMax(foundAlphaset.size() * timePerWord, 1);
 
     }
 
@@ -779,7 +818,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
     gameGoing = true;
     curScore = 0;
     numSolvedLetters = 0;
-    ui->textEdit->append("---------------------------------------------");
+    //ui->textEdit->append("---------------------------------------------");
 
     for (int i = 0; i < 16; i++)
         solvedWordsByLength[i] = 0;
@@ -794,6 +833,14 @@ void MainWindow::on_pushButtonNewGame_clicked()
     scoreLabel->setVisible(true);
 }
 
+int MainWindow::WordDashSecondsPerWord(int size)
+{
+    if (size <= 8) return 6;
+    if (size == 9) return 7;
+    if (size == 10) return 8;
+    if (size > 10) return 9;
+}
+
 void MainWindow::secPassed()
 {
     timerSecs--;
@@ -801,7 +848,8 @@ void MainWindow::secPassed()
     {
         gameTimer.stop();
         gameGoing = false;
-        ui->textEdit->append("<font color=red>Time is up!</font>");
+        // todo replace with gfx
+        //  ui->textEdit->append("<font color=red>Time is up!</font>");
         QString summary = "You scored %1 points. Word breakdown by length:";
         summary = summary.arg(curScore);
         for (int i = 0; i < 16; i++)
@@ -810,7 +858,7 @@ void MainWindow::secPassed()
                 summary += " <font color=green>" + QString::number(i)
                 + "s:</font> " + QString::number(solvedWordsByLength[i]);
         }
-        ui->textEdit->append(summary);
+        // ui->textEdit->append(summary);
     }
     ui->lcdNumber->display(qMax(timerSecs, 0));
 }
@@ -893,7 +941,7 @@ void MainWindow::generateFindList()
         if (!wordStructure->wordStructure.contains(alph))
             foundAlphaset.remove(alph);
     }
-
+    qDebug() << "Found alphaset" << foundAlphaset;
 }
 
 bool MainWindow::populateNextFindList()
@@ -992,7 +1040,8 @@ void MainWindow::generateSingleFindList(int minLength, int maxLength,
 void MainWindow::finishedLoadingWordStructure()
 {
     loadedWordStructure = true;
-    ui->textEdit->append("Loaded word structure! You may begin playing.");
+    ui->statusBar->showMessage("Loaded word structure! You may begin playing.");
+    ui->pushButtonNewGame->setEnabled(true);
 }
 
 void MainWindow::on_actionLoad_board_triggered()
@@ -1014,8 +1063,13 @@ void MainWindow::on_actionSave_board_triggered()
 {
     if (currentGameCode != "")
     {
-        ui->textEdit->append("Use the following code when you click 'Load game':");
-        ui->textEdit->append(currentGameCode);
+
+        QMessageBox::information(this, "Code", "Use the following code when you click 'Load game':<BR>"
+                                 + currentGameCode + "<BR><BR>This code has been copied to the clipboard."
+                                 "<BR>Press Ctrl + V in a new text file if you wish to save it.");
+        QApplication::clipboard()->setText(currentGameCode);
+        //  ui->textEdit->append("Use the following code when you click 'Load game':");
+        // ui->textEdit->append(currentGameCode);
     }
 }
 
@@ -1029,22 +1083,17 @@ void MainWindow::writeSettings()
     QSettings settings("settings.ini", QSettings::IniFormat);
 
     settings.beginGroup("WordDash");
-    settings.setValue("SecondsPerWord", uiPreferences.spinBoxSecondsPerWord->value());
     settings.setValue("MinWordLengthToFind", uiPreferences.spinBoxMinWordLengthToFind->value());
     settings.setValue("MaxWordLengthToFind", uiPreferences.spinBoxMaxWordLengthToFind->value());
-    settings.setValue("BadGuessPenaltySecs", uiPreferences.spinBoxWordDashPenaltySecs->value());
     settings.endGroup();
 
     settings.beginGroup("WordStruck");
     settings.setValue("BonusTileTurnoff", uiPreferences.spinBoxBonusTurnOff->value());
-    settings.setValue("BadGuessPenaltySecs", uiPreferences.spinBoxWordStruckPenaltySecs->value());
 
     settings.endGroup();
 
     settings.beginGroup("GeneralSettings");
     settings.setValue("DefaultGame", currentGameDescription);
-    settings.setValue("HoverHighlightTiles", uiPreferences.checkBoxAutoHighlightTiles->isChecked());
-    settings.setValue("DisplayScoresInGameWindow", uiPreferences.checkBoxDisplayScoresInGameWindow->isChecked());
     settings.endGroup();
 }
 
@@ -1053,22 +1102,16 @@ void MainWindow::readSettings()
     QSettings settings("settings.ini", QSettings::IniFormat);
 
     settings.beginGroup("WordDash");
-    uiPreferences.spinBoxSecondsPerWord->setValue(settings.value("SecondsPerWord", 5).toInt());
     uiPreferences.spinBoxMaxWordLengthToFind->setValue(settings.value("MaxWordLengthToFind", 9).toInt());
     uiPreferences.spinBoxMinWordLengthToFind->setValue(settings.value("MinWordLengthToFind",6).toInt());
-    uiPreferences.spinBoxWordDashPenaltySecs->setValue(settings.value("BadGuessPenaltySecs", 3).toInt());
     settings.endGroup();
 
     settings.beginGroup("WordStruck");
     uiPreferences.spinBoxBonusTurnOff->setValue(settings.value("BonusTileTurnoff", 10).toInt());
-    uiPreferences.spinBoxWordStruckPenaltySecs->setValue(settings.value("BadGuessPenaltySecs", 10).toInt());
     settings.endGroup();
 
     settings.beginGroup("GeneralSettings");
     currentGameDescription = settings.value("DefaultGame", "WordStruck").toString();
-    uiPreferences.checkBoxAutoHighlightTiles->setChecked(settings.value("HoverHighlightTiles", true).toBool());
-    uiPreferences.checkBoxDisplayScoresInGameWindow->setChecked(settings.
-                                                                value("DisplayScoresInGameWindow", true).toBool());
     settings.endGroup();
 
     QString switchStr;
@@ -1104,6 +1147,19 @@ void MainWindow::on_pushButtonSwitchGame_clicked()
         ui->labelCurrentGame->setText(currentGameDescription);
     }
 
+}
+
+void MainWindow::listWidgetItemClicked(QListWidgetItem* it)
+{
+    if (!gameGoing && it->toolTip() == "")
+    {
+        it->setToolTip(wordStructure->getDefinitions(it->text()));
+        /* ui->listWidgetWordList->setCurrentItem(it, QItemSelectionModel::Current);
+
+        QMouseEvent event(QEvent::MouseMove, QPoint(10, 0), Qt::NoButton, 0, 0);
+        QApplication::sendEvent(this, &event);*/
+        // to get the damn tooltip to show
+    }
 }
 
 /***********************/
