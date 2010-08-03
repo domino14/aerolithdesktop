@@ -24,3 +24,4 @@ HEADERS += mainwindow.h \
 FORMS += mainwindow.ui \
     preferences.ui
 RESOURCES += wordgrids.qrc
+OTHER_FILES += changes.txt

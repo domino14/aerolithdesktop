@@ -1,0 +1,11 @@
+Change log.
+
+July 24, 2010:
+- Changed timing to Word Dash , 6 secs for up to 8x8, 7 secs for 9x9, 8 secs for 10x10
+- got rid of "debug" text box at the bottom and replaced with various graphical cues
+- changed penalty for bad find to 1 sec. (fixed)
+- Will do flashing rectangle on solve later on. Aesthetic change not so important right at the moment.
+- Added definitions to tooltips for QListWidget. ONLY GETS POPULATED WHEN CLICKING LIST ITEM. doesn't
+show tooltip properly unless mouse is moved after clicking. need to fix
+- Took away bonus for trivial adding of the letter S as a plural. May not work with stuff like LABS on board then
+adding an S, need to fix.

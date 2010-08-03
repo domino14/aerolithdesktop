@@ -44,7 +44,7 @@ signals:
 };
 
 #define MIN_GRID_SIZE 3
-#define MAX_GRID_SIZE 12
+#define MAX_GRID_SIZE 11
 
 class MainWindow : public QMainWindow
 {
@@ -90,6 +90,7 @@ private:
     QGraphicsSimpleTextItem* dashInstructionsLabel;
 
     QGraphicsSimpleTextItem* thisScoreLabel;
+    QGraphicsSimpleTextItem* bonusScoreLabel;
 
     Tile *bonusTile;
 
@@ -114,7 +115,8 @@ private:
     QList <QString> thisRoundLetters;
 
 
-
+    QWidget* infoPopup;
+    QLabel* infoPopuplabel;
     int numSolvedLetters;
     int lastGridSize;
     int solvedWordsByLength[16];
@@ -140,7 +142,7 @@ private:
     bool populateNextFindList();
     void markInWordList(QString str);
 
-
+    int WordDashSecondsPerWord(int size);
 
     bool shouldLoadNextNewGame;
     QString gameToLoad;
@@ -150,12 +152,14 @@ private:
     double mouseX, mouseY;
     void displayScore(int);
     void showSingleScore(int score, int x1, int x2, int y1, int y2,bool penalty = false);
+    void showBonusScore(int clearBonus, int timeBonus, int x, int y);
     void closeEvent ( QCloseEvent * event );
     void quit();
     void writeSettings();
     void readSettings();
     QString currentGameDescription;
-    QTimer* scoreTimer;
+    QTimer* singleScoreTimer;
+    QTimer* bonusScoreTimer;
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
@@ -177,6 +181,9 @@ private slots:
     void on_pushButtonSwitchGame_clicked();
 
     void hideSingleScore();
+    void hideBonusScore();
+
+    void listWidgetItemClicked(QListWidgetItem*);
 
 };
 
