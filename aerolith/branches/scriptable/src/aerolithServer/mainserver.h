@@ -33,7 +33,7 @@ class MainServer : public QTcpServer
     Q_OBJECT
 
 public: 
-    MainServer(QString, DatabaseHandler*);
+    MainServer(QString);
 
 
 private slots:
@@ -50,9 +50,7 @@ private:
     void incomingConnection(int socketDescriptor); // inherited from QTcpServer
     QSqlDatabase userDb;
     QString aerolithVersion;
-    quint32 numOpenQuestions;
 
-    DatabaseHandler* dbHandler;
     enum packetHeaderStatesEnum
     {
         S_USERLOGGEDIN, S_ERROR, S_USERLOGGEDOUT, S_SERVERMESSAGE
@@ -92,6 +90,11 @@ private:
     void listInfoRequest(ClientSocket*);
     void listDeleteRequest(ClientSocket* socket);
     void suggestionOrBugReport(ClientSocket* socket);
+signals:
+    void readyToConnect();
+public slots:
+    void init();
+    void deactivate();
 };
 
 #endif

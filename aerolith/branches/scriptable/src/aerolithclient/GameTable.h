@@ -42,7 +42,7 @@ public:
     void setLexicon(QString name)
     {
         lexiconName = name;
-        wordDb = DatabaseHandler::lexiconMap.value(lexiconName).db_client;
+
     }
 
     void setTableCapacity(quint8 tc)
@@ -70,7 +70,6 @@ protected:
     quint8 tableCapacity;
     quint16 tablenum;
     avatarLabel* myAvatarLabel;
-    QSqlDatabase wordDb;
     DatabaseHandler* dbHandler;
     QString myUsername;
 

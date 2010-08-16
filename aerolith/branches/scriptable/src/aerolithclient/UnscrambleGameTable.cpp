@@ -17,11 +17,10 @@
 #include "UnscrambleGameTable.h"
 #include "commonDefs.h"
 #include <QtOpenGL>
-UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, DatabaseHandler *dbHandler) :
+UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
         GameTable(parent, f, 8)
 {
     currentWordLength = 0;
-    this->dbHandler = dbHandler;
     pb = new PacketBuilder(this);
     //this->setStyle(new QWindowsStyle);
     tableUi.setupUi(this);
@@ -700,6 +699,8 @@ void UnscrambleGameTable::clearSolutionsDialog()
 
 void UnscrambleGameTable::populateSolutionsTable()
 {
+    tableUi.pushButtonSolutions->setEnabled(true);
+
     QBrush missedColorBrush;
     missedColorBrush.setColor(Qt::red);
     int numTotalSols = 0, numWrong = 0;
@@ -1070,7 +1071,11 @@ void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
                     }
                     addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
                 }
+
                 clearSolutionsDialog();
+                solutionsDialog->hide();
+                tableUi.pushButtonSolutions->setEnabled(false);
+                emit getSolutionsData();
 
             }
             break;

@@ -22,8 +22,8 @@
 
 
 
-MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler) :
-        aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
+MainWindow::MainWindow(QString aerolithVersion) :
+        aerolithVersion(aerolithVersion)
 {
 
 
@@ -136,11 +136,13 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     connect(uiDatabase.pushButtonCreateDatabases, SIGNAL(clicked()), SLOT(createDatabasesOKClicked()));
 
-    connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
-    connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
-    connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
-    connect(dbHandler, SIGNAL(enableClose(bool)), SLOT(dbDialogEnableClose(bool)));
-    connect(dbHandler, SIGNAL(createdDatabase(QString)), SLOT(databaseCreated(QString)));
+//    connect(dbHandler, SIGNAL(setProgressMessage(QString)), uiDatabase.labelProgress, SLOT(setText(QString)));
+//    connect(dbHandler, SIGNAL(setProgressValue(int)), uiDatabase.progressBar, SLOT(setValue(int)));
+//    connect(dbHandler, SIGNAL(setProgressRange(int, int)), uiDatabase.progressBar, SLOT(setRange(int, int)));
+
+
+
+
 
     //   connect(uiTable.pushButtonUseOwnList, SIGNAL(clicked()), SLOT(uploadOwnList()));
 
@@ -148,16 +150,12 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
     wordFilter = new WordFilter(this, Qt::Window);
     connect(uiMainWindow.actionWord_Filter, SIGNAL(triggered()), wordFilter, SLOT(showWidget()));
 
-    wordFilter->setDbHandler(dbHandler);
-
-
-
 
     ///////
     // set game icons
     unscrambleGameIcon.addFile(":images/unscrambleGameSmall.png");
 
-    existingLocalDBList = dbHandler->checkForDatabases();
+    existingLocalDBList = DatabaseHandler::getAvailableDatabases();
 
     if (existingLocalDBList.size() == 0)
     {
@@ -178,7 +176,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
         }
         uiDatabase.pushButtonRebuildDatabase->setMenu(rebuildDbMenu);
         connect(rebuildDbMenu, SIGNAL(triggered(QAction*)), SLOT(rebuildDatabaseAction(QAction*)));
-        dbHandler->connectToDatabases(true, existingLocalDBList);
+
     }
 
     uiCreateScrambleTable.tableWidgetMyLists->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -229,7 +227,7 @@ MainWindow::MainWindow(QString aerolithVersion, DatabaseHandler* databaseHandler
 
     /* TODO this idea of a single gameboard widget is temporary; fix soon */
 
-    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window, dbHandler);
+    gameBoardWidget = new UnscrambleGameTable(0, Qt::Window);
     gameBoardWidget->setWindowTitle("Table");
     gameBoardWidget->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
     gameBoardWidget->setAttribute(Qt::WA_QuitOnClose, false);
@@ -298,8 +296,7 @@ void MainWindow::dbDialogEnableClose(bool e)
     if (e)
     {
         uiMainWindow.chatText->append("<font color=red>Lexicon databases were successfully created!</font>");
-        QStringList dbList = dbHandler->checkForDatabases();
-        dbHandler->connectToDatabases(true, dbList);
+        emit reconnectToDatabases();
         uiLogin.pushButtonStartOwnServer->setEnabled(true);
     }
 }
@@ -313,7 +310,7 @@ void MainWindow::rebuildDatabaseAction(QAction* action)
 {
     if (QMessageBox::question(this, "Rebuild?", "Would you really like to rebuild the database '" + action->text() + "'?",
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-        dbHandler->createLexiconDatabases(QStringList(action->text()));
+        emit createLexiconDatabases(QStringList(action->text()));
 }
 
 void MainWindow::setCheckbox(QString lexiconName)
@@ -355,7 +352,7 @@ void MainWindow::createDatabasesOKClicked()
         databasesToCreate << "FISE";
     if (uiDatabase.checkBoxVolost->isEnabled() && uiDatabase.checkBoxVolost->isChecked())
         databasesToCreate << "Volost";
-    dbHandler->createLexiconDatabases(databasesToCreate);
+    emit createLexiconDatabases(databasesToCreate);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -582,17 +579,17 @@ void MainWindow::createUnscrambleGameTable()
         {
             out << (quint8)LIST_TYPE_ALL_WORD_LENGTH;
 
-            quint8 wl;
+            quint8 wordLength;
             quint32 low, high;
 
-            wl = uiCreateScrambleTable.spinBoxWL->value();
+            wordLength = uiCreateScrambleTable.spinBoxWL->value();
 
-            out << wl;   // special values mean the entire range.
+            out << wordLength;   // special values mean the entire range.
 
             low = 1;    // one
-            high = dbHandler->getNumWordsByLength(currentLexicon, wl);
+            high = DatabaseHandler::getNumWordsByLength(currentLexicon, wordLength);
 
-            gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wl).arg(low).arg(high));
+            gameBoardWidget->setUnmodifiedListName(QString("%1s -- %2 to %3").arg(wordLength).arg(low).arg(high));
 
         }
     }
@@ -937,7 +934,7 @@ void MainWindow::viewProfile(QString username)
 
 void MainWindow::spinBoxWordLengthChange(int length)
 {
-    int max = dbHandler->getNumWordsByLength(currentLexicon, length);
+    int max = DatabaseHandler::getNumWordsByLength(currentLexicon, length);
     if (max != 0)
         uiCreateScrambleTable.spinBoxProb2->setMaximum(max);
 }
@@ -947,7 +944,7 @@ void MainWindow::startOwnServer()
     // start a server thread
     if (uiLogin.pushButtonStartOwnServer->text() == "Start Own Server")
     {
-        emit startServerThread();
+        emit startServer();
         uiLogin.loginPushButton->setEnabled(false);
         uiLogin.pushButtonStartOwnServer->setEnabled(false);
         uiLogin.connectStatusLabel->setText("Please wait a few seconds while Aerolith Server loads.");
@@ -955,12 +952,12 @@ void MainWindow::startOwnServer()
     else
     {
 
-        emit stopServerThread();
+        emit stopServer();
     }
 
 }
 
-void MainWindow::serverThreadHasStarted()
+void MainWindow::serverHasStarted()
 {
     uiLogin.pushButtonStartOwnServer->setEnabled(true);
     uiLogin.loginPushButton->setEnabled(true);
@@ -970,7 +967,7 @@ void MainWindow::serverThreadHasStarted()
     uiLogin.portLE->setText(QString::number(DEFAULT_PORT));
 }
 
-void MainWindow::serverThreadHasFinished()
+void MainWindow::serverHasFinished()
 {
 
     uiLogin.connectStatusLabel->setText("Local server has stopped!");
@@ -1007,15 +1004,12 @@ void MainWindow::on_pushButtonImportList_clicked()
 
     QList <quint32> probIndices;
 
-    bool success = dbHandler->getProbIndices(words, currentLexicon, probIndices);
+    emit probIndicesRequest(words, currentLexicon, listName);
+}
 
-    if (!success)
-    {
-        QMessageBox::warning(this, "Error", "You must first create a database for this lexicon!");
-        return;
-    }
-
-    if (probIndices.size() > REMOTE_LISTSIZE_LIMIT)
+void MainWindow::gotProbIndices(QList <quint32> indices, QString lexicon, QString listName)
+{
+    if (indices.size() > REMOTE_LISTSIZE_LIMIT)
     {
         QMessageBox::warning(this, "Error", "This list contains more than " + QString::number(REMOTE_LISTSIZE_LIMIT)
                              + " alphagrams. If you would like to upload "
@@ -1024,7 +1018,7 @@ void MainWindow::on_pushButtonImportList_clicked()
 
     }
 
-    serverCommunicator->uploadWordList(currentLexicon, probIndices, listName);
+    serverCommunicator->uploadWordList(lexicon, indices, listName);
 }
 
 void MainWindow::repopulateMyListsTable()
@@ -1664,6 +1658,20 @@ void MainWindow::badMagicNumber()
 #endif
 
 }
+
+void MainWindow::setProgressMessage(QString msg)
+{
+    uiDatabase.labelProgress->setText(msg);
+}
+void MainWindow::setProgressValue(int v)
+{
+    uiDatabase.progressBar->setValue(v);
+}
+void MainWindow::setProgressRange(int l, int h)
+{
+    uiDatabase.progressBar->setRange(l, h);
+}
+
 
 /////////////////////////////////////////////////////
 

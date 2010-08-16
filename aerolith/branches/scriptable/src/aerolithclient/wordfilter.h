@@ -11,11 +11,9 @@ class WordFilter : public QWidget
     Q_OBJECT
 public:
     WordFilter(QWidget* parent, Qt::WindowFlags f);
-    void setDbHandler(DatabaseHandler* dbHandler);
     void setCurrentLexicon(QString);
 private:
     Ui::wordFilterForm filterUi;
-    DatabaseHandler* dbHandler;
     QString currentLexicon;
     QStringList currentWordList;
     QStringList originalWordList;

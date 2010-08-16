@@ -24,14 +24,13 @@ class ServerThread : public QThread
 {
 Q_OBJECT
  public:
-  ServerThread(QString version, DatabaseHandler* databaseHandler);
-
+  ServerThread(QString version);
+  MainServer* mainServer;
  protected:
   void run();
   
  private:
-  MainServer* mainServer;
-  DatabaseHandler* dbHandler;
+
   volatile bool shouldQuitThread;
   QString version;
   public slots:
