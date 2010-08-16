@@ -36,7 +36,7 @@ Q_OBJECT
   virtual ~TableGame();
   
 
-  virtual QByteArray initialize(DatabaseHandler*) = 0;
+  virtual QByteArray initialize() = 0;
   virtual void gameStartRequest(ClientSocket*) = 0;
   virtual void gameEndRequest(ClientSocket*) = 0;
   virtual void playerJoined(ClientSocket*) = 0;

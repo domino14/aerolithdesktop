@@ -23,8 +23,7 @@
 extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
-QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
-                             DatabaseHandler* dbHandler)
+QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber)
 {
 
 
@@ -50,7 +49,7 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber,
             tableGame = new UnscrambleGame(this);
 
             tableInformationArray =
-                    tableGame->initialize(dbHandler);
+                    tableGame->initialize();
 
 
         }

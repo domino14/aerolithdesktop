@@ -64,6 +64,9 @@ void setupApplicationParams()
 
 
 }
+void dbClientConnects(DatabaseHandler* dbHandler, MainWindow* mainWin);
+void dbServerConnects(DatabaseHandler* dbHandler, MainServer* mainServer);
+
 
 int main(int argc, char *argv[])
 {
@@ -115,7 +118,9 @@ int main(int argc, char *argv[])
 
             DatabaseHandler databaseHandler;
             DatabaseHandler::createLexiconMap();
-            MainServer mainServer(aerolithVersion, &databaseHandler);
+            databaseHandler.connectToAvailableDatabases();
+
+            MainServer mainServer(aerolithVersion);
             mainServer.listen(QHostAddress::Any, port);
             qDebug() << "listening on port " << port;
             return app.exec();
@@ -132,19 +137,42 @@ int main(int argc, char *argv[])
     }
     else delete log;
 
-    DatabaseHandler databaseHandlerClient;
-    DatabaseHandler databaseHandlerServer;
-
+    DatabaseHandler databaseHandler;
     DatabaseHandler::createLexiconMap();
+    databaseHandler.connectToAvailableDatabases();
 
-    ServerThread serverThread(aerolithVersion, &databaseHandlerServer);
-    MainWindow mainWin(aerolithVersion, &databaseHandlerClient);
+    MainServer mainServer(aerolithVersion);
+    MainWindow mainWin(aerolithVersion);
 
 
-    QObject::connect(&mainWin, SIGNAL(startServerThread()), &serverThread, SLOT(startThread()));
-    QObject::connect(&mainWin, SIGNAL(stopServerThread()), &serverThread, SLOT(stopThread()));
-    QObject::connect(&serverThread, SIGNAL(readyToConnect()), &mainWin, SLOT(serverThreadHasStarted()));
-    QObject::connect(&serverThread, SIGNAL(finished()), &mainWin, SLOT(serverThreadHasFinished()));
+    QObject::connect(&mainWin, SIGNAL(startServer()), &mainServer, SLOT(init()));
+    QObject::connect(&mainWin, SIGNAL(stopServer()), &mainServer, SLOT(deactivate()));
+    QObject::connect(&mainServer, SIGNAL(readyToConnect()), &mainWin, SLOT(serverHasStarted()));
+    QObject::connect(&mainServer, SIGNAL(finished()), &mainWin, SLOT(serverHasFinished()));
+
+    /* client-database connects*/
+    QObject::connect(&mainWin, SIGNAL(probIndicesRequest(QStringList, QString, QString)),
+        &databaseHandler, SLOT(enqueueProbIndicesRequest(QStringList, QString, QString)));
+    QObject::connect(&databaseHandler, SIGNAL(returnProbIndices(QList<quint32>,QString, QString)),
+                     &mainWin, SLOT(gotProbIndices(QList<quint32>,QString,QString)));
+
+    QObject::connect(&databaseHandler, SIGNAL(enableClose(bool)),
+                     &mainWin, SLOT(dbDialogEnableClose(bool)));
+    QObject::connect(&databaseHandler, SIGNAL(createdDatabase(QString)),
+                     &mainWin, SLOT(databaseCreated(QString)));
+    QObject::connect(&databaseHandler, SIGNAL(setProgressMessage(QString)),
+                     &mainWin, SLOT(setProgressMessage(QString)));
+    QObject::connect(&databaseHandler, SIGNAL(setProgressValue(int)),
+                     &mainWin, SLOT(setProgressValue(int)));
+    QObject::connect(&databaseHandler, SIGNAL(setProgressRange(int,int)),
+                     &mainWin, SLOT(setProgressRange(int, int)));
+
+    QObject::connect(&mainWin, SIGNAL(reconnectToDatabases()),
+                     &databaseHandler, SLOT(connectToAvailableDatabases()));
+    QObject::connect(&mainWin, SIGNAL(createLexiconDatabases(QStringList)),
+                     &databaseHandler, SLOT(enqueueCreateLexiconDatabases(QStringList)));
+
+
     mainWin.show();
     return app.exec();
 

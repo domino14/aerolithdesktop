@@ -26,6 +26,22 @@ const int remoteNumQsQuota = 500000;
 
 QMap <QString, LexiconInfo> DatabaseHandler::lexiconMap;
 
+
+DatabaseHandler::DatabaseHandler()
+{
+    shouldQuitThread = false;
+    start();
+}
+
+DatabaseHandler::~DatabaseHandler()
+{
+    shouldQuitThread = true;
+    QTime time;
+    time.start();
+    while (isRunning() || time.elapsed() < 5000) ;
+}
+
+
 bool probLessThan(const Alph &a1, const Alph &a2)
 {
     return a1.combinations > a2.combinations;
@@ -54,7 +70,7 @@ void DatabaseHandler::createLexiconMap()
 
 }
 
-QStringList DatabaseHandler::checkForDatabases()
+QStringList DatabaseHandler::findAvailableDatabases()
 {
     QStringList dbList;
     QDir dir = QDir::home();
@@ -81,13 +97,21 @@ QStringList DatabaseHandler::checkForDatabases()
 
     }
     availableDatabases = dbList;
+    QSqlDatabase::removeDatabase("lexicaDB");
     return dbList;
 
 
 }
 
-void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
+QStringList DatabaseHandler::getAvailableDatabases()
 {
+    QMutexLocker locker(&dbListProtector);
+    return availableDatabases;
+}
+
+void DatabaseHandler::connectToAvailableDatabases()
+{
+    QStringList dbList = DatabaseHandler::findAvailableDatabases();
     QDir dir = QDir::home();
     if (!dir.exists(".aerolith"))
         return;
@@ -102,23 +126,14 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
         if (lexiconMap.contains(key))
         {
             LexiconInfo* lexInfo = &(lexiconMap[key]);
-           // qDebug() << "Name:" << lexInfo->lexiconName;
+            // qDebug() << "Name:" << lexInfo->lexiconName;
             QSqlDatabase* db = NULL;
-            if (clientCall)
-            {
 
-                lexInfo->db_client =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_client");
-                lexInfo->db_client.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
-                lexInfo->db_client.open();
-                db = &(lexInfo->db_client);
-            }
-            else
-            {
-                lexInfo->db_server =  QSqlDatabase::addDatabase("QSQLITE", key + "DB_server");
-                lexInfo->db_server.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
-                lexInfo->db_server.open();
-                db = &(lexInfo->db_server);
-            }
+            lexInfo->dbConn =  QSqlDatabase::addDatabase("QSQLITE", key + "DBconn");
+            lexInfo->dbConn.setDatabaseName(dir.absolutePath() + "/" + key + ".db");
+            lexInfo->dbConn.open();
+            db = &(lexInfo->dbConn);
+
             // make sure to populate word length in lexInfo!
 
             QSqlQuery query(*db);
@@ -131,7 +146,6 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
                 while (query.next())
                 {
                     lexInfo->alphagramsPerLength[i] = query.value(0).toInt();
-                //    qDebug() << "lengths " << i << lexInfo->alphagramsPerLength[i] << clientCall;
                 }
             }
             query.exec("END TRANSACTION");
@@ -141,62 +155,42 @@ void DatabaseHandler::connectToDatabases(bool clientCall, QStringList dbList)
     }
 
 
+    // todo,future move this to a different static function only called by the server
 
-    if (!clientCall)
-    {
-        dir = QDir::home();
-        if (!dir.exists(".aerolith"))
-            dir.mkdir(".aerolith");
-        dir.cd(".aerolith");
-        if (!dir.exists("userlists"))
-            dir.mkdir("userlists");
-        dir.cd("userlists");
-        userlistsDb = QSqlDatabase::addDatabase("QSQLITE", "userlistsDB");
-        userlistsDb.setDatabaseName(dir.absolutePath() + "/userlists.db");
-        userlistsDb.open();
+    dir = QDir::home();
+    if (!dir.exists(".aerolith"))
+        dir.mkdir(".aerolith");
+    dir.cd(".aerolith");
+    if (!dir.exists("userlists"))
+        dir.mkdir("userlists");
+    dir.cd("userlists");
+    userlistsDb = QSqlDatabase::addDatabase("QSQLITE", "userlistsDB");
+    userlistsDb.setDatabaseName(dir.absolutePath() + "/userlists.db");
+    userlistsDb.open();
 
-        qDebug() << "Creating userlistinfo table (if not exists)";
-        QSqlQuery userListsQuery(userlistsDb);
-        userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16) NOT NULL, "
-                            "listName VARCHAR(64) NOT NULL, "
-                            "lexiconName VARCHAR(15) NOT NULL, "
-                            "lastdateSaved VARCHAR(64), alphasInList INTEGER, "
-                            "path VARCHAR(64) NOT NULL, "
-                            "PRIMARY KEY(listName, lexiconName, username) )");
+    qDebug() << "Creating userlistinfo table (if not exists)";
+    QSqlQuery userListsQuery(userlistsDb);
+    userListsQuery.exec("CREATE TABLE IF NOT EXISTS userlistInfo(username VARCHAR(16) NOT NULL, "
+                        "listName VARCHAR(64) NOT NULL, "
+                        "lexiconName VARCHAR(15) NOT NULL, "
+                        "lastdateSaved VARCHAR(64), alphasInList INTEGER, "
+                        "path VARCHAR(64) NOT NULL, "
+                        "PRIMARY KEY(listName, lexiconName, username) )");
 
-        userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlistInfo(username, listName, lexiconName)");
+    userListsQuery.exec("CREATE UNIQUE INDEX listnameIndex ON userlistInfo(username, listName, lexiconName)");
 
-        userListsQuery.exec("CREATE TABLE IF NOT EXISTS numQsByUsername(username VARCHAR(16) NOT NULL, "
-                            "numQs INTEGER)");
+    userListsQuery.exec("CREATE TABLE IF NOT EXISTS numQsByUsername(username VARCHAR(16) NOT NULL, "
+                        "numQs INTEGER)");
 
-        // the list itself is saved in a file:
-        // ~/.aerolith/userlists/username/lexiconName/path
+    // the list itself is saved in a file:
+    // ~/.aerolith/userlists/username/lexiconName/path
 
-
-
-    }
 }
 
 
-
-void DatabaseHandler::createLexiconDatabases(QStringList lexiconNames)
+void DatabaseHandler::createLexiconDatabases(QStringList dbsToCreate)
 {
-    if (lexiconNames.size() == 0) return;
-
-    qDebug() << "In here";
-
-    if (!isRunning())
-    {
-        setProgressMessage("Creating lexicon databases...");
-        dbsToCreate = lexiconNames;
-        start();
-
-
-    }
-}
-
-void DatabaseHandler::run()
-{
+    setProgressMessage("Creating lexicon databases...");
     emit enableClose(false);
     // TODO above signal is misnamed
 
@@ -698,16 +692,17 @@ int DatabaseHandler::getNumWordsByLength(QString lexiconName, int length)
     else return 0;
 }
 
-bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QList<quint32>& probIndices)
+void DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QString listName)
 {
-// client always calls this function as it is used to upload lists to server
-    if (!lexiconMap.value(lexiconName).db_client.isOpen()) return false;
+    QList <quint32> probIndices;
+    if (!lexiconMap.value(lexiconName).dbConn.isOpen()) return;
 
     LessThans lessThan;
     if (lexiconName == "FISE") lessThan = SPANISH_LESS_THAN;
     else lessThan = ENGLISH_LESS_THAN;
 
-    QSqlQuery query(lexiconMap.value(lexiconName).db_client);
+    QSqlQuery query(lexiconMap.value(lexiconName).dbConn);
+    query.exec("BEGIN TRANSACTION");
     query.prepare("SELECT probability from alphagrams where alphagram = ?");
     QSet <QString> alphaset;
     foreach (QString word, words)
@@ -725,8 +720,89 @@ bool DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QLi
             alphaset.insert(alpha);
         }
     }
-    return true;
+    query.exec("END TRANSACTION");
+    emit returnProbIndices(probIndices, lexiconName, listName);
 }
+
+/********************************************************************************/
+/* QUEUED commands
+*
+*
+*
+*/
+
+void DatabaseHandler::enqueueCreateLexiconDatabases(QStringList lexiconNames)
+{
+    if (lexiconNames.size() == 0) return;
+    QMutexLocker locker(&queueProtector);
+
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)CREATE_LEXICON_DATABASES;
+    o << lexiconNames;
+
+    commandQueue.append(command);
+}
+
+
+void DatabaseHandler::enqueueProbIndicesRequest(QStringList words, QString lexicon, QString listName)
+{
+    QMutexLocker locker(&queueProtector);
+
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)REQUEST_PROB_INDICES_FOR_UPLOADED_WORDLIST;
+    o << words << lexicon << listName;
+
+    commandQueue.append(command);
+}
+
+
+void DatabaseHandler::run()
+{
+    while (!shouldQuitThread)
+    {
+        if (commandQueue.size() > 0)
+        {
+            QByteArray cmd = commandQueue.dequeue();
+            processCommand(cmd);
+        }
+
+        msleep(2);
+
+    }
+
+}
+
+void DatabaseHandler::processCommand(QByteArray cmd)
+{
+    QDataStream i(cmd);
+
+    quint8 header;
+    i >> header;
+    switch (header)
+    {
+        case CREATE_LEXICON_DATABASES:
+        {
+            QStringList dbsToCreate;
+            i >> dbsToCreate;
+            createLexiconDatabases(dbsToCreate);
+
+        }
+        break;
+    case REQUEST_PROB_INDICES_FOR_UPLOADED_WORDLIST:
+        {
+            QStringList words;
+            QString lexicon, listName;
+            getProbIndices(words, lexicon, listName);
+        }
+    }
+
+
+}
+
+
+/***********************************************************************/
 
 QString DatabaseHandler::getSavedListRelativePath(QString lexiconName, QString listName, QString username)
 {

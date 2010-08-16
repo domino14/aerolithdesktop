@@ -68,7 +68,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QString, DatabaseHandler*);
+    MainWindow(QString);
 private:
     QStringList peopleLoggedIn;
     QString aerolithVersion;
@@ -80,7 +80,6 @@ private:
 
     QString currentUsername;
     quint16 currentTablenum;
-    DatabaseHandler *dbHandler;
 
     ServerCommunicator *serverCommunicator;
 
@@ -165,9 +164,12 @@ private:
     bool unscramblegameUserlistData_clearHash;  // a hackily-named variable that has a simple function (search in code)
 
 signals:
-    void startServerThread();
-    void stopServerThread();
+    void startServer();
+    void stopServer();
 
+    void probIndicesRequest(QStringList, QString, QString);
+    void reconnectToDatabases();
+    void createLexiconDatabases(QStringList);
 public slots:
 
     void submitChatLEContents();
@@ -195,11 +197,20 @@ public slots:
     void aerolithAcknowledgementsDialog();
     void showAboutQt();
 
-    void serverThreadHasStarted();
-    void serverThreadHasFinished();
+    void serverHasStarted();
+    void serverHasFinished();
     void databaseCreated(QString);
+    void dbDialogEnableClose(bool);
+
     void setCheckbox(QString);
     void repopulateMyListsTable();
+
+    // from database
+    void gotProbIndices(QList <quint32> indices, QString lexicon, QString listName);
+
+    void setProgressMessage(QString);
+    void setProgressValue(int);
+    void setProgressRange(int, int);
  private slots:
     void sentLogin();
 
@@ -208,7 +219,7 @@ public slots:
     void createUnscrambleGameTable();
     void createBonusGameTable();
     void lexiconComboBoxIndexChanged(QString);
-    void dbDialogEnableClose(bool);
+
     void spinBoxWordLengthChange(int);
     void standUp();
     void trySitting(quint8 seatNumber);

@@ -28,7 +28,6 @@
 #include "chip.h"
 #include "wordRectangle.h"
 #include "GameTable.h"
-#include "databasehandler.h"
 #include "commonDefs.h"
 
 
@@ -37,7 +36,7 @@ class UnscrambleGameTable : public GameTable
     Q_OBJECT
 
 public:
-    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f, DatabaseHandler *dbHandler);
+    UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f);
     ~UnscrambleGameTable();
     void resetTable(quint16, QString, QString);
     void leaveTable();
@@ -143,7 +142,7 @@ signals:
 
     void bootFromTable(QString);
 
-
+    void getSolutionsData();
 
         private slots:
     void enteredGuess();

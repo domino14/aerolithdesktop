@@ -88,7 +88,7 @@ QString Utilities::hexPrintable(const QByteArray x)
 {
     QString outStr;
     QTextStream out(&outStr);
-    for (unsigned int i = 0; i < x.size(); i++)
+    for (int i = 0; i < x.size(); i++)
     {
         out << QString::number((quint8)x.at(i), 16).toUpper().rightJustified(2, '0', true) + " ";
     }

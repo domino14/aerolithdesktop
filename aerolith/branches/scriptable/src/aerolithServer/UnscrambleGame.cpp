@@ -35,9 +35,8 @@ UnscrambleGame::UnscrambleGame(Table* table) : TableGame(table)
     qDebug() << "UnscrambleGame constructor";
 }
 
-QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
+QByteArray UnscrambleGame::initialize()
 {
-    this->dbHandler = dbHandler;
     autosaveOnQuit = false;
     wroteToMissedFileThisRound = false;
 
@@ -86,7 +85,7 @@ QByteArray UnscrambleGame::initialize(DatabaseHandler* dbHandler)
 
     table->host->connData.in >> lexiconName >> cycleState >> tableTimerValMin;
 
-    if (dbHandler->availableDatabases.contains(lexiconName))
+    if (DatabaseHandler::getAvailableDatabases().contains(lexiconName))
     {
         wordDbConName = lexiconName + "DB_server";  // this is how it is in databaseHandler. todo perhaps should make this a variable.
 
@@ -170,7 +169,7 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
             else
             {
 
-
+                // todo replace with an emit
                 if (dbHandler->savedListExists(lexiconName, wordList, client->connData.userName))
                 {
                     table->sendTableMessage("You already have a saved list named: " + wordList + ". If you "
@@ -267,7 +266,7 @@ void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint
     {
         if (space < numRacksThisRound && space < unscrambleGameQuestions.size())
         {
-            qDebug() << "corrans" << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
+            //qDebug() << "corrans" << unscrambleGameQuestions[space].numNotYetSolved << unscrambleGameQuestions[space].notYetSolved;
             if (unscrambleGameQuestions[space].notYetSolved.contains(specificAnswer))
             {
                 unscrambleGameQuestions[space].notYetSolved.remove(specificAnswer);
@@ -980,7 +979,7 @@ void UnscrambleGame::saveProgress(ClientSocket* socket)
     fixHeaderLength();
     socket->write(block);       // to get it to resize columns
 
-    writeListSpaceUsage(socket, dbHandler);
+    sendListSpaceUsage(socket, dbHandler);
 }
 
 /*************** static and utility functions ****************/
@@ -1100,9 +1099,10 @@ void UnscrambleGame::generateDailyChallenges(DatabaseHandler* dbHandler)
 }
 
 
-void UnscrambleGame::writeListSpaceUsage(ClientSocket* socket, DatabaseHandler* dbHandler)
+void UnscrambleGame::sendListSpaceUsage(ClientSocket* socket)
 {
     quint32 usage, max;
+    //todo replace with an emit
     dbHandler->getListSpaceUsage(socket->connData.userName, usage, max);
 
     writeHeaderData();

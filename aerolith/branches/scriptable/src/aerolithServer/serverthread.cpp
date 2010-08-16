@@ -17,12 +17,11 @@
 #include "serverthread.h"
 
 
-ServerThread::ServerThread(QString version, DatabaseHandler* databaseHandler)
+ServerThread::ServerThread(QString version)
 {
   //  shouldQuitThread = false;
   this->version = version;
-  this->dbHandler = databaseHandler;
-  
+  mainServer = new MainServer(version);
 }
 
 void ServerThread::startThread()
@@ -44,7 +43,7 @@ void ServerThread::stopThread()
 
 void ServerThread::run()
 {
-  mainServer = new MainServer(version, dbHandler);
+
   
   shouldQuitThread = false;
   mainServer->listen(QHostAddress::Any, DEFAULT_PORT);
@@ -52,5 +51,5 @@ void ServerThread::run()
   exec(); // enter event loop
 	
   mainServer->close();
-  mainServer->deleteLater();
+
 }

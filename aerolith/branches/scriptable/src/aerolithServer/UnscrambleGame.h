@@ -62,7 +62,7 @@ class UnscrambleGame : public TableGame
 
 public:
 
-    QByteArray initialize(DatabaseHandler* dbHandler);
+    QByteArray initialize();
     UnscrambleGame(Table*);
     ~UnscrambleGame();
 
@@ -79,10 +79,10 @@ public:
     void endGame();
     void startGame();
 
-    static void generateDailyChallenges(DatabaseHandler* dbHandler);
-    static void loadWordLists(DatabaseHandler* dbHandler);
+    static void generateDailyChallenges();
+    static void loadWordLists();
     static void sendLists(ClientSocket*);
-    static void writeListSpaceUsage(ClientSocket* socket, DatabaseHandler* dbHandler);
+    static void sendListSpaceUsage(ClientSocket* socket);
     static QHash <QString, challengeInfo> challenges;
 
     static bool midnightSwitchoverToggle;
@@ -103,7 +103,7 @@ private:
  //   void sendUserCurrentAlphagrams(ClientSocket*);
     void sendUserCurrentQuestions(ClientSocket*);
     QString lexiconName;
-    DatabaseHandler* dbHandler;
+
 
 
     struct UnscrambleGameQuestionData

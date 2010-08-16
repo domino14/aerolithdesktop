@@ -15,9 +15,11 @@ void WordFilter::showWidget()
     if (lexiconChanged)
     {
         currentWordList.clear();
-        if (DatabaseHandler::lexiconMap.value(currentLexicon).db_client.isOpen())
+        // todo change how these work. should submit a job to the DatabaseHandler through signals/slots
+
+        if (DatabaseHandler::lexiconMap.value(currentLexicon).dbConn.isOpen())
         {
-            QSqlQuery query(DatabaseHandler::lexiconMap.value(currentLexicon).db_client);
+            QSqlQuery query(DatabaseHandler::lexiconMap.value(currentLexicon).dbConn);
             query.exec("BEGIN TRANSACTION");
             query.exec("SELECT word, front_hooks, back_hooks from words");
             while (query.next())
@@ -47,12 +49,6 @@ void WordFilter::displayCurrentList()
         filterUi.listWidgetWords->addItem(QString("  And %1 more...").arg(currentWordList.size()-1000));
 
     filterUi.labelWordInfo->setText(QString("List has %1 words").arg(currentWordList.size()));
-}
-
-void WordFilter::setDbHandler(DatabaseHandler* dbHandler)
-{
-    this->dbHandler = dbHandler;
-    lexiconChanged = true;
 }
 
 void WordFilter::setCurrentLexicon(QString cl)

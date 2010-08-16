@@ -43,43 +43,15 @@ const quint32 userDailyByteLimit = 2000000;
 QFile bandwidthLogFile("bandwidthLogs.txt");
 QTextStream bandwidthOut(&bandwidthLogFile);
 
-MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler) :
-        aerolithVersion(aerolithVersion), dbHandler(databaseHandler)
+MainServer::MainServer(QString aerolithVersion) :
+        aerolithVersion(aerolithVersion)
 {
     qDebug("mainserver constructor");
-
-
-    bandwidthLogFile.open(QIODevice::WriteOnly | QIODevice::Text);
-
-
-
-
-    // connect to existing databases
-
-    QStringList dbList = dbHandler->checkForDatabases();
-    dbHandler->connectToDatabases(false, dbList);
-    
-
-    QTime midnight(0, 0, 0);
     qsrand(midnight.msecsTo(QTime::currentTime()));
-    initializeWriter();
-    //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
-    //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
-    //wordDb.open();
     oneMinuteTimer = new QTimer;
     connect(oneMinuteTimer, SIGNAL(timeout()), this, SLOT(checkEveryone()));
-    oneMinuteTimer->start(60000);
-
     midnightTimer = new QTimer;
     connect(midnightTimer, SIGNAL(timeout()), this, SLOT(midnightUpkeep()));
-
-    midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
-    qDebug() << "there are" << 86400000 + QTime::currentTime().msecsTo(midnight) << "msecs to midnight.";
-    // but still generate daily challenges right now.
-    UnscrambleGame::loadWordLists(dbHandler);
-    UnscrambleGame::generateDailyChallenges(dbHandler);
-    UnscrambleGame::midnightSwitchoverToggle = true;
-
 
     if (QFile::exists("users.db"))
     {
@@ -100,6 +72,51 @@ MainServer::MainServer(QString aerolithVersion, DatabaseHandler* databaseHandler
         query.exec("CREATE TABLE IF NOT EXISTS playerID_table(playerID INTEGER)");
         query.exec("INSERT INTO playerID_table(playerID) VALUES(1)");
     }
+
+}
+
+void MainServer::init()
+{
+    bandwidthLogFile.open(QIODevice::WriteOnly | QIODevice::Text);
+
+    // connect to existing databases
+
+    initializeWriter();
+    //  wordDb = QSqlDatabase::addDatabase("QSQLITE");
+    //wordDb.setDatabaseName(QDir::homePath() + "/.zyzzyva/lexicons/OWL2+LWL.db");
+    //wordDb.open();
+
+    QTime midnight(0, 0, 0);
+    oneMinuteTimer->start(60000);
+    midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
+
+    // but still generate daily challenges right now.
+    UnscrambleGame::loadWordLists();
+    UnscrambleGame::generateDailyChallenges();
+    UnscrambleGame::midnightSwitchoverToggle = true;
+
+    // todo immediate: move these to a slot that is connected to the database thread(after it finishes
+    // generating daily challenges, etc)
+    QTcpServer::listen(QHostAddress::Any, DEFAULT_PORT);
+    emit readyToConnect();
+}
+
+void MainServer::deactivate()
+{
+    bandwidthLogFile.close();
+    oneMinuteTimer->stop();
+    midnightTimer->stop();
+    todaysBandwidthByUser.clear();
+    todaysBlacklist.clear();
+    foreach (ClientSocket* socket, connections)
+    {
+        connections.removeAll(socket);
+        socket->deleteLater();
+    }
+    usernamesHash.clear();
+    tables.clear();
+
+    QTcpServer::close();    // stop listening
 }
 
 void MainServer::midnightUpkeep()
@@ -143,7 +160,7 @@ void MainServer::midnightUpkeep()
     midnightTimer->start(86400000 + QTime::currentTime().msecsTo(midnight));
 
     /* handle daily challenges for Unscramble game */
-    UnscrambleGame::generateDailyChallenges(dbHandler);
+    UnscrambleGame::generateDailyChallenges();
 
 }
 
@@ -458,6 +475,8 @@ void MainServer::saveRemoteList(ClientSocket* socket)
     if (saveList)
     {
         /* actually save the list to the database */
+
+        // todo replace this with an emit
         bool success = dbHandler->saveSingleList(socket->ugData.uploadedListLexicon,
                                                  socket->ugData.uploadedListName.mid(0, 64),
                                                  socket->connData.userName.toLower(),
@@ -481,7 +500,8 @@ void MainServer::saveRemoteList(ClientSocket* socket)
             fixHeaderLength();
             socket->write(block);
 
-            UnscrambleGame::writeListSpaceUsage(socket, dbHandler);
+
+            UnscrambleGame::sendListSpaceUsage(socket);
         }
         else
         {
@@ -497,6 +517,7 @@ void MainServer::listInfoRequest(ClientSocket* socket)
 {
     QString lex;
     socket->connData.in >> lex;
+    //todo replace this with an emit.
     QList <QStringList> myListsTableLabels = dbHandler->getAllListLabels(lex, socket->connData.userName);
 
     writeHeaderData();
@@ -519,7 +540,7 @@ void MainServer::listInfoRequest(ClientSocket* socket)
     fixHeaderLength();
     socket->write(block);
 
-    UnscrambleGame::writeListSpaceUsage(socket, dbHandler);
+    UnscrambleGame::sendListSpaceUsage(socket);
 }
 
 void MainServer::listDeleteRequest(ClientSocket* socket)
@@ -527,6 +548,7 @@ void MainServer::listDeleteRequest(ClientSocket* socket)
     QString lex, list;
     socket->connData.in >> lex >> list;
 
+    // replace this with an emit
     bool success = dbHandler->deleteUserList(lex, list, socket->connData.userName);
 
     if (success)
@@ -538,7 +560,7 @@ void MainServer::listDeleteRequest(ClientSocket* socket)
         fixHeaderLength();
         socket->write(block);
 
-        UnscrambleGame::writeListSpaceUsage(socket, dbHandler);
+        UnscrambleGame::sendListSpaceUsage(socket);
 
     }
 
@@ -647,7 +669,7 @@ void MainServer::processTableCommand(ClientSocket* socket)
             QString chat;
             socket->connData.in >> chat;
             if (chat == "/reload" && socket->connData.userName == "cesar")
-                UnscrambleGame::loadWordLists(dbHandler);
+                UnscrambleGame::loadWordLists();
             if (chat == "/goingdown" && socket->connData.userName == "cesar")
             {
                 foreach (ClientSocket* connection, connections)
@@ -909,7 +931,7 @@ void MainServer::processNewTable(ClientSocket* socket)
         //   QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
         // does not do a deep copy!
         
-        QByteArray tableBlock = tmp->initialize(socket, tablenum, dbHandler);
+        QByteArray tableBlock = tmp->initialize(socket, tablenum);
         tables.insert(tablenum, tmp);
 
         foreach (ClientSocket* connection, connections)
