@@ -955,7 +955,7 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
 void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
                                      quint8 numNotYetSolved, QSet <quint8> notYetSolved)
 {
-    overallQuestionSet.insert(probIndex);
+/*    overallQuestionSet.insert(probIndex);
     QSqlQuery query(wordDb);
     query.prepare("select words, alphagram from alphagrams "
                   "where probability = ?");
@@ -1021,6 +1021,7 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
     foreach (QString answer, solutions)
         answerHash.insert(answer, index);
 
+        */
 }
 
 void UnscrambleGameTable::mainQuizDone()
@@ -1051,32 +1052,8 @@ void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
         case SERVER_TABLE_QUESTIONS:
             // alphagrams!!!
             {
-                QTime t;
-                t.start();
-                quint8 numRacks;
-                in >> numRacks;
-                for (int i = 0; i < numRacks; i++)
-                {
-                    quint32 probIndex;
-                    in >> probIndex;
-                    quint8 numSolutionsNotYetSolved;
-                    in >> numSolutionsNotYetSolved;
-                    QSet <quint8> notSolved;
-                    //qDebug() << "Got" << probIndex << numSolutionsNotYetSolved;
-                    quint8 temp;
-                    for (int j = 0; j < numSolutionsNotYetSolved; j++)
-                    {
-                        in >> temp;
-                        notSolved.insert(temp);
-                    }
-                    addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
-                }
 
-                clearSolutionsDialog();
-                solutionsDialog->hide();
-                tableUi.pushButtonSolutions->setEnabled(false);
-                emit getSolutionsData();
-
+                emit getQuestionData(ba, lexiconName);
             }
             break;
 

@@ -724,6 +724,48 @@ void DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QSt
     emit returnProbIndices(probIndices, lexiconName, listName);
 }
 
+void DatabaseHandler::getQuestionData(QByteArray ba, QString lex)
+{
+    QSqlQuery query(lexiconMap.value(lex).dbConn);
+    query.exec("BEGIN TRANSACTION");
+
+    QDataStream in(ba);
+    in.setVersion(QDataStream::Qt_4_2);
+    quint8 numRacks;
+    in >> numRacks;
+
+    query.prepare("select words, alphagram from alphagrams "
+                      "where probability = ?");
+
+    for (int i = 0; i < numRacks; i++)
+    {
+        quint32 probIndex;
+        in >> probIndex;
+        quint8 numSolutionsNotYetSolved;
+        in >> numSolutionsNotYetSolved;
+        QSet <quint8> notSolved;
+                    //qDebug() << "Got" << probIndex << numSolutionsNotYetSolved;
+        quint8 temp;
+        for (int j = 0; j < numSolutionsNotYetSolved; j++)
+        {
+            in >> temp;
+            notSolved.insert(temp);
+        }
+//        addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
+
+
+
+        query.bindValue(0, probIndex);
+        query.exec();
+    }
+
+    clearSolutionsDialog();
+    solutionsDialog->hide();
+    tableUi.pushButtonSolutions->setEnabled(false);
+
+    query.exec("END TRANSACTION");
+}
+
 /********************************************************************************/
 /* QUEUED commands
 *
@@ -757,6 +799,17 @@ void DatabaseHandler::enqueueProbIndicesRequest(QStringList words, QString lexic
     commandQueue.append(command);
 }
 
+void DatabaseHandler::enqueueGetQuestionData(QByteArray ba, QString lexicon)
+{
+    QMutexLocker locker(&queueProtector);
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)GET_QUESTION_DATA;
+    o << ba;
+    o << lexicon;
+
+    commandQueue.append(command);
+}
 
 void DatabaseHandler::run()
 {
@@ -782,7 +835,7 @@ void DatabaseHandler::processCommand(QByteArray cmd)
     i >> header;
     switch (header)
     {
-        case CREATE_LEXICON_DATABASES:
+    case CREATE_LEXICON_DATABASES:
         {
             QStringList dbsToCreate;
             i >> dbsToCreate;
@@ -794,8 +847,18 @@ void DatabaseHandler::processCommand(QByteArray cmd)
         {
             QStringList words;
             QString lexicon, listName;
+            i >> words >> lexicon >> listName;
             getProbIndices(words, lexicon, listName);
         }
+        break;
+    case GET_QUESTION_DATA:
+        {
+            QByteArray ba;
+            QString lex;
+            i >> ba >> lex;
+            getQuestionData(ba, lex);
+        }
+        break;
     }
 
 
@@ -995,7 +1058,7 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     QString path = QString::number(curDT.toTime_t()) + "_" + curDT.toString("zzz");
 
     userListsQuery.prepare("INSERT INTO userlistInfo(lexiconName, listName, username, lastdateSaved, "
-                            "alphasInList, path) "
+                           "alphasInList, path) "
                            "VALUES(?, ?, ?, ?, ?, ?)");
 
     SavedUnscrambleGame sug;
