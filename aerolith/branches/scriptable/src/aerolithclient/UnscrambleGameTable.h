@@ -142,7 +142,7 @@ signals:
 
     void bootFromTable(QString);
 
-    void getSolutionsData();
+    void getQuestionData(QByteArray, QString);
 
         private slots:
     void enteredGuess();

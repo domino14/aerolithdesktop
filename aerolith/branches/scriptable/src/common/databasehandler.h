@@ -91,7 +91,8 @@ public:
     enum QueuedCommandHeader
     {
         CREATE_LEXICON_DATABASES = 1,
-        REQUEST_PROB_INDICES_FOR_UPLOADED_WORDLIST = 2
+        REQUEST_PROB_INDICES_FOR_UPLOADED_WORDLIST = 2,
+        GET_QUESTION_DATA = 3
 
     };
 
@@ -132,7 +133,7 @@ private:
     void processCommand(QByteArray);
 
     void createLexiconDatabases(QStringList);
-
+    void getQuestionData(QByteArray, QString);
 
     QSqlDatabase userlistsDb;
     enum SqlListMakerQueryTypes
@@ -173,6 +174,7 @@ signals:
 public slots:
     void enqueueProbIndicesRequest(QStringList, QString, QString);
     void enqueueCreateLexiconDatabases(QStringList);
+    void enqueueGetQuestionData(QByteArray, QString);
     void connectToAvailableDatabases();
 };
 

@@ -250,10 +250,9 @@ MainWindow::MainWindow(QString aerolithVersion) :
     connect(gameBoardWidget, SIGNAL(showInviteDialog()), SLOT(showInviteDialog()));
     connect(gameBoardWidget, SIGNAL(bootFromTable(QString)), SLOT(bootFromTable(QString)));
 
-
-
-
     connect(gameBoardWidget, SIGNAL(sendSpecificGamePacket(QByteArray)), serverCommunicator, SLOT(sendPacket(QByteArray)));
+
+    connect(gameBoardWidget, SIGNAL(getQuestionData(QByteArray)), this, SIGNAL(getQuestionData(QByteArray)));
 
 
     connect(serverCommunicator, SIGNAL(serverTableChat(quint16,QString,QString)),

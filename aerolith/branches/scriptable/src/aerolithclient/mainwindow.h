@@ -167,6 +167,7 @@ signals:
     void startServer();
     void stopServer();
 
+    void getQuestionData(QByteArray);
     void probIndicesRequest(QStringList, QString, QString);
     void reconnectToDatabases();
     void createLexiconDatabases(QStringList);

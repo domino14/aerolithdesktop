@@ -171,6 +171,8 @@ int main(int argc, char *argv[])
                      &databaseHandler, SLOT(connectToAvailableDatabases()));
     QObject::connect(&mainWin, SIGNAL(createLexiconDatabases(QStringList)),
                      &databaseHandler, SLOT(enqueueCreateLexiconDatabases(QStringList)));
+    QObject::connect(&mainWin, SIGNAL(getQuestionData(QByteArray, QString)),
+                     &databaseHandler, SLOT(enqueueGetQuestionData(QByteArray, QString)));
 
 
     mainWin.show();
