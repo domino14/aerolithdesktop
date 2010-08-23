@@ -167,7 +167,7 @@ signals:
     void startServer();
     void stopServer();
 
-    void getQuestionData(QByteArray);
+    void requestQuestionData(QByteArray, QString, int);
     void probIndicesRequest(QStringList, QString, QString);
     void reconnectToDatabases();
     void createLexiconDatabases(QStringList);
@@ -208,10 +208,11 @@ public slots:
 
     // from database
     void gotProbIndices(QList <quint32> indices, QString lexicon, QString listName);
-
     void setProgressMessage(QString);
     void setProgressValue(int);
     void setProgressRange(int, int);
+    void getUnscrambleGameQuestionInfo(QByteArray, QByteArray, int);
+    void getUnscrambleGameAnswerInfo(QByteArray, int);
  private slots:
     void sentLogin();
 

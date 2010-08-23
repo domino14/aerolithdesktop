@@ -190,7 +190,9 @@ UnscrambleGameTable::UnscrambleGameTable(QWidget* parent, Qt::WindowFlags f) :
 #ifdef Q_WS_MAC
 
 #endif
-
+    pendingQuestionData = false;
+    pendingAnswerData = false;
+    gameGoing = false;
 }
 
 UnscrambleGameTable::~UnscrambleGameTable()
@@ -620,6 +622,7 @@ void UnscrambleGameTable::resetTable(quint16 tableNum, QString wordListName, QSt
     savedGameModified = false;
 
     overallQuestionSet.clear();
+    gameGoing = false;
 }
 
 void UnscrambleGameTable::leaveTable()
@@ -635,7 +638,7 @@ void UnscrambleGameTable::addPlayers(QStringList plist)
     peopleInTable.append(plist);
 #else
     foreach (QString p, plist)
-      peopleInTable.append(p);
+        peopleInTable.append(p);
 #endif
 
     //    addPlayersToWidgets(plist);
@@ -697,139 +700,323 @@ void UnscrambleGameTable::clearSolutionsDialog()
     uiSolutions.solsLabel->clear();
 }
 
-void UnscrambleGameTable::populateSolutionsTable()
-{
-    tableUi.pushButtonSolutions->setEnabled(true);
 
+void UnscrambleGameTable::getQuestionInfo(QByteArray fromServer, QByteArray wordInfo, int tablenum)
+{
+    // got question info from the database
+    if (pendingQuestionData && this->tablenum == tablenum)
+    {
+        QDataStream fs(fromServer);
+        QDataStream infoStream(wordInfo);
+        fs.setVersion(QDataStream::Qt_4_2);
+
+        quint8 numRacks;
+        fs >> numRacks;
+
+        for (int i = 0; i < numRacks; i++)
+        {
+            quint32 probIndex;
+            fs >> probIndex;
+            quint8 numSolutionsNotYetSolved;
+            fs >> numSolutionsNotYetSolved;
+            QSet <quint8> notSolved;
+            quint8 temp;
+
+
+            for (int j = 0; j < numSolutionsNotYetSolved; j++)
+            {
+                fs >> temp;
+                notSolved.insert(temp);
+            }
+            QString alphagram;
+            QStringList solutions;
+            infoStream >> alphagram >> solutions;
+            addNewWord(i, probIndex, alphagram, solutions, numSolutionsNotYetSolved, notSolved);
+
+        }
+        pendingQuestionData = false;
+    }
+}
+
+void UnscrambleGameTable::getAnswerInfo(QByteArray answerInfo, int tablenum)
+{
+    // got answer info from the database
+    if (pendingAnswerData && this->tablenum == tablenum)
+    {
+        clearSolutionsDialog();
+        if (gameGoing)
+        {
+            solutionsDialog->hide();
+            tableUi.pushButtonSolutions->setEnabled(false);
+        }
+        QDataStream in(answerInfo);
+        quint8 numAlphs;
+        in >> numAlphs;
+
+        int numTotalSols = 0;
+        for (int i = 0; i < numAlphs; i++)
+        {
+            QString alphagram;
+            in >> alphagram;
+            if (alphagram == "") continue;
+
+            QString oldAlphagram = alphagram;
+            if (lexiconName == "FISE")
+            {
+                alphagram = alphagram.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                            .replace('4', QChar(0x00D1));
+
+            }
+
+
+            quint32 probability;
+            in >> probability;
+
+            quint8 numSols;
+            in >> numSols;
+            QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+            tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+            tableAlphagramItem->setData(Qt::UserRole, QVariant(oldAlphagram));
+            int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
+
+            for (int j = 0; j < numSols; j++)
+            {
+                numTotalSols++;
+                QString word, definition, frontHooks, backHooks;
+                in >> word >> definition >> frontHooks >> backHooks;
+                uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
+
+                uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4,
+                                                          new QTableWidgetItem(backHooks));
+                uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2,
+                                                          new QTableWidgetItem(frontHooks));
+                uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5,
+                                                          new QTableWidgetItem(definition));
+
+                QString oldWord = word;
+                if (lexiconName == "FISE")
+                {
+                    word = word.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                                                .replace('4', QChar(0x00D1));
+                    frontHooks = frontHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                                                   .replace('4', QChar(0x00D1));
+                    backHooks = backHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+                                                                  .replace('4', QChar(0x00D1));
+                }
+
+                QTableWidgetItem* wordItem = new QTableWidgetItem(word);
+                wordItem->setData(Qt::UserRole, QVariant(oldWord));// save the word pre-processing todo probably make this cleaner
+                wordItem->setData(Qt::UserRole+1, QVariant(alphagramRow));
+                wordItem->setTextAlignment(Qt::AlignCenter);
+                uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 3, wordItem); // word
+
+            }
+            uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
+            uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0, new QTableWidgetItem(QString::number(probability)));
+
+
+        }
+        uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+        //    QBrush missedColorBrush;
+        //    missedColorBrush.setColor(Qt::red);
+        //    int numTotalSols = 0, numWrong = 0;
+        //    QTime time;
+        //    time.start();
+
+        //    if (wordDb.isOpen())
+        //    {
+
+        //        QSqlQuery transactionQuery(wordDb);
+        //        QSqlQuery alphagramQuery(wordDb);
+        //        transactionQuery.exec("BEGIN TRANSACTION");
+        //        alphagramQuery.prepare("select words, probability from alphagrams "
+        //                               "where alphagram = ?");
+        //        for (int i = 0; i < wordQuestions.size(); i++)
+        //        {
+
+        //            QStringList theseSols = wordQuestions.at(i).solutions;
+        //            QString alphagram = wordQuestions.at(i).alphagram;
+
+        //            if (alphagram != "") // if alphagram exists.
+        //            {
+        //                if (lexiconName == "FISE")
+        //                {
+        //                    alphagram = alphagram.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+        //                                .replace('4', QChar(0x00D1));
+
+        //                }
+        //                QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
+        //                tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
+        //                int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
+        //                alphagramQuery.bindValue(0, wordQuestions.at(i).alphagram);
+        //                alphagramQuery.exec();
+
+        //                QString words;
+        //                int probability;
+        //                bool wrongAnswer = false;   // got this alphagram wrong?
+        //                while (alphagramQuery.next())   // should only be one result.
+        //                {
+        //                    probability = alphagramQuery.value(1).toInt() & 0xFFFFFF;
+        //                    words = alphagramQuery.value(0).toString();
+
+        //                    QSqlQuery wordQuery(wordDb);
+        //                    wordQuery.prepare("select definition, lexiconstrings, front_hooks, back_hooks from words where word = ?");
+
+        //                    for (int j = 0; j < theseSols.size(); j++)
+        //                    {
+        //                        QString thisWord = theseSols.at(j);
+        //                        wordQuery.bindValue(0, thisWord);
+        //                        wordQuery.exec();
+
+        //                        while (wordQuery.next())
+        //                        {
+
+        //                            numTotalSols++;
+
+        //                            uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
+
+        //                            QString frontHooks = wordQuery.value(2).toString();
+        //                            QString backHooks = wordQuery.value(3).toString();
+        //                            if (lexiconName == "FISE")
+        //                            {
+        //                                thisWord = thisWord.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+        //                                           .replace('4', QChar(0x00D1));
+        //                                frontHooks = frontHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+        //                                             .replace('4', QChar(0x00D1));
+        //                                backHooks = backHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
+        //                                            .replace('4', QChar(0x00D1));
+        //                            }
+
+        //                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4,
+        //                                                                      new QTableWidgetItem(backHooks));
+        //                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2,
+        //                                                                      new QTableWidgetItem(frontHooks));
+        //                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5,
+        //                                                                      new QTableWidgetItem(wordQuery.value(0).toString()));
+
+
+        //                            QTableWidgetItem* wordItem = new QTableWidgetItem(thisWord +
+        //                                                                              wordQuery.value(1).toString());
+        //                            if (!rightAnswers.contains(theseSols.at(j)))
+        //                            {
+        //                                numWrong++;
+        //                                wordItem->setForeground(missedColorBrush);
+        //                                QFont wordItemFont = wordItem->font();
+        //                                wordItemFont.setBold(true);
+        //                                wordItem->setFont(wordItemFont);
+        //                                wrongAnswer = true;
+
+        //                            }
+
+        //                            wordItem->setTextAlignment(Qt::AlignCenter);
+        //                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 3, wordItem); // word
+        //                        }
+        //                    }
+        //                }
+
+
+        //                uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
+
+        //                if (wrongAnswer)
+        //                {
+        //                    tableAlphagramItem->setForeground(missedColorBrush);
+        //                    QFont alphFont = tableAlphagramItem->font();
+        //                    alphFont.setBold(true);
+
+        //                    tableAlphagramItem->setFont(alphFont);
+
+        //                }
+
+
+        //                uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
+        //                                                          new QTableWidgetItem(QString::number(probability)));
+
+        //            }
+        //        }
+        //        transactionQuery.exec("END TRANSACTION");
+        //        uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+        //        double percCorrect;
+        //        if (numTotalSols == 0) percCorrect = 0.0;
+        //        else
+        //            percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
+        //        uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
+        //    }
+        //    else
+        //        qDebug() << "Database is not open.";
+
+        //    qDebug() << "Time to populate sols" << time.elapsed();
+        //    answerHash.clear();
+
+
+
+
+
+
+
+        pendingAnswerData = false;
+    }
+}
+
+void UnscrambleGameTable::gotGameStart()
+{
+    setupForGameStart();
+    gotChat("<font color=red>The game has started!</font>");
+    gameGoing = true;
+}
+
+void UnscrambleGameTable::gotGameEnd()
+{
+    gotChat("<font color=red>This round is over.</font>");
+    markSolutionsTable();
+    clearAllWordTiles();
+    gameGoing = false;
+    tableUi.pushButtonSolutions->setEnabled(true);
+    answerHash.clear();
+}
+
+void UnscrambleGameTable::markSolutionsTable()
+{
+    // marks wrong answers on solutions table.
     QBrush missedColorBrush;
     missedColorBrush.setColor(Qt::red);
     int numTotalSols = 0, numWrong = 0;
-    QTime time;
-    time.start();
-
-    if (wordDb.isOpen())
+    for (int i = 0; i < uiSolutions.solutionsTableWidget->rowCount(); i++)
     {
+        numTotalSols++;
+        QTableWidgetItem* wordItem = uiSolutions.solutionsTableWidget->item(i, 5);
+        QString word = wordItem->data(Qt::UserRole).toString();
+        int alphagramRow = wordItem->data(Qt::UserRole+1).toInt();
 
-        QSqlQuery transactionQuery(wordDb);
-        QSqlQuery alphagramQuery(wordDb);
-        transactionQuery.exec("BEGIN TRANSACTION");
-        alphagramQuery.prepare("select words, probability from alphagrams "
-                               "where alphagram = ?");
-        for (int i = 0; i < wordQuestions.size(); i++)
+        if (!rightAnswers.contains(word))
         {
+            numWrong++;
+            wordItem->setForeground(missedColorBrush);
 
-            QStringList theseSols = wordQuestions.at(i).solutions;
-            QString alphagram = wordQuestions.at(i).alphagram;
+            QTableWidgetItem* alphItem = uiSolutions.solutionsTableWidget->item(alphagramRow, 0);
 
-            if (alphagram != "") // if alphagram exists.
+            QFont wordItemFont = wordItem->font();
+            wordItemFont.setBold(true);
+            wordItem->setFont(wordItemFont);
+            if (alphItem->data(Qt::UserRole+1).toBool() == false)
             {
-                if (lexiconName == "FISE")
-                {
-                    alphagram = alphagram.replace('1', "CH").replace('2', "LL").replace('3', "RR")
-                                .replace('4', QChar(0x00D1));
-
-                }
-                QTableWidgetItem *tableAlphagramItem = new QTableWidgetItem(alphagram);
-                tableAlphagramItem->setTextAlignment(Qt::AlignCenter);
-                int alphagramRow = uiSolutions.solutionsTableWidget->rowCount();
-                alphagramQuery.bindValue(0, wordQuestions.at(i).alphagram);
-                alphagramQuery.exec();
-
-                QString words;
-                int probability;
-                bool wrongAnswer = false;   // got this alphagram wrong?
-                while (alphagramQuery.next())   // should only be one result.
-                {
-                    probability = alphagramQuery.value(1).toInt() & 0xFFFFFF;
-                    words = alphagramQuery.value(0).toString();
-
-                    QSqlQuery wordQuery(wordDb);
-                    wordQuery.prepare("select definition, lexiconstrings, front_hooks, back_hooks from words where word = ?");
-
-                    for (int j = 0; j < theseSols.size(); j++)
-                    {
-                        QString thisWord = theseSols.at(j);
-                        wordQuery.bindValue(0, thisWord);
-                        wordQuery.exec();
-
-                        while (wordQuery.next())
-                        {
-
-                            numTotalSols++;
-
-                            uiSolutions.solutionsTableWidget->insertRow(numTotalSols-1);
-
-                            QString frontHooks = wordQuery.value(2).toString();
-                            QString backHooks = wordQuery.value(3).toString();
-                            if (lexiconName == "FISE")
-                            {
-                                thisWord = thisWord.replace('1', "CH").replace('2', "LL").replace('3', "RR")
-                                           .replace('4', QChar(0x00D1));
-                                frontHooks = frontHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
-                                             .replace('4', QChar(0x00D1));
-                                backHooks = backHooks.replace('1', "CH").replace('2', "LL").replace('3', "RR")
-                                            .replace('4', QChar(0x00D1));
-                            }
-
-                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 4,
-                                                                      new QTableWidgetItem(backHooks));
-                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 2,
-                                                                      new QTableWidgetItem(frontHooks));
-                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 5,
-                                                                      new QTableWidgetItem(wordQuery.value(0).toString()));
-
-
-                            QTableWidgetItem* wordItem = new QTableWidgetItem(thisWord +
-                                                                              wordQuery.value(1).toString());
-                            if (!rightAnswers.contains(theseSols.at(j)))
-                            {
-                                numWrong++;
-                                wordItem->setForeground(missedColorBrush);
-                                QFont wordItemFont = wordItem->font();
-                                wordItemFont.setBold(true);
-                                wordItem->setFont(wordItemFont);
-                                wrongAnswer = true;
-
-                            }
-
-                            wordItem->setTextAlignment(Qt::AlignCenter);
-                            uiSolutions.solutionsTableWidget->setItem(numTotalSols-1, 3, wordItem); // word
-                        }
-                    }
-                }
-
-
-                uiSolutions.solutionsTableWidget->setItem(alphagramRow, 1, tableAlphagramItem);
-
-                if (wrongAnswer)
-                {
-                    tableAlphagramItem->setForeground(missedColorBrush);
-                    QFont alphFont = tableAlphagramItem->font();
-                    alphFont.setBold(true);
-
-                    tableAlphagramItem->setFont(alphFont);
-
-                }
-
-
-                uiSolutions.solutionsTableWidget->setItem(alphagramRow, 0,
-                                                          new QTableWidgetItem(QString::number(probability)));
-
+                alphItem->setForeground(missedColorBrush);
+                QFont alphFont = alphItem->font();
+                alphFont.setBold(true);
+                alphItem->setFont(alphFont);
+                alphItem->setData(Qt::UserRole+1, QVariant(true));  // mark as already set to missed to avoid re-marking
             }
-        }
-        transactionQuery.exec("END TRANSACTION");
-        uiSolutions.solutionsTableWidget->resizeColumnsToContents();
-        double percCorrect;
-        if (numTotalSols == 0) percCorrect = 0.0;
-        else
-            percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
-        uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
-    }
-    else
-        qDebug() << "Database is not open.";
 
-    qDebug() << "Time to populate sols" << time.elapsed();
-    answerHash.clear();
+        }
+
+    }
+    uiSolutions.solutionsTableWidget->resizeColumnsToContents();
+    double percCorrect;
+    if (numTotalSols == 0) percCorrect = 0.0;
+    else
+        percCorrect = (100.0 * (double)(numTotalSols - numWrong))/(double)(numTotalSols);
+    uiSolutions.solsLabel->setText(QString("Number of total solutions: %1   Percentage correct: %2 (%3 of %4)").arg(numTotalSols).arg(percCorrect).arg(numTotalSols-numWrong).arg(numTotalSols));
+
+
 }
 
 void UnscrambleGameTable::alphagrammizeWords()
@@ -952,26 +1139,10 @@ void UnscrambleGameTable::getBasePosition(int index, double& x, double& y, int t
     }
 }
 
-void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
+void UnscrambleGameTable::addNewWord(int index, quint32 probIndex, QString alphagram, QStringList solutions,
                                      quint8 numNotYetSolved, QSet <quint8> notYetSolved)
 {
-/*    overallQuestionSet.insert(probIndex);
-    QSqlQuery query(wordDb);
-    query.prepare("select words, alphagram from alphagrams "
-                  "where probability = ?");
-
-    query.bindValue(0, probIndex);
-    query.exec();
-
-    QString alphagram;
-    QStringList solutions;
-
-    while (query.next())   // should only be one result.
-    {
-        alphagram = query.value(1).toString();
-        solutions = query.value(0).toString().split(" ");
-    }
-
+    overallQuestionSet.insert(probIndex);
     wordQuestion thisWord(alphagram, solutions, numNotYetSolved);
     bool shouldShowTiles = uiPreferences.groupBoxUseTiles->isChecked();
     if (numNotYetSolved > 0)
@@ -1021,7 +1192,7 @@ void UnscrambleGameTable::addNewWord(int index, quint32 probIndex,
     foreach (QString answer, solutions)
         answerHash.insert(answer, index);
 
-        */
+
 }
 
 void UnscrambleGameTable::mainQuizDone()
@@ -1032,12 +1203,12 @@ void UnscrambleGameTable::mainQuizDone()
 void UnscrambleGameTable::fullQuizDone()
 {
     // we are done with the entire quiz
-//    if (savingAllowed)
-//    {
-//        Q_ASSERT(currentSug.curMissedList.isEmpty());
-//        Q_ASSERT(currentSug.curQuizList.isEmpty());
-//
-//    }
+    //    if (savingAllowed)
+    //    {
+    //        Q_ASSERT(currentSug.curMissedList.isEmpty());
+    //        Q_ASSERT(currentSug.curQuizList.isEmpty());
+    //
+    //    }
 
 
 }
@@ -1049,48 +1220,50 @@ void UnscrambleGameTable::gotSpecificCommand(quint8 commandByte, QByteArray ba)
     in.setVersion(QDataStream::Qt_4_2);
     switch (commandByte)
     {
-        case SERVER_TABLE_QUESTIONS:
-            // alphagrams!!!
-            {
+    case SERVER_TABLE_QUESTIONS:
+        // alphagrams!!!
+        {
 
-                emit getQuestionData(ba, lexiconName);
-            }
+            emit requestQuestionData(ba, lexiconName, tablenum);
+            pendingQuestionData = true;
+            pendingAnswerData = true;
+        }
+        break;
+
+    case SERVER_TABLE_NUM_QUESTIONS:
+        // word list info
+
+        {
+            quint16 numRacksSeen;
+            quint16 numTotalRacks;
+            in >> numRacksSeen >> numTotalRacks;
+            gotWordListInfo(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
             break;
+        }
 
-        case SERVER_TABLE_NUM_QUESTIONS:
-            // word list info
-
-            {
-                quint16 numRacksSeen;
-                quint16 numTotalRacks;
-                in >> numRacksSeen >> numTotalRacks;
-                gotWordListInfo(QString("%1 / %2").arg(numRacksSeen).arg(numTotalRacks));
-                break;
-            }
-
-        case SERVER_TABLE_CORRECT_ANSWER:
-            {
-                quint8 seatNumber;
-                quint8 space, specificAnswer;
-                in >> seatNumber >> space >> specificAnswer;
-                answeredCorrectly(seatNumber, space, specificAnswer);
+    case SERVER_TABLE_CORRECT_ANSWER:
+        {
+            quint8 seatNumber;
+            quint8 space, specificAnswer;
+            in >> seatNumber >> space >> specificAnswer;
+            answeredCorrectly(seatNumber, space, specificAnswer);
 
 
-            }
-            break;
-        case SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE:
-            mainQuizDone();
-            break;
-        case SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE:
-            fullQuizDone();
-            break;
-        case SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED:
-            {
-                bool allowed;
-                in >> allowed;
-                setSavingAllowed(allowed);
-            }
-            break;
+        }
+        break;
+    case SERVER_TABLE_UNSCRAMBLEGAME_MAIN_QUIZ_DONE:
+        mainQuizDone();
+        break;
+    case SERVER_TABLE_UNSCRAMBLEGAME_FULL_QUIZ_DONE:
+        fullQuizDone();
+        break;
+    case SERVER_TABLE_UNSCRAMBLEGAME_SAVING_ALLOWED:
+        {
+            bool allowed;
+            in >> allowed;
+            setSavingAllowed(allowed);
+        }
+        break;
 
     }
 }

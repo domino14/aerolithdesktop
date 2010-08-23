@@ -724,7 +724,7 @@ void DatabaseHandler::getProbIndices(QStringList words, QString lexiconName, QSt
     emit returnProbIndices(probIndices, lexiconName, listName);
 }
 
-void DatabaseHandler::getQuestionData(QByteArray ba, QString lex)
+void DatabaseHandler::getQuestionData(QByteArray ba, QString lex, int tablenum)
 {
     QSqlQuery query(lexiconMap.value(lex).dbConn);
     query.exec("BEGIN TRANSACTION");
@@ -737,33 +737,87 @@ void DatabaseHandler::getQuestionData(QByteArray ba, QString lex)
     query.prepare("select words, alphagram from alphagrams "
                       "where probability = ?");
 
+
+    QByteArray oba;
+    QDataStream out(&oba, QIODevice::WriteOnly);
+
+
+    QList <QStringList> solsList;
+    QList <QString> alphList;
+    QList <quint32> probList;
     for (int i = 0; i < numRacks; i++)
     {
         quint32 probIndex;
         in >> probIndex;
         quint8 numSolutionsNotYetSolved;
         in >> numSolutionsNotYetSolved;
-        QSet <quint8> notSolved;
-                    //qDebug() << "Got" << probIndex << numSolutionsNotYetSolved;
-        quint8 temp;
-        for (int j = 0; j < numSolutionsNotYetSolved; j++)
-        {
-            in >> temp;
-            notSolved.insert(temp);
-        }
-//        addNewWord(i, probIndex, numSolutionsNotYetSolved, notSolved);
 
+        in.skipRawData(numSolutionsNotYetSolved);
 
 
         query.bindValue(0, probIndex);
         query.exec();
-    }
 
-    clearSolutionsDialog();
-    solutionsDialog->hide();
-    tableUi.pushButtonSolutions->setEnabled(false);
+        QString alphagram;
+        QStringList solutions;
+
+        while (query.next())   // should only be one result.
+        {
+            alphagram = query.value(1).toString();
+            solutions = query.value(0).toString().split(" ");
+        }
+        out << alphagram << solutions;
+
+        probList << probIndex;
+        alphList << alphagram;
+        solsList << solutions;  // save solutions for looking up definitions later
+    }
+    emit returnQuestionInfo(ba, oba, tablenum); // return the original byte array + the new byte array
+                                                    // with actual words.
+
 
     query.exec("END TRANSACTION");
+
+    QByteArray solsByteArray;
+    QDataStream outSols(&solsByteArray, QIODevice::WriteOnly);
+
+    // now look up definitions.
+    query.exec("BEGIN TRANSACTION");
+    query.prepare("select definition, lexiconstrings, front_hooks, back_hooks from words where word = ?");
+
+
+    outSols << (quint8)alphList.size();
+    for (int i = 0; i < alphList.size(); i++)
+    {
+        QString alphagram = alphList.at(i);
+        outSols << alphagram;
+
+        if (alphagram == "") continue;
+
+        outSols << (probList.at(i) & 0xFFFFFF); // convert from encoded probability to actual probability
+                                            // for this word length.
+        outSols << (quint8)solsList.at(i).size();
+        for (int j = 0; j < solsList.at(i).size(); j++)
+        {
+            QString word = solsList.at(i).at(j);
+            query.bindValue(0, word);
+            query.exec();
+            while (query.next())
+            {
+                QString frontHooks = query.value(2).toString();
+                QString backHooks = query.value(3).toString();
+
+                word += query.value(1).toString();
+                QString definition = query.value(0).toString();
+                outSols << word << definition << frontHooks << backHooks;
+            }
+        }
+    }
+    emit returnAnswerInfo(solsByteArray, tablenum);
+
+    query.exec("END TRANSACTION");
+
+
 }
 
 /********************************************************************************/
@@ -799,7 +853,7 @@ void DatabaseHandler::enqueueProbIndicesRequest(QStringList words, QString lexic
     commandQueue.append(command);
 }
 
-void DatabaseHandler::enqueueGetQuestionData(QByteArray ba, QString lexicon)
+void DatabaseHandler::enqueueGetQuestionData(QByteArray ba, QString lexicon, int tablenum)
 {
     QMutexLocker locker(&queueProtector);
     QByteArray command;
@@ -807,6 +861,7 @@ void DatabaseHandler::enqueueGetQuestionData(QByteArray ba, QString lexicon)
     o << (quint8)GET_QUESTION_DATA;
     o << ba;
     o << lexicon;
+    o << tablenum;
 
     commandQueue.append(command);
 }
@@ -855,8 +910,9 @@ void DatabaseHandler::processCommand(QByteArray cmd)
         {
             QByteArray ba;
             QString lex;
-            i >> ba >> lex;
-            getQuestionData(ba, lex);
+            int tablenum;
+            i >> ba >> lex >> tablenum;
+            getQuestionData(ba, lex, tablenum);
         }
         break;
     }

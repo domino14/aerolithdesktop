@@ -252,7 +252,8 @@ MainWindow::MainWindow(QString aerolithVersion) :
 
     connect(gameBoardWidget, SIGNAL(sendSpecificGamePacket(QByteArray)), serverCommunicator, SLOT(sendPacket(QByteArray)));
 
-    connect(gameBoardWidget, SIGNAL(getQuestionData(QByteArray)), this, SIGNAL(getQuestionData(QByteArray)));
+    connect(gameBoardWidget, SIGNAL(requestQuestionData(QByteArray, QString, int)),
+            this, SIGNAL(requestQuestionData(QByteArray, QString, int)));
 
 
     connect(serverCommunicator, SIGNAL(serverTableChat(quint16,QString,QString)),
@@ -1580,8 +1581,7 @@ void MainWindow::gotServerTableReadyBegin(quint16 tablenum, quint8 seat)
 
 void MainWindow::gotServerTableGameStart(quint16 tablenum)
 {
-    gameBoardWidget->setupForGameStart();
-    gameBoardWidget->gotChat("<font color=red>The game has started!</font>");
+    gameBoardWidget->gotGameStart();
 }
 
 void MainWindow::gotServerTableAvatarChange(quint16 tablenum, quint8 seatNumber, quint8 avatarID)
@@ -1596,10 +1596,8 @@ void MainWindow::gotServerTableAvatarChange(quint16 tablenum, quint8 seatNumber,
 
 void MainWindow::gotServerTableGameEnd(quint16 tablenum)
 {
-    // todo replace this with a virtual end game function
-    gameBoardWidget->gotChat("<font color=red>This round is over.</font>");
-    gameBoardWidget->populateSolutionsTable();
-    gameBoardWidget->clearAllWordTiles();
+    gameBoardWidget->gotGameEnd();
+
 }
 
 void MainWindow::gotServerTableHost(quint16 tablenum, QString host)
@@ -1627,6 +1625,17 @@ void MainWindow::gotSpecificTableCommand(quint16 tablenum, quint8 commandByte, Q
     gameBoardWidget->gotSpecificCommand(commandByte, ba);
 }
 
+/********** from database ***********/
+
+void MainWindow::getUnscrambleGameAnswerInfo(QByteArray solutionData, int tablenum)
+{
+    gameBoardWidget->getAnswerInfo(solutionData, tablenum);
+}
+
+void MainWindow::getUnscrambleGameQuestionInfo(QByteArray data1, QByteArray wordData, int tablenum)
+{
+    gameBoardWidget->getQuestionInfo(data1, wordData, tablenum);
+}
 
 /* dont understand packet
    QMessageBox::critical(this, "Aerolith client", "Don't understand this packet!");
