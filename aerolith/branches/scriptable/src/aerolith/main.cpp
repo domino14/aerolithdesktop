@@ -171,8 +171,13 @@ int main(int argc, char *argv[])
                      &databaseHandler, SLOT(connectToAvailableDatabases()));
     QObject::connect(&mainWin, SIGNAL(createLexiconDatabases(QStringList)),
                      &databaseHandler, SLOT(enqueueCreateLexiconDatabases(QStringList)));
-    QObject::connect(&mainWin, SIGNAL(getQuestionData(QByteArray, QString)),
-                     &databaseHandler, SLOT(enqueueGetQuestionData(QByteArray, QString)));
+    QObject::connect(&mainWin, SIGNAL(requestQuestionData(QByteArray, QString, int)),
+                     &databaseHandler, SLOT(enqueueGetQuestionData(QByteArray, QString, int)));
+
+    QObject::connect(&databaseHandler, SIGNAL(returnQuestionInfo(QByteArray,QByteArray,int)),
+                     &mainWin, SLOT(getUnscrambleGameQuestionInfo(QByteArray, QByteArray, int)));
+    QObject::connect(&databaseHandler, SIGNAL(returnAnswerInfo(QByteArray,int)),
+                     &mainWin, SLOT(getUnscrambleGameAnswerInfo(QByteArray, int)));
 
 
     mainWin.show();

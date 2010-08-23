@@ -53,9 +53,9 @@ public:
     void fullQuizDone();
 
     void clearSolutionsDialog();
-    void populateSolutionsTable();
+    void markSolutionsTable();
 
-    void addNewWord(int, quint32, quint8, QSet <quint8>);
+    void addNewWord(int, quint32, QString, QStringList, quint8, QSet <quint8>);
     void clearAllWordTiles();
     void answeredCorrectly(quint8 seat, quint8 space, quint8 specificAnswer);
 
@@ -63,6 +63,8 @@ public:
     void clearReadyIndicators();
 //    void setCurrentSug(SavedUnscrambleGame sug); // TODO delete
     void setSavingAllowed(bool);
+    void gotGameEnd();
+    void gotGameStart();
     void setUnmodifiedListName(QString u)
     {
         unmodifiedListName = u;
@@ -70,7 +72,12 @@ public:
     void setHost(QString hostname);
 
     void gotSpecificCommand(quint8, QByteArray);
+    void getAnswerInfo(QByteArray, int);
+    void getQuestionInfo(QByteArray, QByteArray, int);
 private:
+    bool gameGoing;
+    bool pendingQuestionData;
+    bool pendingAnswerData;
     QString tableHost;
   //  SavedUnscrambleGame currentSug; // TODO delete
     bool savingAllowed;
@@ -142,7 +149,7 @@ signals:
 
     void bootFromTable(QString);
 
-    void getQuestionData(QByteArray, QString);
+    void requestQuestionData(QByteArray, QString, int);
 
         private slots:
     void enteredGuess();

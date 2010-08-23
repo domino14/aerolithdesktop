@@ -47,7 +47,7 @@ MainServer::MainServer(QString aerolithVersion) :
         aerolithVersion(aerolithVersion)
 {
     qDebug("mainserver constructor");
-    qsrand(midnight.msecsTo(QTime::currentTime()));
+    qsrand(QDateTime::currentDateTime().toTime_t());
     oneMinuteTimer = new QTimer;
     connect(oneMinuteTimer, SIGNAL(timeout()), this, SLOT(checkEveryone()));
     midnightTimer = new QTimer;

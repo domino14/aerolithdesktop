@@ -133,7 +133,7 @@ private:
     void processCommand(QByteArray);
 
     void createLexiconDatabases(QStringList);
-    void getQuestionData(QByteArray, QString);
+    void getQuestionData(QByteArray, QString, int);
 
     QSqlDatabase userlistsDb;
     enum SqlListMakerQueryTypes
@@ -171,10 +171,13 @@ signals:
     void setCurListSpaceUsage(int);
 
     void returnProbIndices(QList<quint32>,QString, QString);
+
+    void returnQuestionInfo(QByteArray, QByteArray, int);
+    void returnAnswerInfo(QByteArray, int);
 public slots:
     void enqueueProbIndicesRequest(QStringList, QString, QString);
     void enqueueCreateLexiconDatabases(QStringList);
-    void enqueueGetQuestionData(QByteArray, QString);
+    void enqueueGetQuestionData(QByteArray, QString, int);
     void connectToAvailableDatabases();
 };
 
