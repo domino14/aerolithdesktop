@@ -23,6 +23,11 @@
 extern QByteArray block;
 extern QDataStream out;
 //  tmp->initialize(tablenum, wordListDescriptor, maxPlayers, connData->username);
+Table::Table(QObject *parent) : QObject(parent)
+{
+
+}
+
 QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber)
 {
 
@@ -51,7 +56,7 @@ QByteArray Table::initialize(ClientSocket* tableCreator, quint16 tableNumber)
             tableInformationArray =
                     tableGame->initialize();
 
-
+            connect(tableGame, SIGNAL(databaseRequest(QByteArray)), this, SIGNAL(databaseRequest(QByteArray)));
         }
     case GAME_TYPE_BONUS:
         {

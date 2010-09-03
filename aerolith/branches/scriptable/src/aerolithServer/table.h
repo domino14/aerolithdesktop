@@ -20,12 +20,13 @@
 #include <QtCore>
 #include "ClientSocket.h"
 #include "commonDefs.h"
-#include "databasehandler.h"
+
 class TableGame;
 
 
-class Table
+class Table : public QObject
 {
+    Q_OBJECT
 public:
 
     enum tablePacketHeaders
@@ -33,10 +34,12 @@ public:
         GAME_STARTED, GAME_ENDED, CHAT_SENT, GUESS_RIGHT, TIMER_VALUE, READY_TO_BEGIN, GAVE_UP
             };
 
+    Table(QObject* parent = 0);
     ~Table();
-    QByteArray initialize(ClientSocket* tableCreator, quint16 tableNumber,
-                          DatabaseHandler* dbHandler);
+    QByteArray initialize(ClientSocket* tableCreator, quint16 tableNumber);
     quint16 tableNumber;
+    quint64 tableID; // a unique ID for this table. as long as no one makes 18 quintillion tables this should
+                    // be fine until the next reboot.
 
     QString tableName;
     quint8 maxPlayers;
@@ -71,6 +74,9 @@ public:
     void cleanupBeforeDelete();
 private:
     void sendAvatarChangePacket(ClientSocket*);
+
+signals:
+    void databaseRequest(QByteArray);
 };
 
 #endif

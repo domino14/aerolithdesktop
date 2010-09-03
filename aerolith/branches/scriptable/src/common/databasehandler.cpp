@@ -826,6 +826,12 @@ void DatabaseHandler::getQuestionData(QByteArray ba, QString lex, int tablenum)
 *
 *
 */
+void DatabaseHandler::enqueueOtherDatabaseRequest(QByteArray ba)
+{
+    QMutexLocker locker(&queueProtector);
+    commandQueue.append(ba);
+    // assume command is already in correct format -- todo make this more elegant in the future!
+}
 
 void DatabaseHandler::enqueueCreateLexiconDatabases(QStringList lexiconNames)
 {
@@ -865,6 +871,41 @@ void DatabaseHandler::enqueueGetQuestionData(QByteArray ba, QString lexicon, int
 
     commandQueue.append(command);
 }
+
+
+void DatabaseHandler::enqueueSaveSingleList(QString lexicon, QString listname, QString username, QList<quint32> indices)
+{
+    QMutexLocker locker(&queueProtector);
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)SAVE_SINGLE_LIST;
+    o << lexicon << listname << username << indices;
+
+    commandQueue.append(command);
+}
+
+void DatabaseHandler::enqueueListInfoRequest(QString lexicon, QString username)
+{
+    QMutexLocker locker(&queueProtector);
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)GET_LIST_INFO;
+    o << lexicon << username;
+
+    commandQueue.append(command);
+}
+
+void DatabaseHandler::enqueueListDeleteRequest(QString lexicon, QString listname, QString username)
+{
+    QMutexLocker locker(&queueProtector);
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)DELETE_LIST;
+    o << lexicon << listname << username;
+
+    commandQueue.append(command);
+}
+
 
 void DatabaseHandler::run()
 {
@@ -915,6 +956,52 @@ void DatabaseHandler::processCommand(QByteArray cmd)
             getQuestionData(ba, lex, tablenum);
         }
         break;
+    case SAVE_SINGLE_LIST:
+        {
+            QString lexicon;
+            QString listname;
+            QString username;
+            QList<quint32> indices;
+            i >> lexicon >> listname >> username >> indices;
+            saveSingleList(lexicon, listname, username, indices);
+        }
+        break;
+    case GET_LIST_INFO:
+        {
+            QString lexicon;
+            QString username;
+
+            i >> lexicon >> username;
+            getAllListLabels(lexicon, username);
+        }
+        break;
+    case DELETE_LIST:
+        {
+            QString lexicon, listname, username;
+            i >> lexicon >> listname >> username;
+            deleteUserList(lexicon, listname, username);
+        }
+        break;
+    case DOES_LIST_EXIST:
+        {
+            QString lexicon, listname, username;
+            quint64 tableid;
+            quint16 tablenum;
+            i >> lexicon >> listname >> username >> tablenum >> tableid;
+            savedListExists(lexicon, listname, username, tablenum, tableid, true);
+        }
+        break;
+    case GENERATE_QUIZ_ARRAY:
+        {
+            QString lexicon, listname;
+            quint64 tableid;
+            quint16 tablenum;
+            quint8 listType, userlistMode;
+            QString username;
+            i >> listType >> lexicon >> listname >> userlistMode >> tablenum >> tableid >> username;
+            generateUnscramblegameQuizArray(lexicon, listname, listType, userlistMode, tablenum, tableid, username);
+        }
+        break;
     }
 
 
@@ -953,7 +1040,8 @@ QString DatabaseHandler::getSavedListAbsolutePath(QString lex, QString list, QSt
 
 }
 
-bool DatabaseHandler::savedListExists(QString lexicon, QString listName, QString username)
+bool DatabaseHandler::savedListExists(QString lexicon, QString listName, QString username,
+                                      quint16 tablenum,quint64 tableid, bool alsoEmit)
 {
     username = username.toLower();
     QSqlQuery userListsQuery(userlistsDb);
@@ -978,8 +1066,8 @@ bool DatabaseHandler::savedListExists(QString lexicon, QString listName, QString
     }
     userListsQuery.exec("END TRANSACTION");
 
+    if (alsoEmit) emit requestedListExists(exists, tablenum, tableid);
     return exists;
-
 }
 
 bool DatabaseHandler::saveGame(SavedUnscrambleGame sug, QString lex, QString list, QString username)
@@ -988,7 +1076,7 @@ bool DatabaseHandler::saveGame(SavedUnscrambleGame sug, QString lex, QString lis
     QByteArray ba = sug.toByteArray();
     username = username.toLower();
 
-    bool update = savedListExists(lex, list, username);
+    bool update = savedListExists(lex, list, username, 0 /*dummy*/, 0 /*dummy*/,false);
     qDebug() << "--Save Game--";
     qDebug() << "Update =" << update;
     bool resultSuccess = false;
@@ -1088,14 +1176,15 @@ bool DatabaseHandler::saveGame(SavedUnscrambleGame sug, QString lex, QString lis
     return resultSuccess;
 }
 
-bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices)
+void DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32> probIndices)
 {
     username = username.toLower();
 
     qDebug() << "saveSingleList called";
     if (!userlistsDb.isOpen())
     {
-        return false;
+        emit saveWordListFailed(username);
+        return;
     }
     QSqlQuery userListsQuery(userlistsDb);
     userListsQuery.prepare("SELECT numQs from numQsByUsername where username = ?");
@@ -1108,7 +1197,11 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
         numQs = userListsQuery.value(0).toInt();
 
     if (numQs + probIndices.size() > remoteNumQsQuota)
-        return false;   // over quota, don't allow saving.
+    {
+        emit saveWordListFailed(username);
+        return;
+
+    } // over quota, don't allow saving.
 
     QDateTime curDT = QDateTime::currentDateTime();
     QString path = QString::number(curDT.toTime_t()) + "_" + curDT.toString("zzz");
@@ -1128,7 +1221,11 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(5, path);
     bool retVal = userListsQuery.exec();
 
-    if (!retVal) return false;
+    if (!retVal)
+    {
+        emit saveWordListFailed(username);
+        return;
+    }
 
     numQs += probIndices.size();
     if (foundUsername)
@@ -1167,7 +1264,8 @@ bool DatabaseHandler::saveSingleList(QString lexiconName, QString listName, QStr
     f.write(sug.toByteArray());
     f.close();
 
-    return true;
+   // success!
+    emit saveWordListSuccess(lexiconName, listName, probIndices.size(), username);
 }
 
 QStringList DatabaseHandler::getSingleListLabels(QString lexiconName, QString username, QString listname)
@@ -1220,9 +1318,9 @@ QStringList DatabaseHandler::getSingleListLabels(QString lexiconName, QString us
     return retList;
 }
 
-QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QString username)
+void DatabaseHandler::getAllListLabels(QString lexiconName, QString username)
 {
-    QList<QStringList> retList;
+    QList<QStringList> outList;
     username = username.toLower();
 
     QSqlQuery userListsQuery(userlistsDb);
@@ -1268,12 +1366,13 @@ QList<QStringList> DatabaseHandler::getAllListLabels(QString lexiconName, QStrin
 
         QStringList sl;
         sl << listName << totalQs << currentQs <<  firstMissedQs << lastdateSaved;
-        retList << sl;
+        outList << sl;
     }
-    return retList;
+
+    emit wordListInfo(username, lexiconName, outList);
 }
 
-bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QString username)
+void DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QString username)
 {
     username = username.toLower();
 
@@ -1287,7 +1386,7 @@ bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(2, username);
     userListsQuery.exec();
     bool exists = userListsQuery.next();
-    if (!exists) return false;
+    if (!exists) emit deleteWordListFailed(username);
 
     int thisNumQs= userListsQuery.value(0).toInt();
 
@@ -1298,7 +1397,7 @@ bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(2, username);
     bool retVal = userListsQuery.exec();
 
-    if (!retVal) return false;
+    if (!retVal) emit deleteWordListFailed(username);
 
     QDir dir = QDir::home();
     dir.cd(".aerolith");
@@ -1322,7 +1421,7 @@ bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
     else
     {
         qCritical() << "Trying to delete a non existing list! Error!";
-        return false;
+        emit deleteWordListFailed(username);
     }
 
     numQs -= thisNumQs;
@@ -1332,7 +1431,7 @@ bool DatabaseHandler::deleteUserList(QString lexiconName, QString listName, QStr
     userListsQuery.bindValue(0, numQs);
     userListsQuery.bindValue(1, username);
     userListsQuery.exec();
-    return true;
+    emit deleteWordListSuccess(lexiconName, listName, username);
 }
 
 void DatabaseHandler::getListSpaceUsage(QString username, quint32 &usage, quint32 &max)
@@ -1349,6 +1448,131 @@ void DatabaseHandler::getListSpaceUsage(QString username, quint32 &usage, quint3
     {
         usage = userListsQuery.value(0).toInt();
     }
+}
+
+void DatabaseHandler::generateUnscramblegameQuizArray(QString lexicon, QString listname,
+                                                      quint8 listType, quint8 userlistMode,
+                                                      quint16 tablenum,quint64 tableid, QString username)
+{
+    SavedUnscrambleGame sug;
+    QList <quint32> missedArray;
+    QList <quint32> quizArray;
+    quint16 numTotalRacks;
+    switch (listType)
+    {
+        case LIST_TYPE_NAMED_LIST:
+            {
+                QSqlQuery query(lexiconMap.value(lexicon).dbConn);
+
+                query.prepare("SELECT probindices from wordlists where listname = ?");
+                query.bindValue(0, listname);
+                query.exec();
+
+                QByteArray indices;
+
+                while (query.next())
+                {
+                    indices = query.value(0).toByteArray();
+                }
+
+                QDataStream stream(indices);
+                quint8 type, length;
+                stream >> type >> length;   //TODO remove length from the parameters
+
+                if (type == 1)
+                {
+                    // a list of indices
+                    quint32 size;
+                    stream >> size;
+
+                    quint32 index;
+                    quizArray.clear();
+                    for (quint32 i = 0; i < size; i++)
+                    {
+
+                        stream >> index;
+                        quizArray << index;
+                    }
+
+                    Utilities::shuffle(quizArray);
+                    numTotalRacks = size;
+                }
+                else
+                    qCritical() << "ERROR: type != 1 !";    // we always have a list of indices for named lists
+
+                sug.initialize(quizArray);
+                // and set SUG accordingly
+                break;
+            }
+        case LIST_TYPE_USER_LIST:
+            {
+                QString pathName = getSavedListAbsolutePath(lexicon, listname, username);
+
+                QFile f(pathName);
+                f.open(QIODevice::ReadOnly);
+                QByteArray ba = f.readAll();
+
+                sug.populateFromByteArray(ba);
+                QList <quint32> qindices;
+                QList <quint32> mindices;
+                switch (userlistMode)
+                {
+
+                    case UNSCRAMBLEGAME_USERLIST_MODE_RESTART:
+                        sug.initialize(sug.origIndices);
+
+                        qindices = sug.origIndices.toList();
+                        mindices.clear();
+
+                        break;
+
+                    case UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED:
+                        qindices = sug.firstMissed.toList();
+                        mindices.clear();
+
+                        sug.curQuizSet = sug.firstMissed;
+                        sug.curMissedSet.clear();
+                        break;
+
+                    case UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE:
+                        if (sug.brandNew)
+                        {
+                            qindices = sug.origIndices.toList();
+                            mindices.clear();
+                        }
+                        else
+                        {
+                            qindices = sug.curQuizSet.toList();
+                            mindices = sug.curMissedSet.toList();
+                        }
+                     //   qDebug() << "Index:" << qindices.at(0);
+                        break;
+                }
+
+                // a list of indices
+                quint32 size = qindices.size();
+
+                // TODO modularize this; put into a function. shouldn't repeat code.
+                if (size > 0)
+                {
+                    quizArray = qindices;
+                    Utilities::shuffle(quizArray);
+
+                }
+                numTotalRacks = size;
+
+                size = mindices.size();
+                if (size > 0)
+                {
+                    missedArray = mindices;
+                    Utilities::shuffle(missedArray);
+                }
+
+                break;
+            }
+    }
+    emit unscramblegameQuizArray(quizArray, missedArray, sug.toByteArray(), tablenum, tableid);
+
 }
 
 QMap <unsigned char, int> DatabaseHandler::getEnglishDist()

@@ -121,7 +121,10 @@ int main(int argc, char *argv[])
             databaseHandler.connectToAvailableDatabases();
 
             MainServer mainServer(aerolithVersion);
-            mainServer.listen(QHostAddress::Any, port);
+         //   mainServer.listen(QHostAddress::Any, port);
+            mainServer.init();
+            dbServerConnects(&databaseHandler, &mainServer);
+
             qDebug() << "listening on port " << port;
             return app.exec();
         }
@@ -151,38 +154,73 @@ int main(int argc, char *argv[])
     QObject::connect(&mainServer, SIGNAL(finished()), &mainWin, SLOT(serverHasFinished()));
 
     /* client-database connects*/
-    QObject::connect(&mainWin, SIGNAL(probIndicesRequest(QStringList, QString, QString)),
-        &databaseHandler, SLOT(enqueueProbIndicesRequest(QStringList, QString, QString)));
-    QObject::connect(&databaseHandler, SIGNAL(returnProbIndices(QList<quint32>,QString, QString)),
-                     &mainWin, SLOT(gotProbIndices(QList<quint32>,QString,QString)));
 
-    QObject::connect(&databaseHandler, SIGNAL(enableClose(bool)),
-                     &mainWin, SLOT(dbDialogEnableClose(bool)));
-    QObject::connect(&databaseHandler, SIGNAL(createdDatabase(QString)),
-                     &mainWin, SLOT(databaseCreated(QString)));
-    QObject::connect(&databaseHandler, SIGNAL(setProgressMessage(QString)),
-                     &mainWin, SLOT(setProgressMessage(QString)));
-    QObject::connect(&databaseHandler, SIGNAL(setProgressValue(int)),
-                     &mainWin, SLOT(setProgressValue(int)));
-    QObject::connect(&databaseHandler, SIGNAL(setProgressRange(int,int)),
-                     &mainWin, SLOT(setProgressRange(int, int)));
-
-    QObject::connect(&mainWin, SIGNAL(reconnectToDatabases()),
-                     &databaseHandler, SLOT(connectToAvailableDatabases()));
-    QObject::connect(&mainWin, SIGNAL(createLexiconDatabases(QStringList)),
-                     &databaseHandler, SLOT(enqueueCreateLexiconDatabases(QStringList)));
-    QObject::connect(&mainWin, SIGNAL(requestQuestionData(QByteArray, QString, int)),
-                     &databaseHandler, SLOT(enqueueGetQuestionData(QByteArray, QString, int)));
-
-    QObject::connect(&databaseHandler, SIGNAL(returnQuestionInfo(QByteArray,QByteArray,int)),
-                     &mainWin, SLOT(getUnscrambleGameQuestionInfo(QByteArray, QByteArray, int)));
-    QObject::connect(&databaseHandler, SIGNAL(returnAnswerInfo(QByteArray,int)),
-                     &mainWin, SLOT(getUnscrambleGameAnswerInfo(QByteArray, int)));
-
+    dbClientConnects(&databaseHandler, &mainWin);
+    dbServerConnects(&databaseHandler, &mainServer);
 
     mainWin.show();
     return app.exec();
 
+}
+
+void dbClientConnects(DatabaseHandler *dbHandler, MainWindow *mainWin)
+{
+    QObject::connect(mainWin, SIGNAL(probIndicesRequest(QStringList, QString, QString)),
+        dbHandler, SLOT(enqueueProbIndicesRequest(QStringList, QString, QString)));
+    QObject::connect(dbHandler, SIGNAL(returnProbIndices(QList<quint32>,QString, QString)),
+                     mainWin, SLOT(gotProbIndices(QList<quint32>,QString,QString)));
+
+    QObject::connect(dbHandler, SIGNAL(enableClose(bool)),
+                     mainWin, SLOT(dbDialogEnableClose(bool)));
+    QObject::connect(dbHandler, SIGNAL(createdDatabase(QString)),
+                     mainWin, SLOT(databaseCreated(QString)));
+    QObject::connect(dbHandler, SIGNAL(setProgressMessage(QString)),
+                     mainWin, SLOT(setProgressMessage(QString)));
+    QObject::connect(dbHandler, SIGNAL(setProgressValue(int)),
+                     mainWin, SLOT(setProgressValue(int)));
+    QObject::connect(dbHandler, SIGNAL(setProgressRange(int,int)),
+                     mainWin, SLOT(setProgressRange(int, int)));
+
+    QObject::connect(mainWin, SIGNAL(reconnectToDatabases()),
+                     dbHandler, SLOT(connectToAvailableDatabases()));
+    QObject::connect(mainWin, SIGNAL(createLexiconDatabases(QStringList)),
+                     dbHandler, SLOT(enqueueCreateLexiconDatabases(QStringList)));
+    QObject::connect(mainWin, SIGNAL(requestQuestionData(QByteArray, QString, int)),
+                     dbHandler, SLOT(enqueueGetQuestionData(QByteArray, QString, int)));
+
+    QObject::connect(dbHandler, SIGNAL(returnQuestionInfo(QByteArray,QByteArray,int)),
+                     mainWin, SLOT(getUnscrambleGameQuestionInfo(QByteArray, QByteArray, int)));
+    QObject::connect(dbHandler, SIGNAL(returnAnswerInfo(QByteArray,int)),
+                     mainWin, SLOT(getUnscrambleGameAnswerInfo(QByteArray, int)));
+}
+
+void dbServerConnects(DatabaseHandler *dbHandler, MainServer *mainServer)
+{
+    QObject::connect(mainServer, SIGNAL(saveWordList(QString,QString,QString,QList<quint32>)),
+                     dbHandler, SLOT(enqueueSaveSingleList(QString,QString,QString,QList<quint32>)));
+    QObject::connect(dbHandler, SIGNAL(saveWordListFailed(QString)),
+                     mainServer, SLOT(saveWordListFailed(QString)));
+    QObject::connect(dbHandler, SIGNAL(saveWordListSuccess(QString,QString,quint32,QString)),
+                     mainServer, SLOT(doneSavingWordList(QString,QString,quint32,QString)));
+
+    QObject::connect(mainServer, SIGNAL(requestListInfo(QString,QString)),
+                     dbHandler, SLOT(enqueueListInfoRequest(QString,QString)));
+    QObject::connect(dbHandler, SIGNAL(wordListInfo(QString,QString,QList<QStringList>)),
+                     mainServer, SLOT(gotListInfo(QString,QString,QList<QStringList>)));
+
+    QObject::connect(mainServer, SIGNAL(requestListDelete(QString,QString,QString)),
+                     dbHandler, SLOT(enqueueListDeleteRequest(QString,QString,QString)));
+    QObject::connect(dbHandler, SIGNAL(deleteWordListFailed(QString)),
+                     mainServer, SLOT(deleteListFailed(QString)));
+    QObject::connect(dbHandler, SIGNAL(deleteWordListSuccess(QString,QString,QString)),
+                     mainServer, SLOT(deletedList(QString,QString,QString)));
+
+    QObject::connect(mainServer, SIGNAL(otherDatabaseRequest(QByteArray)),
+                     dbHandler, SLOT(enqueueOtherDatabaseRequest(QByteArray)));
+    QObject::connect(dbHandler, SIGNAL(requestedListExists(bool,quint16,quint64)),
+                     mainServer, SLOT(requestedListExists(bool,quint16,quint64)));
+    QObject::connect(dbHandler, SIGNAL(unscramblegameQuizArray(QList<quint32>,QList<quint32>,QByteArray,quint16,quint64)),
+                     mainServer, SLOT(gotUnscrambleGameQuizArray(QList<quint32>,QList<quint32>,QByteArray,quint16,quint64)));
 }
 
 /* how to make aerolith logo:

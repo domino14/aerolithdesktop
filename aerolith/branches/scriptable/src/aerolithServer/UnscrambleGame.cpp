@@ -85,12 +85,6 @@ QByteArray UnscrambleGame::initialize()
 
     table->host->connData.in >> lexiconName >> cycleState >> tableTimerValMin;
 
-    if (DatabaseHandler::getAvailableDatabases().contains(lexiconName))
-    {
-        wordDbConName = lexiconName + "DB_server";  // this is how it is in databaseHandler. todo perhaps should make this a variable.
-
-    }
-
 
     connect(&gameTimer, SIGNAL(timeout()), this, SLOT(updateGameTimer()));
     connect(&countdownTimer, SIGNAL(timeout()), this, SLOT(updateCountdownTimer()));
@@ -106,7 +100,13 @@ QByteArray UnscrambleGame::initialize()
     numRacksSeen = 0;
     numTotalRacks = 0;
 
-    generateQuizArray();
+    pendingQuizArray = false;
+
+    if (listType == LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH || listType == LIST_TYPE_ALL_WORD_LENGTH ||
+        listType == LIST_TYPE_ALL_WORD_LENGTH)
+        generateQuizArray();
+    else
+        requestGenerateQuizArray(); // need database access
 
     if (cycleState == TABLE_TYPE_DAILY_CHALLENGES)
     {
@@ -130,6 +130,10 @@ QByteArray UnscrambleGame::initialize()
     out << table->maxPlayers;
     out << table->isPrivate;
     fixHeaderLength();
+
+
+    pendingListExistsRequest = false;
+
 
     return block;
 
@@ -161,34 +165,71 @@ void UnscrambleGame::playerJoined(ClientSocket* client)
     //
     //    }
 
-        if (table->originalHost == client && savingAllowed)
+    if (table->originalHost == client && savingAllowed)
+    {
+        if (autosaveOnQuit)
+            table->sendTableMessage("Autosave on quit is now on. If you are disconnected, your game "
+                                    "will be automatically saved.");
+        else
         {
-            if (autosaveOnQuit)
-                table->sendTableMessage("Autosave on quit is now on. If you are disconnected, your game "
-                                        "will be automatically saved.");
-            else
-            {
-
-                // todo replace with an emit
-                if (dbHandler->savedListExists(lexiconName, wordList, client->connData.userName))
-                {
-                    table->sendTableMessage("You already have a saved list named: " + wordList + ". If you "
-                                            "click Save, you will overwrite this list! If you do not wish "
-                                            "to do this, please select your saved list from 'My Lists' when "
-                                            "creating a new table.");
-
-
-                }
-                else
-                    table->sendTableMessage("Autosave on quit is off. To turn it on, you must click the Save button"
-                                            " to save your current progress. If you are disconnected, the game will "
-                                            "then be automatically saved.");
-
-            }
-
+            requestListExists(lexiconName, wordList, client->connData.userName);
         }
 
+    }
+
 }
+
+void UnscrambleGame::requestListExists(QString lex, QString list, QString username)
+{
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)DatabaseHandler::DOES_LIST_EXIST;
+    o << lex << list << username << table->tableNumber << table->tableID;
+    emit databaseRequest(command);
+    pendingListExistsRequest = true;
+}
+
+void UnscrambleGame::requestGenerateQuizArray()
+{
+    QByteArray command;
+    QDataStream o(&command, QIODevice::WriteOnly);
+    o << (quint8)DatabaseHandler::GENERATE_QUIZ_ARRAY;
+    o << listType << lexiconName << wordList << userlistMode
+            << table->tableNumber << table->tableID << table->originalHost->connData.userName;
+
+    emit databaseRequest(command);
+    pendingQuizArray = true;
+}
+
+
+
+
+
+void UnscrambleGame::savedListExists(bool exists)
+{
+    if (pendingListExistsRequest)
+    {
+        // todo replace with an emit
+        if (exists)
+        {
+            table->sendTableMessage("You already have a saved list named: " + wordList + ". If you "
+                                    "click Save, you will overwrite this list! If you do not wish "
+                                    "to do this, please select your saved list from 'My Lists' when "
+                                    "creating a new table.");
+
+
+        }
+        else
+            table->sendTableMessage("Autosave on quit is off. To turn it on, you must click the Save button"
+                                    " to save your current progress. If you are disconnected, the game will "
+                                    "then be automatically saved.");
+
+        pendingListExistsRequest = false;
+    }
+
+}
+
+
 
 void UnscrambleGame::cleanupBeforeDelete()
 {
@@ -216,6 +257,11 @@ void UnscrambleGame::playerLeftGame(ClientSocket* socket)
 void UnscrambleGame::gameStartRequest(ClientSocket* client)
 {
     if (!client->connData.isSitting) return;    // can't request to start the game if you're standing
+    if (pendingQuizArray)
+    {
+        table->sendTableMessage("Please wait, loading questions...");
+        return;
+    }
     if (startEnabled == true && gameStarted == false && countingDown == false)
     {
         bool startTheGame = true;
@@ -283,10 +329,10 @@ void UnscrambleGame::correctAnswerSent(ClientSocket* socket, quint8 space, quint
                         sug.brandNew = false;
                         sug.curQuizSet = sug.origIndices;
                     }
-//                    qDebug() << "Answered correctly";
+                    //                    qDebug() << "Answered correctly";
 
                     //       Q_ASSERT(currentSug.curQuizList.contains(wordQuestions.at(space).probIndex));
-                  //  qDebug() << sug.curQuizSet.contains(unscrambleGameQuestions[space].probIndex);
+                    //  qDebug() << sug.curQuizSet.contains(unscrambleGameQuestions[space].probIndex);
 
                     sug.curQuizSet.remove(unscrambleGameQuestions[space].probIndex);
                 }
@@ -447,7 +493,7 @@ void UnscrambleGame::endGame()
     missedArray.append(missedThisRound);
 #else
     foreach (quint32 p, missedThisRound)
-      missedArray.append(p);
+        missedArray.append(p);
 #endif
     if (savingAllowed)
     {
@@ -499,6 +545,7 @@ void UnscrambleGame::setQuizArrayRange(quint32 low, quint32 high)
         quizArray << indexList.at(i-low);
 }
 
+
 void UnscrambleGame::generateQuizArray()
 {
 
@@ -507,204 +554,75 @@ void UnscrambleGame::generateQuizArray()
 
     switch (listType)
     {
-    case LIST_TYPE_NAMED_LIST:
-        {
-            QSqlQuery query(QSqlDatabase::database(wordDbConName));
-            query.setForwardOnly(true);
 
-            query.prepare("SELECT probindices from wordlists where listname = ?");
-            query.bindValue(0, wordList);
-            query.exec();
 
-            QByteArray indices;
-
-            while (query.next())
+        case LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH:
             {
-                indices = query.value(0).toByteArray();
+                lowProbIndex = DatabaseHandler::encodeProbIndex(lowProbIndex, wordLength);
+                highProbIndex = DatabaseHandler::encodeProbIndex(highProbIndex, wordLength);
+
+
+                setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks is also set in this function
+                // and set SUG accordingly
+                sug.initializeWithIndexRange(lowProbIndex, highProbIndex);
+
+                break;
+            }
+        case  LIST_TYPE_ALL_WORD_LENGTH:
+            {
+                lowProbIndex = DatabaseHandler::encodeProbIndex(1, wordLength);  // probability 1 is the first
+                if (wordLength >=2 && wordLength <= 15)
+                    highProbIndex = DatabaseHandler::encodeProbIndex(DatabaseHandler::lexiconMap.
+                                                                     value(lexiconName).
+                                                                     alphagramsPerLength[wordLength], wordLength);
+
+
+                setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks also set in this function
+
+                sug.initializeWithIndexRange(lowProbIndex, highProbIndex);
+                // and set SUG accordingly
+
+                break;
             }
 
-            //            QDataStream stream(indices);
-            QDataStream stream(indices);
-            quint8 type, length;
-            stream >> type >> length;   /*TODO remove length from the parameters */
-
-            if (type == 1)
+        case LIST_TYPE_DAILY_CHALLENGE:
             {
-                // a list of indices
-                quint32 size;
-                stream >> size;
+                // daily challenges
+                // just copy the daily challenge array
 
-                quint32 index;
-                quizArray.clear();
-                for (quint32 i = 0; i < size; i++)
+                if (challenges.contains(wordList))
                 {
-
-                    stream >> index;
-                    quizArray << index;
+                    wordLength = challenges.value(wordList).wordLength;
+                    quizArray = challenges.value(wordList).dbIndices;
                 }
 
-                Utilities::shuffle(quizArray);
-                numTotalRacks = size;
+                numTotalRacks = maxRacks;   // this line may be unnecessary, numTotalRacks is set in prepareTableAlphagrams before the start of the game
+
+
+                break;
             }
-            else
-                qCritical() << "ERROR: type != 1 !";    // we always have a list of indices for named lists
-
-            sug.initialize(quizArray);
-            // and set SUG accordingly
-            break;
-        }
-
-
-    case LIST_TYPE_INDEX_RANGE_BY_WORD_LENGTH:
-        {
-            lowProbIndex = DatabaseHandler::encodeProbIndex(lowProbIndex, wordLength);
-            highProbIndex = DatabaseHandler::encodeProbIndex(highProbIndex, wordLength);
-
-
-            setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks is also set in this function
-            // and set SUG accordingly
-            sug.initializeWithIndexRange(lowProbIndex, highProbIndex);
-
-            break;
-        }
-    case  LIST_TYPE_ALL_WORD_LENGTH:
-        {
-            lowProbIndex = DatabaseHandler::encodeProbIndex(1, wordLength);  // probability 1 is the first
-            if (wordLength >=2 && wordLength <= 15)
-                highProbIndex = DatabaseHandler::encodeProbIndex(DatabaseHandler::lexiconMap.
-                                                                 value(lexiconName).
-                                                                 alphagramsPerLength[wordLength], wordLength);
-
-
-            setQuizArrayRange(lowProbIndex, highProbIndex); //numTotalRacks also set in this function
-
-            sug.initializeWithIndexRange(lowProbIndex, highProbIndex);
-            // and set SUG accordingly
-
-            break;
-        }
-    case LIST_TYPE_USER_LIST:
-        {
-            QString pathName = dbHandler->getSavedListAbsolutePath(lexiconName, wordListOriginal,
-                                                                table->originalHost->connData.userName);
-
-            QFile f(pathName);
-            f.open(QIODevice::ReadOnly);
-            QByteArray ba = f.readAll();
-
-            sug.populateFromByteArray(ba);
-            QList <quint32> qindices;
-            QList <quint32> mindices;
-            switch (userlistMode)
-            {
-
-                case UNSCRAMBLEGAME_USERLIST_MODE_RESTART:
-                    sug.initialize(sug.origIndices);
-
-                    qindices = sug.origIndices.toList();
-                    mindices.clear();
-
-                    break;
-
-                case UNSCRAMBLEGAME_USERLIST_MODE_FIRSTMISSED:
-                    qindices = sug.firstMissed.toList();
-                    mindices.clear();
-
-                    sug.curQuizSet = sug.firstMissed;
-                    sug.curMissedSet.clear();
-                    break;
-
-                case UNSCRAMBLEGAME_USERLIST_MODE_CONTINUE:
-                    if (sug.brandNew)
-                    {
-                        qindices = sug.origIndices.toList();
-                        mindices.clear();
-                    }
-                    else
-                    {
-                        qindices = sug.curQuizSet.toList();
-                        mindices = sug.curMissedSet.toList();
-                    }
-                 //   qDebug() << "Index:" << qindices.at(0);
-                    break;
-            }
-
-            // a list of indices
-            quint32 size = qindices.size();
-
-            // TODO modularize this; put into a function. shouldn't repeat code.
-            if (size > 0)
-            {
-                quizArray = qindices;
-                Utilities::shuffle(quizArray);
-//                QList <quint32> tempList;
-//                QList <quint32> indexList;
-//                for (int i = 0; i < size; i++)
-//                    indexList << 0;   // dummy, to resize to 'size'
-//
-//                quint32 index;
-//                Utilities::getUniqueRandomNumbers(tempList, 0, size-1, size);
-//                for (quint32 i = 0; i < size; i++)
-//                {
-//                    indexList[tempList.at(i)] = qindices.at(i);
-//                }
-//
-//                for (quint32 i = 0; i < size; i++)
-//                    quizArray << indexList.at(i);
-            }
-            numTotalRacks = size;
-
-            size = mindices.size();
-            if (size > 0)
-            {
-                missedArray = mindices;
-                Utilities::shuffle(missedArray);
-
-
-//                QList <quint32> tempList;
-//                QList <quint32> indexList;
-//                for (int i = 0; i < size; i++)
-//                    indexList << 0;   // dummy, to resize to 'size'
-//
-//                Utilities::getUniqueRandomNumbers(tempList, 0, size-1, size);
-//                for (quint32 i = 0; i < size; i++)
-//                {
-//                    indexList[tempList.at(i)] = mindices.at(i);
-//                }
-//
-//                for (quint32 i = 0; i < size; i++)
-//                    missedArray << indexList.at(i);
-
-            }
-
-            break;
-        }
-    case LIST_TYPE_DAILY_CHALLENGE:
-        {
-            // daily challenges
-            // just copy the daily challenge array
-
-            if (challenges.contains(wordList))
-            {
-                wordLength = challenges.value(wordList).wordLength;
-                quizArray = challenges.value(wordList).dbIndices;
-            }
-
-            numTotalRacks = maxRacks;   // this line may be unnecessary, numTotalRacks is set in prepareTableAlphagrams before the start of the game
-
-
-            break;
-        }
 
     }
 
 
     quizIndex = 0;
 
-    neverStarted = true;
-    thisMaxQuestions = missedArray.size() + quizArray.size();
+   // thisMaxQuestions = missedArray.size() + quizArray.size();
+    thisMaxQuestions = quizArray.size();
     numTotalQuestions += thisMaxQuestions;
 
+}
+
+void UnscrambleGame::gotQuizArray(QList<quint32> quizArray, QList<quint32> missedArray, QByteArray sugArray)
+{
+    this->quizArray = quizArray;
+    this->missedArray = missedArray;
+    sug.populateFromByteArray(sugArray);
+
+    quizIndex = 0;
+
+    thisMaxQuestions = missedArray.size() + quizArray.size();
+    numTotalQuestions += thisMaxQuestions;
 }
 
 void UnscrambleGame::prepareTableQuestions()

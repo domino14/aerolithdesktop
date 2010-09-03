@@ -19,7 +19,7 @@
 
 const quint8 COUNTDOWN_TIMER_VAL = 3;
 
-void BonusGame::initialize(quint8, quint8, QString tableName, QString lexiconName, DatabaseHandler* dbHandler)
+void BonusGame::initialize(quint8, quint8, QString tableName, QString lexiconName)
 {
     this->tableName = tableName;
     this->lexiconName = lexiconName;

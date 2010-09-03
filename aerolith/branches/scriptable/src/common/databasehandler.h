@@ -92,7 +92,12 @@ public:
     {
         CREATE_LEXICON_DATABASES = 1,
         REQUEST_PROB_INDICES_FOR_UPLOADED_WORDLIST = 2,
-        GET_QUESTION_DATA = 3
+        GET_QUESTION_DATA = 3,
+        SAVE_SINGLE_LIST = 4,
+        GET_LIST_INFO = 5,
+        DELETE_LIST = 6,
+        DOES_LIST_EXIST = 7,
+        GENERATE_QUIZ_ARRAY = 8
 
     };
 
@@ -112,15 +117,15 @@ public:
 
     QString getSavedListRelativePath(QString, QString, QString);
     QString getSavedListAbsolutePath(QString, QString, QString);
-    bool saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32>& probIndices);
+
     //  bool saveNewLists(QString lexiconName, QString listName, QSet <quint32>& probIndices);
     QStringList getSingleListLabels(QString lexiconName, QString username, QString listname);
-    QList <QStringList> getAllListLabels(QString lexiconName, QString username);
-    bool deleteUserList(QString lexiconName, QString listName, QString username);
+
+
 
     bool saveGame(SavedUnscrambleGame, QString, QString, QString);
 
-    bool savedListExists(QString lexicon, QString listName, QString username);
+
     void getListSpaceUsage(QString username, quint32& usage, quint32& max);
 
 
@@ -128,9 +133,15 @@ private:
     static QStringList availableDatabases;
     static QStringList findAvailableDatabases();
 
-
-
+    bool savedListExists(QString lexicon, QString listName, QString username, quint16 tablenum, quint64 tableid, bool alsoEmit);
+    void deleteUserList(QString lexiconName, QString listName, QString username);
+    void saveSingleList(QString lexiconName, QString listName, QString username, QList <quint32> probIndices);
+    void getAllListLabels(QString lexiconName, QString username);
     void processCommand(QByteArray);
+
+    void generateUnscramblegameQuizArray(QString lexicon, QString listname,
+                                            quint8 listType, quint8 userlistMode,
+                                            quint16 tablenum, quint64 tableid, QString username);
 
     void createLexiconDatabases(QStringList);
     void getQuestionData(QByteArray, QString, int);
@@ -174,10 +185,22 @@ signals:
 
     void returnQuestionInfo(QByteArray, QByteArray, int);
     void returnAnswerInfo(QByteArray, int);
+
+    void saveWordListFailed(QString username);
+    void saveWordListSuccess(QString lexicon, QString listName, quint32 listSize, QString username);
+    void wordListInfo(QString username, QString lexicon, QList<QStringList> labels);
+    void deleteWordListFailed(QString username);
+    void deleteWordListSuccess(QString lexicon, QString listname, QString username);
+    void requestedListExists(bool exists, quint16 tablenum,quint64 tableid);
+    void unscramblegameQuizArray(QList <quint32>, QList <quint32>, QByteArray, quint16 tablenum,quint64 tableid);
 public slots:
+    void enqueueListDeleteRequest(QString lexicon, QString listname, QString username);
+    void enqueueListInfoRequest(QString lexicon, QString username);
+    void enqueueSaveSingleList(QString, QString, QString, QList <quint32>);
     void enqueueProbIndicesRequest(QStringList, QString, QString);
     void enqueueCreateLexiconDatabases(QStringList);
     void enqueueGetQuestionData(QByteArray, QString, int);
+    void enqueueOtherDatabaseRequest(QByteArray);
     void connectToAvailableDatabases();
 };
 
