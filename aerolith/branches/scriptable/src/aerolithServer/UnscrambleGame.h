@@ -91,6 +91,8 @@ public:
     int thisMaxQuestions;
 
     bool savingAllowed;
+    void savedListExists(bool exists);
+    void gotQuizArray(QList<quint32> quizArray, QList<quint32> missedArray, QByteArray sugArray);
 private:
 
     SavedUnscrambleGame sug;
@@ -115,11 +117,9 @@ private:
     };
 
     //  QHash <QString, playerData> playerDataHash;
-    QString wordDbConName;
     QSqlQuery query;
     QString wordList;
     QString wordListOriginal;
-    bool neverStarted;
     bool wroteToMissedFileThisRound;
     bool gameStarted;
     bool countingDown;
@@ -156,7 +156,7 @@ private:
 
     quint16 numTotalRacks;
     quint16 numRacksSeen;
-    void generateQuizArray();
+
     void sendCorrectAnswerPacket(quint8, quint8, quint8);
 
     void sendTimerValuePacket(quint16);
@@ -173,6 +173,11 @@ private:
 
     void saveProgress(ClientSocket* client);
 
+    void requestListExists(QString, QString, QString);
+    bool pendingListExistsRequest;
+    void generateQuizArray();
+    void requestGenerateQuizArray();
+    bool pendingQuizArray;
 private slots:
     void updateGameTimer();
     void updateCountdownTimer();

@@ -62,6 +62,15 @@ Q_OBJECT
   Table* table;
 
 
+signals:
+  void databaseRequest(QByteArray);
+  /* note: the command byte arrays emitted with this signal look like the internal format that DatabaseHandler
+    uses.
+     I did this for simplicity. it may not be the best coding practice (if I have to change the DatabaseHandler
+    internal format for any reason), but anyone is welcome to clean it up.
+    search for "databaseRequest" to find uses
+ */
+
 
 };
 

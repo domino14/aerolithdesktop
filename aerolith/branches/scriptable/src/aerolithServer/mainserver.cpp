@@ -73,6 +73,7 @@ MainServer::MainServer(QString aerolithVersion) :
         query.exec("INSERT INTO playerID_table(playerID) VALUES(1)");
     }
 
+    currentTableID = 0;
 }
 
 void MainServer::init()
@@ -326,7 +327,7 @@ void MainServer::receiveMessage()
 
         if (socket->connData.numBytesSentToday > userDailyByteLimit)
         {
-	  qDebug() << "Bandwidth limit!" << socket->connData.numBytesSentToday << userDailyByteLimit;
+            qDebug() << "Bandwidth limit!" << socket->connData.numBytesSentToday << userDailyByteLimit;
             writeToClient(socket, "You have reached your daily bandwidth limit! Please quiz with large files "
                           "locally!", S_ERROR); // the user daily limit should happen very rarely.
             todaysBlacklist.insert(socket->connData.userName.toLower());
@@ -350,8 +351,8 @@ void MainServer::receiveMessage()
         }
 
         if  ((packetType != CLIENT_LOGIN && packetType != CLIENT_REGISTER)
-                && !socket->connData.loggedIn)
-        {
+            && !socket->connData.loggedIn)
+            {
             socket->disconnectFromHost();
             return; // cannot do anything before logging in! (or registering)
         }
@@ -443,12 +444,12 @@ void MainServer::saveRemoteList(ClientSocket* socket)
         {
             QList <quint32> listPiece;
             socket->connData.in >> listPiece;
-	    #if QT_VERSION >= 0x040500
+#if QT_VERSION >= 0x040500
             socket->ugData.uploadedList.append(listPiece);
-	    #else
+#else
 	    foreach (quint32 p, listPiece)
-	      socket->ugData.uploadedList.append(p);
-	    #endif
+                socket->ugData.uploadedList.append(p);
+#endif
             if (socket->ugData.uploadedList.size() > REMOTE_LISTSIZE_LIMIT)
             {
                 socket->disconnectFromHost();
@@ -476,49 +477,68 @@ void MainServer::saveRemoteList(ClientSocket* socket)
     {
         /* actually save the list to the database */
 
-        // todo replace this with an emit
-        bool success = dbHandler->saveSingleList(socket->ugData.uploadedListLexicon,
-                                                 socket->ugData.uploadedListName.mid(0, 64),
-                                                 socket->connData.userName.toLower(),
-                                                 socket->ugData.uploadedList);
+        emit saveWordList(socket->ugData.uploadedListLexicon, socket->ugData.uploadedListName.mid(0, 64),
+                          socket->connData.userName.toLower(),socket->ugData.uploadedList);
 
-
-        if (success)
-        {
-            writeHeaderData();
-            out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE;
-            out << socket->ugData.uploadedListLexicon;
-            QStringList sl;
-            sl << socket->ugData.uploadedListName.mid(0, 64)
-                    << QString::number(socket->ugData.uploadedListSize)
-                    << QString::number(socket->ugData.uploadedListSize)
-                    << "0"
-                    << QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap");
-
-            out << sl;
-
-            fixHeaderLength();
-            socket->write(block);
-
-
-            UnscrambleGame::sendListSpaceUsage(socket);
-        }
-        else
-        {
-
-            writeToClient(socket, "There was a list creation error. "
-                          "Make sure you don't have two lists with the same name.",
-                          S_ERROR);
-        }
     }
+}
+
+void MainServer::doneSavingWordList(QString lexicon, QString listName, quint32 listSize, QString username)
+{
+    ClientSocket* socket;
+    if (usernamesHash.contains(username))
+        socket = usernamesHash.value(username);
+    else return;
+
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_ADDONE;
+    out << lexicon;
+    QStringList sl;
+    sl << listName << QString::number(listSize) << QString::number(listSize) << "0" <<
+            QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap");
+    out << sl;
+    fixHeaderLength();
+
+    socket->write(block);
+    //        sl << socket->ugData.uploadedListName.mid(0, 64)
+    //                << QString::number(socket->ugData.uploadedListSize)
+    //                << QString::number(socket->ugData.uploadedListSize)
+    //                << "0"
+    //                << QDateTime::currentDateTime().toString("MMM d, yy h:mm:ss ap");
+
+
+    UnscrambleGame::sendListSpaceUsage(socket);
+
+
+}
+
+void MainServer::saveWordListFailed(QString username)
+{
+    ClientSocket* socket;
+    if (usernamesHash.contains(username))
+        socket = usernamesHash.value(username);
+    else return;
+    writeToClient(socket, "There was a list creation error. "
+                  "Make sure you don't have two lists with the same name.",
+                  S_ERROR);
 }
 
 void MainServer::listInfoRequest(ClientSocket* socket)
 {
     QString lex;
     socket->connData.in >> lex;
-    //todo replace this with an emit.
-    QList <QStringList> myListsTableLabels = dbHandler->getAllListLabels(lex, socket->connData.userName);
+    emit requestListInfo(lex, socket->connData.userName);
+
+}
+
+void MainServer::gotListInfo(QString username, QString lex, QList <QStringList> myListsTableLabels)
+{
+    //  QList <QStringList> myListsTableLabels = dbHandler->getAllListLabels(lex, socket->connData.userName);
+    ClientSocket* socket;
+    if (usernamesHash.contains(username))
+        socket = usernamesHash.value(username);
+    else return;
 
     writeHeaderData();
     out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_BEGIN;
@@ -548,25 +568,41 @@ void MainServer::listDeleteRequest(ClientSocket* socket)
     QString lex, list;
     socket->connData.in >> lex >> list;
 
-    // replace this with an emit
+    emit requestListDelete(lex, list, socket->connData.userName);
+    /*
     bool success = dbHandler->deleteUserList(lex, list, socket->connData.userName);
 
     if (success)
-    {
-        writeHeaderData();
-        out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE;
-        out << lex;
-        out << list;
-        fixHeaderLength();
-        socket->write(block);
-
-        UnscrambleGame::sendListSpaceUsage(socket);
-
-    }
-
-
+    {*/
 }
 
+void MainServer::deletedList(QString lex, QString list, QString username)
+{
+    ClientSocket* socket;
+    if (usernamesHash.contains(username))
+        socket = usernamesHash.value(username);
+    else return;
+
+    writeHeaderData();
+    out << (quint8) SERVER_UNSCRAMBLEGAME_LISTDATA_CLEARONE;
+    out << lex;
+    out << list;
+    fixHeaderLength();
+    socket->write(block);
+
+    UnscrambleGame::sendListSpaceUsage(socket);
+}
+
+void MainServer::deleteListFailed(QString username)
+{
+    ClientSocket* socket;
+    if (usernamesHash.contains(username))
+        socket = usernamesHash.value(username);
+    else return;
+
+    writeToClient(socket, "There was a list deletion error.",
+                  S_ERROR);
+}
 
 
 void MainServer::sendHighScores(ClientSocket* socket)
@@ -589,13 +625,13 @@ void MainServer::sendHighScores(ClientSocket* socket)
         out << challengeName;
         out << tmpList.at(0).numSolutions;
         out << (quint16) tmpList.size();
-      //  qDebug() << challengeName << "#Sol" << tmpList.at(0).numSolutions << "#players" << tmpList.size();
+        //  qDebug() << challengeName << "#Sol" << tmpList.at(0).numSolutions << "#players" << tmpList.size();
         for (int i = 0; i < tmpList.size(); i++)
         {
             out << tmpList.at(i).userName;
             out << tmpList.at(i).numCorrect;
             out << tmpList.at(i).timeRemaining;
-       //     qDebug() << tmpList.at(i).userName << tmpList.at(i).numCorrect << tmpList.at(i).timeRemaining;
+            //     qDebug() << tmpList.at(i).userName << tmpList.at(i).numCorrect << tmpList.at(i).timeRemaining;
         }
 
         // 40 bytes per score
@@ -848,7 +884,7 @@ void MainServer::removePersonFromTable(ClientSocket* socket, quint16 tablenum)
             qDebug() << " need to kill table " << tablenum;
             tables.remove(tablenum);
             tmp->cleanupBeforeDelete();
-            delete tmp; // delete this table data structure -- this should also delete the tablegame
+            tmp->deleteLater(); // delete this table data structure -- this should also delete the tablegame
 
             // write to all clients that table has ceased to exist!
             writeHeaderData();
@@ -927,16 +963,21 @@ void MainServer::processNewTable(ClientSocket* socket)
 
     if (canCreateTable)
     {
-        Table *tmp = new Table;
+        Table *tmp = new Table(this);
+
         //   QByteArray tableDescription = QByteArray::fromRawData(newTableBytes, tableDescriptionSize);
         // does not do a deep copy!
-        
+        connect(tmp, SIGNAL(databaseRequest(QByteArray)), this, SIGNAL(otherDatabaseRequest(QByteArray)));
+
         QByteArray tableBlock = tmp->initialize(socket, tablenum);
         tables.insert(tablenum, tmp);
-
+        tmp->tableID = currentTableID;
+        qDebug() << "Current table ID:" << currentTableID;
         foreach (ClientSocket* connection, connections)
             connection->write(tableBlock);
         doJoinTable(socket, tablenum);
+        currentTableID++;
+
     }
     //   delete [] newTableBytes;
 
@@ -1353,3 +1394,39 @@ void MainServer::suggestionOrBugReport(ClientSocket* socket)
     f.close();
 
 }
+
+void MainServer::requestedListExists(bool exists, quint16 tablenum, quint64 tableid)
+{
+    if (tables.contains(tablenum))
+    {
+        Table* table = tables.value(tablenum);
+        if (table && table->tableID == tableid)
+        {
+            UnscrambleGame* game = qobject_cast<UnscrambleGame *>(table->tableGame);
+            if (game)
+                game->savedListExists(exists);
+
+            // this seems kind of a dirty way to do this. todo, maybe we should just pass QByteArray
+            // packets directly to the UnscrambleGame and let a handler there take care of it.
+        }
+    }
+}
+
+void MainServer::gotUnscrambleGameQuizArray(QList<quint32> quizArray,QList<quint32> missedArray,
+                                            QByteArray sugArray,
+                                            quint16 tablenum,quint64 tableid)
+{
+    if (tables.contains(tablenum))
+    {
+        Table* table = tables.value(tablenum);
+        if (table && table->tableID == tableid)
+        {
+            UnscrambleGame* game = qobject_cast<UnscrambleGame *>(table->tableGame);
+            if (game)
+                game->gotQuizArray(quizArray, missedArray, sugArray);
+
+        }
+
+    }
+}
+

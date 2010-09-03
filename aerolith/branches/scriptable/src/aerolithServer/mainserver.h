@@ -35,15 +35,6 @@ class MainServer : public QTcpServer
 public: 
     MainServer(QString);
 
-
-private slots:
-    void removeConnection();
-    void receiveMessage();
-    void checkEveryone();
-    void midnightUpkeep();
-    // void updateTimer();
-    // void updateCountdownTimer();
-
 private:
     QTimer* oneMinuteTimer;
     QTimer* midnightTimer;
@@ -68,7 +59,7 @@ private:
 
     // QHash <QString, QString> wordLists;
 
-
+    quint64 currentTableID;
 
     void sendHighScores(ClientSocket*);
     void processLogin(ClientSocket*);
@@ -92,9 +83,28 @@ private:
     void suggestionOrBugReport(ClientSocket* socket);
 signals:
     void readyToConnect();
+    void saveWordList(QString, QString, QString, QList<quint32>);
+    void requestListInfo(QString lexicon, QString username);
+    void requestListDelete(QString lexicon, QString listname, QString username);
+    void otherDatabaseRequest(QByteArray);
 public slots:
     void init();
     void deactivate();
+    void gotListInfo(QString username, QString lex, QList <QStringList> myListsTableLabels);
+    void doneSavingWordList(QString lexicon, QString listName, quint32 listSize, QString username);
+    void saveWordListFailed(QString username);
+    void deletedList(QString lex, QString list, QString username);
+    void deleteListFailed(QString username);
+    void requestedListExists(bool exists, quint16 table, quint64 tableid);
+    void gotUnscrambleGameQuizArray(QList<quint32>,QList<quint32>,QByteArray,quint16,quint64);
+private slots:
+    void removeConnection();
+    void receiveMessage();
+    void checkEveryone();
+    void midnightUpkeep();
+
+    // void updateTimer();
+    // void updateCountdownTimer();
 };
 
 #endif
