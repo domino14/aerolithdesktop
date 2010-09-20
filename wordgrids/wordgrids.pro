@@ -22,6 +22,7 @@ HEADERS += mainwindow.h \
     wordstructure.h \
     wordgridsgraphicsview.h
 FORMS += mainwindow.ui \
-    preferences.ui
+    preferences.ui \
+    defpopup.ui
 RESOURCES += wordgrids.qrc
 OTHER_FILES += changes.txt
