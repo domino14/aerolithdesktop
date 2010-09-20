@@ -24,6 +24,7 @@
 
 #include "wordstructure.h"
 #include "ui_preferences.h"
+#include "ui_defpopup.h"
 namespace Ui
 {
     class MainWindowClass;
@@ -160,6 +161,9 @@ private:
     QString currentGameDescription;
     QTimer* singleScoreTimer;
     QTimer* bonusScoreTimer;
+
+    QWidget* definitionPopup;
+    Ui::defpopupForm definitionUi;
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:

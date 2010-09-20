@@ -158,6 +158,8 @@ MainWindow::MainWindow(QWidget *parent)
             SLOT(listWidgetItemClicked(QListWidgetItem*)));
 
     //  ui->listWidgetWordList
+    definitionPopup = new QWidget(this, Qt::Popup);
+    definitionUi.setupUi(definitionPopup);
 }
 
 void MainWindow::closeEvent ( QCloseEvent * event )
@@ -1151,15 +1153,16 @@ void MainWindow::on_pushButtonSwitchGame_clicked()
 
 void MainWindow::listWidgetItemClicked(QListWidgetItem* it)
 {
-    if (!gameGoing && it->toolTip() == "")
+    if (!gameGoing && it->data(Qt::UserRole).toString() == "")
     {
-        it->setToolTip(wordStructure->getDefinitions(it->text()));
-        /* ui->listWidgetWordList->setCurrentItem(it, QItemSelectionModel::Current);
-
-        QMouseEvent event(QEvent::MouseMove, QPoint(10, 0), Qt::NoButton, 0, 0);
-        QApplication::sendEvent(this, &event);*/
-        // to get the damn tooltip to show
+        it->setData(Qt::UserRole, wordStructure->getDefinitions(it->text()));
     }
+    QString text = it->data(Qt::UserRole).toString();
+    int nLineBreaks = qMax(text.count('\n'), 2);
+    definitionUi.plainTextEdit->setPlainText(it->data(Qt::UserRole).toString());
+    definitionPopup->move(ui->listWidgetWordList->x()+this->x(), ui->listWidgetWordList->y()+this->y());
+    definitionPopup->setFixedHeight(nLineBreaks*25 + 50);
+    definitionPopup->show();
 }
 
 /***********************/

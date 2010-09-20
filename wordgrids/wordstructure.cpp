@@ -54,7 +54,7 @@ QString WordStructure::getDefinitions(QString words)
         }
         retString += "\n\n";
     }
-
+    retString = retString.trimmed();
     return retString;
 
 
