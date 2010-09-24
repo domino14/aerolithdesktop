@@ -170,6 +170,7 @@ private slots:
     void on_actionLoad_board_triggered();
     void on_actionSave_board_triggered();
     void on_actionEdit_game_preferences_triggered();
+    void on_actionConnectToServer_triggered();
     void secPassed();
     void sceneMouseClicked(double, double);
     void mouseOverTile();
@@ -178,6 +179,7 @@ private slots:
     void on_pushButtonNewGame_clicked();
     void on_pushButtonRetry_clicked();
     void on_pushButtonGiveUp_clicked();
+
 
     void on_toolButtonMinusSize_clicked();
     void on_toolButtonPlusSize_clicked();

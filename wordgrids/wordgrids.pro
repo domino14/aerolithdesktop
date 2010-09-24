@@ -16,11 +16,13 @@ SOURCES += main.cpp \
     mainwindow.cpp \
     tile.cpp \
     wordstructure.cpp \
-    wordgridsgraphicsview.cpp
+    wordgridsgraphicsview.cpp \
+    servercommunicator.cpp
 HEADERS += mainwindow.h \
     tile.h \
     wordstructure.h \
-    wordgridsgraphicsview.h
+    wordgridsgraphicsview.h \
+    servercommunicator.h
 FORMS += mainwindow.ui \
     preferences.ui \
     defpopup.ui
