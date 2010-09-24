@@ -209,7 +209,7 @@ QPushButton:disabled{
       </item>
      </layout>
     </item>
-    <item row="1" column="0" rowspan="3">
+    <item row="1" column="0" rowspan="4">
      <widget class="WordgridsGraphicsView" name="graphicsView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -278,6 +278,134 @@ p, li { white-space: pre-wrap; }
       </property>
      </widget>
     </item>
+    <item row="4" column="1">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>200</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Online play</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0" colspan="3">
+        <widget class="QStackedWidget" name="stackedWidget">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="page">
+          <widget class="QListWidget" name="listWidgetTables">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>0</y>
+             <width>221</width>
+             <height>111</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButtonJoinTable">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>110</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Join table</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pushButtonNewTable">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>110</y>
+             <width>75</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>New table</string>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QWidget" name="page_2">
+          <widget class="QListWidget" name="listWidgetMyTable">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>0</y>
+             <width>101</width>
+             <height>131</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QListWidget {
+     border: 2px solid gray;
+     border-radius: 10px;
+	background-color: rgb(220, 255, 220);
+	font: bold 12px;
+}
+</string>
+           </property>
+          </widget>
+          <widget class="QPlainTextEdit" name="plainTextEditChat">
+           <property name="geometry">
+            <rect>
+             <x>120</x>
+             <y>0</y>
+             <width>111</width>
+             <height>111</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="lineEditChat">
+           <property name="geometry">
+            <rect>
+             <x>120</x>
+             <y>110</y>
+             <width>111</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+         </widget>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Status:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="labelOnlineStatus">
+         <property name="text">
+          <string>Offline</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>154</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -298,7 +426,14 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionLoad_board"/>
     <addaction name="actionSave_board"/>
    </widget>
+   <widget class="QMenu" name="menuOnline_play">
+    <property name="title">
+     <string>Online play</string>
+    </property>
+    <addaction name="actionConnectToServer"/>
+   </widget>
    <addaction name="menuLoad_board"/>
+   <addaction name="menuOnline_play"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionLoad_board">
@@ -314,6 +449,11 @@ p, li { white-space: pre-wrap; }
   <action name="actionEdit_game_preferences">
    <property name="text">
     <string>Edit game preferences</string>
+   </property>
+  </action>
+  <action name="actionConnectToServer">
+   <property name="text">
+    <string>Connect to Server</string>
    </property>
   </action>
  </widget>
