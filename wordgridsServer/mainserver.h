@@ -18,8 +18,9 @@ private:
     QHash <quint16, WordgridsTable*> tables;
     void removePersonFromTable(ClientSocket*, quint16);
     void processCommand(ClientSocket*, QByteArray);
-    void processNewTable(ClientSocket* socket);
+    void processNewTable(ClientSocket* socket, QByteArray);
     void doJoinTable(ClientSocket* socket, quint16 tablenum);
+
 private slots:
     void removeConnection();
     void receiveMessage();

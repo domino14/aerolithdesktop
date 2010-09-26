@@ -129,9 +129,9 @@ void MainServer::processCommand(ClientSocket* socket, QByteArray cmd)
     //socket->write(cmd + '\n');
 
     // client commands are lowercase
-    if (cmd == "newtable")
+    if (cmd.startsWith("newtable"))
     {
-        processNewTable(socket);
+        processNewTable(socket, cmd);
     }
     else if (cmd == "leavetable")
     {
@@ -144,8 +144,8 @@ void MainServer::processCommand(ClientSocket* socket, QByteArray cmd)
         {
             foreach (ClientSocket* connection, tables.value(tablenum)->peopleInTable)
             {
-                connection->write("CHATTABLE " + QByteArray::number(tablenum) +
-                                  cmd.mid(10) + "\n");
+                connection->write("CHATTABLE " + QByteArray::number(tablenum) + " " +
+                                  socket->connectionData.userName.toAscii() + " " + cmd.mid(10) + "\n");
             }
         }
     }
@@ -155,23 +155,29 @@ void MainServer::processCommand(ClientSocket* socket, QByteArray cmd)
         if (tablenum != 0 && tables.contains(tablenum))
         {
             QList<QByteArray> params = cmd.split(' ');
-            if (params.size() == 6) // xl yl xh yh score bonustile
+            if (params.size() == 7) // xl yl xh yh score bonustile
             {
                 int score = tables.value(tablenum)->processMove(socket, params);
                 foreach (ClientSocket* connection, tables.value(tablenum)->peopleInTable)
                 {
                     connection->write("PLAYERSCORE " + QByteArray::number(tablenum) +
                                       " " + QByteArray::number(score) + " " +
-                                      socket->connectionData.userName + "\n");
+                                      socket->connectionData.userName.toAscii() + "\n");
                 }
             }
         }
     }
 }
 
-void MainServer::processNewTable(ClientSocket* socket)
+void MainServer::processNewTable(ClientSocket* socket, QByteArray cmd)
 {
     //
+    cmd = cmd.mid(9);   // skipping the 'new table'
+    QList <QByteArray> tparams = cmd.split(' ');
+    if (tparams.size() != 3) return;
+    int gridSize = tparams.at(0).toInt();
+    int timer = tparams.at(1).toInt();
+    bool useBonus = tparams.at(2) == "TRUE";
 
     quint16 tablenum = 0;
 
@@ -190,16 +196,16 @@ void MainServer::processNewTable(ClientSocket* socket)
         canCreateTable = false;
     }
 
-    else if (socket->connData.tableNum != 0)
+    else if (socket->connectionData.tableNum != 0)
     {
         canCreateTable = false;
     }
 
     if (canCreateTable)
     {
-        WordgridsTable *tmp = new Table(this);
+        WordgridsTable *tmp = new WordgridsTable(this);
 
-        tmp->initialize(socket, tablenum);
+        tmp->initialize(socket, tablenum, gridSize, timer, useBonus);
         tables.insert(tablenum, tmp);
 
         foreach (ClientSocket* connection, connections)
@@ -222,7 +228,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
 
     WordgridsTable *table = tables.value(tablenum);
 
-    if (socket->connData.tableNum != 0)
+    if (socket->connectionData.tableNum != 0)
     {
         // already in a table
         return;
@@ -234,7 +240,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
 
 
     foreach (ClientSocket* connection, connections)
-        connection->write("JOINTABLE " + socket->connectionData.userName + " "
+        connection->write("JOINTABLE " + socket->connectionData.userName.toAscii() + " "
                           + QByteArray::number(tablenum) + "\n");
 
     table->personJoined(socket);
