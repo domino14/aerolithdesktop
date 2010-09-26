@@ -9,13 +9,13 @@ class WordgridsTable : public QObject
     Q_OBJECT
 public:
     WordgridsTable(QObject* parent);
-    void initialize(ClientSocket*, quint16, int);
+    void initialize(ClientSocket*, quint16, int, int, bool);
     void removePersonFromTable(ClientSocket*);
     QList <ClientSocket*> peopleInTable;
     void cleanupBeforeDelete();
     void personJoined(ClientSocket*);
-
-
+    QHash <ClientSocket*, QList<QByteArray> >movesHash;
+    int processMove(ClientSocket* socket, QList<QByteArray> params);
 private:
     enum GameTimerModes
     {
@@ -26,6 +26,13 @@ private:
     int boardSize;
     QTimer* gameTimer;
     bool timerModeGame;
+    int curTimerValue;
+    int gameTimerValue;
+    bool allowBonusTiles;
+    void sendMessageToTable(QByteArray);
+    void sendMessageToPlayer(ClientSocket*, QByteArray);
+signals:
+
 private slots:
     void timeout();
 };
