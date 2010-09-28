@@ -50,6 +50,13 @@ MainWindow::MainWindow(QWidget *parent)
     preferencesWidget = new QWidget(this, Qt::Window);
     uiPreferences.setupUi(preferencesWidget);
 
+    definitionPopup = new QWidget(this, Qt::Popup);
+    definitionUi.setupUi(definitionPopup);
+
+    loginWidget = new QWidget(this, Qt::Window);
+    loginUi.setupUi(loginWidget);
+
+
 
     ui->setupUi(this);
     scene = new WordgridsScene(this);
@@ -158,8 +165,18 @@ MainWindow::MainWindow(QWidget *parent)
             SLOT(listWidgetItemClicked(QListWidgetItem*)));
 
     //  ui->listWidgetWordList
-    definitionPopup = new QWidget(this, Qt::Popup);
-    definitionUi.setupUi(definitionPopup);
+    serverCommunicator = new ServerCommunicator(this);
+    connect(serverCommunicator, SIGNAL(serverConnectionError(QString)),
+            this, SLOT(serverConnectionError(QString)));
+    connect(serverCommunicator, SIGNAL(serverDisconnect()),
+            this, SLOT(serverDisconnected()));
+    connect(serverCommunicator, SIGNAL(serverConnect()),
+            this, SLOT(serverConnected()));
+    connect(serverCommunicator, SIGNAL(showError(QString)),
+            this, SLOT(showServerError(QString)));
+    connect(serverCommunicator, SIGNAL(newTable(QByteArray)),
+            this, SLOT(newTable(QByteArray)));
+
 }
 
 void MainWindow::closeEvent ( QCloseEvent * event )
@@ -1153,7 +1170,7 @@ void MainWindow::on_pushButtonSwitchGame_clicked()
 
 void MainWindow::listWidgetItemClicked(QListWidgetItem* it)
 {
-    if (!gameGoing && it->data(Qt::UserRole).toString() == "")
+    if (it->data(Qt::UserRole).toString() == "")
     {
         it->setData(Qt::UserRole, wordStructure->getDefinitions(it->text()));
     }
@@ -1163,6 +1180,86 @@ void MainWindow::listWidgetItemClicked(QListWidgetItem* it)
     definitionPopup->move(ui->listWidgetWordList->x()+this->x(), ui->listWidgetWordList->y()+this->y());
     definitionPopup->setFixedHeight(nLineBreaks*25 + 50);
     definitionPopup->show();
+}
+
+void MainWindow::on_actionConnectToServer_triggered()
+{
+    loginWidget->show();
+}
+
+void MainWindow::on_pushButtonConnect_clicked()
+{
+
+
+    if (!serverCommunicator->isConnectedToServer())
+    {
+
+        serverCommunicator->connectToServer(loginUi.lineEditServer->text(), loginUi.lineEditPort->text().toInt(),
+                                            loginUi.lineEditUsername->text());
+
+        ui->labelOnlineStatus->setText("Connecting to server...");
+        loginUi.pushButtonConnect->setText("Disconnect");
+
+
+        ui->listWidgetTables->clear();
+    }
+    else
+    {
+        serverCommunicator->disconnectFromServer();
+
+        ui->labelOnlineStatus->setText("<font color=red>Disconnected from server</font>");
+
+        loginUi.pushButtonConnect->setText("Connect");
+    }
+}
+
+void MainWindow::serverConnectionError(QString error)
+{
+    QMessageBox::information(this, "Error", error);
+    loginUi.pushButtonConnect->setText("Connect!");
+    ui->labelOnlineStatus->setText("<font color=red>Disconnected.</font>");
+}
+
+void MainWindow::showServerError(QString error)
+{
+    QMessageBox::information(this, "Error", error);
+}
+
+void MainWindow::serverDisconnected()
+{
+    ui->labelOnlineStatus->setText("<font color=red>You are disconnected.</font>");
+    ui->listWidgetTables->clear();
+    ui->stackedWidget->setCurrentIndex(0);
+
+    loginUi.pushButtonConnect->setText("Connect!");
+    //centralWidget->hide();
+    loginWidget->show();
+    tablesHash.clear();
+}
+
+void MainWindow::serverConnected()
+{
+    ui->labelOnlineStatus->setText("<font color=green>Connected to server!</font>");
+    ui->listWidgetTables->clear();
+    ui->stackedWidget->setCurrentIndex(0);
+    loginUi.pushButtonConnect->setText("Disconnect");
+    loginWidget->hide();
+    tablesHash.clear();
+}
+
+void MainWindow::newTable(QByteArray ba)
+{
+    QList <QByteArray> params = ba.split(' ');
+    int tablenum = params[0].toInt();
+    int gridSize = params[1].toInt();
+    int timerval = params[2].toInt();
+    bool allowBonus = params[3] == "TRUE";
+    int numPpl = params[4].toInt();
+    QString label = QString("%1 x %1, %2s., BT%3Allowed (%4 players)").
+                    arg(gridSize).arg(timerval).arg(allowBonus ? " " : " NOT ").arg(numPpl);
+    QListWidgetItem* lwi = new QListWidgetItem(label, ui->listWidgetTables);
+    tablesHash.insert(tablenum, lwi);
+
 }
 
 /***********************/
