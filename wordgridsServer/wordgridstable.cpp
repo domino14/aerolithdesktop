@@ -1,12 +1,17 @@
 #include "wordgridstable.h"
 
+int letterDist[26] =
+{ 9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1 };
+const int letterDistSum = 98;
+
+
 WordgridsTable::WordgridsTable(QObject* parent) : QObject(parent)
 {
     gameTimer = new QTimer(this);
     connect(gameTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 }
 
-void WordgridsTable::initialize(ClientSocket *socket, quint16 tablenum, int boardSize, int gameTimerValue,
+void WordgridsTable::initialize(quint16 tablenum, int boardSize, int gameTimerValue,
                                 bool allowBonusTiles)
 {
     this->tableNum = tablenum;
@@ -38,15 +43,17 @@ void WordgridsTable::timeout()
         {
             timerModeGame = MODE_INGAME;
             curTimerValue = gameTimerValue;
+            startGame();
         }
         else if (timerModeGame == MODE_BREAK)
         {
             timerModeGame = MODE_INGAME;
             curTimerValue = gameTimerValue;
+            startGame();
         }
         else if (timerModeGame == MODE_INGAME)
         {
-            movesHash.clear();
+            sendMessageToTable("GAMEOVER " + QByteArray::number(tableNum));
             timerModeGame = MODE_BREAK;
             curTimerValue = 25;
         }
@@ -60,6 +67,55 @@ void WordgridsTable::sendMessageToTable(QByteArray ba)
         socket->write(ba);
 }
 
+void WordgridsTable::startGame()
+{
+    foreach (ClientSocket* socket, peopleInTable)
+        socket->gameData.score = 0;
+    movesHash.clear();
+    generateAndSendNewBoard();
+}
+
+void WordgridsTable::generateAndSendNewBoard()
+{
+    curBoard = "";
+    for (int i = 0; i < boardSize; i++)
+    {
+        for (int j = 0; j < boardSize; j++)
+        {
+            int letter = qrand()%letterDistSum;
+            int accum = 0;
+            int lettercounter;
+            for (lettercounter = 0; lettercounter < 26; lettercounter++)
+            {
+                accum += letterDist[lettercounter];
+                if (letter < accum) break;
+            }
+//            /* handle special Q case */
+//            if ((char)lettercounter + 'A' == 'Q')
+//            {
+//                thisRoundLetters << "Qu";
+//            }
+//            else
+//            {
+//                tile->setTileLetter(QString((char)lettercounter + 'A'));
+//                thisRoundLetters << QString((char)lettercounter + 'A');
+//            }
+            curBoard += ((char)lettercounter + 'A');
+        }
+    }
+    sendMessageToTable("CURBOARD " + QByteArray::number(tableNum) + " " + curBoard + "\n");
+}
+
+void WordgridsTable::writeScoreToAll(ClientSocket* socket)
+{
+    foreach (ClientSocket* connection, peopleInTable)
+    {
+        connection->write("PLAYERSCORE " + QByteArray::number(tableNum) +
+                          " " + QByteArray::number(socket->gameData.score) + " " +
+                          socket->connectionData.userName.toAscii() + "\n");
+    }
+}
+
 
 
 void WordgridsTable::personJoined(ClientSocket * socket)
@@ -67,12 +123,23 @@ void WordgridsTable::personJoined(ClientSocket * socket)
     peopleInTable.append(socket);
     socket->connectionData.tableNum = this->tableNum;
     socket->gameData.score = 0;
+    if (timerModeGame == MODE_INGAME)
+    {
+         socket->write("CURBOARD " + QByteArray::number(tableNum) + " " + curBoard + "\n");
+         foreach (ClientSocket* connection, peopleInTable)
+         {
+             socket->write("PLAYERSCORE " + QByteArray::number(tableNum) +
+                               " " + QByteArray::number(connection->gameData.score) + " " +
+                               connection->connectionData.userName.toAscii() + "\n");
+         }
+    }
 }
 
-int WordgridsTable::processMove(ClientSocket* socket, QList<QByteArray> params)
+void WordgridsTable::processMove(ClientSocket* socket, QList<QByteArray> params)
 {
     // acceptpos xl yl xh yh score bonustile
     movesHash[socket].append(params);
     // keep info about player moves?
-    return params[5].toInt();
+    socket->gameData.score += params[5].toInt();
+    writeScoreToAll(socket);
 }
