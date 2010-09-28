@@ -25,6 +25,8 @@
 #include "wordstructure.h"
 #include "ui_preferences.h"
 #include "ui_defpopup.h"
+#include "ui_loginForm.h"
+#include "servercommunicator.h"
 namespace Ui
 {
     class MainWindowClass;
@@ -164,6 +166,12 @@ private:
 
     QWidget* definitionPopup;
     Ui::defpopupForm definitionUi;
+
+
+    QWidget* loginWidget;
+    Ui::loginForm loginUi;
+    ServerCommunicator* serverCommunicator;
+    QHash <quint16, QListWidgetItem*> tablesHash;
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
@@ -190,6 +198,13 @@ private slots:
     void hideBonusScore();
 
     void listWidgetItemClicked(QListWidgetItem*);
+
+    void on_pushButtonConnect_clicked();    // for server
+    void serverConnectionError(QString);
+    void serverDisconnected();
+    void serverConnected();
+    void showServerError(QString);
+    void newTable(QByteArray);
 
 };
 
