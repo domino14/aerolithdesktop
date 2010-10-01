@@ -8,8 +8,12 @@ class WordgridsTable : public QObject
 {
     Q_OBJECT
 public:
+    enum GameType
+    {
+        GAME_STRUCK, GAME_DASH
+    };
     WordgridsTable(QObject* parent);
-    void initialize(quint16, int, int, bool);
+    void initialize(quint16, int, int, GameType);
     void removePersonFromTable(ClientSocket*);
     QList <ClientSocket*> peopleInTable;
     void cleanupBeforeDelete();
@@ -17,19 +21,24 @@ public:
     QHash <ClientSocket*, QList<QByteArray> >movesHash;
     void processMove(ClientSocket* socket, QList<QByteArray> params);
     int boardSize;
-    bool allowBonusTiles;
     int gameTimerValue;
+    GameType gameType;
+    int btTurnoff;
+
 private:
     enum GameTimerModes
     {
         MODE_BEGINNING, MODE_INGAME, MODE_BREAK
-            };
+    };
+
+
 
     QByteArray curBoard;
     quint16 tableNum;
 
     QTimer* gameTimer;
     GameTimerModes timerModeGame;
+
     int curTimerValue;
 
 

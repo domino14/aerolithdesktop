@@ -11,16 +11,18 @@ WordgridsTable::WordgridsTable(QObject* parent) : QObject(parent)
     connect(gameTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 }
 
-void WordgridsTable::initialize(quint16 tablenum, int boardSize, int gameTimerValue,
-                                bool allowBonusTiles)
+void WordgridsTable::initialize(quint16 tablenum, int boardSize,
+                                int btTurnoff, GameType gameType)
 {
     this->tableNum = tablenum;
     this->boardSize = boardSize;
     this->timerModeGame = MODE_BEGINNING;
     gameTimer->start(1000);
     curTimerValue = 20;
-    this->gameTimerValue = gameTimerValue;
-    this->allowBonusTiles = allowBonusTiles;
+    this->btTurnoff = btTurnoff;
+    this->gameType = gameType;
+
+    gameTimerValue = boardSize*boardSize*2.5;
 
 }
 
