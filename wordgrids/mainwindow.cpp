@@ -1252,11 +1252,15 @@ void MainWindow::newTable(QByteArray ba)
     QList <QByteArray> params = ba.split(' ');
     int tablenum = params[0].toInt();
     int gridSize = params[1].toInt();
-    int timerval = params[2].toInt();
-    bool allowBonus = params[3] == "TRUE";
+    int btTurnoff = params[2].toInt();
+    QString type = params[3];
     int numPpl = params[4].toInt();
-    QString label = QString("%1 x %1, %2s., BT%3Allowed (%4 players)").
-                    arg(gridSize).arg(timerval).arg(allowBonus ? " " : " NOT ").arg(numPpl);
+    QString label;
+    if (type == "STRUCK")
+        label = QString("%1: %2 x %2, BTOFF @ %3, (%4 players)").
+                    arg(type).arg(gridSize).arg(btTurnoff).arg(numPpl);
+    else if (type == "DASH")
+        label = QString("%1: %2 x %2 (%3 players)").arg(type).arg(gridSize).arg(numPpl);
     QListWidgetItem* lwi = new QListWidgetItem(label, ui->listWidgetTables);
     tablesHash.insert(tablenum, lwi);
 
