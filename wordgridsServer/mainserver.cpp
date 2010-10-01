@@ -7,12 +7,12 @@ const int DEFAULT_PORT = 2003;
 MainServer::MainServer()
 {
 
-    processNewTable("11 300 FALSE");
-    processNewTable("9 210 FALSE");
-    processNewTable("7 120 FALSE");
-    processNewTable("11 300 TRUE");
-    processNewTable("9 210 TRUE");
-    processNewTable("7 120 TRUE");
+    processNewTable("11 STRUCK 12");
+    processNewTable("9 STRUCK 8");
+    processNewTable("7 STRUCK 4");
+    processNewTable("11 DASH 0");
+    processNewTable("9 DASH 0");
+    processNewTable("7 DASH 0");
     QTcpServer::listen(QHostAddress::Any, DEFAULT_PORT);
     qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -208,8 +208,9 @@ void MainServer::processNewTable(QByteArray cmd)
     QList <QByteArray> tparams = cmd.split(' ');
     if (tparams.size() != 3) return;
     int gridSize = tparams.at(0).toInt();
-    int timer = tparams.at(1).toInt();
-    bool useBonus = tparams.at(2) == "TRUE";
+    WordgridsTable::GameType type = (tparams.at(1) == "STRUCK" ?
+                                     WordgridsTable::GAME_STRUCK : WordgridsTable::GAME_DASH);
+    int btTurnoff = tparams.at(2).toInt();
 
     quint16 tablenum = 0;
 
@@ -232,7 +233,7 @@ void MainServer::processNewTable(QByteArray cmd)
     {
         WordgridsTable *tmp = new WordgridsTable(this);
 
-        tmp->initialize(tablenum, gridSize, timer, useBonus);
+        tmp->initialize(tablenum, gridSize, btTurnoff, type);
         tables.insert(tablenum, tmp);
 
         foreach (ClientSocket* connection, connections)
@@ -246,10 +247,10 @@ QByteArray MainServer::tableInfoString(quint16 tablenum)
     if (!tables.contains(tablenum)) return "";
     WordgridsTable* table = tables.value(tablenum);
     if (!table) return "";
-    QByteArray infoStr = "NEWTABLE " + QByteArray::number(tablenum) +
-            " " + QByteArray::number(table->boardSize) + " " +
-            QByteArray::number(table->gameTimerValue) + " "  +
-            (table->allowBonusTiles ? "TRUE" : " FALSE");
+    QByteArray infoStr = "NEWTABLE " + QByteArray::number(tablenum) + " " +
+                         QByteArray::number(table->boardSize) + " " +
+                         QByteArray::number(table->btTurnoff) + " " +
+                         (table->gameType == WordgridsTable::GAME_STRUCK ? "STRUCK" : "DASH");
 
     infoStr += " " + QByteArray::number(table->peopleInTable.size());
 
