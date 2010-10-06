@@ -172,9 +172,20 @@ private:
     Ui::loginForm loginUi;
     ServerCommunicator* serverCommunicator;
     QHash <quint16, QListWidgetItem*> tablesHash;
+    QByteArray myUsername;
+    void populateTableList(QListWidgetItem*);
+    bool inATable;
+    int curTable;
+    void leaveNetworkedGame();
+    void endGameActions();
+    bool connectedToNetwork;
+    int currentBTOFF;
+    QListWidgetItem* findPlayerInTable(QByteArray username);
+
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
+
     void on_actionLoad_board_triggered();
     void on_actionSave_board_triggered();
     void on_actionEdit_game_preferences_triggered();
@@ -185,6 +196,7 @@ private slots:
     void mouseOutOfTile();
     void keyPressed(int);
     void on_pushButtonNewGame_clicked();
+
     void on_pushButtonRetry_clicked();
     void on_pushButtonGiveUp_clicked();
 
@@ -205,7 +217,17 @@ private slots:
     void serverConnected();
     void showServerError(QString);
     void newTable(QByteArray);
-
+    void joinTable(QByteArray);
+    void gotTableChat(QByteArray);
+    void sendTableChat();
+    void performDisconnectedActions();
+    void on_pushButtonJoinTable_clicked();
+    void leaveTable();
+    void gotLeftTable(QByteArray);
+    void gotTimer(QByteArray);
+    void gotGameBoard(QByteArray);
+    void gotPlayerScore(QByteArray);
+    void gotGameOver(QByteArray);
 };
 
 #endif // MAINWINDOW_H
