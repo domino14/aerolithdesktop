@@ -11,6 +11,10 @@ public:
     bool isConnectedToServer();
     void connectToServer(QString server, int port, QString _username);
     void disconnectFromServer();
+    void sendJoinTable(int);
+    void sendToTable(QByteArray);
+    void sendLeaveTable();
+    void sendCurrentPosition(int xl, int yl, int xh, int yh, int score, QByteArray bonusTile);
 private:
     QTcpSocket *commsSocket;
     QString username;
@@ -22,11 +26,20 @@ signals:
     void serverConnectionError(QString);
     void showError(QString);
     void newTable(QByteArray);
+    void joinTable(QByteArray);
+    void chatTable(QByteArray);
+    void leftTable(QByteArray);
+    void timerVal(QByteArray);
+    void curBoard(QByteArray);
+    void playerScore(QByteArray);
+    void gameOver(QByteArray);
+
 private slots:
     void readFromServer();
     void handleError(QAbstractSocket::SocketError socketError);
     void socketDisconnected();
     void socketConnected();
+
 
 };
 

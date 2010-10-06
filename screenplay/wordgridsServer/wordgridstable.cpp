@@ -55,7 +55,7 @@ void WordgridsTable::timeout()
         }
         else if (timerModeGame == MODE_INGAME)
         {
-            sendMessageToTable("GAMEOVER " + QByteArray::number(tableNum));
+            sendMessageToTable("GAMEOVER " + QByteArray::number(tableNum) + "\n");
             timerModeGame = MODE_BREAK;
             curTimerValue = 25;
         }
@@ -72,7 +72,10 @@ void WordgridsTable::sendMessageToTable(QByteArray ba)
 void WordgridsTable::startGame()
 {
     foreach (ClientSocket* socket, peopleInTable)
+    {
         socket->gameData.score = 0;
+        writeScoreToAll(socket);
+    }
     movesHash.clear();
     generateAndSendNewBoard();
 }
@@ -142,6 +145,6 @@ void WordgridsTable::processMove(ClientSocket* socket, QList<QByteArray> params)
     // acceptpos xl yl xh yh score bonustile
     movesHash[socket].append(params);
     // keep info about player moves?
-    socket->gameData.score += params[5].toInt();
+    socket->gameData.score = params[5].toInt();
     writeScoreToAll(socket);
 }

@@ -23,7 +23,7 @@ void MainServer::incomingConnection(int socketDescriptor)
     ClientSocket* client = new ClientSocket();
     if (client->setSocketDescriptor(socketDescriptor))
     {
-        //      connections.append(client);
+        connections.append(client);
         client->connectionData.tableNum = 0;
         connect(client, SIGNAL(disconnected()), this, SLOT(removeConnection()));
         connect(client, SIGNAL(readyRead()), this, SLOT(receiveMessage()));
@@ -159,6 +159,15 @@ void MainServer::processCommand(ClientSocket* socket, QByteArray cmd)
             }
         }
     }
+    else if (cmd.startsWith("jointable "))
+    {
+        QList <QByteArray> params = cmd.split(' ');
+        if (params.size() == 2)
+        {
+            int tablenum = params[1].toInt();
+            doJoinTable(socket, tablenum);
+        }
+    }
     else if (cmd.startsWith("acceptpos "))
     {
         int tablenum = socket->connectionData.tableNum;
@@ -199,6 +208,15 @@ void MainServer::processCommand(ClientSocket* socket, QByteArray cmd)
             socket->connectionData.userName = sn;
             foreach (quint16 tn, tables.keys())
                 socket->write(tableInfoString(tn));
+
+            foreach (ClientSocket* connection, connections)
+            {
+                if (connection->connectionData.tableNum != 0)
+                {
+                    socket->write("JOINTABLE " + connection->connectionData.userName.toAscii() + " "
+                                  + QByteArray::number(connection->connectionData.tableNum) + "\n");
+                }
+            }
         }
     }
 }
@@ -263,8 +281,10 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
 
     // check if table exists, and if it does (which it should), if it's full
 
+    qDebug() << "In do join table";
     if (!tables.contains(tablenum))
     {
+        qDebug() << "table" << tablenum << "does not exist";
         return;
     }
 
@@ -272,6 +292,7 @@ void MainServer::doJoinTable(ClientSocket* socket, quint16 tablenum)
 
     if (socket->connectionData.tableNum != 0)
     {
+        qDebug() << "you are already in table" << socket->connectionData.tableNum;
         // already in a table
         return;
     }

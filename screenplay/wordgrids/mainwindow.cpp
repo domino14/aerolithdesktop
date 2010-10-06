@@ -164,6 +164,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->listWidgetWordList, SIGNAL(itemClicked(QListWidgetItem*)), this,
             SLOT(listWidgetItemClicked(QListWidgetItem*)));
 
+
     //  ui->listWidgetWordList
     serverCommunicator = new ServerCommunicator(this);
     connect(serverCommunicator, SIGNAL(serverConnectionError(QString)),
@@ -176,6 +177,29 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(showServerError(QString)));
     connect(serverCommunicator, SIGNAL(newTable(QByteArray)),
             this, SLOT(newTable(QByteArray)));
+    connect(serverCommunicator, SIGNAL(joinTable(QByteArray)),
+            this, SLOT(joinTable(QByteArray)));
+    connect(serverCommunicator, SIGNAL(chatTable(QByteArray)),
+            this, SLOT(gotTableChat(QByteArray)));
+    connect(serverCommunicator, SIGNAL(leftTable(QByteArray)),
+            this, SLOT(gotLeftTable(QByteArray)));
+    connect(serverCommunicator, SIGNAL(timerVal(QByteArray)),
+            this, SLOT(gotTimer(QByteArray)));
+    connect(serverCommunicator, SIGNAL(curBoard(QByteArray)),
+            this, SLOT(gotGameBoard(QByteArray)));
+    connect(serverCommunicator, SIGNAL(playerScore(QByteArray)),
+            this, SLOT(gotPlayerScore(QByteArray)));
+    connect(serverCommunicator, SIGNAL(gameOver(QByteArray)),
+            this, SLOT(gotGameOver(QByteArray)));
+
+
+    connect(ui->lineEditChat, SIGNAL(returnPressed()), this, SLOT(sendTableChat()));
+    connect(ui->pushButtonExitTable, SIGNAL(clicked()), this, SLOT(leaveTable()));
+
+
+    connectedToNetwork = false;
+    inATable = false;
+    curTable = 0;
 
 }
 
@@ -359,7 +383,7 @@ void MainWindow::possibleRectangleCheck()
     if (x1 == x2 && y1 == y2) return;
 
     QString letters;
-    bool bonusTileUsed = false;
+
     for (int j = qMin(y1, y2); j <= qMax(y1, y2); j++)
     {
         for (int i = qMin(x1, x2); i <= qMax(x1, x2); i++)
@@ -376,19 +400,20 @@ void MainWindow::possibleRectangleCheck()
     // ui->labelDebug->setText(debugStr);
 
     int thisScore = 0;
-
+    QString bonusTile;
     if (currentGameDescription == "WordStruck")
     {
         int numExtraLetters = 0;
         bool bonusS = false;
-        if (curselBonusTile && curselBonusTile->getTileLetter() != "")
+        if (curselBonusTile) bonusTile = curselBonusTile->getTileLetter();
+        if (bonusTile != "")
         {
-            letters += curselBonusTile->getTileLetter();
-            numExtraLetters = curselBonusTile->getTileLetter().length();
+            letters += bonusTile;
+            numExtraLetters = bonusTile.length();
 
-            if (curselBonusTile->getTileLetter() == "S") bonusS = true;
+            if (bonusTile == "S") bonusS = true;
         }
-        curselBonusTile->setTileLetter("");
+        if (curselBonusTile) curselBonusTile->setTileLetter("");
 
         letters = alphagrammize(letters.toUpper());
 
@@ -488,16 +513,26 @@ void MainWindow::possibleRectangleCheck()
             displayScore(curScore);
 
             scene->update();
-
+            if (connectedToNetwork)
+                serverCommunicator->sendCurrentPosition(qMin(x1, x2), qMin(y1, y2),
+                                                        qMax(x1, x2), qMax(y1, y2),
+                                                        curScore, bonusTile.toAscii());
 
         }
         else
         {
-            int penalty = 1;
-            timerSecs -= penalty;
-            if (penalty > 0) /*ui->textEdit->append(QString("<font color=red>%1-second penalty!</font>").
-                                                  arg(penalty));*/
-                showSingleScore(-penalty, x1, x2, y1, y2, true);
+            if (!connectedToNetwork)
+            {
+                int penalty = 1;
+                timerSecs -= penalty;
+                if (penalty > 0) /*ui->textEdit->append(QString("<font color=red>%1-second penalty!</font>").
+                                                      arg(penalty));*/
+                    showSingleScore(-penalty, x1, x2, y1, y2, true);
+            }
+            else
+            {
+                // no penalties when connected to network!?
+            }
         }
 
     }
@@ -550,6 +585,10 @@ void MainWindow::possibleRectangleCheck()
             }
 
             displayScore(curScore);
+            if (connectedToNetwork)
+                serverCommunicator->sendCurrentPosition(qMin(x1, x2), qMin(y1, y2),
+                                                        qMax(x1, x2), qMax(y1, y2),
+                                                        curScore, "");  // no bonus tile
             scene->update();
 
 
@@ -561,11 +600,19 @@ void MainWindow::possibleRectangleCheck()
         }
         else
         {
-            int penalty =1;
-            timerSecs -= penalty;
-            if (penalty > 0) /*ui->textEdit->append(QString("<font color=red>%1-second penalty!</font>").
-                                                  arg(penalty));*/
-                showSingleScore(-penalty, x1, x2, y1, y2, true);
+            if (!connectedToNetwork)
+            {
+                int penalty =1;
+                timerSecs -= penalty;
+                if (penalty > 0) /*ui->textEdit->append(QString("<font color=red>%1-second penalty!</font>").
+                                                      arg(penalty));*/
+                    showSingleScore(-penalty, x1, x2, y1, y2, true);
+            }
+            else
+            {
+                // no penalty?
+            }
+
         }
     }
 
@@ -670,20 +717,39 @@ void MainWindow::on_pushButtonNewGame_clicked()
     if (currentGameDescription == "WordStruck")
     {
         dashInstructionsLabel->setVisible(false);
-        bonusTurnoffTiles = uiPreferences.spinBoxBonusTurnOff->value();
+        if (!connectedToNetwork)
+            bonusTurnoffTiles = uiPreferences.spinBoxBonusTurnOff->value();
+        else
+        {
+            if (!inATable)
+            {
+                QMessageBox::warning(this, "Error!", "You are not in a table!");
+                return;
+            }
+            bonusTurnoffTiles = currentBTOFF;
+
+        }
     }
     else if (currentGameDescription == "WordDash")
     {
-        minToGenerate = uiPreferences.spinBoxMinWordLengthToFind->value();
-        maxToGenerate = uiPreferences.spinBoxMaxWordLengthToFind->value();
-        curGenerating = minToGenerate;
-
-        if (minToGenerate > maxToGenerate)
+        if (!connectedToNetwork)
         {
-            QMessageBox::warning(this, "Can't start!", "Your minimum length for Word Dash "
-                                 "is greater than your maximum length!");
-            return;
+            minToGenerate = uiPreferences.spinBoxMinWordLengthToFind->value();
+            maxToGenerate = uiPreferences.spinBoxMaxWordLengthToFind->value();
+            curGenerating = minToGenerate;
 
+            if (minToGenerate > maxToGenerate)
+            {
+                QMessageBox::warning(this, "Can't start!", "Your minimum length for Word Dash "
+                                     "is greater than your maximum length!");
+                return;
+
+            }
+        }
+        else
+        {
+            QMessageBox::warning(this, "!", "Not implemented yet");
+            return;
         }
 
     }
@@ -705,7 +771,7 @@ void MainWindow::on_pushButtonNewGame_clicked()
         gridSize = sqrt(gameToLoad.length());
     }
 
-    if (currentGameDescription == "WordStruck")
+    if (currentGameDescription == "WordStruck" && !connectedToNetwork)
     {
         timerSecs = QInputDialog::getInteger(this, "Timer?", "Please select desired timer (seconds)",
                                              gridSize*gridSize*3, 1, 5000, 1, &ok);
@@ -827,11 +893,13 @@ void MainWindow::on_pushButtonNewGame_clicked()
 
     }
 
-
-
-    ui->lcdNumber->display(timerSecs);
     displayScore(0);
-    gameTimer.start();
+
+    if (!connectedToNetwork)
+    {
+        ui->lcdNumber->display(timerSecs);
+        gameTimer.start();
+    }
 
     ui->listWidgetWordList->clear();
     gameGoing = true;
@@ -865,21 +933,31 @@ void MainWindow::secPassed()
     timerSecs--;
     if (timerSecs <= 0)
     {
-        gameTimer.stop();
-        gameGoing = false;
-        // todo replace with gfx
-        //  ui->textEdit->append("<font color=red>Time is up!</font>");
-        QString summary = "You scored %1 points. Word breakdown by length:";
-        summary = summary.arg(curScore);
-        for (int i = 0; i < 16; i++)
-        {
-            if (solvedWordsByLength[i] > 0)
-                summary += " <font color=green>" + QString::number(i)
-                + "s:</font> " + QString::number(solvedWordsByLength[i]);
-        }
-        // ui->textEdit->append(summary);
+        endGameActions();
     }
     ui->lcdNumber->display(qMax(timerSecs, 0));
+}
+
+void MainWindow::endGameActions()
+{
+    gameTimer.stop();
+    gameGoing = false;
+    // todo replace with gfx
+    //  ui->textEdit->append("<font color=red>Time is up!</font>");
+    QString summary = "You scored %1 points. Word breakdown by length:";
+    summary = summary.arg(curScore);
+    for (int i = 0; i < 16; i++)
+    {
+        if (solvedWordsByLength[i] > 0)
+            summary += " <font color=green>" + QString::number(i)
+            + "s:</font> " + QString::number(solvedWordsByLength[i]);
+    }
+    // ui->textEdit->append(summary);
+}
+
+void MainWindow::leaveNetworkedGame()
+{
+    endGameActions();
 }
 
 void MainWindow::on_toolButtonMinusSize_clicked()
@@ -1065,6 +1143,11 @@ void MainWindow::finishedLoadingWordStructure()
 
 void MainWindow::on_actionLoad_board_triggered()
 {
+    if (connectedToNetwork)
+    {
+        QMessageBox::warning(this, "Error", "You can only load a game when you are offline.");
+        return;
+    }
     QString code = QInputDialog::getText(this, "Enter code", "Enter passcode");
     if (code != "" && isPerfectSquare(code.length()))
     {
@@ -1196,7 +1279,7 @@ void MainWindow::on_pushButtonConnect_clicked()
 
         serverCommunicator->connectToServer(loginUi.lineEditServer->text(), loginUi.lineEditPort->text().toInt(),
                                             loginUi.lineEditUsername->text());
-
+        myUsername = loginUi.lineEditUsername->text().toAscii();
         ui->labelOnlineStatus->setText("Connecting to server...");
         loginUi.pushButtonConnect->setText("Disconnect");
 
@@ -1206,11 +1289,31 @@ void MainWindow::on_pushButtonConnect_clicked()
     else
     {
         serverCommunicator->disconnectFromServer();
+        performDisconnectedActions();
 
-        ui->labelOnlineStatus->setText("<font color=red>Disconnected from server</font>");
-
-        loginUi.pushButtonConnect->setText("Connect");
     }
+}
+
+void MainWindow::performDisconnectedActions()
+{
+    qDebug() << "Performing disconnected actions.";
+    ui->labelOnlineStatus->setText("<font color=red>Disconnected from server</font>");
+    ui->listWidgetTables->clear();
+    ui->stackedWidget->setCurrentIndex(0);
+
+    loginUi.pushButtonConnect->setText("Connect");
+    ui->stackedWidget->setCurrentIndex(0);
+
+    loginWidget->show();
+    tablesHash.clear();
+    inATable = false;
+    curTable = 0;
+    connectedToNetwork = false;
+    /* re-enable buttons */
+    ui->pushButtonNewGame->setEnabled(true);
+    ui->pushButtonRetry->setEnabled(true);
+    ui->pushButtonGiveUp->setEnabled(true);
+    ui->pushButtonSwitchGame->setEnabled(true);
 }
 
 void MainWindow::serverConnectionError(QString error)
@@ -1228,23 +1331,25 @@ void MainWindow::showServerError(QString error)
 void MainWindow::serverDisconnected()
 {
     ui->labelOnlineStatus->setText("<font color=red>You are disconnected.</font>");
-    ui->listWidgetTables->clear();
-    ui->stackedWidget->setCurrentIndex(0);
-
-    loginUi.pushButtonConnect->setText("Connect!");
-    //centralWidget->hide();
-    loginWidget->show();
-    tablesHash.clear();
+    performDisconnectedActions();
 }
 
 void MainWindow::serverConnected()
 {
+    timerSecs = 0;  // thus ending any current non-networked game going on
     ui->labelOnlineStatus->setText("<font color=green>Connected to server!</font>");
     ui->listWidgetTables->clear();
     ui->stackedWidget->setCurrentIndex(0);
     loginUi.pushButtonConnect->setText("Disconnect");
     loginWidget->hide();
     tablesHash.clear();
+    connectedToNetwork = true;
+
+    /* disable buttons */
+    ui->pushButtonNewGame->setEnabled(false);
+    ui->pushButtonRetry->setEnabled(false);
+    ui->pushButtonGiveUp->setEnabled(false);
+    ui->pushButtonSwitchGame->setEnabled(false);
 }
 
 void MainWindow::newTable(QByteArray ba)
@@ -1258,12 +1363,222 @@ void MainWindow::newTable(QByteArray ba)
     QString label;
     if (type == "STRUCK")
         label = QString("%1: %2 x %2, BTOFF @ %3, (%4 players)").
-                    arg(type).arg(gridSize).arg(btTurnoff).arg(numPpl);
+                arg(type).arg(gridSize).arg(btTurnoff).arg(numPpl);
     else if (type == "DASH")
         label = QString("%1: %2 x %2 (%3 players)").arg(type).arg(gridSize).arg(numPpl);
     QListWidgetItem* lwi = new QListWidgetItem(label, ui->listWidgetTables);
+    lwi->setData(Qt::UserRole + 1, tablenum);
+    lwi->setData(Qt::UserRole + 2, btTurnoff);
     tablesHash.insert(tablenum, lwi);
 
+}
+
+void MainWindow::joinTable(QByteArray ba)
+{
+
+    QList <QByteArray> params = ba.split(' ');
+    int tablenum = params[1].toInt();
+    QByteArray username = params[0];
+    qDebug() << username << "joined" << tablenum;
+    if (tablesHash.contains(tablenum))
+    {
+        QListWidgetItem* lwi = tablesHash.value(tablenum);
+        QList <QVariant> users = lwi->data(Qt::UserRole).toList();
+        users << QVariant(username);
+        lwi->setData(Qt::UserRole, users);
+        int numP = users.size();
+        int index = lwi->text().indexOf("(");
+        QString before = lwi->text().left(index);
+        QString tableText = before + QString("(%1 players)").arg(numP);
+        lwi->setText(tableText);
+
+
+        if (tablenum == curTable && username != myUsername)
+        {
+            // if i'm aready in this table and someone else joined
+            ui->listWidgetMyTable->insertItem(0,
+                                              QString("(%1) %2").arg(0).
+                                              arg(QString(username)));
+        }
+
+        if (username == myUsername)
+        {
+            ui->labelTableName->setText(tableText);
+            inATable = true;
+            ui->listWidgetMyTable->clear();
+            ui->plainTextEditChat->clear();
+            populateTableList(lwi);
+            ui->stackedWidget->setCurrentIndex(1);  // switch to table view
+            curTable = tablenum;
+
+            if (tableText.contains("STRUCK")) currentGameDescription = "WordStruck";
+            else if (tableText.contains("DASH")) currentGameDescription = "WordDash";
+
+            QString switchStr;
+            if (currentGameDescription == "WordStruck") switchStr = "WordDash";
+            else if (currentGameDescription == "WordDash") switchStr = "WordStruck";
+
+            ui->pushButtonSwitchGame->setText("Switch to: " + switchStr);
+            ui->labelCurrentGame->setText(currentGameDescription);
+
+            currentBTOFF = lwi->data(Qt::UserRole + 2).toInt();
+        }
+
+    }
+}
+
+
+
+void MainWindow::populateTableList(QListWidgetItem * item)
+{
+    QList <QVariant> people = item->data(Qt::UserRole).toList();
+    foreach (QVariant person, people)
+    {
+        ui->listWidgetMyTable->insertItem(0, QString("(%1) %2").arg(0).arg(QString(person.toByteArray())));
+    }
+}
+
+void MainWindow::on_pushButtonJoinTable_clicked()
+{
+    // TODO if not already in a table
+    if (!inATable)
+    {
+        QListWidgetItem* lwi = ui->listWidgetTables->currentItem();
+        serverCommunicator->sendJoinTable(lwi->data(Qt::UserRole + 1).toInt());
+    }
+}
+
+void MainWindow::sendTableChat()
+{
+    QByteArray chat = ui->lineEditChat->text().left(255).simplified().toAscii();
+    serverCommunicator->sendToTable(chat);
+    ui->lineEditChat->clear();
+}
+
+void MainWindow::gotTableChat(QByteArray ba)
+{
+    QList <QByteArray> params = ba.split(' ');
+    // tablenum, user, chat
+    int tablenum = params[0].toInt();
+    QByteArray user = params[1];
+    if (tablenum != curTable) return;
+    QByteArray chat;
+    for (int i = 2; i < params.size(); i++)
+    {
+        chat += params[i] + " ";
+    }
+    ui->plainTextEditChat->appendPlainText(user + ": " + chat);
+}
+
+void MainWindow::leaveTable()
+{
+    serverCommunicator->sendLeaveTable();
+
+}
+
+void MainWindow::gotTimer(QByteArray ba)
+{
+    QList <QByteArray> params = ba.split(' ');
+    int tablenum = params[0].toInt();
+    int timer = params[1].toInt();
+    if (tablenum == curTable)
+        ui->lcdNumber->display(timer);
+    timerSecs = timer;  // used for calculating bonus scores
+}
+
+void MainWindow::gotLeftTable(QByteArray ba)
+{
+    // username tablenum
+    QList <QByteArray> params = ba.split(' ');
+    int tablenum = params[1].toInt();
+    QByteArray username = params[0];
+    if (tablesHash.contains(tablenum))
+    {
+        QListWidgetItem* lwi = tablesHash.value(tablenum);
+        QList <QVariant> users = lwi->data(Qt::UserRole).toList();
+        users.removeAll(QVariant(username));
+        lwi->setData(Qt::UserRole, users);
+        int numP = users.size();
+        int index = lwi->text().indexOf("(");
+        QString before = lwi->text().left(index);
+        lwi->setText(before + QString("(%1 players)").arg(numP));
+
+
+        if (tablenum == curTable && username != myUsername)
+        {
+            // if i'm aready in this table and someone else left
+
+            QListWidgetItem* it = findPlayerInTable(username);
+            if (it) delete it;
+
+        }
+
+        if (username == myUsername)
+        {
+            inATable = false;
+            ui->stackedWidget->setCurrentIndex(0);  // switch to table list view
+            curTable = 0;
+            leaveNetworkedGame();
+        }
+
+    }
+}
+
+QListWidgetItem* MainWindow::findPlayerInTable(QByteArray username)
+{
+    for (int i = 0; i < ui->listWidgetMyTable->count(); i++)
+    {
+        QString text = ui->listWidgetMyTable->item(i)->text();
+        QStringList list = text.split(" ");
+        // first is score, second is name
+        if (list.size() == 2)
+        {
+            if (list[1] == username)
+            {
+                return ui->listWidgetMyTable->item(i);
+            }
+        }
+    }
+    return NULL;    // if couldn't find this player
+}
+
+void MainWindow::gotGameBoard(QByteArray ba)
+{
+    QList <QByteArray> params = ba.split(' ');
+    qDebug() << "Getting new board" << params[0].toInt() << curTable << params[1];
+    if (params[0].toInt() == curTable)
+    {
+        shouldLoadNextNewGame = true;
+        gameToLoad = params[1];
+        on_pushButtonNewGame_clicked();
+    }
+
+}
+
+void MainWindow::gotPlayerScore(QByteArray ba)
+{
+    QList <QByteArray> params = ba.split(' ');
+    if (params[0].toInt() == curTable)
+    {
+        int score = params[1].toInt();
+        QByteArray player = params[2];
+        QListWidgetItem* it = findPlayerInTable(player);
+        if (it)
+        {
+            QString text = it->text();
+            text.replace(QRegExp("\\(\\d+\\)"), QString("(%1)").arg(score));
+            it->setText(text);
+        }
+        ui->listWidgetMyTable->sortItems(Qt::DescendingOrder);
+    }
+}
+
+void MainWindow::gotGameOver(QByteArray ba)
+{
+    if (ba.toInt() == curTable)
+    {
+        endGameActions();
+    }
 }
 
 /***********************/
