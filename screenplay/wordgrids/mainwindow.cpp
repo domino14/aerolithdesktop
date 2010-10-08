@@ -16,6 +16,7 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "playerlistwidgetitem.h"
 
 #include <QDateTime>
 
@@ -1396,9 +1397,11 @@ void MainWindow::joinTable(QByteArray ba)
         if (tablenum == curTable && username != myUsername)
         {
             // if i'm aready in this table and someone else joined
-            ui->listWidgetMyTable->insertItem(0,
-                                              QString("(%1) %2").arg(0).
-                                              arg(QString(username)));
+            PlayerListWidgetItem* item = new PlayerListWidgetItem();
+            item->setScore(0);
+            item->setUsername(username);
+            ui->listWidgetMyTable->addItem(item->formattedText());
+
         }
 
         if (username == myUsername)
@@ -1434,7 +1437,10 @@ void MainWindow::populateTableList(QListWidgetItem * item)
     QList <QVariant> people = item->data(Qt::UserRole).toList();
     foreach (QVariant person, people)
     {
-        ui->listWidgetMyTable->insertItem(0, QString("(%1) %2").arg(0).arg(QString(person.toByteArray())));
+        PlayerListWidgetItem* item = new PlayerListWidgetItem();
+        item->setScore(0);
+        item->setUsername(person.toByteArray());
+        ui->listWidgetMyTable->addItem(item->formattedText());
     }
 }
 
@@ -1565,11 +1571,16 @@ void MainWindow::gotPlayerScore(QByteArray ba)
         QListWidgetItem* it = findPlayerInTable(player);
         if (it)
         {
-            QString text = it->text();
-            text.replace(QRegExp("\\(\\d+\\)"), QString("(%1)").arg(score));
-            it->setText(text);
+            PlayerListWidgetItem* plwi = dynamic_cast<PlayerListWidgetItem*>(it);
+            if (plwi)
+            {
+                plwi->setScore(score);
+                plwi->setText(plwi->formattedText());
+                ui->listWidgetMyTable->sortItems(Qt::DescendingOrder);
+            }
+
         }
-        ui->listWidgetMyTable->sortItems(Qt::DescendingOrder);
+
     }
 }
 

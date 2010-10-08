@@ -1,7 +1,8 @@
 # -------------------------------------------------
 # Project created by QtCreator 2009-05-28T00:56:24
 # -------------------------------------------------
-QT += sql network
+QT += sql \
+    network
 macx { 
     TARGET = wordgrids
     QMAKE_MAC_SDK = /Developer/SDKs/MacOSX10.5.sdk
@@ -17,12 +18,14 @@ SOURCES += main.cpp \
     tile.cpp \
     wordstructure.cpp \
     wordgridsgraphicsview.cpp \
-    servercommunicator.cpp
+    servercommunicator.cpp \
+    playerlistwidgetitem.cpp
 HEADERS += mainwindow.h \
     tile.h \
     wordstructure.h \
     wordgridsgraphicsview.h \
-    servercommunicator.h
+    servercommunicator.h \
+    playerlistwidgetitem.h
 FORMS += mainwindow.ui \
     preferences.ui \
     defpopup.ui \
