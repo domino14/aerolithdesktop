@@ -14,6 +14,16 @@ void PlayerListWidgetItem::setUsername(QByteArray u)
     username = u;
 }
 
+QByteArray PlayerListWidgetItem::getUsername()
+{
+    return username;
+}
+
+int PlayerListWidgetItem::getScore()
+{
+    return score;
+}
+
 void PlayerListWidgetItem::setScore(int s)
 {
     score = s;

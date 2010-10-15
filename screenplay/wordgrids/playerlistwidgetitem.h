@@ -10,6 +10,8 @@ public:
     void setScore(int);
     void setUsername(QByteArray);
     QString formattedText();
+    QByteArray getUsername();
+    int getScore();
 private:
     QByteArray username;
     int score;

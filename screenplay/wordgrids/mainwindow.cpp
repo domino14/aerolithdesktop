@@ -16,7 +16,6 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "playerlistwidgetitem.h"
 
 #include <QDateTime>
 
@@ -31,6 +30,7 @@ const int letterDistSum = 98;
 
 QBrush brushUnsolved = QBrush(QColor(255, 200, 150));
 QBrush brushSolved = QBrush(QColor(155, 100, 0));
+QBrush brushDimmed = QBrush(QColor(155, 100, 50));
 QBrush brushHighlight = QBrush(QColor(0, 255, 0));
 QBrush brushBonusTile = QBrush(QColor(0, 255, 255));
 
@@ -749,8 +749,13 @@ void MainWindow::on_pushButtonNewGame_clicked()
         }
         else
         {
-            QMessageBox::warning(this, "!", "Not implemented yet");
-            return;
+            int gridSize = sqrt(gameToLoad.length());
+            if (gridSize == 7) minToGenerate = 4;
+            if (gridSize == 9) minToGenerate = 5;
+            if (gridSize == 11) minToGenerate = 6;
+            maxToGenerate = minToGenerate + 3;
+            curGenerating = minToGenerate;
+
         }
 
     }
@@ -888,9 +893,12 @@ void MainWindow::on_pushButtonNewGame_clicked()
     if (currentGameDescription == "WordDash")
     {
         generateFindList();
-        int timePerWord = WordDashSecondsPerWord(boardWidth);
-        qDebug() << "Time per word:" << timePerWord;
-        timerSecs = qMax(foundAlphaset.size() * timePerWord, 1);
+        if (!connectedToNetwork)
+        {
+            int timePerWord = WordDashSecondsPerWord(boardWidth);
+            qDebug() << "Time per word:" << timePerWord;
+            timerSecs = qMax(foundAlphaset.size() * timePerWord, 1);
+        }
 
     }
 
@@ -953,7 +961,14 @@ void MainWindow::endGameActions()
             summary += " <font color=green>" + QString::number(i)
             + "s:</font> " + QString::number(solvedWordsByLength[i]);
     }
-    // ui->textEdit->append(summary);
+
+    ui->plainTextEditChat->appendHtml("<font color=red>Time is up!</font>");
+    ui->plainTextEditChat->appendHtml(summary);
+    foreach (Tile* tile, tiles)
+    {
+        tile->setTileBrush(brushDimmed);
+    }
+
 }
 
 void MainWindow::leaveNetworkedGame()
@@ -1197,6 +1212,7 @@ void MainWindow::writeSettings()
 
     settings.beginGroup("GeneralSettings");
     settings.setValue("DefaultGame", currentGameDescription);
+    settings.setValue("DefaultUsername", loginUi.lineEditUsername->text());
     settings.endGroup();
 }
 
@@ -1215,6 +1231,7 @@ void MainWindow::readSettings()
 
     settings.beginGroup("GeneralSettings");
     currentGameDescription = settings.value("DefaultGame", "WordStruck").toString();
+    loginUi.lineEditUsername->setText(settings.value("DefaultUsername", "").toString());
     settings.endGroup();
 
     QString switchStr;
@@ -1400,7 +1417,8 @@ void MainWindow::joinTable(QByteArray ba)
             PlayerListWidgetItem* item = new PlayerListWidgetItem();
             item->setScore(0);
             item->setUsername(username);
-            ui->listWidgetMyTable->addItem(item->formattedText());
+            item->setText(item->formattedText());
+            ui->listWidgetMyTable->addItem(item);
 
         }
 
@@ -1440,7 +1458,8 @@ void MainWindow::populateTableList(QListWidgetItem * item)
         PlayerListWidgetItem* item = new PlayerListWidgetItem();
         item->setScore(0);
         item->setUsername(person.toByteArray());
-        ui->listWidgetMyTable->addItem(item->formattedText());
+        item->setText(item->formattedText());
+        ui->listWidgetMyTable->addItem(item);
     }
 }
 
@@ -1530,20 +1549,13 @@ void MainWindow::gotLeftTable(QByteArray ba)
     }
 }
 
-QListWidgetItem* MainWindow::findPlayerInTable(QByteArray username)
+PlayerListWidgetItem* MainWindow::findPlayerInTable(QByteArray username)
 {
     for (int i = 0; i < ui->listWidgetMyTable->count(); i++)
     {
-        QString text = ui->listWidgetMyTable->item(i)->text();
-        QStringList list = text.split(" ");
-        // first is score, second is name
-        if (list.size() == 2)
-        {
-            if (list[1] == username)
-            {
-                return ui->listWidgetMyTable->item(i);
-            }
-        }
+        PlayerListWidgetItem* plwi = dynamic_cast<PlayerListWidgetItem*>(ui->listWidgetMyTable->item(i));
+        if (plwi && plwi->getUsername() == username) return plwi;
+        if (!plwi) qDebug("unable to cast");
     }
     return NULL;    // if couldn't find this player
 }
@@ -1568,16 +1580,13 @@ void MainWindow::gotPlayerScore(QByteArray ba)
     {
         int score = params[1].toInt();
         QByteArray player = params[2];
-        QListWidgetItem* it = findPlayerInTable(player);
+        PlayerListWidgetItem* it = findPlayerInTable(player);
         if (it)
         {
-            PlayerListWidgetItem* plwi = dynamic_cast<PlayerListWidgetItem*>(it);
-            if (plwi)
-            {
-                plwi->setScore(score);
-                plwi->setText(plwi->formattedText());
-                ui->listWidgetMyTable->sortItems(Qt::DescendingOrder);
-            }
+            it->setScore(score);
+            it->setText(it->formattedText());
+            ui->listWidgetMyTable->sortItems(Qt::DescendingOrder);
+
 
         }
 
