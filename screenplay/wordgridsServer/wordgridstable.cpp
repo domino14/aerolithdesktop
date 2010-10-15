@@ -143,6 +143,7 @@ void WordgridsTable::personJoined(ClientSocket * socket)
 void WordgridsTable::processMove(ClientSocket* socket, QList<QByteArray> params)
 {
     // acceptpos xl yl xh yh score bonustile
+    // todo the following is BROKEN
     movesHash[socket].append(params);
     // keep info about player moves?
     socket->gameData.score = params[5].toInt();

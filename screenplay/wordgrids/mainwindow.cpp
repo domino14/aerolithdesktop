@@ -1469,7 +1469,8 @@ void MainWindow::on_pushButtonJoinTable_clicked()
     if (!inATable)
     {
         QListWidgetItem* lwi = ui->listWidgetTables->currentItem();
-        serverCommunicator->sendJoinTable(lwi->data(Qt::UserRole + 1).toInt());
+        if (lwi)
+            serverCommunicator->sendJoinTable(lwi->data(Qt::UserRole + 1).toInt());
     }
 }
 
