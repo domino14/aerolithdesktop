@@ -22,8 +22,8 @@ void WordgridsTable::initialize(quint16 tablenum, int boardSize,
     this->btTurnoff = btTurnoff;
     this->gameType = gameType;
 
-    gameTimerValue = boardSize*boardSize*2.5;
-
+    if (gameType == GAME_STRUCK) gameTimerValue = boardSize*boardSize*2.5;
+    else if (gameType == GAME_DASH) gameTimerValue = boardSize*boardSize*4;
 }
 
 void WordgridsTable::removePersonFromTable(ClientSocket* socket)

@@ -27,6 +27,7 @@
 #include "ui_defpopup.h"
 #include "ui_loginForm.h"
 #include "servercommunicator.h"
+#include "playerlistwidgetitem.h"
 namespace Ui
 {
     class MainWindowClass;
@@ -180,7 +181,7 @@ private:
     void endGameActions();
     bool connectedToNetwork;
     int currentBTOFF;
-    QListWidgetItem* findPlayerInTable(QByteArray username);
+    PlayerListWidgetItem* findPlayerInTable(QByteArray username);
 
 public slots:
     //   void tileMouseCornerClicked(int, int);
