@@ -178,6 +178,7 @@ private:
     void generateQuizArray();
     void requestGenerateQuizArray();
     bool pendingQuizArray;
+    bool pendingPrepareNextGame;
 private slots:
     void updateGameTimer();
     void updateCountdownTimer();

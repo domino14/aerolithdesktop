@@ -133,7 +133,8 @@ QByteArray UnscrambleGame::initialize()
 
 
     pendingListExistsRequest = false;
-
+    pendingPrepareNextGame = true;
+    prepareTableQuestions();
 
     return block;
 
@@ -262,6 +263,11 @@ void UnscrambleGame::gameStartRequest(ClientSocket* client)
         table->sendTableMessage("Please wait, loading questions...");
         return;
     }
+    if (pendingPrepareNextGame)
+    {
+        table->sendTableMessage("Please wait, preparing next game...");
+        return;
+    }
     if (startEnabled == true && gameStarted == false && countingDown == false)
     {
         bool startTheGame = true;
@@ -380,7 +386,7 @@ void UnscrambleGame::startGame()
     //    - maxRacks alphagrams
     gameStarted = true;
     wroteToMissedFileThisRound = false;
-    prepareTableQuestions();
+    // used to be prepareTableQuestions here
     sendGameStartPacket();
 
     foreach (ClientSocket* socket, table->peopleInTable)
@@ -515,6 +521,10 @@ void UnscrambleGame::endGame()
     }
 
     unscrambleGameQuestions.clear();
+
+    pendingPrepareNextGame = true;
+    prepareTableQuestions();    // prepare the NEXT questions NOW. by the time database is done hopefully
+    // we can start the next game. if not it should just wait.
 }
 
 
@@ -636,7 +646,7 @@ void UnscrambleGame::prepareTableQuestions()
         quizArray = missedArray;		// copy missedArray to quizArray
         quizIndex = 0;	// and set the index back at the beginning
         missedArray.clear();	// also clear the missed array, cuz we're starting a new one.
-        table->sendTableMessage("The list has been exhausted. Now quizzing on missed list.");
+        table->sendTableMessage("The list has been exhausted. Will quiz on missed list.");
         sendListExhaustedMessage();
         numRacksSeen = 0;
         numTotalRacks = quizArray.size();
