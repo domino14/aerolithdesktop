@@ -141,17 +141,12 @@ MainWindow::MainWindow(QWidget *parent)
     wordStructure = new WordStructure(this);
     loadedWordStructure = false;
     connect(wordStructure, SIGNAL(finishedLoadingWordStructure()), this, SLOT(finishedLoadingWordStructure()));
-    wordStructure->loadWordStructure();
-
-    // ui->textEdit->append("Please wait for word structure to load...");
-
-    ui->statusBar->showMessage("Please wait... Loading word structure");
-    ui->pushButtonNewGame->setEnabled(false);
 
 
     shouldLoadNextNewGame = false;
 
     scoreLabel->setVisible(false);
+
 
     readSettings();
     singleScoreTimer = new QTimer(this);
@@ -201,7 +196,8 @@ MainWindow::MainWindow(QWidget *parent)
     connectedToNetwork = false;
     inATable = false;
     curTable = 0;
-
+    connect(uiPreferences.comboBoxLexicon, SIGNAL(currentIndexChanged(QString)),
+            this, SLOT(currentLexiconChanged(QString)));
 }
 
 void MainWindow::closeEvent ( QCloseEvent * event )
@@ -1025,6 +1021,29 @@ void MainWindow::markInWordList(QString str)
 
     list[0]->setBackground(QBrush(Qt::blue));
     list[0]->setForeground(QBrush(Qt::white));
+    list[0]->setData(Qt::UserRole + 1, true);   // mark as highlighted
+    /*
+    qDebug() << "marked";
+    // scroll down if top half of visible items is highlighted
+    for (int i = 0; i < ui->listWidgetWordList->count(); i++)
+    {
+        qDebug() << ui->listWidgetWordList->visualItemRect(ui->listWidgetWordList->item(i))
+                << ui->listWidgetWordList->item(i)->text();
+    }
+    qDebug() << "Overal rectangle";
+    qDebug() << ui->listWidgetWordList->maximumViewportSize();*/
+
+
+    for (int i = 0; i < ui->listWidgetWordList->count(); i++)
+    {
+        if (ui->listWidgetWordList->item(i)->data(Qt::UserRole + 1).toBool() == false)
+        {
+            // this item should be visible in the center at least
+            ui->listWidgetWordList->scrollToItem(ui->listWidgetWordList->item(i),
+                                                 QAbstractItemView::PositionAtCenter);
+            break;
+        }
+    }
 
 }
 
@@ -1059,6 +1078,9 @@ void MainWindow::generateFindList()
 
 bool MainWindow::populateNextFindList()
 {
+    // populates the next 'find list' by word length
+    // if we have reached 'maxtogenerate' return false
+    // else highlight words we have already found that may have been of a higher word length
     ui->listWidgetWordList->clear();
 
     qDebug() << "in populate" << curGenerating << foundAlphaset;
@@ -1155,6 +1177,7 @@ void MainWindow::finishedLoadingWordStructure()
     loadedWordStructure = true;
     ui->statusBar->showMessage("Loaded word structure! You may begin playing.");
     ui->pushButtonNewGame->setEnabled(true);
+    uiPreferences.comboBoxLexicon->setEnabled(true);
 }
 
 void MainWindow::on_actionLoad_board_triggered()
@@ -1213,6 +1236,7 @@ void MainWindow::writeSettings()
     settings.beginGroup("GeneralSettings");
     settings.setValue("DefaultGame", currentGameDescription);
     settings.setValue("DefaultUsername", loginUi.lineEditUsername->text());
+    settings.setValue("DefaultLexiconIndex", uiPreferences.comboBoxLexicon->currentIndex());
     settings.endGroup();
 }
 
@@ -1232,6 +1256,9 @@ void MainWindow::readSettings()
     settings.beginGroup("GeneralSettings");
     currentGameDescription = settings.value("DefaultGame", "WordStruck").toString();
     loginUi.lineEditUsername->setText(settings.value("DefaultUsername", "").toString());
+    uiPreferences.comboBoxLexicon->setCurrentIndex(settings.value("DefaultLexiconIndex", 0).toInt());
+    // trigger the loading of the lexicon
+    currentLexiconChanged(uiPreferences.comboBoxLexicon->currentText());
     settings.endGroup();
 
     QString switchStr;
@@ -1332,6 +1359,7 @@ void MainWindow::performDisconnectedActions()
     ui->pushButtonRetry->setEnabled(true);
     ui->pushButtonGiveUp->setEnabled(true);
     ui->pushButtonSwitchGame->setEnabled(true);
+    uiPreferences.comboBoxLexicon->setEnabled(true);
 }
 
 void MainWindow::serverConnectionError(QString error)
@@ -1368,6 +1396,7 @@ void MainWindow::serverConnected()
     ui->pushButtonRetry->setEnabled(false);
     ui->pushButtonGiveUp->setEnabled(false);
     ui->pushButtonSwitchGame->setEnabled(false);
+    uiPreferences.comboBoxLexicon->setEnabled(false);
 }
 
 void MainWindow::newTable(QByteArray ba)
@@ -1600,6 +1629,16 @@ void MainWindow::gotGameOver(QByteArray ba)
     {
         endGameActions();
     }
+}
+
+void MainWindow::currentLexiconChanged(QString text)
+{
+    uiPreferences.comboBoxLexicon->setEnabled(false);
+    ui->pushButtonNewGame->setEnabled(false);
+    wordStructure->loadWordStructure(text + ".db");
+    // ui->textEdit->append("Please wait for word structure to load...");
+    ui->statusBar->showMessage("Please wait... Loading word structure");
+    currentLexicon = text;
 }
 
 /***********************/

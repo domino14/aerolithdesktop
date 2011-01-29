@@ -16,7 +16,7 @@ public:
             };
     ThreadOptions currentThreadOption;
     QHash <QString, QString> wordStructure;
-    void loadWordStructure();
+    void loadWordStructure(QString dbName);
     QString getDefinitions(QString words);
     QSqlDatabase wordDb;
     bool containsOnlyPlurals(QString words);

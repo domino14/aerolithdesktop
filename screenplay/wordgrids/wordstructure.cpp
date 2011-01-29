@@ -7,10 +7,12 @@ WordStructure::WordStructure(QObject* parent) : QThread(parent)
 
 }
 
-void WordStructure::loadWordStructure()
+void WordStructure::loadWordStructure(QString dbName)
 {
+    if (wordDb.isOpen())
+        wordDb.close();
     wordDb = QSqlDatabase::addDatabase("QSQLITE");
-    wordDb.setDatabaseName("OWL2+LWL.db");
+    wordDb.setDatabaseName(dbName);
     wordDb.open();
     if (!isRunning())
     {

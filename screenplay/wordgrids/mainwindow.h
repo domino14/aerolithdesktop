@@ -183,6 +183,7 @@ private:
     int currentBTOFF;
     PlayerListWidgetItem* findPlayerInTable(QByteArray username);
 
+    QString currentLexicon;
 public slots:
     //   void tileMouseCornerClicked(int, int);
 private slots:
@@ -211,6 +212,8 @@ private slots:
     void hideBonusScore();
 
     void listWidgetItemClicked(QListWidgetItem*);
+
+    void currentLexiconChanged(QString text);
 
     void on_pushButtonConnect_clicked();    // for server
     void serverConnectionError(QString);
